@@ -726,6 +726,7 @@
       lock();
       const curr=clone(localSquad);
       let nextSlot=activeSquadSlot,nextSquad=curr;
+      let adaptMessage="";
       const nextSlots=clone(squadSlots||{"1":curr,"2":curr,"3":curr});
       const allowed=new Set(userCards());
       if(kind==="replace"){
@@ -751,69 +752,99 @@
         if(arg?.coachId!==curr.coachId)throw fail("halloween-coach-invalid");
         curr.coachPowerSelection=clone(arg.coachPowerSelection||null);
       } else if(kind==="adapt"||kind==="formation"){
-        const cap=opponentOverall()+1;
-        if(kind==="adapt"&&resolvedUser()&&ovr(resolvedUser().lineup)<=cap){
-          notify("La squadra rispetta già il limite di "+cap+" OVR.");
-          return;
-        }
+        const cap=opponentOverall()+1,limit=Math.floor(cap*11);
         const formationId=kind==="formation"?asId(arg):curr.formationId;
         const formations=global.RoadToGloryConfig?.season?.("ie1")?.formations||[];
         const formation=formations.find(f=>asId(f.id)===formationId);
         if(!formation&&kind==="formation")throw fail("halloween-formation-unavailable");
         const roles=formation?.requirements||{FW:3,MF:3,DF:4,GK:1};
+        const previous=[...curr.lineup,...curr.bench],previousSet=new Set(curr.lineup);
         const owned=userCards().map(id=>({id,p:resolveCard(id)})).filter(x=>x.p)
-          .sort((a,b)=>Number(b.p.overall??b.p.finalOverall??0)-Number(a.p.overall??a.p.finalOverall??0));
-        const previous=[...curr.lineup,...curr.bench],line=[];
-        for(const role of ["FW","MF","DF","GK"]){
-          const count=Number(roles[role]||0);let picks=0;
-          for(const id of [...previous,...owned.map(x=>x.id)]) {
-            if(picks>=count)break;
-            if(line.includes(id)||!allowed.has(id))continue;
-            const p=resolveCard(id);
-            if(String(p?.normalizedRole||p?.position||"").toUpperCase()!==role)continue;
-            line.push(id);picks++;
+          .map(x=>({...x,overall:Math.round(Number(x.p.overall??x.p.finalOverall??0)),
+            role:asId(x.p.normalizedRole||x.p.position||x.p.role).toUpperCase()}))
+          .filter(x=>Number.isFinite(x.overall));
+        let line=[];
+        if(kind==="adapt"){
+          // Exact bounded knapsack on the REAL RTG owned-card pool. For each
+          // tactical role count retain achievable sums and prefer already
+          // selected cards on equal totals; maximize average <= enemy+1.
+          // Unlike the old algorithm, this also upgrades an OVR-75 lineup.
+          const groupTotals=[];
+          for(const role of ["FW","MF","DF","GK"]){
+            const need=Number(roles[role]||0);
+            if(!need)continue;
+            const candidates=owned.filter(x=>x.role===role);
+            if(candidates.length<need)throw fail("halloween-formation-insufficient-players");
+            // Cards with equal rating are interchangeable for this problem:
+            // retain up to need of each rating, prioritizing owned starters.
+            const byOverall=new Map();
+            for(const entry of candidates){
+              const bucket=byOverall.get(entry.overall)||[];
+              bucket.push(entry);byOverall.set(entry.overall,bucket);
+            }
+            const reduced=Array.from(byOverall.values()).flatMap(bucket=>bucket
+              .sort((a,b)=>Number(previousSet.has(b.id))-Number(previousSet.has(a.id))||a.id.localeCompare(b.id))
+              .slice(0,need));
+            const dp=Array.from({length:need+1},()=>new Map());
+            dp[0].set(0,{ids:[],changes:0});
+            for(const item of reduced){
+              for(let count=need;count>=1;count--){
+                for(const [sum,path] of dp[count-1]){
+                  const total=sum+item.overall;
+                  if(total>limit)continue;
+                  const changes=path.changes+(previousSet.has(item.id)?0:1);
+                  const old=dp[count].get(total);
+                  if(!old||changes<old.changes)
+                    dp[count].set(total,{ids:[...path.ids,item.id],changes});
+                }
+              }
+            }
+            if(!dp[need].size)throw fail("halloween-overall-cap");
+            groupTotals.push(dp[need]);
+          }
+          let combined=new Map([[0,{ids:[],changes:0}]]);
+          for(const group of groupTotals){
+            const next=new Map();
+            for(const [sum,chosen] of combined){
+              for(const [extra,choice] of group){
+                const total=sum+extra;if(total>limit)continue;
+                const changes=chosen.changes+choice.changes;
+                const old=next.get(total);
+                if(!old||changes<old.changes)next.set(total,{ids:[...chosen.ids,...choice.ids],changes});
+              }
+            }
+            if(!next.size)throw fail("halloween-overall-cap");
+            combined=next;
+          }
+          const target=Math.max(...combined.keys());
+          line=combined.get(target)?.ids||[];
+          adaptMessage="Squadra ottimizzata: "+(Math.round(target/11*10)/10)+
+            " / "+cap+" OVR (massimo raggiungibile con i giocatori disponibili).";
+        }else{
+          for(const role of ["FW","MF","DF","GK"]){
+            const need=Number(roles[role]||0);
+            for(const id of [...previous,...owned.map(x=>x.id)]){
+              if(line.filter(k=>asId(resolveCard(k)?.normalizedRole||resolveCard(k)?.position).toUpperCase()===role).length>=need)break;
+              if(line.includes(id)||!allowed.has(id))continue;
+              const p=resolveCard(id);
+              if(asId(p?.normalizedRole||p?.position).toUpperCase()===role)line.push(id);
+            }
           }
         }
         if(line.length!==11)throw fail("halloween-formation-insufficient-players");
-        const bench=[...previous,...owned.map(x=>x.id)].filter((id,i,all)=>!line.includes(id)&&all.indexOf(id)===i).slice(0,4);
+        const bench=[...curr.bench,...curr.lineup,...owned.map(x=>x.id)]
+          .filter((id,i,arr)=>!line.includes(id)&&arr.indexOf(id)===i).slice(0,4);
         if(bench.length!==4)throw fail("halloween-bench-insufficient");
-        if(kind==="adapt"){
-          // Use the same eleven tactical role slots as the native RTG squad.
-          // Replace only with a weaker player of that role until OVR <= cap.
-          const roleFor=id=>asId(resolveCard(id)?.normalizedRole||resolveCard(id)?.position||resolveCard(id)?.role).toUpperCase();
-          const rating=id=>Number(resolveCard(id)?.overall??resolveCard(id)?.finalOverall??0);
-          const roleSlots=formation?.slotRoles||[];
-          let attempts=0;
-          while(ovr(line.map(resolveCard))>cap && attempts++<100){
-            const requiredDrop=(ovr(line.map(resolveCard))-cap)*11;
-            const choices=[];
-            for(let i=0;i<line.length;i++){
-              const assignedRole=asId(roleSlots[i]||roleFor(line[i])).toUpperCase();
-              for(const id of userCards()){
-                if(line.includes(id)||roleFor(id)!==assignedRole)continue;
-                const drop=rating(line[i])-rating(id);
-                if(drop<=0)continue;
-                choices.push({i,id,drop,score:drop>=requiredDrop?drop:10000-drop});
-              }
-            }
-            choices.sort((a,b)=>a.score-b.score||a.i-b.i);
-            if(!choices.length)break;
-            const choice=choices[0],prior=line[choice.i],benchIndex=bench.indexOf(choice.id);
-            line[choice.i]=choice.id;
-            if(benchIndex>=0)bench[benchIndex]=prior;
-          }
-          if(ovr(line.map(resolveCard))>cap)throw fail("halloween-overall-cap");
-          notify("Squadra adattata al limite di "+cap+" OVR.");
-        }
         curr.lineup=line;curr.bench=bench;curr.formationId=formationId;curr.lineupOrderedBySlot=false;
       }
-      nextSlots[nextSlot]=clone(nextSquad);
+            nextSlots[nextSlot]=clone(nextSquad);
       const epoch=session;
       const saved={...nextSquad,activeSquadSlot:nextSlot,slots:nextSlots};
       await storage.updateMany([SQUAD_KEY],()=>({writes:{[SQUAD_KEY]:saved},value:true}));
       assertCurrent(epoch);
       // Only advance the visible squad once the canonical event save commits.
       activeSquadSlot=nextSlot;localSquad=nextSquad;squadSlots=nextSlots;
+      if(adaptMessage)notify(adaptMessage);
     }
     async function startMatch() {
       if(!isOpen() || match)throw fail("halloween-event-closed-or-match-active");
