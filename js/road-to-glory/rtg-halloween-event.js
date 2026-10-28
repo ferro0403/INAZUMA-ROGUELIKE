@@ -271,6 +271,7 @@
         '<section class="halloween-play-banner" aria-label="Sfida Occult Halloween">'+
         '<div class="halloween-play-banner-copy"><small>SFIDA A TEMPO · OCCULT</small><h2>IL CIMITERO STREGATO</h2>'+
         '<p>Affronta Occult Halloween prima della fine dell’evento.</p></div>'+
+        '<img class="halloween-play-crest" src="'+escape(LOGO_URL)+'" alt="Stemma Occult Halloween">'+
         '<button type="button" class="btn btn-yellow" data-halloween-start '+(!isOpen()||!can||match?'disabled':'')+'>GIOCA LA PARTITA →</button>'+
         (match?'<button type="button" class="btn btn-yellow" data-halloween-resume>RIPRENDI LA PARTITA →</button>':'')+
         '</section>';
