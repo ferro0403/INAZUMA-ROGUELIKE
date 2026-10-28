@@ -276,33 +276,39 @@
       </section>`;
     }
 
-    function replacementPickerMarkup({ target = null, role = "", allowAnyRole = false, quickEntries = [], entries = [], total = 0, visibleCount = entries.length, query = "", sourceFilter = "all", rarityFilter = "all", rarityOptions = [], seasonFilter = "all", teamFilter = "all", roleFilter = "all", seasonOptions = [], teamOptions = [] } = {}) {
-      const targetName = target?.player?.name || target?.playerId || "Giocatore";
-      const filterButton = (value,label) => `<button type="button" class="rtg-picker-filter ${sourceFilter===value?"active":""}" data-rtg-picker-source="${escape(value)}">${escape(label)}</button>`;
-      const rarityOptionMarkup = ['<option value="all">Tutte</option>', ...rarityOptions.map((rarity) => `<option value="${escape(rarity)}" ${String(rarityFilter)===String(rarity)?"selected":""}>${escape(rarity)}</option>`)].join("");
-      return `<section class="rtg-squad-picker development-squad-card-scope">
-        <div class="modal-head rtg-squad-picker-head">
-          <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Scegli un sostituto · ${escape(allowAnyRole ? "qualsiasi ruolo" : (role || "stesso ruolo"))}</p></div>
-        </div>
-        ${quickEntries.length ? `<section class="rtg-picker-quick-bench"><div class="rtg-picker-quick-head"><span>PANCHINA · CAMBIO RAPIDO</span><strong>TUTTI I RUOLI</strong></div><div class="rtg-picker-quick-strip">${quickEntries.map((entry) => playerCard(entry, "picker")).join("")}</div></section>` : ""}
-        <div class="rtg-picker-toolbar">
-          <label class="rtg-picker-search"><span>Cerca per nome</span><input type="search" inputmode="search" autocomplete="off" placeholder="Es. Jude, Axel, Mark…" value="${escape(query)}" data-rtg-picker-search /></label>
+    // Canonical shared filter toolbar. Used verbatim by the squad replacement
+    // picker and the RTG Development Center; only data attributes are scoped.
+    function pickerFilterToolbarMarkup({area="picker",query="",sourceFilter="all",rarityFilter="all",rarityOptions=[],seasonFilter="all",teamFilter="all",roleFilter="all",seasonOptions=[],teamOptions=[],descending=true}={}) {
+      const filterButton=(value,label)=>`<button type="button" class="rtg-picker-filter ${sourceFilter===value?"active":""}" data-rtg-${escape(area)}-source="${escape(value)}">${escape(label)}</button>`;
+      const rarityOptionMarkup=['<option value="all">Tutte</option>',...rarityOptions.map(rarity=>`<option value="${escape(rarity)}" ${String(rarityFilter)===String(rarity)?"selected":""}>${escape(rarity)}</option>`)].join("");
+      return `        <div class="rtg-picker-toolbar">
+          <label class="rtg-picker-search"><span>Cerca per nome</span><input type="search" inputmode="search" autocomplete="off" placeholder="Es. Jude, Axel, Mark…" value="${escape(query)}" data-rtg-${escape(area)}-search /></label>
           <div class="rtg-picker-source-filters" aria-label="Filtra provenienza">
             ${filterButton("all","Tutti")}
             ${filterButton("free","Svincolati")}
             ${filterButton("rtg","Giocatori RTG")}
           </div>
           <div class="rtg-picker-season-team-filters">
-            <label class="rtg-picker-rarity-filter rtg-picker-season-filter"><span>Season</span><select data-rtg-picker-season aria-label="Filtra per season">${filterOptionsMarkup(seasonOptions,seasonFilter)}</select></label>
-            <label class="rtg-picker-rarity-filter rtg-picker-team-filter"><span>Squadra</span><select data-rtg-picker-team aria-label="Filtra per squadra">${filterOptionsMarkup(teamOptions,teamFilter)}</select></label>
+            <label class="rtg-picker-rarity-filter rtg-picker-season-filter"><span>Season</span><select data-rtg-${escape(area)}-season aria-label="Filtra per season">${filterOptionsMarkup(seasonOptions,seasonFilter)}</select></label>
+            <label class="rtg-picker-rarity-filter rtg-picker-team-filter"><span>Squadra</span><select data-rtg-${escape(area)}-team aria-label="Filtra per squadra">${filterOptionsMarkup(teamOptions,teamFilter)}</select></label>
           </div>
-          ${roleFilterMarkup("picker",roleFilter)}
+          ${roleFilterMarkup(area,roleFilter)}
           <label class="rtg-picker-rarity-filter">
             <span>Rarità</span>
-            <select data-rtg-picker-rarity aria-label="Filtra per rarità">${rarityOptionMarkup}</select>
+            <select data-rtg-${escape(area)}-rarity aria-label="Filtra per rarità">${rarityOptionMarkup}</select>
           </label>
-          <button type="button" class="rtg-picker-ovr-sort active" data-rtg-picker-sort aria-label="Ordina per overall decrescente" aria-pressed="true"><span>OVR</span><strong data-rtg-picker-sort-arrow aria-hidden="true">↓</strong></button>
+          <button type="button" class="rtg-picker-ovr-sort ${descending?"active":""}" data-rtg-${escape(area)}-sort aria-label="Ordina per overall decrescente" aria-pressed="${descending?"true":"false"}"><span>OVR</span><strong data-rtg-${escape(area)}-sort-arrow aria-hidden="true">${descending?"↓":"↑"}</strong></button>
+        </div>`;
+    }
+
+    function replacementPickerMarkup({ target = null, role = "", allowAnyRole = false, quickEntries = [], entries = [], total = 0, visibleCount = entries.length, query = "", sourceFilter = "all", rarityFilter = "all", rarityOptions = [], seasonFilter = "all", teamFilter = "all", roleFilter = "all", seasonOptions = [], teamOptions = [] } = {}) {
+      const targetName = target?.player?.name || target?.playerId || "Giocatore";
+      return `<section class="rtg-squad-picker development-squad-card-scope">
+        <div class="modal-head rtg-squad-picker-head">
+          <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Scegli un sostituto · ${escape(allowAnyRole ? "qualsiasi ruolo" : (role || "stesso ruolo"))}</p></div>
         </div>
+        ${quickEntries.length ? `<section class="rtg-picker-quick-bench"><div class="rtg-picker-quick-head"><span>PANCHINA · CAMBIO RAPIDO</span><strong>TUTTI I RUOLI</strong></div><div class="rtg-picker-quick-strip">${quickEntries.map((entry) => playerCard(entry, "picker")).join("")}</div></section>` : ""}
+        ${pickerFilterToolbarMarkup({query,sourceFilter,rarityFilter,rarityOptions,seasonFilter,teamFilter,roleFilter,seasonOptions,teamOptions})}
         <div data-rtg-picker-results>${replacementPickerResultsMarkup({ entries, total, visibleCount })}</div>
       </section>`;
     }
@@ -380,7 +386,7 @@
       root?.querySelectorAll?.("[data-rtg-squad-slot]")?.forEach((button)=>button.addEventListener("click",()=>actions.onSelectSquadSlot?.(Number(button.dataset.rtgSquadSlot)||1)));
     }
 
-    return Object.freeze({ renderModel, markup, bind, playerCard, lineupPitchMarkup, matchPitchMarkup, formationPreviewMarkup, formationOptionsMarkup, replacementPickerMarkup, replacementPickerResultsMarkup, catalogMarkup, catalogResultsMarkup, filterOptionsMarkup, versionPickerMarkup });
+    return Object.freeze({ renderModel, markup, bind, playerCard, lineupPitchMarkup, matchPitchMarkup, formationPreviewMarkup, formationOptionsMarkup, replacementPickerMarkup, pickerFilterToolbarMarkup, replacementPickerResultsMarkup, catalogMarkup, catalogResultsMarkup, filterOptionsMarkup, versionPickerMarkup });
   }
 
   global.RoadToGlorySquadView = Object.freeze({ create });
