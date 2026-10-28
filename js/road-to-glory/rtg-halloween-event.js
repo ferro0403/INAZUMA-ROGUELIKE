@@ -116,6 +116,7 @@
     let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false;
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
     let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved",pendingRevealHidden=false;
+    let selectedAlbumTeamId=TEAM_ID;
     let vendingMotion=null;
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
     function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null;
@@ -231,15 +232,17 @@
             dataAttr:attr,extraClass:"halloween-native-card"+cls})
         : '<button type="button" class="player-card player-card-compact '+cls+'" '+attr+'><span class="player-corner player-role">'+escape(p.position||"")+'</span><span class="player-corner player-overall">'+escape(p.overall||"")+'</span><img class="player-portrait" src="'+escape(p.portraitUrl||"")+'" alt=""><strong>'+escape(p.name||"")+'</strong></button>';
     }
-    function openNativeDetail(cardId,albumUnlocked=false) {
+    function openNativeDetail(cardId,albumUnlocked=false,fromAlbum=false) {
       const p=resolveCard(cardId);
       if(!p)return;
-      if(deps.openPlayerDetails) {
-        deps.openPlayerDetails(cardId,"",{mode:albumUnlocked?"album":undefined,albumUnlocked});
-      } else if(deps.showPlayerDetailsFor) {
+      // The generic RTG detail resolver cannot resolve an unowned event card.
+      // Use this event player's canonical render directly, even when locked.
+      if(deps.showPlayerDetailsFor) {
         deps.showPlayerDetailsFor(p,{playerId:p.playerId,level:20,readOnly:true,rtgFourMoves:true,
           moveSeasonId:p.halloweenMoves?EVENT_ID:(p.resolvedSeasonId||p.legacySeasonId||"ie1"),
-          rtgRarity:p.category,mode:albumUnlocked?"album":"current",albumUnlocked});
+          rtgRarity:p.category,mode:fromAlbum?"album":"current",albumUnlocked});
+      } else if(deps.openPlayerDetails) {
+        deps.openPlayerDetails(cardId,"",{mode:fromAlbum?"album":undefined,albumUnlocked});
       }
       const modal=deps.getModalRoot?.();
       modal?.classList?.toggle("halloween-detail-native",Boolean(p.halloweenMoves));
@@ -315,14 +318,33 @@
         '<div class="rtg-vending-wallet-chip"><span>ZUCCHE HALLOWEEN</span><strong>'+currency(shared.halloween.pumpkins)+'</strong></div></div></div>'+
         '</div>';
     }
+    function eventAlbumTeams() {
+      // Single event team today; future event teams can be added to this
+      // collection without replacing the native RTG teams/roster screens.
+      const teamRecords=[assets.team];
+      return teamRecords.filter(Boolean).map(team=>{
+        const roster=(team.players||[]).map(raw=>player(raw.playerId)).filter(Boolean);
+        return {teamId:asId(team.teamId),teamName:asId(team.teamName||team.name)||"Occult Halloween",
+          logoUrl:team.logoUrl||LOGO_URL,roster,
+          total:roster.length,unlocked:roster.filter(p=>isOwned(asId(p.playerId))).length};
+      });
+    }
     function albumSection() {
-      const roster=Array.from(assets.players.keys()).map(pid=>player(pid));
-      const owned=new Set(shared.halloween.ownedIds.map(pid=>EVENT_ID+"::"+pid));
-      if(!deps.runView?.albumRosterMarkup) return '<p>Album RTG non disponibile</p>';
-      return '<div class="rtg-halloween-mode halloween-album-mode">'+
-        deps.runView.albumRosterMarkup({state:{activeSeasonId:"ie1"},seasonId:EVENT_ID,
-          team:{teamId:TEAM_ID,teamName:"Occult Halloween",logoUrl:LOGO_URL},
-          entries:roster.filter(p=>owned.has(p.cardId)),allEntries:roster,database:{players:roster}})+'</div>';
+      const teams=eventAlbumTeams();
+      const state={activeSeasonId:EVENT_ID};
+      if(view==="album"){
+        if(!deps.runView?.albumTeamsMarkup)return '<p>Album squadre RTG non disponibile</p>';
+        return deps.runView.albumTeamsMarkup({state,seasonId:EVENT_ID,teams})
+          .replace('<main class="album-screen album-teams-screen','<main class="album-screen halloween-event-album-teams album-teams-screen')
+          .replace(/(<p class="eyebrow">)ALBUM → [^<]+/,'$1ALBUM → EVENTO HALLOWEEN');
+      }
+      const team=teams.find(item=>item.teamId===selectedAlbumTeamId)||teams[0];
+      if(!team||!deps.runView?.albumRosterMarkup)return '<p>Album giocatori non disponibile</p>';
+      const entries=team.roster.filter(p=>isOwned(asId(p.playerId)));
+      return deps.runView.albumRosterMarkup({
+        state,seasonId:EVENT_ID,team,entries,allEntries:team.roster,
+        database:{players:team.roster}
+      }).replace('<main class="album-screen album-roster-screen','<main class="album-screen halloween-event-album-roster album-roster-screen');
     }
 
     function matchPitch(m,side){
@@ -693,11 +715,17 @@
       if(matchTimer!=null){global.clearTimeout?.(matchTimer);matchTimer=null;}
       if(view!=="vending"){vendingMotion?.stop?.();vendingMotion=null;}
       if(view==="squad")app.innerHTML=squadSection();
-      else if(view==="album")app.innerHTML=albumSection();
+      else if(view==="album"||view==="album-roster")app.innerHTML=albumSection();
       else if(match&&view==="match"&&deps.matchView)app.innerHTML=nativeMatchMarkup();
       else app.innerHTML=shell(view==="vending"?vendingSection():match?pendingSection():matchSection());
       app.querySelectorAll?.("[data-halloween-back],[data-rtg-home]")?.forEach(el=>el.addEventListener("click",()=>{if(view==="match"){dispose();deps.onReturn?.();}else {view="match";render();}}));
-      app.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>{dispose();deps.onReturn?.();});
+      app.querySelector?.("[data-rtg-album-collection-back]")?.addEventListener("click",()=>{dispose();deps.onReturn?.();});
+      app.querySelectorAll?.("[data-rtg-album-team]")?.forEach(button=>button.addEventListener("click",()=>{
+        const id=asId(button.dataset.rtgAlbumTeam);
+        if(!eventAlbumTeams().some(team=>team.teamId===id))return;
+        selectedAlbumTeamId=id;view="album-roster";render();
+      }));
+      app.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>{view="album";render();});
       app.querySelectorAll?.("[data-halloween-tab],[data-rtg-tab]")?.forEach(el=>el.addEventListener("click",()=>{
         const target=el.dataset.halloweenTab || el.dataset.rtgTab;
         if(target==="squad"||target==="run"||target==="match"){view=target==="squad"?"squad":"match";render();}
@@ -755,10 +783,18 @@
           onSelectSquadSlot:slot=>perform(()=>editSquad("slot",slot))
         });
       }
-      if(view==="album")app.querySelectorAll?.("[data-rtg-album-player-entry]").forEach(entry=>{
-        if(entry.dataset.albumUnlocked!=="true")return;
-        entry.querySelector?.("[data-rtg-album-player-card]")?.addEventListener("click",()=>openNativeDetail(entry.dataset.rtgAlbumPlayerEntry,true));
-      });
+      if(view==="album-roster"){
+        const roster=app.querySelector?.("[data-rtg-album-roster]");
+        roster?.addEventListener("click",event=>{
+          const origin=typeof event.target?.closest==="function"?event.target:event.target?.parentElement;
+          const entry=origin?.closest?.("[data-rtg-album-player-entry]")||
+            origin?.closest?.("[data-rtg-album-player-card]")?.closest?.("[data-rtg-album-player-entry]");
+          const cardId=asId(entry?.dataset?.rtgAlbumPlayerEntry);
+          if(!cardId||!cardId.startsWith(EVENT_ID+"::"))return;
+          event.preventDefault?.();
+          openNativeDetail(cardId,entry.dataset.albumUnlocked==="true",true);
+        });
+      }
     }
     async function perform(op) {if(busy)return;try{await op();render();}catch(error){global.console?.error?.("[RTG Halloween]",error);const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento"};notify(reasons[error?.code]||("Operazione Halloween fallita: "+(error?.code||error?.message||"errore sconosciuto")),"error");}}
     async function editSquad(kind,arg) {
@@ -1013,7 +1049,7 @@
       if(!response.ok)throw fail("halloween-free-agent-data-unavailable");
       const freeAgents=await response.json();assertCurrent(epoch);
       data={freeAgents};await load();assertCurrent(epoch);
-      view=initialView==="album"?"album":"match";detailPid="";
+      view=initialView==="album"?"album":"match";selectedAlbumTeamId=TEAM_ID;detailPid="";
       if(match&&["completed","completed-draw"].includes(match.status)&&!Number.isInteger(match.halloweenAward))await finalizeIfNeeded(match);
       assertCurrent(epoch);render();listen();
     }
