@@ -12,11 +12,13 @@
   const NAMES={
     "208":"FIDUCIA NEI CAMPIONI","1329":"ALLENAMENTO SPECIALIZZATO",
     "1777":"FUORI QUOTA","1974":"POTENZIALE RISVEGLIATO","4401":"TRASFORMAZIONE TOTALE",
+    "halloween-coach-54":"MASCHERA MALEDETTA",
   };
   const NOTES={
     "208":"Tocca due titolari direttamente sul campo. Entrambi riceveranno +100 PT iniziali e massimi.",
     "1329":"Tocca un titolare sul campo: tutte le sue mosse speciali disponibili costeranno la metà dei PT.",
     "1777":"Tocca una riserva sulla panchina: nel calcolo dell'overall squadra conterà al massimo 60. I valori reali non cambiano.",
+    "halloween-coach-54":"Scegli un titolare Halloween sul campo: nei requisiti il suo OVR vale 15 punti in meno. In partita rimane identico.",
     "1974":"Scegli 2 giocatori, titolari o riserve: entrambi salgono temporaneamente di 1 rarità. Puoi vedere le statistiche potenziate qui sotto.",
     "4401":"Scegli 2 titolari. Per ognuno imposta un elemento diverso dall'originale: tutte le sue mosse speciali disponibili cambiano nello stesso elemento. Potenza e costo PT non cambiano.",
   };
@@ -50,7 +52,9 @@
     const selectionSquad=()=>({...squad,coachPowerSelection:choice});
     const valid=()=>!!rules.validConfig(selectionSquad(),from(squad.lineup),ctx.seasonId(),from(squad.bench));
     const cap=["208","1974","4401"].includes(coachId)?2:1;
-    const allowed=key=>coachId==="1777"?(squad.bench||[]).includes(key):
+    const allowed=key=>coachId==="halloween-coach-54"?
+      (squad.lineup||[]).includes(key)&&key.startsWith("halloween2026::"):
+      coachId==="1777"?(squad.bench||[]).includes(key):
       coachId==="1974"?[...(squad.lineup||[]),...(squad.bench||[])].includes(key)&&
         !!rules.nextRarity(rules.rarityOf(resolve(key))):
         (squad.lineup||[]).includes(key);
@@ -91,12 +95,14 @@
       }).join("");
     }
     function overallPreview(){
-      if(coachId!=="1777"||choice.cardIds.length!==1)return "";
+      if(!["1777","halloween-coach-54"].includes(coachId)||choice.cardIds.length!==1)return "";
       const overall=ctx.previewSquadOverall?.(choice);
       if(!overall||!Number.isFinite(overall.before)||!Number.isFinite(overall.after))return "";
-      return '<section class="rtg-coach-power-projection" aria-label="Overall squadra con Fuori quota">'+
+      return '<section class="rtg-coach-power-projection" aria-label="Anteprima OVR squadra requisito">'+
         '<h4>OVERALL SQUADRA · ANTEPRIMA</h4><strong>'+esc(overall.before)+
-        ' → '+esc(overall.after)+'</strong><p>La media resta su 15 giocatori. Solo la riserva scelta pesa al massimo 60.</p></section>';
+        ' → '+esc(overall.after)+'</strong><p>'+(coachId==="halloween-coach-54"?
+          "Il titolare Halloween selezionato conta 15 OVR in meno solo nei requisiti. Valori reali invariati.":
+          "La media resta su 15 giocatori. Solo la riserva scelta pesa al massimo 60.")+'</p></section>';
     }
     function render(){
       const model=ctx.getModel?.();
@@ -117,7 +123,7 @@
             return '<section class="rtg-coach-yi-target"><h4>GIOCATORE '+(index+1)+' · '+name+'</h4>'+
               '<div class="rtg-coach-yi-element-options">'+options+'</div></section>';
           }).join("")+'</div>':"";
-      const title=coachId==="1777"?"SCEGLI UNA RISERVA":"SCEGLI SUL CAMPO";
+      const title=coachId==="1777"?"SCEGLI UNA RISERVA":coachId==="halloween-coach-54"?"SCEGLI UN TITOLARE HALLOWEEN":"SCEGLI SUL CAMPO";
       const summary=coachId==="1329"&&choice.cardIds[0]
         ?' · TUTTE LE '+(rules.availableMoveIndices(rules.fourMoves(resolve(choice.cardIds[0]),ctx.seasonId()))?.length||0)+' MOSSE':
         coachId==="4401"?' · TUTTE LE MOSSE':"";
