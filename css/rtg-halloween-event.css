@@ -564,3 +564,18 @@
  background:#0b0a0e!important;background-color:#0b0a0e!important;
  color:#fff!important;border-color:#ff9028!important
 }
+
+/* Every HW legacy badge (native RTG cards, album, pull and detail) uses black.
+   Match only HW; preserve all original Season badges unchanged. */
+.rtg-legacy-badge[data-legacy-season="HW"],
+.player-detail-rtg-legacy-badge[data-legacy-season="HW"]{
+  --rtg-legacy-color:#0b0a0e!important;
+  --rtg-legacy-ink:#fff!important;
+  background:#0b0a0e!important;
+  color:#fff!important;
+  border-color:#ff9028!important;
+}
+.rtg-legacy-badge[data-legacy-season="HW"] > *,
+.player-detail-rtg-legacy-badge[data-legacy-season="HW"] > *{
+  color:#fff!important;
+}
