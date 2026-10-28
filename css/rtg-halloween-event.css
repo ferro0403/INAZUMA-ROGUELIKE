@@ -106,3 +106,13 @@
 .halloween-detail-moves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .halloween-detail-moves span{border:1px solid #aa511b;background:#160d14;border-radius:4px;padding:8px;font-size:.75rem}
 @media(max-width:600px){.halloween-detail-hero{min-height:200px}.halloween-detail-hero h2{font-size:1.7rem}.halloween-detail-hero .halloween-duel{grid-template-columns:1fr}.halloween-detail-hero .halloween-duel strong{font-size:1.3rem}.halloween-detail-render{height:245px}.halloween-detail-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+.halloween-original-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:15px 0}
+.halloween-pitch{min-width:0;overflow:hidden;border:2px solid #ef7415;border-radius:8px;background:linear-gradient(180deg,#100b14dd,#24100cde);padding:8px}
+.halloween-pitch h3{font-size:.8rem;color:#ffaf45;text-align:center;margin:5px 0 12px;letter-spacing:.07em}
+.halloween-pitch .rtg-live-pitch{min-height:280px;width:100%;overflow:visible;transform:none}
+.halloween-pitch .rtg-shared-match-side{width:100%;max-width:100%}
+.halloween-pitch .rtg-shared-match-card{max-width:100%}
+.halloween-pitch--opponent [data-rtg-field-player]:not([data-rtg-field-player="halloween2026::custom_0001"]):not([data-rtg-field-player="halloween2026::custom_0002"]) img{filter:sepia(.12) saturate(.65) hue-rotate(295deg) brightness(.68) contrast(1.32) drop-shadow(0 0 14px #ff304b90)}
+@media(max-width:650px){.halloween-original-fields{grid-template-columns:1fr}.halloween-pitch{padding:6px}.halloween-pitch .rtg-live-pitch{min-height:220px}}
