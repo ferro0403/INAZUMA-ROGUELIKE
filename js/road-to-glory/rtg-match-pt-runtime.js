@@ -46,7 +46,7 @@
     const season=id(player.resolvedSeasonId||player.legacySeasonId||
       (side==="user"?state.userSquad?.seasonId:state.opponentSquad?.seasonId)||state.seasonId||"ie1");
     const canonical=id(player.legacyCanonicalPlayerId||player.playerId||player.id||pid);
-    const catalog=runtime()?.movesFor?.(season,canonical)||[];
+    const catalog=Array.isArray(player?.halloweenMoves)?player.halloweenMoves:(runtime()?.movesFor?.(season,canonical)||[]);
     // A free agent without an extracted 4-move catalog keeps its verified legacy move.
     const moves=catalog.length?catalog:[player.activeMove||player.move].filter(Boolean);
     const type=kindOf(kind,hasPossession);
