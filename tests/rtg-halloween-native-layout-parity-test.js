@@ -96,6 +96,15 @@ assert.doesNotMatch(halloweenCss,/#modal-root\.halloween-detail-native \.player-
 assert.match(halloweenCss,/#modal-root\.halloween-detail-native \.player-detail-layout\.halloween-event-detail \.player-detail-content/,
   "Halloween colouring is scoped to actual Halloween player details");
 const openCoachesPart=eventSource.slice(eventSource.indexOf("function openCoaches()"),eventSource.indexOf("function render()",eventSource.indexOf("function openCoaches()")));
+const canonicalCoaches=fs.readFileSync("js/road-to-glory/rtg-coaches-controller.js","utf8");
+assert.match(canonicalCoaches,/detailId\?"rtg-modal player-detail-modal rtg-coaches-modal"/,
+  "Record the canonical normal RTG coach detail modal frame");
+assert.match(openCoachesPart,/coachDetailClassName=id===HALLOWEEN_COACH_ID/,
+  "Halloween-only coach must be the sole exception to the ordinary coach frame");
+assert.match(openCoachesPart,/"rtg-modal player-detail-modal rtg-coaches-modal"/,
+  "All normal coaches opened during Halloween must preserve the black RTG inset frame");
+assert.match(openCoachesPart,/"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"/,
+  "Hekyll keeps his existing Halloween-only modal styling");
 assert.match(openCoachesPart,/classList\?\.remove\?\.\("halloween-detail-native","halloween-detail-vampire"\)/,
   "Opening a coach from the event clears the previously used player-only modal theme");
 for (const filename of ["halloween-nathan-fullbody.png","halloween-samford-fullbody.png"]) {
