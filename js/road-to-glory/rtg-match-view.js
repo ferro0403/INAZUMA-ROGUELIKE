@@ -123,8 +123,9 @@
       const playerRole = role(player) || "—";
       const overall = player?.overall ?? player?.finalOverall ?? "—";
       const shawnFwClass = isShawn1162Fw(player) ? " rtg-duel-render--shawn-1162-fw" : "";
+      const halloweenClass=player?.halloweenVampire===true?" halloween-vampiro":"";
       return `<button type="button" class="rtg-duel-visual rtg-duel-visual--${escape(side)}" ${attrs}>
-        <span class="rtg-duel-render${shawnFwClass}">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
+        <span class="rtg-duel-render${shawnFwClass}${halloweenClass}">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
         <span class="rtg-duel-player-copy"><small>${escape(playerRole)} · OVR ${escape(overall)}</small><strong>${escape(name)}</strong></span>
       </button>`;
     }
@@ -185,8 +186,9 @@
       const elementClass = duelElementClass(player);
       const elementStateClass = opponent && duelElementDisadvantaged(player,opponent) ? "is-element-disadvantaged" : "";
       const shawnFwClass = isShawn1162Fw(player) ? " rtg-duel-render--shawn-1162-fw" : "";
+      const halloweenClass=player?.halloweenVampire===true?" halloween-vampiro":"";
       return `<button type="button" class="rtg-duel-visual rtg-duel-visual--compare rtg-duel-visual--${escape(side)} ${escape(elementClass)}" ${attrs}>
-        <span class="rtg-duel-render${shawnFwClass}">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
+        <span class="rtg-duel-render${shawnFwClass}${halloweenClass}">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
         <span class="rtg-duel-player-copy">
           <strong class="rtg-duel-player-name">${escape(name)}</strong>
           <span class="rtg-duel-player-meta">
