@@ -215,7 +215,8 @@
       // Use the current RTG development rarity when provided, not the initial catalog rarity.
       const currentRarity = rtgMovesApi && rtgRarity ? rtgRarity : resolved.category;
       const rtgPt = rtgMovesApi?.ptBreakdown?.(baseStats, currentRarity) || null;
-      const rtgList = rtgMovesApi?.movesFor?.(resolvedMoveSeasonId, movePlayerId) || [];
+      const rtgList = Array.isArray(player.halloweenMoves) && player.halloweenMoves.length === 4
+        ? player.halloweenMoves : (rtgMovesApi?.movesFor?.(resolvedMoveSeasonId, movePlayerId) || []);
       // Only the RTG detail reads four-move data; all other modes keep one move.
       // When a database has fewer than four verified moves, show empty slots rather
       // than fabricate moves. Preserve the legacy move as a fallback when missing.
