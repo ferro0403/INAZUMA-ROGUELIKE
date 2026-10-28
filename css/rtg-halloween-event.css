@@ -172,7 +172,7 @@
 .halloween-squad-mode .rtg-bottom-nav{background:#171018!important;border-color:#f98c25!important}
 .halloween-squad-mode .rtg-bottom-nav button{color:#ffdcb9!important}
 .halloween-squad-mode .rtg-bottom-nav button.active{background:#f98b20!important;color:#120b0b!important}
-.rtg-halloween-picker .rtg-squad-picker,.rtg-halloween-picker .rtg-formation-options,.rtg-halloween-picker .rtg-player-catalog{background:#171018!important;color:#ffe8cb!important}
+/* Event picker uses the unmodified native RTG picker colors and card rarity palette. */
 .halloween-album-mode .album-roster-screen{background:linear-gradient(180deg,#22111b,#130e17)!important}
 .halloween-album-mode .album-roster-hero{background:linear-gradient(125deg,#1b1018,#7b2c12)!important;border-bottom-color:#fa8628!important}
 .halloween-album-mode .album-player-entry.is-unlocked .player-card{box-shadow:0 0 10px #ff8c2155}
@@ -268,3 +268,82 @@
 .player-detail-layout.halloween-event-detail .detail-stats>div{
  border-color:#f78b24!important;background:#1b1118!important;color:#ffe7c5!important
 }
+
+/* Halloween collection: the normal PlayerView geometry, readable event colors. */
+.player-card.halloween-event-card .player-info .player-title strong,
+.player-card.halloween-event-card .player-info .player-title,
+.player-card.halloween-event-card .player-meta,
+.player-card.halloween-event-card .player-meta span{color:#fff0d6!important}
+.player-card.halloween-event-card .player-title strong{text-shadow:0 1px 2px #000!important}
+.player-card.halloween-event-card .player-portrait-wrap{background:radial-gradient(circle at 50% 25%,#b94a2670,#30121d 72%)!important}
+.player-detail-layout.halloween-event-detail .player-detail-name,
+.player-detail-layout.halloween-event-detail .player-detail-heading,
+.player-detail-layout.halloween-event-detail .player-detail-heading .eyebrow,
+.player-detail-layout.halloween-event-detail .detail-category,
+.player-detail-layout.halloween-event-detail .detail-category strong{
+ color:#fff0ce!important;text-shadow:0 2px 2px #270f13b0!important
+}
+.player-detail-layout.halloween-event-detail .player-detail-content{
+ background:#170f18!important;color:#ffe9c8!important
+}
+.player-detail-layout.halloween-event-detail .player-detail-section h3,
+.player-detail-layout.halloween-event-detail .detail-stat-label,
+.player-detail-layout.halloween-event-detail .detail-stat-value,
+.player-detail-layout.halloween-event-detail .detail-stat-bonus,
+.player-detail-layout.halloween-event-detail .detail-stat svg{
+ color:#fff0cf!important;fill:currentColor!important;opacity:1!important
+}
+.player-detail-layout.halloween-event-detail .detail-stat{
+ background:#221622!important;border:2px solid #fa8530!important;
+}
+.player-detail-layout.halloween-event-detail .detail-stat-track{background:#57444b!important}
+.player-detail-layout.halloween-event-detail .detail-stat-track i{background:#ff9a2a!important}
+.player-detail-layout.halloween-event-detail .rtg-pt-panel,
+.player-detail-layout.halloween-event-detail .rtg-pt-top,
+.player-detail-layout.halloween-event-detail .rtg-pt-breakdown{
+ background:#fff7e4!important;color:#252027!important
+}
+.player-detail-layout.halloween-event-detail .rtg-pt-panel span,
+.player-detail-layout.halloween-event-detail .rtg-pt-panel strong,
+.player-detail-layout.halloween-event-detail .rtg-pt-panel small,
+.player-detail-layout.halloween-event-detail .rtg-pt-panel p{color:#28212a!important;opacity:1!important}
+.player-detail-layout.halloween-event-detail .rtg-four-moves-item .rtg-move-slot-label,
+.player-detail-layout.halloween-event-detail .rtg-four-moves-item .rtg-pt-cost{
+ background:#fff3d8!important;color:#20141a!important
+}
+.player-detail-layout.halloween-event-detail .rtg-move-slot-label span,
+.player-detail-layout.halloween-event-detail .rtg-pt-cost span,
+.player-detail-layout.halloween-event-detail .rtg-pt-cost strong{
+ color:#211419!important;opacity:1!important
+}
+.player-detail-layout.halloween-event-detail .player-fullbody{max-width:100%!important;object-fit:contain!important;object-position:center bottom!important}
+.player-detail-layout.halloween-event-detail .player-fullbody--portrait{width:90%!important;height:85%!important;object-fit:contain!important}
+.player-detail-layout.halloween-event-detail .player-detail-visual{overflow:hidden}
+
+/* Recolor the original RTG prematch layout, not its card/formation components. */
+.halloween-native-match.rtg-prematch-shell{background:linear-gradient(145deg,#090b11,#30131b 65%,#a13f14)!important}
+.halloween-native-match .rtg-prematch-topbar{background:#140d16!important}
+.halloween-native-match .rtg-prematch-matchup{background:linear-gradient(115deg,#21121c,#542019)!important;border:3px solid #f68725!important;color:#fff1db!important}
+.halloween-native-match .rtg-matchup-team{background:transparent!important}
+.halloween-native-match .rtg-matchup-team-copy small,
+.halloween-native-match .rtg-matchup-team-copy strong,
+.halloween-native-match .rtg-matchup-team-copy span,
+.halloween-native-match .rtg-matchup-team-copy em,
+.halloween-native-match .rtg-matchup-team-copy b{color:#fff0d5!important}
+.halloween-native-match .rtg-prematch-tactical{background:#1a1118!important;border:3px solid #f68725!important}
+.halloween-native-match .rtg-prematch-tabs button{color:#ffe0ad!important}
+.halloween-native-match .rtg-prematch-tabs button.active{background:#fa8c22!important;color:#140f17!important}
+.halloween-native-match .rtg-matchup-team--opponent .rtg-matchup-team-emblem img,
+.halloween-native-match .rtg-matchup-team--opponent img,
+.halloween-native-match .rtg-prematch-top-team--opponent img{
+ filter:sepia(.3) saturate(.5) hue-rotate(300deg) brightness(.67) contrast(1.5) drop-shadow(0 0 10px #ee314b)!important
+}
+.halloween-vending-banner{min-height:unset!important;display:block!important;padding:10px!important;background:transparent!important;border:3px solid #f98d23!important}
+.halloween-vending-banner button{width:100%!important;min-height:74px!important;font-size:1.12rem!important;margin:0!important}
+.rtg-halloween-picker .rtg-squad-picker,
+.rtg-halloween-picker .rtg-formation-options,
+.rtg-halloween-picker .rtg-player-catalog{background:#fff!important;color:#121419!important}
+.rtg-halloween-picker .rtg-picker-search>span,
+.rtg-halloween-picker .rtg-picker-season-team-filters label>span,
+.rtg-halloween-picker .rtg-picker-rarity-filter>span{color:#222!important}
+.rtg-halloween-picker .rtg-picker-toolbar{background:#fff!important}
