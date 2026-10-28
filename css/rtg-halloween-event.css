@@ -193,27 +193,53 @@
  filter:sepia(.12) saturate(.65) hue-rotate(295deg) brightness(.68) contrast(1.32) drop-shadow(0 0 14px #ff304b90)
 }
 
-/* Exact compact RTG card geometry; Halloween palette only. */
-.halloween-squad-mode .tactical-player-card,
-.halloween-album-mode .album-player-card{
- background:linear-gradient(125deg,#461b1d 0%,#22131d 60%,#110f18 100%)!important;
- border-color:#ff8a24!important;color:#fff0d6!important;
+
+/* HALLOWEEN: THE GRAVEYARD IS THE PAGE BACKDROP, NOT A BOX. */
+.rtg-halloween-run-screen{background:linear-gradient(180deg,#0c0d16ba,#0d0811d9 55%,#0e0815e7),url("https://static9.depositphotos.com/1014889/1236/i/450/depositphotos_12367834-stock-photo-halloween-background-spooky-graveyard.jpg") center top / cover fixed!important}
+.rtg-halloween-run-screen .rtg-run-content{background:transparent!important}
+.rtg-halloween-run-screen .rtg-map.rtg-halloween-map{
+  background:linear-gradient(125deg,#171117e8,#381b1bd9)!important;
+  min-height:300px!important;margin:20px 0 90px!important;
 }
-.halloween-squad-mode .tactical-player-card .player-info,
-.halloween-album-mode .album-player-card .player-info{
- background:#1b1119ed!important;color:#ffeaca!important;
+.rtg-halloween-run-screen .halloween-map-content{min-height:245px!important}
+.rtg-halloween-run-screen .rtg-run-command{display:flex!important;align-items:center;gap:12px!important;flex-wrap:wrap}
+.rtg-halloween-run-screen .rtg-run-command>div{flex:1 1 190px!important;min-width:0}
+.rtg-halloween-run-screen .rtg-run-command button{flex:1 1 240px!important;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.rtg-halloween-run-screen .rtg-run-command .halloween-reward-description{font-size:.86rem;max-width:260px;line-height:1.35}
+.halloween-native-match .rtg-prematch-topbar,.halloween-native-match .rtg-match-topbar{border-bottom:5px solid #e87819}
+.halloween-native-match{background:linear-gradient(150deg,#110d17,#31151c)!important}
+.halloween-native-match .rtg-prematch-matchup,
+.halloween-native-match .rtg-match-content{background-color:#140f16}
+.halloween-native-match .rtg-prematch-top-team--opponent img,
+.halloween-native-match .rtg-score-team--opponent img,
+.halloween-native-match .rtg-final-team--opponent img,
+.rtg-halloween-run-screen .rtg-journey-opponent img,
+.rtg-halloween-run-screen .halloween-map-crest{
+  filter:sepia(.17) saturate(.5) hue-rotate(295deg) brightness(.65) contrast(1.6) drop-shadow(0 0 8px #ee2539a5)!important
 }
-.halloween-squad-mode .tactical-player-card .player-title strong,
-.halloween-album-mode .album-player-card .player-title strong{color:#ffe9ca!important}
-.halloween-squad-mode .tactical-player-card .player-corner.player-overall,
-.halloween-album-mode .album-player-card .player-corner.player-overall{
- background:#ff9d23!important;border-color:#301312!important;color:#1b0c10!important;
+.halloween-native-match [data-side="opponent"] img:not([src*="custom_0001"]):not([src*="custom_0002"]){filter:sepia(.17) saturate(.6) hue-rotate(300deg) brightness(.67) contrast(1.35)!important}
+
+/* Only Halloween player cards are seasonal. Normal RTG and free-agent cards
+   retain the exact original rarity colors, portraits and compact geometry. */
+.halloween-squad-mode [data-rtg-squad-player^="halloween2026::"].player-card,
+.halloween-album-mode [data-rtg-album-player-entry^="halloween2026::"] .player-card{
+  background:linear-gradient(140deg,#632518,#230f1a 68%,#0c0b12)!important;
+  border-color:#fb8524!important;color:#ffe8c7!important
 }
-.halloween-squad-mode .tactical-player-card .player-corner.player-role,
-.halloween-album-mode .album-player-card .player-corner.player-role{
- background:#fff0d7!important;color:#170d11!important;border-color:#ff8822!important;
+.halloween-squad-mode [data-rtg-squad-player^="halloween2026::"].player-card .player-info,
+.halloween-album-mode [data-rtg-album-player-entry^="halloween2026::"] .player-card .player-info{
+ background:#180e15!important;color:#ffe6ba!important
 }
-.halloween-squad-mode .tactical-player-card .player-portrait-wrap,
-.halloween-album-mode .album-player-card .player-portrait-wrap{
- background:radial-gradient(circle at 55% 48%,#76302170,#23121b80 68%,#120c1380);
+.halloween-squad-mode [data-rtg-squad-player^="halloween2026::"].player-card .player-corner.player-overall,
+.halloween-album-mode [data-rtg-album-player-entry^="halloween2026::"] .player-corner.player-overall{
+ background:#ff9a1b!important;color:#200e0b!important
+}
+.halloween-squad-mode [data-rtg-squad-player^="halloween2026::"].player-card .player-corner.player-role,
+.halloween-album-mode [data-rtg-album-player-entry^="halloween2026::"] .player-corner.player-role{
+ background:#ffe6bd!important;color:#211018!important
+}
+@media(max-width:600px){
+  .rtg-halloween-run-screen .rtg-run-command{display:block!important}
+  .rtg-halloween-run-screen .rtg-run-command button{margin-top:12px!important;width:100%}
+  .rtg-halloween-run-screen .rtg-map.rtg-halloween-map{min-height:260px!important}
 }
