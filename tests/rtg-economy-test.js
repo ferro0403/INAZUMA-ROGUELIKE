@@ -87,4 +87,28 @@ resolver.resolveOwnedAtLevel20(swiftId,"ie1",null,null,account.developmentByCard
 assert.strictEqual(JSON.stringify(account),accountBeforeRead,"Resolution is pure: never charge evolution resources twice");
 assert.strictEqual(sourceEvent("38").overall,83,"Opposing event players and original source remain unmodified");
 assert.strictEqual(sourceEvent("custom_0001").overall,96,"Match opposition uses unmodified event assets");
+// One shared native picker filter component: the Development Center must use
+// exactly the SAME HTML as "Cambia giocatore", not a parallel approximation.
+for(const file of["js/road-to-glory/rtg-squad-view-base.js","js/road-to-glory/rtg-economy-view.js"])
+  vm.runInContext(fs.readFileSync(file,"utf8"),c,{filename:file});
+const squadView=c.RoadToGlorySquadView.create({escapeHtml:String});
+const economyView=c.RoadToGloryEconomyView.create({escapeHtml:String,economy:E});
+const options={query:"Nathan",sourceFilter:"rtg",seasonFilter:"halloween2026",teamFilter:"Occult Halloween",
+  roleFilter:"GK",rarityFilter:"Elite",rarityOptions:["Forte","Elite"],
+  seasonOptions:[{value:"all",label:"Tutte"},{value:"halloween2026",label:"Evento Halloween"}],
+  teamOptions:[{value:"all",label:"Tutte"},{value:"Occult Halloween",label:"Occult Halloween"}],
+  descending:true};
+const pickerToolbar=squadView.pickerFilterToolbarMarkup(options);
+const pickerHtml=squadView.replacementPickerMarkup({...options,entries:[]});
+assert.ok(pickerHtml.includes(pickerToolbar),"Native replacement picker must reuse the canonical toolbar");
+const developmentToolbar=squadView.pickerFilterToolbarMarkup({...options,area:"development"});
+const developmentHtml=economyView.developmentMarkup({state:{tokens:500,projects:{}},players:[],
+  filteredPlayers:[],pickerFilterMarkup:developmentToolbar});
+assert.ok(developmentHtml.includes(developmentToolbar),"Development reuses exact same filtering markup");
+for(const attribute of["search","source","season","team","role","rarity","sort"])
+  assert.ok(developmentHtml.includes("data-rtg-development-"+attribute),"Missing shared filter "+attribute);
+assert.ok(developmentHtml.includes('rtg-development-picker-filters rtg-modal'),
+  "Development filter controls must receive the same CSS as modal picker");
+assert.ok(developmentHtml.includes('data-rtg-picker-sort-arrow'),
+  "The OVR arrow must retain the native squad picker CSS contract");
 console.log("rtg-economy-test: PASS");
