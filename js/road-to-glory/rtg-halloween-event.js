@@ -539,7 +539,7 @@
         const button=event.currentTarget;
         if(button.disabled)return;
         button.disabled=true;
-        perform(async()=>{
+        return perform(async()=>{
           await pull();
           if(vendingMotion){
             try{await vendingMotion.play("orange");}catch(error){global.console?.warn?.("[Halloween] Animazione distributore",error);}
