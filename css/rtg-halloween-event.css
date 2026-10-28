@@ -243,3 +243,29 @@
   .rtg-halloween-run-screen .rtg-run-command button{margin-top:12px!important;width:100%}
   .rtg-halloween-run-screen .rtg-map.rtg-halloween-map{min-height:260px!important}
 }
+
+/* Event cards use canonical PlayerView at every RTG destination. */
+.player-card.halloween-event-card{
+ background:linear-gradient(140deg,#60251a,#200f1b 68%,#0b0b13)!important;
+ border-color:#f98a27!important;color:#ffe8c4!important;
+}
+.player-card.halloween-event-card .player-info{
+ background:#1b1018ed!important;color:#ffe6bc!important;
+}
+.player-card.halloween-event-card .player-corner.player-overall{
+ background:#ff9b21!important;color:#1b0e0b!important;border-color:#da6320!important;
+}
+.player-card.halloween-event-card .player-corner.player-role{
+ background:#fff0d6!important;color:#200d16!important;
+}
+.player-detail-layout.halloween-event-detail{background:#23131b!important;color:#ffe7c7!important}
+.player-detail-layout.halloween-event-detail .player-detail-hero{
+ background:linear-gradient(125deg,#35151b,#9b4217)!important
+}
+.player-detail-layout.halloween-event-detail .player-detail-visual{
+ background:radial-gradient(circle at 55% 42%,#ca5f19aa,#34151d 75%)!important
+}
+.player-detail-layout.halloween-event-detail .player-detail-section h3{color:#f98e21}
+.player-detail-layout.halloween-event-detail .detail-stats>div{
+ border-color:#f78b24!important;background:#1b1118!important;color:#ffe7c5!important
+}
