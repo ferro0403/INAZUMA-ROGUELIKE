@@ -170,7 +170,7 @@ async function main() {
   // The adaptation button must avoid increasing an already compliant team.
   const before=clone(controller.getState().shared);
   await control("data-rtg-adapt").fire();
-  assert.deepEqual(controller.getState().shared,before,"Adapting a compliant team must be a no-op");
+  assert.equal(JSON.stringify(controller.getState().shared),JSON.stringify(before),"Adapting a compliant team must be a no-op");
   // Simulate a high-OVR team and lower-OVR available substitutions, on a
   // real 11+4 saved roster; adaptation must meet the limit using the same roles.
   const active=controller.getState().match;
