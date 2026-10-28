@@ -84,6 +84,12 @@
     assert.match(css,/\.rtg-coach-halloween img\.rtg-coach-fullbody/);
     assert.match(css,/\.rtg-coach-halloween \.rtg-coach-team-logo/);
     assert.match(css,/\.rtg-coach-halloween img\.rtg-coach-portrait/);
+    const hekyllFullbodyRule=css.match(/\.rtg-coach-detail\.rtg-coach-halloween \.player-detail-visual img\.rtg-coach-fullbody\s*\{([^}]+)\}/)?.[1];
+    assert.ok(hekyllFullbodyRule,"Hekyll must have a scoped fullbody alignment rule");
+    assert.match(hekyllFullbodyRule,/left:50%!important;/,"Centered horizontal anchor, not inherited left:60%");
+    assert.match(hekyllFullbodyRule,/transform:translateX\(-50%\)!important;/,"Restore native centering transform");
+    assert.match(hekyllFullbodyRule,/object-fit:contain!important;/,"Show the whole character without cropping");
+    assert.doesNotMatch(hekyllFullbodyRule,/transform:none!important;/,"Never push fullbody outside the hero again");
   });
   test("Season bloccate fino al completamento e completamento storico",()=>{
     let s=campaign();s.tokens=4000;
