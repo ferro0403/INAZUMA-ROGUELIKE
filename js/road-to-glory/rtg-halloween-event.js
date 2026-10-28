@@ -14,6 +14,7 @@
   const PUMPKIN_URL = "https://static.vecteezy.com/ti/vettori-gratis/p1/3690657-halloween-zucca-disegno-halloween-zucca-vettore-isolare-su-sfondo-bianco-gratuito-vettoriale.jpg";
   const LOGO_URL = "https://dxi4wb638ujep.cloudfront.net/1/k/r/k/rk_nafgart8.webp";
   const SPECIAL = Object.freeze(["custom_0002", "custom_0001"]);
+  const HALLOWEEN_COACH_ID = "halloween-coach-54";
   const EVENT_FULLBODY_URLS = Object.freeze({"38":"https://dxi4wb638ujep.cloudfront.net/1/k/y/z/yz3gzfs1bku_r0_fullbody.webp","39":"https://dxi4wb638ujep.cloudfront.net/1/k/4/c/4cuzgcn9uqk_r0_fullbody.webp","40":"https://dxi4wb638ujep.cloudfront.net/1/k/j/0/j0lsn9bhdzm_r0_fullbody.webp","41":"https://dxi4wb638ujep.cloudfront.net/1/k/l/v/lviojktrgfm_r0_fullbody.webp","42":"https://dxi4wb638ujep.cloudfront.net/1/k/6/9/69tvob1rrsk_r0_fullbody.webp","43":"https://dxi4wb638ujep.cloudfront.net/1/k/a/s/aswadgazemu_r0_fullbody.webp","44":"https://dxi4wb638ujep.cloudfront.net/1/k/r/6/r6b7w5mjz_8_r0_fullbody.webp","45":"https://dxi4wb638ujep.cloudfront.net/1/k/f/q/fq-jb0lbuau_r0_fullbody.webp","46":"https://dxi4wb638ujep.cloudfront.net/1/k/u/4/u4pcsld75z8_r0_fullbody.webp","47":"https://dxi4wb638ujep.cloudfront.net/1/k/a/q/aqup2kkyyfc_r0_fullbody.webp","48":"https://dxi4wb638ujep.cloudfront.net/1/k/x/4/x4lub1si1s0_r0_fullbody.webp","49":"https://dxi4wb638ujep.cloudfront.net/1/k/r/x/rxgbiozaame_r0_fullbody.webp","50":"https://dxi4wb638ujep.cloudfront.net/1/k/g/_/g_36lx_6t_s_r0_fullbody.webp","51":"https://dxi4wb638ujep.cloudfront.net/1/k/i/e/iewmlotwo5s_r0_fullbody.webp","52":"https://dxi4wb638ujep.cloudfront.net/1/k/t/2/t2bhmxlsfke_r0_fullbody.webp","53":"https://dxi4wb638ujep.cloudfront.net/1/k/z/z/zziy1s-kwq0_r0_fullbody.webp"});
   const clone = x => JSON.parse(JSON.stringify(x));
   const asId = x => String(x == null ? "" : x).trim();
@@ -103,7 +104,7 @@
       Math.round((lineup.reduce((sum,p)=>sum + Number(p?.overall ?? p?.finalOverall ?? 0), 0)/11)*10)/10;
   }
   function weightedPick(missing, random) {
-    const pool = missing.map(pid => ({pid,weight:SPECIAL.includes(pid)?4:5.75}));
+    const pool = missing.map(pid => ({pid,weight:pid===HALLOWEEN_COACH_ID||SPECIAL.includes(pid)?4:5.75}));
     const total = pool.reduce((n,item)=>n+item.weight,0);
     if (!pool.length || !Number.isFinite(random) || random < 0 || random >= 1) throw fail("halloween-invalid-pull");
     let n = random * total;
@@ -193,6 +194,11 @@
     }
     function currency(n) { return '<span class="halloween-currency"><img src="'+escape(PUMPKIN_URL)+'" alt="">'+escape(n)+'</span>'; }
     function isOwned(pid) { return shared?.halloween.ownedIds.includes(pid); }
+    function halloweenPrizeIds(account) {
+      const missing=Array.from(assets.players.keys()).filter(pid=>!account.halloween.ownedIds.includes(pid));
+      if(!account.coachOwnedIds.includes(HALLOWEEN_COACH_ID))missing.push(HALLOWEEN_COACH_ID);
+      return missing;
+    }
     function initialEventSquad(previous={}) {
       const chosenLine=Array.isArray(previous.lineup)?previous.lineup.map(asId):[];
       const chosenBench=Array.isArray(previous.bench)?previous.bench.map(asId):[];
@@ -306,7 +312,7 @@
           requirementsMarkup:requirement,nextTeamName:"Occult Halloween",dirty:false})+'</div>';
     }
     function vendingSection() {
-      const available=Array.from(assets.players.keys()).filter(pid=>!isOwned(pid)),enough=shared.halloween.pumpkins>=PRICE;
+      const available=halloweenPrizeIds(shared),enough=shared.halloween.pumpkins>=PRICE;
       const capsules=Array.from({length:12},(_,i)=>'<div class="rtg-vending-capsule-v9 c'+(i%6+1)+'" data-capsule-rarity="'+(i%2?"orange":"black")+'"></div>').join("");
       return '<div class="halloween-vending"><button type="button" class="halloween-vending-close" data-halloween-close-vending aria-label="Chiudi distributore">×</button><p class="eyebrow">CAPSULE STATION · HALLOWEEN</p><h2>IL DISTRIBUTORE STREGATO</h2>'+
         '<div class="rtg-vending halloween-vending-classic"><div class="rtg-vending-stage"><div class="rtg-vending-machine-v9 rtg-vending-machine-v12" data-rtg-vending-machine aria-label="Distributore Halloween">'+
@@ -751,7 +757,7 @@
         button.disabled=true;
         return perform(async()=>{
           const drawn=await pull(); // Account debit and card acquisition already committed.
-          if(!drawn?.player||!drawn?.result)return;
+          if((!drawn?.player&&!drawn?.coach)||!drawn?.result)return;
           const machine=app.querySelector?.("[data-rtg-vending-machine]");
           const rarity=String(drawn.result.rarity||"").toLowerCase();
           const capsuleColour=rarity==="leggenda"||rarity==="elite"?"orange":"black";
@@ -765,14 +771,23 @@
           if(machine?.classList)machine.classList.add("is-revealing");
           if(typeof global.setTimeout==="function")await new Promise(resolve=>global.setTimeout(resolve,980));
           if(!deps.runView?.pullResultMarkup||!deps.openModal)return;
-          let markup=deps.runView.pullResultMarkup(drawn.result,drawn.player,{teams:[{teamId:TEAM_ID,teamName:"Occult Halloween",logoUrl:LOGO_URL}]});
-          markup=markup.replace("SALDO RTG","ZUCCHE HALLOWEEN")
+          const isCoach=Boolean(drawn.coach);
+          let markup=isCoach
+            ?global.RoadToGloryCoachesView?.result?.(drawn.coach)?.replace("ROAD TO GLORY · STAFF","OCCULT · HALLOWEEN")
+            :deps.runView.pullResultMarkup(drawn.result,drawn.player,{teams:[{teamId:TEAM_ID,teamName:"Occult Halloween",logoUrl:LOGO_URL}]});
+          if(!markup)return;
+          if(!isCoach)markup=markup.replace("SALDO RTG","ZUCCHE HALLOWEEN")
             .replace(/(<div class="rtg-pull-balance">[\s\S]*?<strong>)[\s\S]*?(<\/strong>)/,
                (_all,before,after)=>before+'<img class="halloween-reveal-currency-icon" src="'+escape(PUMPKIN_URL)+'" alt="Zucca Halloween"> '+escape(drawn.result.balanceAfter)+' ZUCCHE'+after)
             .replace(/ROAD TO GLORY · LEGACY [^<]*/,"OCCULT · HALLOWEEN");
           deps.openModal(markup,{className:"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"});
-          modalRoot()?.querySelector?.("[data-rtg-pull-continue]")?.addEventListener("click",()=>deps.closeModal?.());
+          modalRoot()?.querySelectorAll?.("[data-rtg-pull-continue],[data-rtg-coaches-collection]")?.forEach(btn=>btn.addEventListener("click",()=>deps.closeModal?.()));
           modalRoot()?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",()=>openNativeDetail(drawn.result.cardId));
+          if(isCoach)modalRoot()?.querySelector?.("[data-rtg-coach-detail]")?.addEventListener("click",()=>{
+            deps.openModal(global.RoadToGloryCoachesView.detail(activeEventSquad(),HALLOWEEN_COACH_ID,{equippedId:localSquad.coachId||""}),
+              {className:"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"});
+            modalRoot()?.querySelector?.("[data-rtg-coaches-back]")?.addEventListener("click",()=>deps.closeModal?.());
+          });
         }).finally?.(()=>{if(button.isConnected)button.disabled=false;});
       });
       if(match&&view==="match"&&deps.matchView)bindNativeMatch();
@@ -1029,18 +1044,27 @@
       await mutate("halloween-capsule",(account)=>{
         const ev=account.halloween;
         if(ev.pumpkins<PRICE)throw fail("halloween-insufficient-pumpkins");
-        const missing=Array.from(assets.players.keys()).filter(id=>!ev.ownedIds.includes(id));
+        const missing=halloweenPrizeIds(account);
         if(!missing.length)throw fail("halloween-collection-completed");
         const random=global.crypto?.getRandomValues?global.crypto.getRandomValues(new Uint32Array(1))[0]/4294967296:Math.random();
         selected=weightedPick(missing,random);
-        const record=recordCard(selected);
-        if(account.gachaAcquiredCards.some(c=>c.cardId===record.cardId))throw fail("halloween-existing-card");
-        ev.pumpkins-=PRICE;ev.ownedIds.push(selected);ev.pullCount++;
-        account.gachaAcquiredCards.push(record);
+        if(selected===HALLOWEEN_COACH_ID){
+          if(account.coachOwnedIds.includes(selected))throw fail("halloween-coach-already-owned");
+          // Existing RTG shared account persists coaches for BOTH campaigns.
+          // Debit and coach grant commit in the SAME canonical transaction.
+          ev.pumpkins-=PRICE;ev.pullCount++;account.coachOwnedIds.push(selected);
+        }else{
+          const record=recordCard(selected);
+          if(account.gachaAcquiredCards.some(c=>c.cardId===record.cardId))throw fail("halloween-existing-card");
+          ev.pumpkins-=PRICE;ev.ownedIds.push(selected);ev.pullCount++;
+          account.gachaAcquiredCards.push(record);
+        }
       });
+      if(selected===HALLOWEEN_COACH_ID)
+        return {coach:global.RoadToGloryCoaches?.BY_ID?.[selected],result:{
+          coachId:selected,rarity:"Leggenda",balanceAfter:shared.halloween.pumpkins}};
       const p=player(selected);
       return {player:p,result:{cardId:EVENT_ID+"::"+selected,playerId:selected,legacySeasonId:EVENT_ID,rarity:p?.category||"Normale",balanceAfter:shared.halloween.pumpkins}};
-
     }
     async function open(initialView="match") {
       dispose();const epoch=session;
