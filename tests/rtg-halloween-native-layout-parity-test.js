@@ -87,6 +87,17 @@ for (const [playerId, expectedPath] of [
 assert.match(eventSource,/frontFullbodyUrl:raw\.frontFullbodyUrl \|\| EVENT_FULLBODY_URLS/,
   "Halloween player resolver must prefer the player-specific fullbody URL");
 const halloweenCss=fs.readFileSync("css/rtg-halloween-event.css","utf8");
+// Regression: a player-only modal skin must NEVER recolour the normal coach
+// detail, even when the same modal root was used by an event player first.
+assert.doesNotMatch(halloweenCss,/#modal-root\.halloween-detail-native \.player-detail-content\b/,
+  "The old unscoped selector made ordinary coach abilities white-on-cream");
+assert.doesNotMatch(halloweenCss,/#modal-root\.halloween-detail-native \.player-detail-hero\b/,
+  "Normal coach hero graphics must not inherit Halloween player colours");
+assert.match(halloweenCss,/#modal-root\.halloween-detail-native \.player-detail-layout\.halloween-event-detail \.player-detail-content/,
+  "Halloween colouring is scoped to actual Halloween player details");
+const openCoachesPart=eventSource.slice(eventSource.indexOf("function openCoaches()"),eventSource.indexOf("function render()",eventSource.indexOf("function openCoaches()")));
+assert.match(openCoachesPart,/classList\?\.remove\?\.\("halloween-detail-native","halloween-detail-vampire"\)/,
+  "Opening a coach from the event clears the previously used player-only modal theme");
 for (const filename of ["halloween-nathan-fullbody.png","halloween-samford-fullbody.png"]) {
   assert.ok(halloweenCss.includes('img.player-fullbody--fullbody[src$="'+filename+'"]'),
     "Only the two custom Halloween fullbody images must receive the sizing override");
