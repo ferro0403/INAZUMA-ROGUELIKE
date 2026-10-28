@@ -98,7 +98,7 @@
   }
   function ovr(lineup) {
     return !Array.isArray(lineup) || lineup.length !== 11 ? null :
-      Math.round(lineup.reduce((sum,p)=>sum + Number(p?.overall ?? p?.finalOverall ?? 0), 0)/11);
+      Math.round((lineup.reduce((sum,p)=>sum + Number(p?.overall ?? p?.finalOverall ?? 0), 0)/11)*10)/10;
   }
   function weightedPick(missing, random) {
     const pool = missing.map(pid => ({pid,weight:SPECIAL.includes(pid)?4:5.75}));
