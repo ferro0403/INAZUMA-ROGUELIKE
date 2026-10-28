@@ -186,3 +186,9 @@
 #modal-root.halloween-detail-native .player-detail-visual{background:linear-gradient(125deg,#50151e,#de721b)!important}
 #modal-root.halloween-detail-vampire .player-fullbody{filter:sepia(.12) saturate(.65) hue-rotate(295deg) brightness(.68) contrast(1.32) drop-shadow(0 0 14px #ff304b90)}
 @media(max-width:640px){.rtg-halloween-run-screen .rtg-run-content{padding-bottom:100px}.rtg-halloween-run-screen .rtg-map.rtg-halloween-map{min-height:480px}.halloween-squad-mode .rtg-squad-content{padding-bottom:90px}}
+
+.rtg-halloween-run-screen.halloween-screen{padding:0!important;width:100%!important}
+.halloween-squad-mode [data-rtg-squad-player^="halloween2026::"]:not([data-rtg-squad-player="halloween2026::custom_0001"]):not([data-rtg-squad-player="halloween2026::custom_0002"]) .player-portrait,
+.halloween-album-mode [data-rtg-album-player-entry^="halloween2026::"]:not([data-rtg-album-player-entry="halloween2026::custom_0001"]):not([data-rtg-album-player-entry="halloween2026::custom_0002"]) .player-portrait{
+ filter:sepia(.12) saturate(.65) hue-rotate(295deg) brightness(.68) contrast(1.32) drop-shadow(0 0 14px #ff304b90)
+}
