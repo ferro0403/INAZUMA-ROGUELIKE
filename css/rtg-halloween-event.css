@@ -449,3 +449,103 @@
  object-fit:contain!important;object-position:center bottom!important;
  transform:scale(1.24)!important;transform-origin:50% 92%!important
 }
+
+
+/* Halloween visual QA (28 Oct): keep native RTG structures but repair contrast and the portrait frame. */
+.rtg-halloween-run-screen .status-pill.halloween-wallet{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  min-width:104px!important;min-height:48px!important;padding:6px 9px!important;
+  background:#24131b!important;color:#fff0d7!important;border:2px solid #ff8b2a!important;
+  box-shadow:3px 3px 0 #0c0a0f!important
+}
+.rtg-halloween-run-screen .halloween-wallet .halloween-currency{
+  color:#fff0d7!important;display:inline-flex!important;align-items:center!important;
+  font-size:1.3rem!important;gap:8px!important;text-shadow:none!important
+}
+.rtg-halloween-run-screen .halloween-wallet .halloween-currency img{
+  display:block!important;position:static!important;width:34px!important;height:34px!important;
+  flex:0 0 34px!important;max-width:none!important;
+  object-fit:cover!important;background:#fff!important;border-radius:50%!important;
+  mix-blend-mode:normal!important;opacity:1!important;filter:contrast(1.2) saturate(1.35)!important
+}
+.halloween-play-banner{
+  grid-template-columns:minmax(0,1fr) 88px!important;
+  gap:9px 14px!important;
+  min-height:230px!important;
+  padding:20px 18px!important;
+  align-items:center!important
+}
+.halloween-play-banner-copy{min-width:0!important;grid-column:1!important}
+.halloween-play-crest{
+  grid-column:2!important;grid-row:1!important;
+  display:block!important;width:88px!important;max-height:115px!important;
+  object-fit:contain!important;justify-self:center!important;align-self:center!important;
+  filter:sepia(.35) saturate(.6) hue-rotate(297deg) brightness(.67) contrast(1.48)
+    drop-shadow(0 0 9px #fe395b)!important
+}
+.halloween-play-banner>.btn{grid-column:1/-1!important;grid-row:auto!important;position:relative!important;z-index:2!important}
+@media(max-width:390px){
+  .halloween-play-banner{grid-template-columns:minmax(0,1fr) 69px!important;padding:16px 12px!important}
+  .halloween-play-crest{width:69px!important}
+  .halloween-play-banner-copy h2{font-size:1.48rem!important}
+}
+/* Original player detail: the custom Nathan/Samford portrait PNG/WebP must float
+   transparently like every RTG render, never inside the default paper rectangle. */
+#modal-root.halloween-detail-native .player-detail-layout.halloween-event-detail:has(.player-fullbody--portrait) .player-detail-visual,
+.player-detail-layout.halloween-event-detail:has(.player-fullbody--portrait) .player-detail-visual{
+  background:transparent!important;border:0!important;box-shadow:none!important;
+  overflow:visible!important;isolation:isolate!important
+}
+#modal-root.halloween-detail-native .player-detail-layout.halloween-event-detail .player-fullbody--portrait,
+.player-detail-layout.halloween-event-detail .player-fullbody--portrait{
+  display:block!important;position:absolute!important;
+  left:50%!important;right:auto!important;bottom:0!important;top:auto!important;
+  width:118%!important;height:98%!important;max-width:none!important;max-height:none!important;
+  aspect-ratio:auto!important;object-fit:contain!important;object-position:center bottom!important;
+  background:transparent!important;background-color:transparent!important;
+  border:0!important;border-radius:0!important;outline:0!important;
+  box-shadow:none!important;clip-path:none!important;
+  transform:translateX(-50%)!important;transform-origin:center bottom!important;
+  padding:0!important
+}
+#modal-root.halloween-detail-native .player-detail-visual:has(.player-fullbody--portrait)::before,
+#modal-root.halloween-detail-native .player-detail-visual:has(.player-fullbody--portrait)::after{
+  content:none!important;display:none!important
+}
+.rtg-halloween-picker .rtg-requirement span{color:#302222!important;font-weight:850!important}
+.rtg-halloween-picker .rtg-requirement strong{color:#13753b!important}
+.halloween-squad-mode .rtg-requirement span{color:#3c2921!important}
+.halloween-squad-mode .rtg-requirement strong{color:#137c45!important}
+/* Reuse native rarity reveal layout; restore legibility on a plum background. */
+.rtg-halloween-pull-modal .rtg-pull-result-copy,
+.rtg-halloween-pull-modal .rtg-pull-result-copy h2,
+.rtg-halloween-pull-modal .rtg-pull-series,
+.rtg-halloween-pull-modal .rtg-pull-team strong,
+.rtg-halloween-pull-modal .rtg-pull-balance span,
+.rtg-halloween-pull-modal .rtg-pull-meta,
+.rtg-halloween-pull-modal .rtg-pull-player-identity{
+  color:#fff0db!important;opacity:1!important;text-shadow:0 1px 1px #140a11!important
+}
+.rtg-halloween-pull-modal .rtg-pull-result-head{
+  background:#30121c!important;color:#fff0dc!important
+}
+.rtg-halloween-pull-modal .rtg-pull-result-body{background:#21121b!important;color:#fff0db!important}
+.rtg-halloween-pull-modal .rtg-pull-balance{
+  background:#22101a!important;border:2px solid #ff882a!important;
+  color:#fff0dc!important
+}
+.rtg-halloween-pull-modal .rtg-pull-balance strong,
+.rtg-halloween-pull-modal .rtg-pull-balance strong *{
+  color:#ffba59!important;opacity:1!important;filter:none!important
+}
+.rtg-halloween-pull-modal .rtg-pull-balance strong::before,
+.rtg-halloween-pull-modal .rtg-pull-balance strong::after{content:none!important;display:none!important}
+.rtg-halloween-pull-modal .halloween-reveal-currency-icon{
+  display:inline-block!important;width:25px!important;height:25px!important;
+  object-fit:cover!important;vertical-align:middle!important;
+  background:#fff!important;border-radius:50%!important;
+  margin-right:5px!important
+}
+.rtg-halloween-pull-modal .rtg-pull-continue{
+  font-weight:1000!important;letter-spacing:.055em!important
+}
