@@ -114,7 +114,9 @@
     let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false;
     let tick = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
-    function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null; }
+    function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null;
+      deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
+    }
     function listen() { if(tick!=null)global.clearInterval?.(tick);tick=global.setInterval?.(()=>{const el=app?.querySelector?.("[data-halloween-countdown]"); if(el)el.textContent=isOpen()?countdown():"EVENTO TERMINATO";if(!isOpen())app?.querySelectorAll?.("[data-halloween-start],[data-halloween-pull]")?.forEach(b=>b.disabled=true);},1000); }
     function readAccount(record) { const current = record || {}; return {...clone(current),tokens:current.tokens??0,gachaAcquiredCards:current.gachaAcquiredCards||[],developmentByCardId:current.developmentByCardId||{},coachOwnedIds:current.coachOwnedIds||[],halloween:eventState(current.halloween)}; }
     function lock() { global.RoadToGloryPersistence?.assertWritable?.(); global.PersistenceRecoveryGuard?.assertWritable?.(); }
