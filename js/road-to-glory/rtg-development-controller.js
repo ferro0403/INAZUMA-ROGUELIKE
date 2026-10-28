@@ -67,6 +67,7 @@
     const roleFor=player=>String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
     function developmentTeamLabels(player){
       const sid=seasonFor(player),db=global.SeasonRegistry?.database?.(sid);
+      if(sid==="halloween2026")return ["Occult Halloween"];
       const teamNames=new Map((db?.teams||[]).map(team=>[
         String(team?.teamId||team?.id||""),String(team?.teamName||team?.name||"")
       ]).filter(([id,name])=>id&&name));
