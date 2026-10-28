@@ -363,7 +363,12 @@ async function main() {
   await pickerController.open("squad");
   await control("data-rtg-change-player").fire();
   assert.ok(pickerEntries.some(entry=>entry.cardId===nathanId),
-    "Slot 1 must allow swapping Nathan from another starting position");
+    "Slot 1 must allow swapping Nathan from another starting position; debug="+JSON.stringify({
+      entries:pickerEntries.map(e=>({id:e.cardId,overall:e.overall})),
+      owned:records["shared:account"].gachaAcquiredCards.map(e=>e.cardId),
+      current:records["local:halloween2026:squad"],
+      ui:app.innerHTML.slice(0,260)
+    }));
   records["local:halloween2026:squad"].activeSquadSlot=2;
   await pickerController.open("squad");
   pickerEntries=[];
