@@ -237,6 +237,25 @@
     // campaign contains a stale local record for one, never replace the
     // permanent Development Center profile with the immutable base player.
     if (standard.developmentApplied === true) return standard;
+    if (cardId.startsWith("halloween2026::")) {
+      // Halloween uses supplied level-20 character assets, not the compact
+      // Season progressionCode. The ordinary RTG evolution was recorded in
+      // developmentByCardId, but resolveBaseAtLevel20 returned the raw event
+      // character before applying any potential/stat growth.
+      // Reuse the SAME stat growth algorithm as normal RTG evolution; do not
+      // modify source assets, unlocked ownership, saved records, or opponents.
+      const overall = Math.min(99, currentPotential + boost);
+      const stats = global.InazumaProgression?.growPlayerStatsToTargetOverall?.({
+        role: standard.position || standard.normalizedRole,
+        originalStats: standard.stats || standard.baseStats || {},
+        currentStats: standard.stats || standard.baseStats || {},
+        currentOverall: currentPotential,
+        targetOverall: overall,
+      }) || { ...(standard.stats || standard.baseStats || {}) };
+      const rarity = String(upgrade?.currentRarity || global.InazumaProgression?.categoryForPotential?.(overall,standard.category) || standard.category);
+      return { ...standard, ...stats, stats, overall, finalOverall:overall,
+        potential:overall, category:rarity, finalRarity:rarity };
+    }
     return resolveBaseAtLevel20(playerId, activeSeasonId, roleVariantId, freeAgentsDb, {
       potentialBoost: boost,
       currentOverallBoost: boost,
