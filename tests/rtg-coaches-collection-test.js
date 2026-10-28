@@ -61,6 +61,30 @@
     const other=campaign("rtg-ares-orion");other.coachOwnedIds=[id];
     assert.equal(api.status(other,id),"owned","Coach remains usable in the other RTG run");
   });
+  test("Hekyll: busto esterno, fullbody interno ufficiale, carta HW prima nell'album",()=>{
+    const coach=api.BY_ID["halloween-coach-54"];
+    const official="https://dxi4wb638ujep.cloudfront.net/1/k/4/k/4krtqo9my50_r0_fullbody.webp";
+    assert.equal(coach.frontFullbodyUrl,official);
+    assert.notEqual(coach.imageUrl,coach.frontFullbodyUrl,"Thumbnail and fullbody must be different assets");
+    const thumbnail=view.card(coach,"locked");
+    const albumCard=view.albumCard(coach,"locked");
+    const internal=view.detail(campaign(),coach.id);
+    assert.ok(thumbnail.includes('src="'+coach.imageUrl+'"'));
+    assert.ok(albumCard.includes('src="'+coach.imageUrl+'"'));
+    assert.ok(!thumbnail.includes('src="'+official+'"'),"Compact card must NOT use large fullbody");
+    assert.ok(!albumCard.includes('src="'+official+'"'),"Album card must use bust, not fullbody");
+    assert.ok(internal.includes('src="'+official+'"'),"Detail must show official fullbody");
+    assert.ok(internal.includes('class="player-fullbody player-fullbody--fullbody rtg-coach-fullbody'),
+      "Detail uses existing native player fullbody image styling");
+    const album=view.albumMarkup(campaign());
+    assert.ok(album.indexOf('data-rtg-album-coach-entry="halloween-coach-54"')<
+      album.indexOf('data-rtg-album-coach-entry="36"'),"Event card must be the first album entry");
+    assert.match(album,/data-rtg-album-event-coach="true"/);
+    const css=read("css/rtg-coaches.css");
+    assert.match(css,/\.rtg-coach-halloween img\.rtg-coach-fullbody/);
+    assert.match(css,/\.rtg-coach-halloween \.rtg-coach-team-logo/);
+    assert.match(css,/\.rtg-coach-halloween img\.rtg-coach-portrait/);
+  });
   test("Season bloccate fino al completamento e completamento storico",()=>{
     let s=campaign();s.tokens=4000;
     assert.equal(api.eligible(s).length,0);
