@@ -141,7 +141,7 @@
       const rarityOptions=["Tutti",...economy.RARITIES].map((value)=>`<option value="${escape(value)}" ${value===rarity?"selected":""}>${value==="Tutti"?"Tutte":escape(value)}</option>`).join("");
       const playerBody=selected
         ? selectedMarkup(selected)
-        : `<div class="development-filters rtg-development-picker-filters">${pickerFilterMarkup || `<label class="development-search-field"><span aria-hidden="true">⌕</span><input class="development-search" data-rtg-development-search value="${escape(query)}" placeholder="Cerca giocatore…" aria-label="Cerca giocatore per nome" autocomplete="off"></label><label class="development-rarity-field"><span>RARITÀ</span><select data-rtg-development-rarity>${rarityOptions}</select></label>`}</div>
+        : `<div class="development-filters rtg-development-picker-filters rtg-modal">${pickerFilterMarkup || `<label class="development-search-field"><span aria-hidden="true">⌕</span><input class="development-search" data-rtg-development-search value="${escape(query)}" placeholder="Cerca giocatore…" aria-label="Cerca giocatore per nome" autocomplete="off"></label><label class="development-rarity-field"><span>RARITÀ</span><select data-rtg-development-rarity>${rarityOptions}</select></label>`}</div>
           <section class="album-player-grid development-player-grid development-squad-card-scope" data-rtg-development-results>${playerGrid(filteredPlayers)}</section>`;
       const projectsBody=`<section class="development-projects">
         <div class="development-section-heading"><div><p class="eyebrow">INVENTARIO RTG</p><h2>PROGETTI COMPLETI</h2></div><p>Disponibili esclusivamente per le evoluzioni Road to Glory.</p></div>
