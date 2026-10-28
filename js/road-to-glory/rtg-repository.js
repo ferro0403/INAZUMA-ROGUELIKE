@@ -122,6 +122,7 @@
         gachaAcquiredCards:Array.isArray(state?.gachaAcquiredCards)?stateApi.clone(state.gachaAcquiredCards):[],
         developmentByCardId:mergeDevelopmentMaps(state?.developmentByCardId),
         coachOwnedIds:mergeCoaches(shared.coachOwnedIds,state?.coachOwnedIds),
+        ...(Object.prototype.hasOwnProperty.call(shared,"halloween")?{halloween:stateApi.clone(shared.halloween)}:{}),
       };
     }
 
