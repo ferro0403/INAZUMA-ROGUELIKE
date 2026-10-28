@@ -876,3 +876,63 @@
 @media(max-width:390px){
   .rtg-coach-prematch-config .rtg-match-squad-field-shell .pitch{min-height:390px!important}
 }
+
+/* The event coach reuses the exact existing RTG coach cards and detail.
+   Only HW colours change; native coach functionality and geometry remain. */
+.rtg-coach-card.rtg-coach-halloween.player-card,
+.rtg-coaches-modal .rtg-coach-entry .rtg-coach-card.rtg-coach-halloween.player-card,
+.rtg-coaches-album .album-player-entry>.rtg-coach-album-card.rtg-coach-halloween{
+  --rarity-color:#ff8c2b!important;--rarity-accent:#ff8c2b!important;
+  --accent:#ff8c2b!important;--card-accent:#ff8c2b!important;
+  background:linear-gradient(145deg,#31121e 0%,#6b241b 72%,#ee8027 100%)!important;
+  border-color:#ff8e32!important;color:#fff1df!important
+}
+.rtg-coach-card.rtg-coach-halloween .player-portrait-wrap,
+.rtg-coach-album-card.rtg-coach-halloween .player-portrait-wrap{
+  background:radial-gradient(circle at 50% 38%,#bd713488,#1a0b18 77%)!important
+}
+.rtg-coach-card.rtg-coach-halloween .player-info,
+.rtg-coach-album-card.rtg-coach-halloween .player-info{
+  background:#1b0e19!important;color:#fff2de!important
+}
+.rtg-coach-card.rtg-coach-halloween .player-title strong,
+.rtg-coach-album-card.rtg-coach-halloween .player-title strong,
+.rtg-coach-card.rtg-coach-halloween .player-meta{
+  color:#fff0d6!important
+}
+.rtg-coach-card.rtg-coach-halloween .player-corner.player-overall,
+.rtg-coach-album-card.rtg-coach-halloween .player-corner.player-overall{
+  background:#111016!important;color:#ffbc68!important;
+  border-color:#ff8c2b!important
+}
+.rtg-coach-card.rtg-coach-halloween .player-corner.player-role,
+.rtg-coach-album-card.rtg-coach-halloween .player-corner.player-role{
+  background:#fff2d9!important;color:#1a1014!important
+}
+.rtg-coach-detail.rtg-coach-halloween.player-detail-layout{
+  --rarity-color:#ff8e2e!important;--rarity-accent:#ff8e2e!important;
+  --accent:#ff8e2e!important;--detail-accent:#ff8e2e!important
+}
+.rtg-coach-detail.rtg-coach-halloween .player-detail-hero{
+  background:linear-gradient(127deg,#47171c,#a9451c 66%,#ff9a2c)!important
+}
+.rtg-coach-detail.rtg-coach-halloween .player-detail-name{
+  color:#fff1d8!important;text-shadow:2px 3px 0 #170a13!important
+}
+.rtg-coach-detail.rtg-coach-halloween .player-detail-visual{
+  background:radial-gradient(circle at 60% 40%,#c76b3588,#210b18 78%)!important
+}
+.rtg-coach-squad-slot.rtg-coach-halloween{
+  border-color:#ff8b2b!important;background:#26111a!important;color:#fff1db!important
+}
+.rtg-coach-squad-slot.rtg-coach-halloween .rtg-coach-squad-selected strong,
+.rtg-coach-squad-slot.rtg-coach-halloween .rtg-coach-squad-selected span{
+  color:#fff0d7!important
+}
+.rtg-coaches-reward.rtg-coach-halloween{
+  border-color:#ff902e!important;background:linear-gradient(140deg,#230f19,#59201e)!important
+}
+.rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-info,
+.rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-info h3{
+  color:#fff2de!important
+}
