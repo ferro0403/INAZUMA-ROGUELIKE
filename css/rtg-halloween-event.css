@@ -740,3 +740,65 @@
   }
   .rtg-halloween-run-screen .halloween-vending-teaser .rtg-vending-button{width:100%!important}
 }
+
+/* Event-only Occult emblem treatment: match the original dark Halloween badge
+   in the home hero, team collection and roster header. */
+.rtg-halloween-run-screen .halloween-event-hero-crest,
+.halloween-event-album-teams .album-team-card__logo img,
+.halloween-event-album-teams .album-team-card__watermark img,
+.halloween-event-album-roster .album-roster-hero__logo img{
+  filter:sepia(.3) saturate(.55) hue-rotate(300deg) brightness(.67)
+    contrast(1.48) drop-shadow(0 0 8px #f13c7280)!important;
+}
+.rtg-halloween-run-screen .halloween-event-hero-crest{
+  border-color:#ffc068!important;
+  background:#fdf4e6!important;
+  box-shadow:5px 5px 0 #09080d!important;
+}
+.halloween-event-album-teams .album-team-card{
+  border-color:#ee8431!important;
+}
+.halloween-event-album-roster .album-roster-hero__name{
+  color:#fff0d8!important;
+  text-shadow:2px 3px 0 #1a0c13!important;
+}
+.halloween-event-album-roster .album-roster-hero__stats{
+  color:#ffe8d3!important;
+}
+.halloween-event-album-roster .album-roster-percent{
+  color:#ffba3d!important;
+}
+.halloween-event-album-roster .album-player-entry.is-locked{
+  opacity:.78!important;
+}
+.halloween-event-album-roster .album-player-entry .player-title,
+.halloween-event-album-roster .album-player-entry .player-title strong,
+.halloween-event-album-roster .album-player-entry .player-meta{
+  color:#fff2dd!important;
+}
+.halloween-event-album-roster .album-player-entry.is-locked .album-player-card{
+  cursor:pointer!important;
+}
+.halloween-event-album-roster .album-player-entry.is-locked .album-player-card:focus-visible{
+  outline:3px solid #ffad35!important;outline-offset:3px!important;
+}
+/* More compact, readable event page: show challenge and capsule shortcut
+   together on a small phone without losing the match requirements. */
+.rtg-halloween-run-screen .halloween-event-hero{
+  margin-top:0!important;padding-block:18px!important;
+}
+.halloween-event-hero-top{padding-bottom:12px!important;}
+.rtg-halloween-run-screen .halloween-event-hero-copy .eyebrow{margin-bottom:10px!important;}
+.rtg-halloween-run-screen .halloween-event-hero-copy h1{margin-bottom:9px!important;}
+.halloween-event-ovr-strip{padding:11px 0!important;}
+.halloween-event-ovr-strip>div{padding-block:9px!important;gap:5px!important;}
+.halloween-event-status{margin:11px 0 14px!important;padding:9px 12px!important;gap:2px!important;}
+.rtg-halloween-run-screen .halloween-event-main-cta{min-height:59px!important;}
+.rtg-halloween-run-screen .halloween-vending-teaser{margin-top:0!important;padding-block:15px!important;}
+@media(max-width:520px){
+  .rtg-halloween-run-screen .halloween-event-hero{padding:16px 14px!important;}
+  .halloween-event-hero-top{padding-bottom:10px!important;}
+  .halloween-event-ovr-strip{padding:10px 0!important;}
+  .halloween-event-status{margin:9px 0 12px!important;}
+  .rtg-halloween-run-screen .halloween-vending-teaser{padding:14px!important;}
+}
