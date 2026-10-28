@@ -472,11 +472,13 @@
         &&(teamFilter==="all"||e.teams.includes(teamFilter)))
         .sort((a,b)=>(descending?b.overall-a.overall:a.overall-b.overall)||a.player.name.localeCompare(b.player.name,"it"));
       const shown=list=>list.slice(0,visibleCount);
-      function select(id){return perform(async()=>{
-        await editSquad("replace",{from:cardId,to:id});deps.closeModal?.();
+      let selecting=false;
+      function select(id){if(selecting)return;selecting=true;return perform(async()=>{
+        try{await editSquad("replace",{from:cardId,to:id});deps.closeModal?.();}
+        finally{selecting=false;}
       });}
       function wireResults(){
-        modalRoot()?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(b=>b.addEventListener("click",()=>select(b.dataset.rtgPickerPlayer)));
+        modalRoot()?.querySelector?.("[data-rtg-picker-results]")?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(b=>b.addEventListener("click",()=>select(b.dataset.rtgPickerPlayer)));
         modalRoot()?.querySelector?.("[data-rtg-picker-load-more]")?.addEventListener("click",()=>{visibleCount+=12;paint();});
       }
       function paint(){
@@ -494,6 +496,7 @@
         seasonOptions:seasons,teamOptions:teams()
       }),{className:"rtg-modal rtg-squad-picker-modal rtg-halloween-picker"});
       wireResults();
+      modalRoot()?.querySelectorAll?.(".rtg-picker-quick-bench [data-rtg-picker-player]")?.forEach(b=>b.addEventListener("click",()=>select(b.dataset.rtgPickerPlayer)));
       modalRoot()?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",e=>{query=e.target.value.trim();visibleCount=12;paint();});
       modalRoot()?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(b=>b.addEventListener("click",()=>{sourceFilter=b.dataset.rtgPickerSource;visibleCount=12;paint();}));
       modalRoot()?.querySelectorAll?.("[data-rtg-picker-role]")?.forEach(b=>b.addEventListener("click",()=>{
