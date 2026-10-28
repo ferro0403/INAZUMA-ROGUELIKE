@@ -58,6 +58,21 @@ assert.doesNotMatch(eventSource,/stage==="comparison"\?1700:1150/,
   "Do not add 1.15 seconds of delay not used by the native RTG match controller");
 assert.match(eventSource,/const target=Math\.max\(\.\.\.combined\.keys\(\)\)/,
   "The adapt button must maximize OVR from below as well as lower an overpowered team");
+const nativeOverlayBlock=eventSource.slice(eventSource.indexOf("function bindNativeMatch()"),eventSource.indexOf("function openNativePreMatchCoachPower()"));
+const duelFirst=nativeOverlayBlock.indexOf("if(lastResolution){");
+const halftimeAfter=nativeOverlayBlock.indexOf('}else if(m.status==="halftime")');
+assert.ok(duelFirst>=0&&halftimeAfter>duelFirst,
+  "Duel outcome must take precedence over the halftime screen at 45 minutes");
+assert.match(nativeOverlayBlock,/m.status==="halftime"&&!lastResolution/,
+  "Halftime editing must not replace a still-visible duel result");
+assert.match(nativeOverlayBlock,/if\(match\?\.status!=="active"\)return render\(\);/,
+  "Continuing a terminal duel must show the native period or final result without stepping the engine again");
+assert.match(eventSource,/function pickerTeamLabels\(p,seasonId\)/,
+  "Halloween squad picker must deduplicate teams by their canonical labels");
+assert.ok(eventSource.includes('const rarityOrder=["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"]'),
+  "Halloween rarity filter must match the normal RTG rarity order");
+assert.match(eventSource,/halloween-event-main-cta/,
+  "Halloween home must use a single primary match CTA");
 const halloweenAssets=JSON.parse(fs.readFileSync("data/rtg-halloween-occult-players.json","utf8"))[0].players;
 for (const [playerId, expectedPath] of [
   ["custom_0002","assets/rtg/halloween-samford-fullbody.png"],
@@ -76,8 +91,10 @@ for (const filename of ["halloween-nathan-fullbody.png","halloween-samford-fullb
   assert.ok(halloweenCss.includes('img.player-fullbody--fullbody[src$="'+filename+'"]'),
     "Only the two custom Halloween fullbody images must receive the sizing override");
 }
-assert.ok(halloweenCss.includes("height:61%!important;") &&
-  halloweenCss.includes("max-height:61%!important;") &&
+assert.ok(halloweenCss.includes("height:69%!important;") &&
+  halloweenCss.includes("max-height:69%!important;") &&
   halloweenCss.includes("transform:translateX(-50%) scale(1)!important;"),
   "Both custom fullbodies must fit inside the hero without the default RTG enlargement");
+assert.match(halloweenCss,/\.halloween-squad-mode \.rtg-requirement\.bad strong/,
+  "Over-cap OVR must display as invalid rather than green");
 console.log("RTG Halloween parity: 11 starters + 4 bench, original squad markup, tagged vampire duel render PASS");
