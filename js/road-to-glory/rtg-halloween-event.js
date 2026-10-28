@@ -202,7 +202,16 @@
     }
     function vendingSection() {
       const available=Array.from(assets.players.keys()).filter(pid=>!isOwned(pid)),enough=shared.halloween.pumpkins>=PRICE;
-      return '<div class="halloween-vending"><p class="eyebrow">CAPSULE STATION · HALLOWEEN</p><h2>IL DISTRIBUTORE STREGATO</h2><div class="halloween-vending-machine"><div class="halloween-machine-head">🎃 OCCULT GACHA 🎃</div><div class="halloween-machine-window"><span>🟠</span><span>⚫</span><span>🟠</span><span>⚫</span><span>🟠</span><span>⚫</span></div><div class="halloween-machine-body"><p>UN PULL · '+currency(PRICE)+'</p><button class="halloween-action" data-halloween-pull '+(!isOpen()||!enough||available.length===0?"disabled":"")+'>ESTRAI UNA CAPSULA</button></div></div><p>Samford e Nathan Swift: 4% ciascuno finché sono entrambi disponibili. Nessun duplicato.</p><p>Giocatori rimasti: '+available.length+' / 18</p></div>';
+      const capsules=Array.from({length:12},(_,i)=>'<div class="rtg-vending-capsule-v9 c'+(i%6+1)+'" data-capsule-rarity="'+(i%2?"orange":"black")+'"></div>').join("");
+      return '<div class="halloween-vending"><p class="eyebrow">CAPSULE STATION · HALLOWEEN</p><h2>IL DISTRIBUTORE STREGATO</h2>'+
+        '<div class="rtg-vending halloween-vending-classic"><div class="rtg-vending-stage"><div class="rtg-vending-machine-v9 rtg-vending-machine-v12" data-rtg-vending-machine aria-label="Distributore Halloween">'+
+        '<div class="rtg-vending-head-v9"><span>CAPSULE STATION</span><strong>OCCULT HALLOWEEN</strong></div>'+
+        '<div class="rtg-vending-window-v9">'+capsules+'<span class="rtg-vending-funnel-v10"></span><span class="rtg-vending-window-glare-v9"></span></div>'+
+        '<div class="rtg-vending-body-v9"><div class="rtg-vending-info-v9"><small>1 CAPSULA</small><strong>'+PRICE+'</strong></div>'+
+        '<div class="rtg-vending-crank-v9"><span></span></div><div class="rtg-vending-chute-v9"><span class="rtg-vending-chute-well-v9"></span><span class="rtg-vending-chute-flap-v10"></span><div class="rtg-vending-prize-track-v9"><span class="rtg-vending-prize-v9"></span></div></div><div class="rtg-vending-brand-v9">🎃</div></div></div>'+
+        '<button class="btn btn-yellow rtg-vending-pull halloween-action" data-halloween-pull '+(!isOpen()||!enough||available.length===0?"disabled":"")+'>GIRA · '+currency(PRICE)+'</button>'+
+        '<div class="rtg-vending-wallet-chip"><span>ZUCCHE HALLOWEEN</span><strong>'+currency(shared.halloween.pumpkins)+'</strong></div></div></div>'+
+        '<p>Samford e Nathan Swift: 4% ciascuno finché sono entrambi disponibili. Nessun duplicato.</p><p>Giocatori rimasti: '+available.length+' / 18</p></div>';
     }
     function albumSection() {
       return '<div class="halloween-album"><h2>ALBUM · GIOCATORI EVENTO</h2><p>OCCULT HALLOWEEN · '+shared.halloween.ownedIds.length+'/18</p><div class="halloween-album-grid">'+Array.from(assets.players.values()).map(p=>'<div class="'+(isOwned(asId(p.playerId))?'':'halloween-locked')+'">'+card(p,{event:true,owned:isOwned(asId(p.playerId))})+'</div>').join("")+'</div></div>';
