@@ -703,6 +703,8 @@
       if(match)throw fail("halloween-active-match");
       lock();
       const curr=clone(localSquad);
+      let nextSlot=activeSquadSlot,nextSquad=curr;
+      const nextSlots=clone(squadSlots||{"1":curr,"2":curr,"3":curr});
       const allowed=new Set(userCards());
       if(kind==="replace"){
         if(!allowed.has(arg.to)||arg.to===arg.from)return;
@@ -717,10 +719,9 @@
         curr[area][i]=arg.to;
       } else if(kind==="slot") {
         const slot=Number(arg);if(![1,2,3].includes(slot))throw fail("halloween-invalid-slot");
-        const savedSlots=clone(squadSlots||{"1":curr,"2":curr,"3":curr});
-        savedSlots[activeSquadSlot]=curr;
-        activeSquadSlot=slot;
-        localSquad=initialEventSquad(clone(savedSlots[slot]||curr));squadSlots=savedSlots;
+        nextSlots[activeSquadSlot]=curr;
+        nextSlot=slot;
+        nextSquad=initialEventSquad(clone(nextSlots[slot]||curr));
       } else if(kind==="coach"){
         if(arg&&!shared.coachOwnedIds.includes(arg))throw fail("halloween-coach-unowned");
         curr.coachId=arg;curr.coachPowerSelection=null;
@@ -749,15 +750,15 @@
         if(line.length!==11)throw fail("halloween-formation-insufficient-players");
         const bench=[...previous,...owned.map(x=>x.id)].filter((id,i,all)=>!line.includes(id)&&all.indexOf(id)===i).slice(0,4);
         if(bench.length!==4)throw fail("halloween-bench-insufficient");
-        curr.lineup=line;curr.bench=bench;curr.formationId=formationId;
+        curr.lineup=line;curr.bench=bench;curr.formationId=formationId;curr.lineupOrderedBySlot=false;
       }
-      if(kind!=="slot")localSquad=curr;
-      squadSlots=clone(squadSlots||{"1":curr,"2":curr,"3":curr});
-      squadSlots[activeSquadSlot]=clone(localSquad);
+      nextSlots[nextSlot]=clone(nextSquad);
       const epoch=session;
-      const saved={...localSquad,activeSquadSlot,slots:squadSlots};
+      const saved={...nextSquad,activeSquadSlot:nextSlot,slots:nextSlots};
       await storage.updateMany([SQUAD_KEY],()=>({writes:{[SQUAD_KEY]:saved},value:true}));
       assertCurrent(epoch);
+      // Only advance the visible squad once the canonical event save commits.
+      activeSquadSlot=nextSlot;localSquad=nextSquad;squadSlots=nextSlots;
     }
     async function startMatch() {
       if(!isOpen() || match)throw fail("halloween-event-closed-or-match-active");
