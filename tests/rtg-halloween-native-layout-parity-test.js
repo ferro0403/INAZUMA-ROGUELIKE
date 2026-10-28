@@ -58,7 +58,7 @@ assert.doesNotMatch(eventSource,/stage==="comparison"\?1700:1150/,
   "Do not add 1.15 seconds of delay not used by the native RTG match controller");
 assert.match(eventSource,/const target=Math\.max\(\.\.\.combined\.keys\(\)\)/,
   "The adapt button must maximize OVR from below as well as lower an overpowered team");
-assert.match(eventSource,/halloween-reveal-currency-icon[^\\n]*PUMPKIN_URL|PUMPKIN_URL[^\\n]*halloween-reveal-currency-icon/, "Pull reward balance must use the Halloween pumpkin image");
+assert.ok(eventSource.includes('class="halloween-reveal-currency-icon"') && eventSource.includes('escape(PUMPKIN_URL)'), "Pull reward balance must use the Halloween pumpkin image");
 assert.match(eventSource,/data-halloween-close-vending/, "Vending machine must provide an exit");
-assert.match(eventSource,/DISTRIBUTORE STREGATO · '\\+PRICE\\+' ZUCCHE/, "Event home must show the price");
+assert.ok(eventSource.includes("DISTRIBUTORE STREGATO · '+PRICE+' ZUCCHE"), "Event home must show the price");
 console.log("RTG Halloween parity: 11 starters + 4 bench, original squad markup, tagged vampire duel render PASS");
