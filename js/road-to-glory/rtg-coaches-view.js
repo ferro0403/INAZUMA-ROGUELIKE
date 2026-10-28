@@ -134,8 +134,8 @@
   function card(c,status="locked",selected=false){
     const state=statusLabel(status);
     // Same markup/classes as PlayerView.compactCard: the card differs only in data and orange trim.
-    return `<button type="button" class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player squad-player-card rtg-picker-squad-card rtg-coach-card ${selected?"selected":""} ${status==="locked"?"rtg-coach-locked":""}" data-rtg-coach-detail="${esc(c.id)}" aria-label="Scheda allenatore ${esc(c.name)}">
-      <span class="player-corner player-role" aria-label="Allenatore">ALL.</span><span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.season.replace("Season ","S"))}</span>
+    return `<button type="button" class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player squad-player-card rtg-picker-squad-card rtg-coach-card ${c.eventCoach?"rtg-coach-halloween":""} ${selected?"selected":""} ${status==="locked"?"rtg-coach-locked":""}" data-rtg-coach-detail="${esc(c.id)}" aria-label="Scheda allenatore ${esc(c.name)}">
+      <span class="player-corner player-role" aria-label="Allenatore">ALL.</span><span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.eventCoach?"HW":c.season.replace("Season ","S"))}</span>
       <div class="player-portrait-wrap ${c.zukanId==="4763"?"rtg-coach-rene-wrap":""}">${portrait(c)}</div>
       <div class="player-info"><div class="player-title"><strong title="${esc(c.name)}">${esc(c.name)}</strong></div>
       <div class="player-meta" aria-label="Dettagli allenatore"><span>${esc(c.team)}</span><span>${esc(state)}</span></div></div>
@@ -147,20 +147,20 @@
   // Coach album cards deliberately avoid the normal Album lock overlay: on a
   // three-column phone grid that overlay covered the portrait and even the name.
   function albumCard(c,status="locked"){
-    return `<button type="button" class="player-card rtg-coach-album-card" data-rtg-coach-detail="${esc(c.id)}" aria-label="Apri scheda di ${esc(c.name)}">
+    return `<button type="button" class="player-card rtg-coach-album-card ${c.eventCoach?"rtg-coach-halloween":""}" data-rtg-coach-detail="${esc(c.id)}" aria-label="Apri scheda di ${esc(c.name)}">
       <span class="player-corner player-role" aria-label="Allenatore">ALL.</span>
-      <span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.season.replace("Season ","S"))}</span>
+      <span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.eventCoach?"HW":c.season.replace("Season ","S"))}</span>
       <div class="player-portrait-wrap">${portrait(c)}</div>
       <div class="player-info"><div class="player-title"><strong title="${esc(c.name)}">${esc(c.name)}</strong></div></div>
     </button>`;
   }
   function squadSlot(state,coachId="",selection=null){
     const c=model().owned(state).has(String(coachId))?model().BY_ID[String(coachId)]:null;
-    return `<section class="rtg-coach-squad-slot" aria-label="Allenatore della formazione">
+    return `<section class="rtg-coach-squad-slot ${c?.eventCoach?"rtg-coach-halloween":""}" aria-label="Allenatore della formazione">
       <div class="rtg-coach-squad-heading"><h2>ALLENATORE</h2><b>STAFF</b></div>
-      ${c?`<div class="rtg-coach-squad-selected"><button type="button" data-rtg-squad-coach-detail class="rtg-coach-squad-image" aria-label="Scheda di ${esc(c.name)}">${portrait(c)}</button><div><strong>${esc(c.name)}</strong><span>${esc(c.team)} · ${esc(c.season)}</span><small>${["208","1329","1777","1974","4401"].includes(c.id)?(selection?.coachId===c.id?"Potere configurabile · selezione salvata":"Potere configurabile in Squadra"):(["36","1225","1275","1940","4761"].includes(c.id)?"Potere attivo nel Prepartita":"Potere non ancora attivo")}</small></div></div>`:
+      ${c?`<div class="rtg-coach-squad-selected"><button type="button" data-rtg-squad-coach-detail class="rtg-coach-squad-image" aria-label="Scheda di ${esc(c.name)}">${portrait(c)}</button><div><strong>${esc(c.name)}</strong><span>${esc(c.team)} · ${esc(c.season)}</span><small>${["208","1329","1777","1974","4401","halloween-coach-54"].includes(c.id)?(selection?.coachId===c.id?"Potere configurabile · selezione salvata":"Potere configurabile in Squadra"):(["36","1225","1275","1940","4761"].includes(c.id)?"Potere attivo nel Prepartita":"Potere non ancora attivo")}</small></div></div>`:
       `<div class="rtg-coach-squad-empty"><b aria-hidden="true">+</b><span>Nessun allenatore assegnato</span></div>`}
-      <div class="rtg-coach-squad-buttons"><button type="button" class="btn" data-rtg-squad-coach-select>${c?"CAMBIA ALLENATORE":"ASSEGNA ALLENATORE"}</button>${c?'<button type="button" class="btn" data-rtg-squad-coach-detail>SCHEDA / RIMUOVI</button>':""}${c&&["208","1329","1777","1974","4401"].includes(c.id)?'<button type="button" class="btn btn-yellow" data-rtg-coach-power-configure>CONFIGURA POTERE</button>':""}</div>
+      <div class="rtg-coach-squad-buttons"><button type="button" class="btn" data-rtg-squad-coach-select>${c?"CAMBIA ALLENATORE":"ASSEGNA ALLENATORE"}</button>${c?'<button type="button" class="btn" data-rtg-squad-coach-detail>SCHEDA / RIMUOVI</button>':""}${c&&["208","1329","1777","1974","4401","halloween-coach-54"].includes(c.id)?'<button type="button" class="btn btn-yellow" data-rtg-coach-power-configure>CONFIGURA POTERE</button>':""}</div>
     </section>`;
   }
   function vending(state){
@@ -185,14 +185,14 @@
     const coaches=model().catalog(state),got=coaches.filter(c=>model().status(state,c.id)==="owned").length;
     return `<section class="rtg-coaches-window" aria-label="Allenatori"><header class="rtg-coaches-heading"><div><p class="eyebrow">ROAD TO GLORY · COLLEZIONE</p><h2>ALLENATORI</h2><p>${got} / ${coaches.length} ottenuti</p></div></header>
       <div class="rtg-coaches-tabs"><button type="button" class="${tab==="draw"?"active":""}" data-rtg-coaches-tab="draw">DISTRIBUTORE</button><button type="button" class="${tab==="collection"?"active":""}" data-rtg-coaches-tab="collection">COLLEZIONE</button></div>
-      ${tab==="draw"?vending(state):`<div class="rtg-coaches-grid rtg-picker-grid">${coaches.map(c=>`<div class="rtg-coach-entry ${c.zukanId==="4763"?"is-rene":""} ${model().status(state,c.id)==="owned"?"is-unlocked":"is-locked"}">${card(c,model().status(state,c.id),equippedId===c.id)}${model().status(state,c.id)==="owned"?`<button type="button" class="rtg-coach-quick-equip" data-rtg-coaches-equip="${equippedId===c.id?"":esc(c.id)}" aria-label="${equippedId===c.id?"Rimuovi":"Assegna"} ${esc(c.name)}">${equippedId===c.id?"✓ ASSEGNATO":"＋ ASSEGNA"}</button>`:""}</div>`).join("")}</div>`}
+      ${tab==="draw"?vending(state):`<div class="rtg-coaches-grid rtg-picker-grid">${coaches.map(c=>`<div class="rtg-coach-entry ${c.eventCoach?"rtg-coach-halloween":""} ${c.zukanId==="4763"?"is-rene":""} ${model().status(state,c.id)==="owned"?"is-unlocked":"is-locked"}">${card(c,model().status(state,c.id),equippedId===c.id)}${model().status(state,c.id)==="owned"?`<button type="button" class="rtg-coach-quick-equip" data-rtg-coaches-equip="${equippedId===c.id?"":esc(c.id)}" aria-label="${equippedId===c.id?"Rimuovi":"Assegna"} ${esc(c.name)}">${equippedId===c.id?"✓ ASSEGNATO":"＋ ASSEGNA"}</button>`:""}</div>`).join("")}</div>`}
     </section>`;
   }
   function detail(state,coachId,{equippedId=""}={}){
     const c=model().BY_ID[String(coachId)];if(!c)return "";
     const status=model().status(state,c.id),isOwned=status==="owned",selected=isOwned&&c.id===equippedId;
     // Same PlayerView.detailMarkup DOM sections, replacing overall/stats with ability data.
-    return `<div class="player-detail-layout rtg-coach-detail rarity-coach" aria-label="Scheda allenatore ${esc(c.name)}">
+    return `<div class="player-detail-layout rtg-coach-detail rarity-coach ${c.eventCoach?"rtg-coach-halloween":""}" aria-label="Scheda allenatore ${esc(c.name)}">
       <section class="player-detail-hero ${c.name.length>18?"player-detail-hero--extra-long-name":c.name.length>12?"player-detail-hero--long-name":""}">
         <div class="player-detail-identity">
           <div class="player-detail-team">${teamEmblem(c)}<strong>ALLENATORI</strong></div>
@@ -203,9 +203,9 @@
         </div><div class="player-detail-visual rarity-coach">${portrait(c,true)}</div>
       </section>
       <section class="player-detail-content">
-        <section class="player-detail-section"><h3><span>Potere allenatore</span></h3><div class="rtg-coach-power"><strong>${esc(c.powerName)}</strong><p>${esc(c.powerDescription)}</p><small class="rtg-coach-power-status">${["208","1329","1777","1974","4401"].includes(c.id)?"DISPONIBILE · CONFIGURA IN SQUADRA":(["36","1225","1275","1940","4761"].includes(c.id)?"DISPONIBILE · ATTIVAZIONE PREPARTITA":"PROSSIMAMENTE · POTERE NON ANCORA ATTIVO")}</small></div></section>
+        <section class="player-detail-section"><h3><span>Potere allenatore</span></h3><div class="rtg-coach-power"><strong>${esc(c.powerName)}</strong><p>${esc(c.powerDescription)}</p><small class="rtg-coach-power-status">${["208","1329","1777","1974","4401","halloween-coach-54"].includes(c.id)?"DISPONIBILE · CONFIGURA IN SQUADRA":(["36","1225","1275","1940","4761"].includes(c.id)?"DISPONIBILE · ATTIVAZIONE PREPARTITA":"PROSSIMAMENTE · POTERE NON ANCORA ATTIVO")}</small></div></section>
         <section class="player-detail-section"><h3><span>Informazioni</span></h3><div class="rtg-coach-profile-meta"><span><small>Squadra</small><b class="rtg-coach-profile-team">${teamEmblem(c)}${esc(c.team)}</b></span><span><small>Season</small><b>${esc(c.season)}</b></span></div>
-        ${isOwned?`<button type="button" class="btn btn-yellow rtg-coach-equip" data-rtg-coaches-equip="${selected?"":esc(c.id)}">${selected?"RIMUOVI DALLA FORMAZIONE":"ASSEGNA ALLA FORMAZIONE"}</button>`:`<p class="rtg-coach-locked-note">${status==="locked"?`Completa ${esc(c.season)} per ottenere questa carta.`:"Disponibile nell'altra campagna."}</p>`}
+        ${isOwned?`<button type="button" class="btn btn-yellow rtg-coach-equip" data-rtg-coaches-equip="${selected?"":esc(c.id)}">${selected?"RIMUOVI DALLA FORMAZIONE":"ASSEGNA ALLA FORMAZIONE"}</button>`:`<p class="rtg-coach-locked-note">${c.eventCoach?"Ottienilo dal Distributore Stregato durante l’evento Halloween.":status==="locked"?`Completa ${esc(c.season)} per ottenere questa carta.`:"Disponibile nell'altra campagna."}</p>`}
         <button type="button" class="btn rtg-coach-back" data-rtg-coaches-back>← TORNA AGLI ALLENATORI</button></section>
       </section>
     </div>`;
@@ -214,13 +214,13 @@
     const coaches=model().catalog(state),owned=model().owned(state),got=coaches.filter(c=>owned.has(c.id)).length,total=coaches.length;
     return `<main class="album-screen album-roster-screen album-roster-screen--modern rtg-album-roster-screen rtg-coaches-album">
       <header class="album-roster-hero"><div class="album-roster-hero__nav"><button type="button" class="btn section-root-button album-roster-back-button" data-rtg-album-coaches-back>←</button></div><div class="album-roster-hero__identity"><span class="album-team-logo album-roster-hero__logo">⚽</span><h1 class="album-roster-hero__name">ALLENATORI</h1></div><div class="album-roster-hero__stats"><span>${got} / ${total} allenatori sbloccati</span><strong class="album-roster-percent">${total?Math.round(100*got/total):0}%</strong></div><span class="album-roster-hero__bar"><span style="width:${total?100*got/total:0}%"></span></span></header>
-      <section class="album-player-grid album-player-grid--modern" data-rtg-album-coaches>${coaches.map(c=>`<div class="album-player-entry rtg-coach-album-entry ${c.zukanId==="4763"?"is-rene":""} ${owned.has(c.id)?"is-unlocked":"is-locked"}" data-rtg-album-coach-entry="${esc(c.id)}">${albumCard(c,model().status(state,c.id))}<span class="rtg-coach-album-status ${owned.has(c.id)?"is-owned":""}">${owned.has(c.id)?"✓ OTTENUTO":"🔒 BLOCCATO"}</span></div>`).join("")}</section>
+      <section class="album-player-grid album-player-grid--modern" data-rtg-album-coaches>${coaches.map(c=>`<div class="album-player-entry rtg-coach-album-entry ${c.eventCoach?"rtg-coach-halloween":""} ${c.zukanId==="4763"?"is-rene":""} ${owned.has(c.id)?"is-unlocked":"is-locked"}" data-rtg-album-coach-entry="${esc(c.id)}">${albumCard(c,model().status(state,c.id))}<span class="rtg-coach-album-status ${owned.has(c.id)?"is-owned":""}">${owned.has(c.id)?"✓ OTTENUTO":"🔒 BLOCCATO"}</span></div>`).join("")}</section>
     </main>`;
   }
   function result(coach,state=null){
     // Separate coach reveal from the player pull result layout: no 92px card,
     // tilted frame, accidental min-height, or empty column on mobile.
-    return `<div class="rtg-coaches-reward rtg-paper-modal" aria-label="Allenatore ottenuto">
+    return `<div class="rtg-coaches-reward rtg-paper-modal ${coach.eventCoach?"rtg-coach-halloween":""}" aria-label="Allenatore ottenuto">
       <header class="rtg-coaches-reward-heading"><span>ROAD TO GLORY · STAFF</span></header>
       <h2 class="rtg-coaches-reward-title">NUOVO ALLENATORE!</h2>
       <div class="rtg-coaches-reward-feature"><div class="rtg-coaches-reward-art">${card(coach,"owned")}</div>
