@@ -190,26 +190,34 @@
     function currency(n) { return '<span class="halloween-currency"><img src="'+escape(PUMPKIN_URL)+'" alt="">'+escape(n)+'</span>'; }
     function isOwned(pid) { return shared?.halloween.ownedIds.includes(pid); }
     function initialEventSquad(previous={}) {
-      const chosen=[...(previous.lineup||[]),...(previous.bench||[])];
-      const assigned=new Set(chosen);
-      const available=(data?.freeAgents?.players||[]).map(p=>({
-        cardId:global.RoadToGloryCardIdentity.cardIdForFreeAgent(p.playerId||p.id),
-        role:String(p.position||p.normalizedRole||p.role||"").toUpperCase(),
-        overall:Number(p.overall??p.finalOverall??0)
-      })).filter(x=>x.cardId&&!assigned.has(x.cardId)).sort((a,b)=>a.overall-b.overall);
-      const lineup=[...(previous.lineup||[])],bench=[...(previous.bench||[])];
-      const requirements={FW:3,MF:3,DF:4,GK:1};
-      const slots=["FW","MF","DF","GK"];
-      for(const role of slots) {
-        let have=lineup.filter(cardId=>String(resolveCard(cardId)?.normalizedRole||resolveCard(cardId)?.position||"").toUpperCase()===role).length;
-        while(have<requirements[role]&&lineup.length<11) {
-          const i=available.findIndex(x=>x.role===role);
-          if(i<0)break;const item=available.splice(i,1)[0];lineup.push(item.cardId);assigned.add(item.cardId);have++;
-        }
+      const chosenLine=Array.isArray(previous.lineup)?previous.lineup.map(asId):[];
+      const chosenBench=Array.isArray(previous.bench)?previous.bench.map(asId):[];
+      const allowed=new Set(userCards());
+      const valid=id=>allowed.has(id)&&!!resolveCard(id);
+      const unique=ids=>Array.from(new Set(ids.filter(valid)));
+      const line=unique(chosenLine),bench=unique(chosenBench).filter(id=>!line.includes(id));
+      const formationId=previous.formationId||"4-3-3";
+      const formation=(global.RoadToGloryConfig?.season?.("ie1")?.formations||[]).find(f=>asId(f.id)===formationId);
+      if(line.length===11&&bench.length===4){
+        return {...previous,formationId,lineup:line,bench,activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}};
       }
-      while(lineup.length<11&&available.length)lineup.push(available.shift().cardId);
-      while(bench.length<4&&available.length)bench.push(available.shift().cardId);
-      return {formationId:previous.formationId||"4-3-3",lineup,bench,lineupOrderedBySlot:false,coachId:previous.coachId||"",activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}};
+      const roles=Array.isArray(formation?.slotRoles)&&formation.slotRoles.length===11
+        ?formation.slotRoles.map(role=>asId(role).toUpperCase())
+        :Object.entries(formation?.requirements||{FW:3,MF:3,DF:4,GK:1})
+          .flatMap(([role,count])=>Array.from({length:Number(count)||0},()=>role));
+      if(roles.length!==11)throw fail("halloween-invalid-formation-slots");
+      const pool=unique([...line,...bench,...userCards()]);
+      const picked=[],used=new Set();
+      const roleFor=id=>asId(resolveCard(id)?.normalizedRole||resolveCard(id)?.position).toUpperCase();
+      for(const role of roles){
+        const candidate=pool.find(id=>!used.has(id)&&roleFor(id)===role)||pool.find(id=>!used.has(id));
+        if(!candidate)throw fail("halloween-squad-insufficient-players");
+        used.add(candidate);picked.push(candidate);
+      }
+      const reserves=unique([...bench,...line,...pool]).filter(id=>!used.has(id)).slice(0,4);
+      if(reserves.length!==4)throw fail("halloween-bench-insufficient");
+      return {...previous,formationId,lineup:picked,bench:reserves,lineupOrderedBySlot:true,
+        coachId:previous.coachId||"",activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}};
     }
     function activeEventSquad() {return {...shared,activeSeasonId:"ie1",gachaAcquiredCards:shared.gachaAcquiredCards,coachOwnedIds:shared.coachOwnedIds,squads:{ie1:localSquad}};}
     function nativeCard(p,opts={}) {
