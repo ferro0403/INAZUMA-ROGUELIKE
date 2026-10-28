@@ -737,6 +737,7 @@
     aiPolicy: global.RoadToGloryAiPolicy,
     penaltyRuntime: global.RoadToGloryPenaltyRuntime,
     showPlayerDetailsFor: (...args) => showPlayerDetailsFor(...args),
+    compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
   }) : null;
 
   const homeView = global.HomeView.create({ escapeHtml, normalizeTeamIdentity, savedTeamIdentity, seasonDisplayName, resolvedRosterPlayer, averageOverall, lifeHeartsMarkup, bossTeamLogoUrl, getSeasonDb: () => seasonDb });
