@@ -490,6 +490,22 @@
       modalRoot()?.querySelector?.("[data-rtg-catalog-search]")?.addEventListener("input",e=>{query=e.target.value.trim();updateResults();});
       modalRoot()?.querySelectorAll?.("[data-rtg-catalog-role]")?.forEach(b=>b.addEventListener("click",()=>{role=b.dataset.rtgCatalogRole;updateResults();}));
     }
+    function openNativeCoachPower(){
+      const ui=global.RoadToGloryCoachSquadPowerUi;
+      if(match||!ui?.open)return;
+      const currentState=()=>activeEventSquad(),resolver={resolveAtLevel20:id=>resolveCard(id)};
+      const model=()=>deps.squadView?.renderModel?.({
+        state:currentState(),freeAgentIds:(data.freeAgents?.players||[]).map(p=>asId(p.playerId||p.id)),
+        seasonDb:global.SeasonRegistry?.database?.("ie1")||{},freeAgentsDb:data.freeAgents,playerResolver:resolver
+      })||{};
+      ui.open({getCampaign:currentState,getSquadDraft:()=>localSquad,seasonId:()=>"ie1",
+        resolve:resolveCard,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
+        closeModal:deps.closeModal,toast:notify,squadView:deps.squadView,getModel:model,
+        saveSquad:async draft=>editSquad("coachPower",draft),
+        openPlayerDetails:key=>openNativeDetail(key),
+        previewSquadOverall:()=>({before:ovr(resolvedUser()?.lineup),after:ovr(resolvedUser()?.lineup)})
+      });
+    }
     function openCoaches() {
       const view=global.RoadToGloryCoachesView;
       if(!deps.openModal||!view?.markup)return notify("Catalogo allenatori RTG non disponibile","error");
@@ -552,7 +568,7 @@
           onOpenDetails:cardId=>openNativeDetail(cardId),
           onOpenPlayer:cardId=>openPicker(cardId),
           onOpenFormation:openFormation,onOpenCatalog:openCatalog,onOpenCoaches:openCoaches,
-          onOpenCoachDetails:openCoaches,onConfigureCoachPower:openCoaches,
+          onOpenCoachDetails:openCoaches,onConfigureCoachPower:openNativeCoachPower,
           onAdaptRequirements:()=>perform(()=>editSquad("adapt")),
           onSave:()=>notify("Squadra evento salvata"),
           onSelectSquadSlot:slot=>perform(()=>editSquad("slot",slot))
@@ -588,7 +604,10 @@
         localSquad=clone(savedSlots[slot]||curr);squadSlots=savedSlots;
       } else if(kind==="coach"){
         if(arg&&!shared.coachOwnedIds.includes(arg))throw fail("halloween-coach-unowned");
-        curr.coachId=arg;
+        curr.coachId=arg;curr.coachPowerSelection=null;
+      } else if(kind==="coachPower"){
+        if(arg?.coachId!==curr.coachId)throw fail("halloween-coach-invalid");
+        curr.coachPowerSelection=clone(arg.coachPowerSelection||null);
       } else if(kind==="adapt"||kind==="formation"){
         const formationId=kind==="formation"?asId(arg):curr.formationId;
         const formations=global.RoadToGloryConfig?.season?.("ie1")?.formations||[];
@@ -633,7 +652,12 @@
       if(meta.teamIdentity)squad.teamIdentity=clone(meta.teamIdentity);
       let created=global.RoadToGloryMatchEngine.createMatch({seasonId:EVENT_ID,matchId,seed:matchId,nodeId:"event:occult-halloween",matchType:"event",attemptNumber:1,userSquad:squad,opponentSquad:opponent()});
       const state=activeEventSquad(),coach=global.RoadToGloryCoachPreMatchRuntime?.coachFor?.(state,"ie1")||"";
-      created=global.RoadToGloryCoachPowerRuntime?.applyToMatch?.(created,localSquad,state)||created;
+      created=global.RoadToGloryCoachPowerRuntime?.applyToMatch?.(created,localSquad,state,{
+        upgradeRarity:(player,targetRarity,cardId)=>global.RoadToGloryCoachRarityPower?.upgrade?.({
+          player,targetRarity,cardId,playerResolver:global.RoadToGloryPlayerResolver,
+          freeAgentsDb:data.freeAgents,seasonId:"ie1",squad:localSquad
+        })
+      })||created;
       if(coach){created.preMatchCoachId=coach;created.presentation={...(created.presentation||{}),preMatchPowerStatus:"pending"};}
       else created=global.RoadToGloryMatchEngine.prepareNext(created);
       created.presentation={...(created.presentation||{}),preMatchSeen:false};
