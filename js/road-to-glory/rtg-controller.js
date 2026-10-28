@@ -132,10 +132,7 @@
     }
     async function ensureData(){
       assertCurrent();const checkData=controllerFence?.checkpoint();
-      // Halloween assets are optional: a seasonal CDN failure must never block regular campaigns.
-      try { await global.RoadToGloryHalloween?.prepare?.(); }
-      catch (error) { global.console?.warn?.("[RTG Halloween] Seasonal assets unavailable; ordinary RTG remains playable", error); }
-      checkData?.();
+      global.RoadToGloryHalloween?.prepare?.()?.catch?.(error=>global.console?.warn?.("[RTG Halloween] Optional assets unavailable",error));
       const sid=activeSeasonId();
       seasonDb=global.SeasonRegistry?.database?.(sid)||seasonDb;
       if(!seasonDb||id(seasonDb?.seasonId||"ie1")!==sid){
@@ -160,8 +157,7 @@
       if(Array.isArray(direct))return direct.map(id);
       return (squadRuntime?.accessiblePlayerIds?.(args)||freeAgentIds).map(freeAgentCardId);
     }
-    function rawPlayer(cardRef){
-      const meta=cardMeta(cardRef);
+    function rawPlayer(cardRef){const meta=cardMeta(cardRef);
       if(meta.legacySeasonId===global.RoadToGloryHalloween?.EVENT_ID)return global.RoadToGloryHalloween.eventPlayer(meta.playerId);
       if(meta.sourceKind===cardIdentity?.FREE_AGENTS)return (freeAgentsDb?.players||[]).find(player=>id(player?.playerId||player?.id)===id(meta.playerId))||null;
       if(meta.legacySeasonId){
@@ -1014,20 +1010,13 @@
       }finally{pullBusy=false;}
     }
     let halloweenMode=null;
-    function openHalloween(){
-      if(!halloweenMode)halloweenMode=global.RoadToGloryHalloween.create({app,toast:deps.toast,onReturn:()=>renderCampaignSelect()});
-      return halloweenMode.open().catch(error=>{global.console?.error?.("[RTG Halloween]",error);deps.toast?.("Evento Halloween non disponibile","error");renderCampaignSelect();});
-    }
-    function renderCampaignSelect(){
-      halloweenMode?.dispose?.();
-      renderHtml(runView.campaignSelectorMarkup());
-      app?.querySelector?.("[data-rtg-halloween-open]")?.addEventListener("click",()=>openHalloween());
+    function openHalloween(){if(!halloweenMode)halloweenMode=global.RoadToGloryHalloween.create({app,toast:deps.toast,onReturn:()=>renderCampaignSelect()});return halloweenMode.open().catch(error=>{global.console?.error?.("[RTG Halloween]",error);deps.toast?.("Evento Halloween non disponibile","error");renderCampaignSelect();});}
+    function renderCampaignSelect(){halloweenMode?.dispose?.();
+      renderHtml(runView.campaignSelectorMarkup());app?.querySelector?.("[data-rtg-halloween-open]")?.addEventListener("click",()=>openHalloween());
       app?.querySelector?.("[data-rtg-campaign-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
       app?.querySelectorAll?.("[data-rtg-campaign]")?.forEach(button=>button.addEventListener("click",async()=>{
-        const campaignId=id(button.dataset.rtgCampaign);
-        repository.selectCampaign?.(campaignId);
-        campaign=null;seasonDb=null;rawPlayerById=new Map();squadSlotRuntime=null;albumController=null;vendingRuntime=null;
-        await open({destination:"run"});
+        const campaignId=id(button.dataset.rtgCampaign);repository.selectCampaign?.(campaignId);
+        campaign=null;seasonDb=null;rawPlayerById=new Map();squadSlotRuntime=null;albumController=null;vendingRuntime=null;await open({destination:"run"});
       }));
       return {selector:true};
     }
