@@ -69,7 +69,7 @@
         app,localStorage:global.localStorage,id,cardMeta,acquiredCardIdSet,getCampaign:()=>campaign,assertCurrent,
         getSeasonDb:()=>seasonDb,getFreeAgentsDb:()=>freeAgentsDb,activeSeasonId,config,cardIdentity,gacha,
         playerResolver,ensureSeason1Db:deps.ensureSeason1Db,ensureData,renderHtml,runView,
-        mountDevQuickTools,renderHome:deps.renderHome,openPlayerDetails:openRtgPlayerDetails,
+        mountDevQuickTools,renderHome:deps.renderHome,toast:deps.toast,openPlayerDetails:openRtgPlayerDetails,
         returnToVending:(mode)=>{renderRun();return openVending(mode);},openCoaches:(coachId)=>openCoaches("collection",coachId),
       });
       return albumController;
