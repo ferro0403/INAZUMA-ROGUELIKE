@@ -686,7 +686,9 @@
           if(typeof global.setTimeout==="function")await new Promise(resolve=>global.setTimeout(resolve,980));
           if(!deps.runView?.pullResultMarkup||!deps.openModal)return;
           let markup=deps.runView.pullResultMarkup(drawn.result,drawn.player,{teams:[{teamId:TEAM_ID,teamName:"Occult Halloween",logoUrl:LOGO_URL}]});
-          markup=markup.replace("SALDO RTG","ZUCCHE HALLOWEEN").replace(/(\d+) ◈/g,"$1 ZUCCHE")
+          markup=markup.replace("SALDO RTG","ZUCCHE HALLOWEEN")
+            .replace(/(<div class="rtg-pull-balance">[\s\S]*?<strong>)([\d.,]+) ◈(<\/strong>)/,
+              (_all,before,amount,after)=>before+'<img class="halloween-reveal-currency-icon" src="'+escape(PUMPKIN_URL)+'" alt=""> '+amount+' ZUCCHE'+after)
             .replace(/ROAD TO GLORY · LEGACY [^<]*/,"OCCULT · HALLOWEEN");
           deps.openModal(markup,{className:"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"});
           modalRoot()?.querySelector?.("[data-rtg-pull-continue]")?.addEventListener("click",()=>deps.closeModal?.());
