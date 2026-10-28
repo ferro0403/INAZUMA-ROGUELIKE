@@ -182,7 +182,7 @@
     </div>`;
   }
   function markup(state,{tab="draw",equippedId=""}={}){
-    const coaches=model().catalog(state),got=coaches.filter(c=>model().status(state,c.id)==="owned").length;
+    const coaches=model().catalog(state).sort((a,b)=>Number(Boolean(b.eventCoach))-Number(Boolean(a.eventCoach))),got=coaches.filter(c=>model().status(state,c.id)==="owned").length;
     return `<section class="rtg-coaches-window" aria-label="Allenatori"><header class="rtg-coaches-heading"><div><p class="eyebrow">ROAD TO GLORY · COLLEZIONE</p><h2>ALLENATORI</h2><p>${got} / ${coaches.length} ottenuti</p></div></header>
       <div class="rtg-coaches-tabs"><button type="button" class="${tab==="draw"?"active":""}" data-rtg-coaches-tab="draw">DISTRIBUTORE</button><button type="button" class="${tab==="collection"?"active":""}" data-rtg-coaches-tab="collection">COLLEZIONE</button></div>
       ${tab==="draw"?vending(state):`<div class="rtg-coaches-grid rtg-picker-grid">${coaches.map(c=>`<div class="rtg-coach-entry ${c.eventCoach?"rtg-coach-halloween":""} ${c.zukanId==="4763"?"is-rene":""} ${model().status(state,c.id)==="owned"?"is-unlocked":"is-locked"}">${card(c,model().status(state,c.id),equippedId===c.id)}${model().status(state,c.id)==="owned"?`<button type="button" class="rtg-coach-quick-equip" data-rtg-coaches-equip="${equippedId===c.id?"":esc(c.id)}" aria-label="${equippedId===c.id?"Rimuovi":"Assegna"} ${esc(c.name)}">${equippedId===c.id?"✓ ASSEGNATO":"＋ ASSEGNA"}</button>`:""}</div>`).join("")}</div>`}
@@ -211,10 +211,12 @@
     </div>`;
   }
   function albumMarkup(state){
-    const coaches=model().catalog(state),owned=model().owned(state),got=coaches.filter(c=>owned.has(c.id)).length,total=coaches.length;
+    // Pin the event card at the start: it must be visible on mobile without
+    // scrolling past the ten standard RTG coaches. Same album/card templates.
+    const coaches=model().catalog(state).sort((a,b)=>Number(Boolean(b.eventCoach))-Number(Boolean(a.eventCoach))),owned=model().owned(state),got=coaches.filter(c=>owned.has(c.id)).length,total=coaches.length;
     return `<main class="album-screen album-roster-screen album-roster-screen--modern rtg-album-roster-screen rtg-coaches-album">
       <header class="album-roster-hero"><div class="album-roster-hero__nav"><button type="button" class="btn section-root-button album-roster-back-button" data-rtg-album-coaches-back>←</button></div><div class="album-roster-hero__identity"><span class="album-team-logo album-roster-hero__logo">⚽</span><h1 class="album-roster-hero__name">ALLENATORI</h1></div><div class="album-roster-hero__stats"><span>${got} / ${total} allenatori sbloccati</span><strong class="album-roster-percent">${total?Math.round(100*got/total):0}%</strong></div><span class="album-roster-hero__bar"><span style="width:${total?100*got/total:0}%"></span></span></header>
-      <section class="album-player-grid album-player-grid--modern" data-rtg-album-coaches>${coaches.map(c=>`<div class="album-player-entry rtg-coach-album-entry ${c.eventCoach?"rtg-coach-halloween":""} ${c.zukanId==="4763"?"is-rene":""} ${owned.has(c.id)?"is-unlocked":"is-locked"}" data-rtg-album-coach-entry="${esc(c.id)}">${albumCard(c,model().status(state,c.id))}<span class="rtg-coach-album-status ${owned.has(c.id)?"is-owned":""}">${owned.has(c.id)?"✓ OTTENUTO":"🔒 BLOCCATO"}</span></div>`).join("")}</section>
+      <section class="album-player-grid album-player-grid--modern" data-rtg-album-coaches>${coaches.map(c=>`<div class="album-player-entry rtg-coach-album-entry ${c.eventCoach?"rtg-coach-halloween":""} ${c.zukanId==="4763"?"is-rene":""} ${owned.has(c.id)?"is-unlocked":"is-locked"}" data-rtg-album-coach-entry="${esc(c.id)}" ${c.eventCoach?'data-rtg-album-event-coach="true"':""}>${albumCard(c,model().status(state,c.id))}<span class="rtg-coach-album-status ${owned.has(c.id)?"is-owned":""}">${owned.has(c.id)?"✓ OTTENUTO":"🔒 BLOCCATO"}</span></div>`).join("")}</section>
     </main>`;
   }
   function result(coach,state=null){
