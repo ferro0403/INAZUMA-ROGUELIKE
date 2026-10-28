@@ -110,11 +110,13 @@ const squadView={
       '<div class="rtg-squad-slots">SQUADRA 1 · SQUADRA 2 · SQUADRA 3</div>'+
       model.lineup.map(id=>'<button data-rtg-player-detail="'+id+'">CARD</button>').join('')+
       '<button data-rtg-change-player="'+model.lineup[0]+'">CAMBIA</button>'+
+      '<button data-rtg-adapt>ADATTA AI REQUISITI</button>'+
       '<button data-rtg-tab="run">RUN</button><button data-rtg-tab="squad">SQUADRA</button></main>';
   },
   bind(root,actions){
     root.querySelectorAll("[data-rtg-player-detail]").forEach(el=>el.addEventListener("click",()=>actions.onOpenDetails(el.dataset.rtgPlayerDetail)));
     root.querySelectorAll("[data-rtg-change-player]").forEach(el=>el.addEventListener("click",()=>actions.onOpenPlayer(el.dataset.rtgChangePlayer)));
+    root.querySelectorAll("[data-rtg-adapt]").forEach(el=>el.addEventListener("click",actions.onAdaptRequirements));
   }
 };
 let nativeDetailOpened=false;
@@ -165,6 +167,29 @@ async function main() {
   assert.match(app.innerHTML,/SQUADRA 1/);
   assert.equal((app.innerHTML.match(/data-rtg-player-detail=/g)||[]).length,11,
     "Existing 7-player slot must be completed to 11 without dropping selected players");
+  // The adaptation button must avoid increasing an already compliant team.
+  const before=clone(controller.getState().shared);
+  await control("data-rtg-adapt").fire();
+  assert.deepEqual(controller.getState().shared,before,"Adapting a compliant team must be a no-op");
+  // Simulate a high-OVR team and lower-OVR available substitutions, on a
+  // real 11+4 saved roster; adaptation must meet the limit using the same roles.
+  const active=controller.getState().match;
+  assert.equal(active,null);
+  const savedSlot=records["local:halloween2026:squad"].slots["3"]||
+    {lineup:(app.innerHTML.match(/data-rtg-player-detail="([^"]+)"/g)||[]).map(x=>x.split('"')[1])};
+  // The previous incomplete slot is already repaired in RAM; trigger a
+  // temporary elevated test roster through the free-agent database.
+  const actualLineup=(app.innerHTML.match(/data-rtg-player-detail="([^"]+)"/g)||[]).map(x=>x.split('"')[1]);
+  assert.equal(actualLineup.length,11);
+  const selected=new Set(actualLineup);
+  freeAgents.players.forEach(p=>{p.overall=selected.has("free_agents::"+p.playerId)?96:70;});
+  await control("data-rtg-adapt").fire();
+  const repaired=records["local:halloween2026:squad"];
+  assert.equal(repaired.lineup.length,11,"Adapting must keep eleven starters");
+  assert.equal(repaired.bench.length,4,"Adapting must keep four substitutes");
+  assert.equal(new Set([...repaired.lineup,...repaired.bench]).size,15,"No duplicated cards after adapt");
+  const average=repaired.lineup.reduce((sum,id)=>sum+freeAgents.players.find(p=>id==="free_agents::"+p.playerId).overall,0)/11;
+  assert.ok(Math.round(average*10)/10<=87,"Adapt must respect Halloween OVR cap of 87");
   await control("data-rtg-player-detail").fire();
   assert.equal(nativeDetailOpened,true,"Player details must open original fullbody sheet");
   await control("data-rtg-tab",d=>d.rtgTab==="run").fire();
