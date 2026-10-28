@@ -115,6 +115,10 @@ async function main() {
   const identity=context.RoadToGloryCardIdentity.record({playerId:"45",legacySeasonId:"halloween2026"});
   assert.equal(identity.cardId,"halloween2026::45","SeasonRegistry must not alias event cards into Season 1");
   const assets=await E.prepare();
+  assert.equal(E.eventPlayer("45").attack,80,"Combat uses 0-100 RTG stats, not raw 1-10 values");
+  assert.equal(E.eventPlayer("45").stats.attack,80);
+  assert.equal(E.eventPlayer("45").frontFullbodyUrl?.includes("_fullbody.webp"),true,
+    "Existing canonical players must open their true fullbody art");
   assert.equal(assets.players.size,18);
   assert.equal(assets.setup.startingXI.length,11);
   assert.equal(Object.keys(assets.moves.players).length,18);
