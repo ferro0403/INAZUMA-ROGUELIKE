@@ -256,7 +256,13 @@
         (!can?'<p class="halloween-squad-requirement">La tua squadra: '+(own??"—")+' OVR · limite '+limit+' · 11 titolari e 4 riserve. <button data-halloween-tab="squad">GESTISCI SQUADRA →</button></p>':'')+
         '<div class="rtg-journey-progress" role="progressbar" aria-valuenow="1" aria-valuemin="0" aria-valuemax="1"><span style="width:100%"></span></div></section>'+
         '<section class="panel rtg-run-command halloween-original-command halloween-vending-banner">'+
-        '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>DISTRIBUTORE HALLOWEEN</button></section>';
+        '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>HW</button></section>'+
+        '<section class="halloween-play-banner" aria-label="Sfida Occult Halloween">'+
+        '<div class="halloween-play-banner-copy"><small>SFIDA A TEMPO · OCCULT</small><h2>IL CIMITERO STREGATO</h2>'+
+        '<p>Affronta Occult Halloween prima della fine dell’evento.</p></div>'+
+        '<button type="button" class="btn btn-yellow" data-halloween-start '+(!isOpen()||!can||match?'disabled':'')+'>GIOCA LA PARTITA →</button>'+
+        (match?'<button type="button" class="btn btn-yellow" data-halloween-resume>RIPRENDI LA PARTITA →</button>':'')+
+        '</section>';
 
     }
     function squadSection() {
@@ -285,7 +291,7 @@
         '<div class="rtg-vending-crank-v9"><span></span></div><div class="rtg-vending-chute-v9"><span class="rtg-vending-chute-well-v9"></span><span class="rtg-vending-chute-flap-v10"></span><div class="rtg-vending-prize-track-v9"><span class="rtg-vending-prize-v9"></span></div></div><div class="rtg-vending-brand-v9">🎃</div></div></div>'+
         '<button class="btn btn-yellow rtg-vending-pull halloween-action" data-halloween-pull '+(!isOpen()||!enough||available.length===0?"disabled":"")+'>GIRA · '+currency(PRICE)+'</button>'+
         '<div class="rtg-vending-wallet-chip"><span>ZUCCHE HALLOWEEN</span><strong>'+currency(shared.halloween.pumpkins)+'</strong></div></div></div>'+
-        '<p>Samford e Nathan Swift: 4% ciascuno finché sono entrambi disponibili. Nessun duplicato.</p><p>Giocatori rimasti: '+available.length+' / 18</p></div>';
+        '</div>';
     }
     function albumSection() {
       const roster=Array.from(assets.players.keys()).map(pid=>player(pid));
