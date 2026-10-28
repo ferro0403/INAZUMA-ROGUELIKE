@@ -116,7 +116,7 @@
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
     function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null; }
     function listen() { if(tick!=null)global.clearInterval?.(tick);tick=global.setInterval?.(()=>{const el=app?.querySelector?.("[data-halloween-countdown]"); if(el)el.textContent=isOpen()?countdown():"EVENTO TERMINATO";if(!isOpen())app?.querySelectorAll?.("[data-halloween-start],[data-halloween-pull]")?.forEach(b=>b.disabled=true);},1000); }
-    function readAccount(record) { const current = record || {}; return {tokens:current.tokens||0,gachaAcquiredCards:current.gachaAcquiredCards||[],developmentByCardId:current.developmentByCardId||{},coachOwnedIds:current.coachOwnedIds||[],halloween:eventState(current.halloween)}; }
+    function readAccount(record) { const current = record || {}; return {...clone(current),tokens:current.tokens??0,gachaAcquiredCards:current.gachaAcquiredCards||[],developmentByCardId:current.developmentByCardId||{},coachOwnedIds:current.coachOwnedIds||[],halloween:eventState(current.halloween)}; }
     function lock() { global.RoadToGloryPersistence?.assertWritable?.(); global.PersistenceRecoveryGuard?.assertWritable?.(); }
     async function load() {
       const records = await storage.readMany([SHARED_KEY,SQUAD_KEY,MATCH_KEY]);
@@ -323,7 +323,7 @@
       const p=player(selected);
       notify("🎃 Sbloccato: "+(p?.name||selected)+"! Disponibile in tutte le Season.");
     }
-    async function open() {
+    async function open(initialView="match") {
       dispose();const epoch=session;
       await prepare();assertCurrent(epoch);
       const previous=global.SeasonRegistry?.activeId?.();
@@ -334,7 +334,7 @@
       if(!response.ok)throw fail("halloween-free-agent-data-unavailable");
       const freeAgents=await response.json();assertCurrent(epoch);
       data={freeAgents};await load();assertCurrent(epoch);
-      view="match";render();listen();
+      view=initialView==="album"?"album":"match";render();listen();
     }
     return Object.freeze({open,render,dispose,getState:()=>({shared:shared&&clone(shared),match:match&&clone(match)})});
   }
