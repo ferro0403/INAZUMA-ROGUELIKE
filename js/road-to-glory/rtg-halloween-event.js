@@ -258,24 +258,34 @@
        '<div class="content narrow rtg-run-content halloween-original-content">'+body+'</div>'+footer("run")+'</main>';
     }
     function matchSection() {
-      const target=opponentOverall(),ours=resolvedUser(),own=ovr(ours?.lineup),limit=target+1,can=Boolean(ours&&own!==null&&own<=limit);
-      return '<section class="rtg-journey-summary halloween-journey-summary" aria-label="Prossima partita Evento Halloween">'+
-        '<div class="rtg-journey-main"><div class="rtg-journey-copy"><p class="eyebrow">LA TUA PROSSIMA PARTITA</p><h1>OCCULT HALLOWEEN</h1>'+
-        '<p>SFIDA EVENTO · OVR AVVERSARIO '+target+' · MASSIMO '+limit+'</p></div><div class="rtg-journey-opponent"><img src="'+escape(LOGO_URL)+'" alt="Occult"></div></div>'+
-        '<button type="button" class="btn btn-yellow" data-halloween-start '+(!isOpen()||!can||match?'disabled':'')+'>PREPARA PARTITA →</button>'+
-        (match?'<button type="button" class="btn btn-yellow" data-halloween-resume>RIPRENDI PARTITA →</button>':'')+
-        (!can?'<p class="halloween-squad-requirement">La tua squadra: '+(own??"—")+' OVR · limite '+limit+' · 11 titolari e 4 riserve. <button data-halloween-tab="squad">GESTISCI SQUADRA →</button></p>':'')+
-        '<div class="rtg-journey-progress" role="progressbar" aria-valuenow="1" aria-valuemin="0" aria-valuemax="1"><span style="width:100%"></span></div></section>'+
-        '<section class="panel rtg-run-command halloween-original-command halloween-vending-banner">'+
-        '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>DISTRIBUTORE STREGATO · '+PRICE+' ZUCCHE</button></section>'+
-        '<section class="halloween-play-banner" aria-label="Sfida Occult Halloween">'+
-        '<div class="halloween-play-banner-copy"><small>SFIDA A TEMPO · OCCULT</small><h2>IL CIMITERO STREGATO</h2>'+
-        '<p>Affronta Occult Halloween prima della fine dell’evento.</p></div>'+
-        '<img class="halloween-play-crest" src="'+escape(LOGO_URL)+'" alt="Stemma Occult Halloween">'+
-        '<button type="button" class="btn btn-yellow" data-halloween-start '+(!isOpen()||!can||match?'disabled':'')+'>GIOCA LA PARTITA →</button>'+
-        (match?'<button type="button" class="btn btn-yellow" data-halloween-resume>RIPRENDI LA PARTITA →</button>':'')+
+      const target=opponentOverall(),ours=resolvedUser(),own=ovr(ours?.lineup),limit=target+1;
+      const eligible=Boolean(ours&&own!==null&&own<=limit),active=Boolean(match),open=isOpen();
+      const overLimit=own!==null&&own>limit;
+      const status=active?"PARTITA IN CORSO":!ours?"FORMAZIONE INCOMPLETA":overLimit?"LIMITE SUPERATO":"PRONTA PER LA SFIDA";
+      const statusMessage=overLimit?"Riduci l'overall della tua formazione per giocare.":!ours?"Completa gli 11 titolari e le 4 riserve.":"Affronta Occult Halloween prima della fine dell'evento.";
+      const mainAction=active
+        ? '<button type="button" class="btn btn-yellow halloween-event-main-cta" data-halloween-resume>RIPRENDI PARTITA →</button>'
+        :eligible&&open
+          ? '<button type="button" class="btn btn-yellow halloween-event-main-cta" data-halloween-start>PREPARA PARTITA →</button>'
+          :!open
+            ? '<button type="button" class="btn btn-yellow halloween-event-main-cta" disabled>EVENTO TERMINATO</button>'
+            : '<button type="button" class="btn btn-yellow halloween-event-main-cta" data-halloween-tab="squad">SISTEMA LA SQUADRA →</button>';
+      return '<section class="rtg-journey-summary halloween-journey-summary halloween-event-hero" aria-label="Prossima partita Halloween">'+
+        '<div class="halloween-event-hero-top"><div class="halloween-event-hero-copy">'+
+        '<p class="eyebrow">SFIDA EVENTO · IL CIMITERO STREGATO</p><h1>OCCULT<br>HALLOWEEN</h1>'+
+        '<p>La sfida di Halloween contro la squadra Occult.</p></div>'+
+        '<img class="halloween-event-hero-crest" src="'+escape(LOGO_URL)+'" alt="Stemma Occult Halloween"></div>'+
+        '<div class="halloween-event-ovr-strip" aria-label="Requisiti overall">'+
+        '<div><span>OVR AVVERSARIO</span><strong>'+target+'</strong></div>'+
+        '<div><span>OVR MASSIMO</span><strong>'+limit+'</strong></div>'+
+        '<div class="'+(overLimit?"is-over-limit":!ours?"is-incomplete":"is-eligible")+'"><span>LA TUA SQUADRA</span><strong>'+escape(own??"—")+'</strong></div></div>'+
+        '<div class="halloween-event-status '+(overLimit||!ours?"is-warning":"is-ready")+'"><strong>'+status+'</strong><span>'+statusMessage+'</span></div>'+
+        mainAction+'</section>'+
+        '<section class="panel rtg-run-command halloween-vending-banner halloween-vending-teaser" aria-label="Distributore stregato">'+
+        '<div class="halloween-vending-teaser-copy"><span class="eyebrow">CAPSULE HALLOWEEN</span>'+
+        '<h2>DISTRIBUTORE STREGATO</h2><p>1 capsula · '+PRICE+' zucche</p></div>'+
+        '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>APRI DISTRIBUTORE →</button>'+
         '</section>';
-
     }
     function squadSection() {
       const view=deps.squadView;
