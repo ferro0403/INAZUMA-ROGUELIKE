@@ -216,7 +216,12 @@
 .rtg-halloween-run-screen .halloween-map-crest{
   filter:sepia(.17) saturate(.5) hue-rotate(295deg) brightness(.65) contrast(1.6) drop-shadow(0 0 8px #ee2539a5)!important
 }
-.halloween-native-match [data-side="opponent"] img:not([src*="custom_0001"]):not([src*="custom_0002"]){filter:sepia(.17) saturate(.6) hue-rotate(300deg) brightness(.67) contrast(1.35)!important}
+/* Player-specific vampire selector: data URLs do not contain character IDs. */
+.player-card.halloween-vampire-player .player-portrait,
+.halloween-native-match .halloween-vampire-player .player-portrait,
+.player-detail-visual.halloween-vampiro .player-fullbody{
+ filter:sepia(.17) saturate(.6) hue-rotate(300deg) brightness(.72) contrast(1.35) drop-shadow(0 0 7px #e84156)!important
+}
 
 /* Only Halloween player cards are seasonal. Normal RTG and free-agent cards
    retain the exact original rarity colors, portraits and compact geometry. */
