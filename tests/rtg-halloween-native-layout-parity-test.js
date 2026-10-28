@@ -76,6 +76,8 @@ for (const filename of ["halloween-nathan-fullbody.png","halloween-samford-fullb
   assert.ok(halloweenCss.includes('img.player-fullbody--fullbody[src$="'+filename+'"]'),
     "Only the two custom Halloween fullbody images must receive the sizing override");
 }
-assert.match(halloweenCss,/height:61%!important;[\\s\\S]*?max-height:61%!important;[\\s\\S]*?transform:translateX\\(-50%\\) scale\\(1\\)!important;/,
+assert.ok(halloweenCss.includes("height:61%!important;") &&
+  halloweenCss.includes("max-height:61%!important;") &&
+  halloweenCss.includes("transform:translateX(-50%) scale(1)!important;"),
   "Both custom fullbodies must fit inside the hero without the default RTG enlargement");
 console.log("RTG Halloween parity: 11 starters + 4 bench, original squad markup, tagged vampire duel render PASS");
