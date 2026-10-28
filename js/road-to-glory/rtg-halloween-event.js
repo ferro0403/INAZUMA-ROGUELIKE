@@ -675,7 +675,7 @@
             try{await vendingMotion.play(capsuleColour);}
             catch(error){global.console?.warn?.("[Halloween] Animazione distributore",error);}
           }else if(machine){
-            machine.classList.add("is-turning");
+            machine.classList?.add?.("is-turning");
             if(typeof global.setTimeout==="function")await new Promise(resolve=>global.setTimeout(resolve,620));
           }
           if(machine?.classList)machine.classList.add("is-revealing");
