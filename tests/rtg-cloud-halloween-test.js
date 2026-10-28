@@ -67,14 +67,10 @@ const context={
       url.includes("occult-lineup")?data[1]:
       url.includes("occult-moves")?data[2]:freeAgents
   }),
-  SeasonRegistry:{activeId:()=>"ie1",loadDatabase:async()=>({}),setActive(){}},
+  SeasonRegistry:{activeId:()=>"ie1",loadDatabase:async()=>({}),setActive(){},normalizeSeasonId:id=>["ie1","ie1_s2","ie1_s3","ie2","orion"].includes(id)?id:"ie1"},
   RoadToGloryPersistence:{assertWritable(){}},
   PersistenceRecoveryGuard:{assertWritable(){}},
   RoadToGloryStorage:{create:()=>storage},
-  RoadToGloryCardIdentity:{
-    cardIdForFreeAgent:id=>"free_agents::"+id,
-    record:({playerId,legacySeasonId})=>({cardId:legacySeasonId+"::"+playerId,playerId,legacySeasonId})
-  },
   RoadToGloryPlayerResolver:{
     resolveOwnedAtLevel20(cardId,_season,_role,db){
       const p=db.players.find(x=>cardId==="free_agents::"+x.playerId);
@@ -89,6 +85,7 @@ const context={
   },
   RoadToGloryRng:{int:()=>0}
 };
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-cloud-snapshot.js","utf8"),context);
@@ -115,6 +112,8 @@ function control(attr,predicate=()=>true) {
   return (app.controls[attr]||[]).find(x=>predicate(x.dataset));
 }
 async function main() {
+  const identity=context.RoadToGloryCardIdentity.record({playerId:"45",legacySeasonId:"halloween2026"});
+  assert.equal(identity.cardId,"halloween2026::45","SeasonRegistry must not alias event cards into Season 1");
   const assets=await E.prepare();
   assert.equal(assets.players.size,18);
   assert.equal(assets.setup.startingXI.length,11);
