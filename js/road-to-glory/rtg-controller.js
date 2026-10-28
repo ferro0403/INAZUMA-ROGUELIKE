@@ -1009,7 +1009,7 @@
       return result;
       }finally{pullBusy=false;}
     }
-    let halloweenMode=null;function openHalloween(){if(!halloweenMode)halloweenMode=global.RoadToGloryHalloween.create({app,toast:deps.toast,onReturn:()=>renderCampaignSelect(),squadView:deps.squadView,runView:deps.runView,compactPlayerCardMarkup:deps.compactPlayerCardMarkup,showPlayerDetailsFor:deps.showPlayerDetailsFor,openModal:deps.openModal,closeModal:deps.closeModal,getModalRoot:deps.getModalRoot,getUserTeamMeta:deps.getUserTeamMeta});return halloweenMode.open().catch(error=>{global.console?.error?.("[RTG Halloween]",error);deps.toast?.("Evento Halloween non disponibile","error");renderCampaignSelect();});}
+    let halloweenMode=null;function openHalloween(){if(!halloweenMode)halloweenMode=global.RoadToGloryHalloween.create({app,toast:deps.toast,onReturn:()=>renderCampaignSelect(),squadView:deps.squadView,runView:deps.runView,matchView:deps.matchView,compactPlayerCardMarkup:deps.compactPlayerCardMarkup,showPlayerDetailsFor:deps.showPlayerDetailsFor,openModal:deps.openModal,closeModal:deps.closeModal,getModalRoot:deps.getModalRoot,getUserTeamMeta:deps.getUserTeamMeta});return halloweenMode.open().catch(error=>{global.console?.error?.("[RTG Halloween]",error);deps.toast?.("Evento Halloween non disponibile","error");renderCampaignSelect();});}
     function renderCampaignSelect(){halloweenMode?.dispose?.();
       renderHtml(runView.campaignSelectorMarkup());app?.querySelector?.("[data-rtg-halloween-open]")?.addEventListener("click",()=>openHalloween());
       app?.querySelector?.("[data-rtg-campaign-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
