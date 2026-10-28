@@ -332,8 +332,8 @@
       if(["completed","completed-draw","abandoned"].includes(match.status))
         return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+v.resultMarkup(match,null)+
           '<p class="halloween-event-reward">🎃 '+(match.halloweenAward||PRIZE)+' ZUCCHE HALLOWEEN</p></div></main>';
-      if(match.presentation?.preMatchSeen===false)return v.preMatchMarkup(match);
-      return v.matchMarkup(match);
+      if(match.presentation?.preMatchSeen===false)return v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
+      return v.matchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
     }
     function bindNativeMatch(){
       const v=deps.matchView,m=match;
@@ -374,6 +374,7 @@
         onPenaltyMove:index=>perform(()=>stepMatch("penalty-move:"+index)),
         onContinue:()=>perform(closeResult),
       });
+      if(!done&&m.presentation?.preMatchPowerStatus==="pending"&&m.presentation?.preMatchSeen===false)openNativePreMatchCoachPower();
       if(!done&&m.status==="halftime"){
         app.querySelectorAll?.("[data-rtg-half-lineup]")?.forEach(b=>b.addEventListener("click",()=>{
           halfSelected=halfSelected===b.dataset.rtgHalfLineup?"":b.dataset.rtgHalfLineup;render();
@@ -406,7 +407,7 @@
           const epoch=session;
           const curr=match;
           const chosen=skip?global.RoadToGloryCoachPreMatchRuntime.skip(curr):
-            global.RoadToGloryCoachPreMatchRuntime.apply(curr,selection);
+            global.RoadToGloryCoachPreMatchRuntime.apply(curr,curr.preMatchCoachId,selection);
           await storage.updateMany([MATCH_KEY],records=>{
             if(records[MATCH_KEY]?.matchId!==id)throw fail("halloween-stale-match");
             return {writes:{[MATCH_KEY]:chosen},value:true};
@@ -488,13 +489,25 @@
       modalRoot()?.querySelectorAll?.("[data-rtg-catalog-role]")?.forEach(b=>b.addEventListener("click",()=>{role=b.dataset.rtgCatalogRole;updateResults();}));
     }
     function openCoaches() {
-      if(!deps.openModal)return;
-      const coaches=Object.values(global.RoadToGloryCoaches?.BY_ID||{}).filter(c=>shared.coachOwnedIds.includes(asId(c.id)));
-      const choices=coaches.map(c=>'<button type="button" class="btn" data-halloween-coach="'+escape(c.id)+'">'+escape(c.name||c.displayName||c.id)+'</button>').join("");
-      deps.openModal('<section class="rtg-paper-modal rtg-halloween-coaches"><p class="eyebrow">ALLENATORI RTG</p><h2>Allenatore evento</h2><button type="button" class="btn" data-halloween-coach="">Nessuno</button>'+choices+'</section>',{className:"rtg-modal rtg-halloween-picker"});
-      modalRoot()?.querySelectorAll?.("[data-halloween-coach]")?.forEach(btn=>btn.addEventListener("click",()=>perform(async()=>{
-        await editSquad("coach",btn.dataset.halloweenCoach);deps.closeModal?.();
-      })));
+      const view=global.RoadToGloryCoachesView;
+      if(!deps.openModal||!view?.markup)return notify("Catalogo allenatori RTG non disponibile","error");
+      function openCollection(){
+        deps.openModal(view.markup(activeEventSquad(),{tab:"collection",equippedId:localSquad.coachId||""}),
+          {className:"rtg-modal rtg-coaches-modal rtg-halloween-picker"});
+        const root=modalRoot();
+        root?.querySelectorAll?.("[data-rtg-coaches-equip]")?.forEach(btn=>btn.addEventListener("click",()=>perform(async()=>{
+          await editSquad("coach",btn.dataset.rtgCoachesEquip);deps.closeModal?.();
+        })));
+        root?.querySelectorAll?.("[data-rtg-coach-detail]")?.forEach(btn=>btn.addEventListener("click",()=>{
+          const id=btn.dataset.rtgCoachDetail;
+          deps.openModal(view.detail(activeEventSquad(),id,{equippedId:localSquad.coachId||""}),
+            {className:"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"});
+          modalRoot()?.querySelectorAll?.("[data-rtg-coaches-equip]")?.forEach(b=>b.addEventListener("click",()=>perform(async()=>{
+            await editSquad("coach",b.dataset.rtgCoachesEquip);deps.closeModal?.();
+          })));
+        }));
+      }
+      openCollection();
     }
     function render() {
       if(!app)return;
@@ -601,7 +614,14 @@
       if(global.RtgFourMovesRuntime && !(await global.RtgFourMovesRuntime.ready))throw fail("halloween-move-catalog-not-ready");
       const epoch=session;
       const matchId="halloween-2026:"+String(global.crypto?.randomUUID?.()||Date.now()+"-"+Math.random());
-      const created=global.RoadToGloryMatchEngine.createMatch({seasonId:EVENT_ID,matchId,seed:matchId,nodeId:"event:occult-halloween",matchType:"event",attemptNumber:1,userSquad:squad,opponentSquad:opponent()});
+      const meta=deps.getUserTeamMeta?.()||{};
+      squad.name=meta.name||"La tua squadra";
+      if(meta.teamIdentity)squad.teamIdentity=clone(meta.teamIdentity);
+      let created=global.RoadToGloryMatchEngine.createMatch({seasonId:EVENT_ID,matchId,seed:matchId,nodeId:"event:occult-halloween",matchType:"event",attemptNumber:1,userSquad:squad,opponentSquad:opponent()});
+      const state=activeEventSquad(),coach=global.RoadToGloryCoachPreMatchRuntime?.coachFor?.(state,"ie1")||"";
+      created=global.RoadToGloryCoachPowerRuntime?.applyToMatch?.(created,localSquad,state)||created;
+      if(coach){created.preMatchCoachId=coach;created.presentation={...(created.presentation||{}),preMatchPowerStatus:"pending"};}
+      else created=global.RoadToGloryMatchEngine.prepareNext(created);
       created.presentation={...(created.presentation||{}),preMatchSeen:false};
       lock();
       await storage.updateMany([MATCH_KEY],records=>{if(records[MATCH_KEY]!=null)throw fail("halloween-active-match");return {writes:{[MATCH_KEY]:created},value:true};});
