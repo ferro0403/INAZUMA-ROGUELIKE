@@ -41,4 +41,50 @@ assert.strictEqual(state.developmentByCardId["ie1::mark"].targetPotential,99);
 assert.strictEqual(state.developmentByCardId["ie1::mark"].currentRarity,"Aurico");
 assert.strictEqual(state.developmentByCardId["ie1_s2::mark"],undefined,"season cards must evolve independently");
 assert.strictEqual(E.previewEvolution(state,{cardId:"free_agents::mark",basePotential:65,baseRarity:"Debole"}).ok,false,"free agents are not RTG development targets");
+// Regression: Halloween cards have no compact progressionCode, but their
+// already committed RTG evolutions must update OVR/stats via the canonical
+// progression helper. No second purchase or mutation on read.
+vm.runInContext(fs.readFileSync("js/roguelike_progression.js","utf8"),c,{filename:"roguelike_progression.js"});
+const eventRaw=JSON.parse(fs.readFileSync("data/rtg-halloween-occult-players.json","utf8"))[0].players;
+const sourceEvent=pid=>{
+  const raw=eventRaw.find(p=>String(p.playerId)===String(pid));
+  const keys=["attack","control","speed","grit","physical","stamina","defense","save"];
+  const stats=Object.fromEntries(keys.map(key=>[key,Number(raw[key]||0)*10]));
+  return {...raw,...stats,stats,baseStats:stats,cardId:"halloween2026::"+pid,legacySeasonId:"halloween2026",
+    finalOverall:Number(raw.overall),category:raw.category,finalRarity:raw.category,
+    level:20,normalizedRole:raw.position};
+};
+c.RoadToGloryHalloween={EVENT_ID:"halloween2026",eventPlayer:sourceEvent};
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-player-resolver.js","utf8"),c,{filename:"rtg-player-resolver.js"});
+const resolver=c.RoadToGloryPlayerResolver;
+let account={tokens:4500,projects:{Elite:1,Aurico:1},
+  gachaAcquiredCards:[{cardId:"halloween2026::38"},{cardId:"halloween2026::custom_0001"}],
+  developmentByCardId:{}};
+const johnId="halloween2026::38",swiftId="halloween2026::custom_0001";
+const johnBefore=resolver.resolveOwnedAtLevel20(johnId,"ie1",null,null,account.developmentByCardId);
+const swiftBefore=resolver.resolveOwnedAtLevel20(swiftId,"ie1",null,null,account.developmentByCardId);
+assert.strictEqual(johnBefore.overall,83);
+assert.strictEqual(swiftBefore.overall,96);
+const johnEvolution=E.evolve(account,{cardId:johnId,basePotential:83,baseRarity:"Forte",expectedTarget:"Elite"});
+assert.strictEqual(johnEvolution.ok,true);
+account=johnEvolution.state;
+const johnAfter=resolver.resolveOwnedAtLevel20(johnId,"ie1",null,null,account.developmentByCardId);
+assert.strictEqual(johnAfter.overall,85,"Nathan Jones Forte→Elite must show the paid +2 OVR");
+assert.strictEqual(johnAfter.finalOverall,85);
+assert.strictEqual(johnAfter.category,"Elite");
+assert.strictEqual(johnAfter.stats.save>=johnBefore.stats.save,true);
+assert.strictEqual(resolver.resolveOwnedAtLevel20(johnId,"orion",null,null,account.developmentByCardId).overall,85,
+  "RTG development from shared account is visible across campaigns");
+const swiftEvolution=E.evolve(account,{cardId:swiftId,basePotential:96,baseRarity:"Leggenda",expectedTarget:"Aurico"});
+assert.strictEqual(swiftEvolution.ok,true);
+account=swiftEvolution.state;
+const swiftAfter=resolver.resolveOwnedAtLevel20(swiftId,"ie1",null,null,account.developmentByCardId);
+assert.strictEqual(swiftAfter.overall,99,"Nathan Swift Leggenda→Aurico must show +3 OVR");
+assert.strictEqual(swiftAfter.category,"Aurico");
+const accountBeforeRead=JSON.stringify(account);
+resolver.resolveOwnedAtLevel20(johnId,"ie1",null,null,account.developmentByCardId);
+resolver.resolveOwnedAtLevel20(swiftId,"ie1",null,null,account.developmentByCardId);
+assert.strictEqual(JSON.stringify(account),accountBeforeRead,"Resolution is pure: never charge evolution resources twice");
+assert.strictEqual(sourceEvent("38").overall,83,"Opposing event players and original source remain unmodified");
+assert.strictEqual(sourceEvent("custom_0001").overall,96,"Match opposition uses unmodified event assets");
 console.log("rtg-economy-test: PASS");
