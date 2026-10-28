@@ -592,13 +592,151 @@
   left:55%!important;
   right:auto!important;
   top:auto!important;
-  bottom:7%!important;
+  bottom:4%!important;
   width:100%!important;
-  height:61%!important;
+  height:69%!important;
   max-width:100%!important;
-  max-height:61%!important;
+  max-height:69%!important;
   object-fit:contain!important;
   object-position:center bottom!important;
   transform:translateX(-50%) scale(1)!important;
   transform-origin:center bottom!important;
+}
+
+/* Event home refresh: one challenge, one capsule station, no duplicate CTA.
+   Keep canonical RTG navigation, storage and match UI. */
+.rtg-halloween-run-screen .halloween-original-content{
+  width:min(100%,760px)!important;
+  max-width:760px!important;
+  margin-inline:auto!important;
+  padding:20px 16px 188px!important;
+  background:transparent!important;
+}
+.rtg-halloween-run-screen .halloween-event-hero{
+  display:block!important;
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:hidden!important;
+  margin:8px 0 18px!important;
+  padding:26px 24px 24px!important;
+  min-height:0!important;
+  border:3px solid #fd922d!important;
+  border-radius:4px!important;
+  background:
+    linear-gradient(107deg,rgba(19,13,23,.97) 0%,rgba(27,15,26,.94) 48%,rgba(45,19,23,.82) 100%),
+    url("https://static9.depositphotos.com/1014889/1236/i/450/depositphotos_12367834-stock-photo-halloween-background-spooky-graveyard.jpg")
+    center 45%/cover no-repeat!important;
+  box-shadow:8px 9px 0 #0a090f, inset 0 0 0 1px #ffae453d!important;
+}
+.rtg-halloween-run-screen .halloween-event-hero::before{
+  content:"";position:absolute;right:-80px;top:-75px;width:260px;height:260px;
+  background:radial-gradient(circle,#ff852b32,transparent 70%);pointer-events:none;z-index:-1
+}
+.halloween-event-hero-top{
+  display:grid;grid-template-columns:minmax(0,1fr) 100px;
+  gap:10px;align-items:center;min-width:0;padding-bottom:18px
+}
+.halloween-event-hero-copy{min-width:0}
+.rtg-halloween-run-screen .halloween-event-hero-copy .eyebrow{
+  margin:0 0 13px!important;color:#ffb668!important;
+  font-size:.71rem!important;font-weight:950!important;letter-spacing:.14em!important
+}
+.rtg-halloween-run-screen .halloween-event-hero-copy h1{
+  margin:0 0 12px!important;color:#fff2dd!important;
+  font-size:clamp(1.95rem,6.6vw,3.05rem)!important;
+  font-weight:1000!important;letter-spacing:-.03em!important;
+  line-height:.96!important;text-shadow:3px 4px 0 #08070d!important
+}
+.rtg-halloween-run-screen .halloween-event-hero-copy>p:last-child{
+  color:#edd7c9!important;font-size:.9rem!important;line-height:1.4!important;
+  margin:0!important;max-width:340px
+}
+.halloween-event-hero-crest{
+  width:100%;max-width:105px;aspect-ratio:1;object-fit:contain;
+  border:3px solid #ffa33e;background:#fef8e8;
+  box-shadow:5px 5px 0 #0a0a10;
+  padding:8px;filter:none!important
+}
+.halloween-event-ovr-strip{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;padding:14px 0;border-top:1px solid #ffb55e65;
+  border-bottom:1px solid #ffb55e65
+}
+.halloween-event-ovr-strip>div{
+  min-width:0;padding:12px 9px 10px;
+  border:1px solid #9b5736;background:#140e19e8;
+  display:flex;flex-direction:column;justify-content:space-between;gap:7px
+}
+.halloween-event-ovr-strip>div>span{
+  font-size:.6rem;letter-spacing:.065em;font-weight:950;color:#edc5a2;
+  line-height:1.2;min-height:2.2em
+}
+.halloween-event-ovr-strip>div>strong{
+  font-size:clamp(1.4rem,5vw,1.85rem);line-height:1;color:#fff4e8;font-weight:1000
+}
+.halloween-event-ovr-strip .is-eligible{border-color:#5cbd78;background:#10251e}
+.halloween-event-ovr-strip .is-eligible strong{color:#b1f4b5}
+.halloween-event-ovr-strip .is-incomplete,
+.halloween-event-ovr-strip .is-over-limit{border-color:#ff7468;background:#39191e}
+.halloween-event-ovr-strip .is-incomplete strong,
+.halloween-event-ovr-strip .is-over-limit strong{color:#ff9990}
+.halloween-event-status{
+  margin:15px 0 18px;padding:12px 14px;
+  display:flex;flex-direction:column;gap:4px;
+  background:#1d221e;border-left:4px solid #77c48c
+}
+.halloween-event-status strong{color:#b8f0b9;font-size:.72rem;letter-spacing:.12em}
+.halloween-event-status span{color:#f2e3d3;font-size:.85rem;line-height:1.4}
+.halloween-event-status.is-warning{background:#351b1d;border-left-color:#ff8a61}
+.halloween-event-status.is-warning strong{color:#ffb49b}
+.rtg-halloween-run-screen .halloween-event-main-cta{
+  display:block!important;width:100%!important;min-height:66px!important;
+  margin:0!important;font-size:1.05rem!important;
+  border:2px solid #ffb05f!important
+}
+.rtg-halloween-run-screen .halloween-vending-teaser{
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;gap:15px!important;
+  min-height:0!important;margin:0 0 20px!important;
+  padding:20px!important;
+  background:linear-gradient(125deg,#21131b 0%,#381a19 100%)!important;
+  border:2px solid #fc8e30!important;
+  box-shadow:6px 7px 0 #09080e!important;
+}
+.halloween-vending-teaser-copy{min-width:0!important}
+.halloween-vending-teaser-copy .eyebrow{
+  display:block;font-size:.64rem!important;letter-spacing:.14em!important;
+  color:#ffad62!important;margin:0 0 8px!important
+}
+.rtg-halloween-run-screen .halloween-vending-teaser-copy h2{
+  color:#fff0db!important;font-size:clamp(1.04rem,3.9vw,1.35rem)!important;
+  line-height:1.15!important;margin:0 0 8px!important
+}
+.rtg-halloween-run-screen .halloween-vending-teaser-copy p{
+  color:#ffbd75!important;font-size:.86rem!important;font-weight:850!important;margin:0!important
+}
+.rtg-halloween-run-screen .halloween-vending-teaser .rtg-vending-button{
+  flex:0 0 auto!important;width:auto!important;max-width:100%!important;
+  min-height:54px!important;padding:11px 14px!important;
+  font-size:.78rem!important;white-space:nowrap!important
+}
+/* The native requirement value must never look valid when OVR exceeds the cap. */
+.halloween-squad-mode .rtg-requirement.bad strong,
+.halloween-squad-mode .rtg-requirement.bad strong *{
+  color:#c32b26!important;
+  background-color:#fff0ec!important
+}
+.halloween-squad-mode .rtg-requirement.ok strong{color:#17783c!important}
+@media(max-width:520px){
+  .rtg-halloween-run-screen .halloween-original-content{padding:14px 13px 180px!important}
+  .rtg-halloween-run-screen .halloween-event-hero{padding:19px 16px 18px!important}
+  .halloween-event-hero-top{grid-template-columns:minmax(0,1fr) 80px!important}
+  .halloween-event-hero-crest{max-width:80px}
+  .halloween-event-ovr-strip{gap:5px}
+  .halloween-event-ovr-strip>div{padding:10px 7px}
+  .halloween-event-ovr-strip>div>span{font-size:.54rem}
+  .rtg-halloween-run-screen .halloween-vending-teaser{
+    grid-template-columns:1fr!important;padding:18px 16px!important;gap:13px!important
+  }
+  .rtg-halloween-run-screen .halloween-vending-teaser .rtg-vending-button{width:100%!important}
 }
