@@ -962,22 +962,26 @@
 .rtg-coaches-album .rtg-coach-album-entry.rtg-coach-halloween{
   --album-rarity:#ff8f32!important;
 }
-.rtg-coach-detail.rtg-coach-halloween .player-detail-visual{
-  overflow:hidden!important;
+/* Do not give Hekyll custom artwork geometry: he now inherits the exact
+   fullbody scale and placement used by Ray Dark and every native RTG coach,
+   including the existing mobile 1.72x scale. Only his colours differ. */
+.rtg-coach-detail.rtg-coach-halloween .player-detail-content{
+  background:#1b1019!important;color:#ffe8d0!important
 }
-.rtg-coach-detail.rtg-coach-halloween .player-detail-visual img.rtg-coach-fullbody{
-  /* Same centered image anchoring as Ray Dark and the other RTG coaches.
-     This image inherits left:60% from PlayerDetail; overriding its translateX
-     with transform:none pushed nearly all of Hekyll outside the clipping area. */
-  position:absolute!important;
-  left:50%!important;
-  right:auto!important;
-  top:auto!important;
-  bottom:0!important;
-  display:block!important;
-  width:100%!important;height:96%!important;max-width:100%!important;
-  max-height:96%!important;
-  object-fit:contain!important;object-position:center bottom!important;
-  transform:translateX(-50%)!important;
-  transform-origin:center bottom!important;
+.rtg-coach-detail.rtg-coach-halloween .player-detail-section>h3{
+  color:#ffaf58!important
+}
+/* Coach ability text is DARK on the cream card in both standard and HW detail.
+   Avoid the inherited white-on-cream text observed in the event modal. */
+.rtg-coach-detail .rtg-coach-power,
+.rtg-coach-detail .rtg-coach-power strong,
+.rtg-coach-detail .rtg-coach-power p{
+  color:#17191b!important
+}
+.rtg-coach-detail .rtg-coach-profile-meta>span,
+.rtg-coach-detail .rtg-coach-profile-meta>span b{
+  color:#17191b!important
+}
+.rtg-coach-detail.rtg-coach-halloween .rtg-coach-power{
+  background:#fff4e5!important
 }
