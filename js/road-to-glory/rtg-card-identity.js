@@ -137,6 +137,7 @@
       ie2: "AR",
       orion: "OR",
       [FREE_AGENTS]: "FA",
+      halloween2026: "HW",
     })[seasonId] || (seasonId ? seasonId.toUpperCase() : "");
   }
 
