@@ -133,7 +133,10 @@
       activeSquadSlot = Number(stored?.activeSquadSlot)||1;
       squadSlots = stored?.slots || null;
       localSquad = stored?.slots?.[activeSquadSlot] || stored || initialEventSquad();
-      if (localSquad.lineup?.length!==11||localSquad.bench?.length!==4) localSquad=initialEventSquad(localSquad);
+      const savedCards=[...(localSquad?.lineup||[]),...(localSquad?.bench||[])];
+      if ((localSquad?.lineup||[]).length!==11||(localSquad?.bench||[]).length!==4||
+          new Set(savedCards).size!==15||savedCards.some(cardId=>!resolveCard(cardId)))
+        localSquad=initialEventSquad(localSquad);
       if (!localSquad?.formationId) localSquad = {...localSquad,formationId:"4-3-3",activeRoleVariantByCardId:{}};
       if(localSquad.lineup?.length===11 && localSquad.lineupOrderedBySlot!==true) localSquad.lineupOrderedBySlot=false;
       match = records[MATCH_KEY] || null;
