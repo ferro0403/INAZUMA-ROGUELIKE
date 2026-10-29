@@ -925,9 +925,15 @@
 .rtg-coach-squad-slot.rtg-coach-halloween{
   border-color:#ff8b2b!important;background:#26111a!important;color:#fff1db!important
 }
-.rtg-coach-squad-slot.rtg-coach-halloween .rtg-coach-squad-selected strong,
+/* Hekyll's compact card uses a light parchment panel: the previous ivory
+   title/club text became unreadable. Scope contrast to this coach only. */
+.rtg-coach-squad-slot.rtg-coach-halloween .rtg-coach-squad-selected strong{
+  color:#24151a!important;
+  text-shadow:none!important;
+}
 .rtg-coach-squad-slot.rtg-coach-halloween .rtg-coach-squad-selected span{
-  color:#fff0d7!important
+  color:#4c2d25!important;
+  text-shadow:none!important;
 }
 .rtg-coaches-reward.rtg-coach-halloween{
   border-color:#ff902e!important;background:linear-gradient(140deg,#230f19,#59201e)!important
