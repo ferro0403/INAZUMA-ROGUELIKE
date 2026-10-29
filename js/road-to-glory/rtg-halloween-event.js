@@ -6,7 +6,7 @@
   const MATCH_KEY = "local:halloween2026:match";
   const SQUAD_KEY = "local:halloween2026:squad";
   const SHARED_KEY = "shared:account";
-  const PRICE = 300;
+  const PRICE = 200;
   const PRIZE = 300;
   const LUCKY_PRIZE = 600;
   const BANNER_URL = "https://img.magnific.com/foto-gratuito/illustrazione-digitale-di-halloween_23-2151822706.jpg?semt=ais_hybrid&w=740&q=80";
@@ -144,7 +144,7 @@
           new Set(savedCards).size!==15||savedCards.some(cardId=>!resolveCard(cardId)))
         localSquad=initialEventSquad(localSquad);
       if (!localSquad?.formationId) localSquad = {...localSquad,formationId:"4-3-3",activeRoleVariantByCardId:{}};
-      if(localSquad.lineup?.length===11 && localSquad.lineupOrderedBySlot!==true) localSquad.lineupOrderedBySlot=false;
+      localSquad=orderedEventSquad(localSquad);
       match = records[MATCH_KEY] || null;
     }
     function recordCard(pid) {
@@ -205,6 +205,41 @@
       if(!account.coachOwnedIds.includes(HALLOWEEN_COACH_ID))missing.push(HALLOWEEN_COACH_ID);
       return missing;
     }
+    // Same positional XI contract as ordinary Road to Glory. A card's
+    // natural role must never decide whether it is visible on the field.
+    // Older valid Halloween squads can be converted in RAM, without writes.
+    function tacticalSlotRoles(formationId){
+      const formation=(global.RoadToGloryConfig?.season?.("ie1")?.formations||[])
+        .find(f=>asId(f.id)===asId(formationId||"4-3-3"));
+      const slots=Array.isArray(formation?.slotRoles)&&formation.slotRoles.length===11
+        ? formation.slotRoles
+        : Object.entries(formation?.requirements||{FW:3,MF:3,DF:4,GK:1})
+          .flatMap(([role,count])=>Array.from({length:Number(count)||0},()=>role));
+      if(slots.length!==11)throw fail("halloween-invalid-formation-slots");
+      return slots.map(role=>asId(role).toUpperCase());
+    }
+    function orderedEventSquad(input){
+      const squad=clone(input);
+      if(squad.lineupOrderedBySlot===true||!Array.isArray(squad.lineup)||squad.lineup.length!==11)
+        return squad;
+      const remaining=[...squad.lineup];
+      const lineup=tacticalSlotRoles(squad.formationId).map(role=>{
+        const index=remaining.findIndex(cardId=>
+          asId(resolveCard(cardId)?.normalizedRole||resolveCard(cardId)?.position).toUpperCase()===role);
+        return remaining.splice(index>=0?index:0,1)[0];
+      });
+      return {...squad,lineup,lineupOrderedBySlot:true};
+    }
+    function assertEventSquadIntegrity(squad){
+      const all=[...(squad?.lineup||[]),...(squad?.bench||[])];
+      if(squad?.lineup?.length!==11||squad?.bench?.length!==4||
+         new Set(all).size!==15||squad.lineupOrderedBySlot!==true)
+        throw fail("halloween-squad-incomplete");
+      const allowed=new Set(userCards());
+      if(all.some(cardId=>!allowed.has(cardId)||!resolveCard(cardId)))
+        throw fail("halloween-squad-incomplete");
+      tacticalSlotRoles(squad.formationId);
+    }
     function initialEventSquad(previous={}) {
       const chosenLine=Array.isArray(previous.lineup)?previous.lineup.map(asId):[];
       const chosenBench=Array.isArray(previous.bench)?previous.bench.map(asId):[];
@@ -215,7 +250,8 @@
       const formationId=previous.formationId||"4-3-3";
       const formation=(global.RoadToGloryConfig?.season?.("ie1")?.formations||[]).find(f=>asId(f.id)===formationId);
       if(line.length===11&&bench.length===4){
-        return {...previous,formationId,lineup:line,bench,activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}};
+        return orderedEventSquad({...previous,formationId,lineup:line,bench,
+          activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}});
       }
       const roles=Array.isArray(formation?.slotRoles)&&formation.slotRoles.length===11
         ?formation.slotRoles.map(role=>asId(role).toUpperCase())
@@ -873,7 +909,7 @@
     async function editSquad(kind,arg) {
       if(match)throw fail("halloween-active-match");
       lock();
-      const curr=clone(localSquad);
+      const curr=orderedEventSquad(localSquad);
       let nextSlot=activeSquadSlot,nextSquad=curr;
       let adaptMessage="";
       const nextSlots=clone(squadSlots||{"1":curr,"2":curr,"3":curr});
@@ -984,9 +1020,12 @@
         const bench=[...curr.bench,...curr.lineup,...owned.map(x=>x.id)]
           .filter((id,i,arr)=>!line.includes(id)&&arr.indexOf(id)===i).slice(0,4);
         if(bench.length!==4)throw fail("halloween-bench-insufficient");
-        curr.lineup=line;curr.bench=bench;curr.formationId=formationId;curr.lineupOrderedBySlot=false;
+        curr.lineup=line;curr.bench=bench;curr.formationId=formationId;
+        curr.lineupOrderedBySlot=false;
+        nextSquad=orderedEventSquad(curr);
       }
-            nextSlots[nextSlot]=clone(nextSquad);
+      assertEventSquadIntegrity(nextSquad);
+      nextSlots[nextSlot]=clone(nextSquad);
       const epoch=session;
       const saved={...nextSquad,activeSquadSlot:nextSlot,slots:nextSlots};
       await storage.updateMany([SQUAD_KEY],()=>({writes:{[SQUAD_KEY]:saved},value:true}));
