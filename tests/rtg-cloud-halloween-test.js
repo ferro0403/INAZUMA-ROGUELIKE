@@ -584,7 +584,7 @@ async function main() {
   await control("data-halloween-tab",d=>d.halloweenTab==="squad").fire();
   assert.match(coachSquadMarkup.opts.coachSlotMarkup,/selezione salvata/,
     "Equipped Halloween coach should visibly confirm its saved active power");
-  assert.match(coachSquadMarkup.opts.requirementsMarkup,/Maschera Maledetta attiva/,
+  assert.doesNotMatch(coachSquadMarkup.opts.requirementsMarkup,/Maschera Maledetta attiva/,
     "The requirements panel must explain the ACTIVE 15-point coach discount");
   const preSwapTarget=coachRules.overallDiscountFor(records["local:halloween2026:squad"].slots["1"],
     records["shared:account"]);
@@ -613,7 +613,7 @@ async function main() {
   coachUiArgs.closeModal();
   assert.equal(coachSquadMarkup.opts.teamPower,effectiveBefore,
     "Configuring Hekyll must immediately restore the discounted squad OVR");
-  assert.match(coachSquadMarkup.opts.requirementsMarkup,/Maschera Maledetta attiva/,
+  assert.doesNotMatch(coachSquadMarkup.opts.requirementsMarkup,/Maschera Maledetta attiva/,
     "Committed selection must show in the same Squadra screen");
   assert.match(coachSquadMarkup.opts.coachSlotMarkup,/selezione salvata/);
   context.RoadToGloryCoachSquadPowerUi=originalCoachUi;
@@ -775,6 +775,100 @@ async function main() {
   assert.equal(records["shared:account"].halloween.pumpkins,99999,
     "Repeated DEV grants must not overflow or duplicate currency");
   devController.dispose();
+
+  // Event kickoff parity: real configured staff powers must reach the
+  // immutable match snapshot. Earlier coverage verified saved selection/OVR
+  // but never checked Hillman's +100 PT or Yi's two elemental conversions.
+  const eventIds=["halloween2026::custom_0001","halloween2026::custom_0002"];
+  const id2Record=context.RoadToGloryCardIdentity.record({
+    playerId:"custom_0002",legacySeasonId:"halloween2026"
+  });
+  const accountForCoaches=records["shared:account"];
+  if(!accountForCoaches.gachaAcquiredCards.some(x=>x.cardId===eventIds[1]))
+    accountForCoaches.gachaAcquiredCards.push(id2Record);
+  if(!accountForCoaches.halloween.ownedIds.includes("custom_0002"))
+    accountForCoaches.halloween.ownedIds.push("custom_0002");
+  for(const coachId of ["208","4401"])
+    if(!accountForCoaches.coachOwnedIds.includes(coachId))
+      accountForCoaches.coachOwnedIds.push(coachId);
+  const currentTeam=clone(records["local:halloween2026:squad"].slots["1"]);
+  const roster=Array.from(new Set([...eventIds,...currentTeam.lineup,...currentTeam.bench]));
+  const field=[...eventIds,...roster.filter(key=>!eventIds.includes(key)).slice(0,9)];
+  const reserves=roster.filter(key=>!field.includes(key)).slice(0,4);
+  assert.equal(field.length,11);
+  assert.equal(reserves.length,4);
+  const baseTeam={...currentTeam,lineup:field,bench:reserves,lineupOrderedBySlot:true};
+  const originalMatchCreator=context.RoadToGloryMatchEngine.createMatch;
+  context.RoadToGloryMatchEngine.createMatch=options=>{
+    const match=originalMatchCreator(options);
+    match.ptModeVersion=1;
+    match.ptCurrentByPlayerId={};
+    match.ptMaxByPlayerId={};
+    for(const player of [...options.userSquad.lineup,...options.userSquad.bench]){
+      match.ptCurrentByPlayerId["user:"+player.cardId]=150;
+      match.ptMaxByPlayerId["user:"+player.cardId]=150;
+    }
+    return match;
+  };
+  for(const coachId of ["208","4401"]){
+    const targets=eventIds.map(cardId=>E.eventPlayer(cardId.split("::")[1]));
+    const elements=targets.map((target,index)=>{
+      const current=String(target.element||"").toLowerCase();
+      return (index===0?["fire","wind","forest","mountain"]:["mountain","fire","wind","forest"])
+        .find(element=>element!==current);
+    });
+    const selection=coachId==="208"
+      ?{coachId,cardIds:eventIds.slice(),moveIndices:[],element:"",targets:[]}
+      :{coachId,cardIds:eventIds.slice(),moveIndices:[],element:"",
+        targets:eventIds.map((cardId,index)=>({cardId,element:elements[index],moveIndices:[]}))};
+    const team={...baseTeam,coachId,coachPowerSelection:selection};
+    const existing=records["local:halloween2026:squad"];
+    records["local:halloween2026:squad"]={
+      ...existing,activeSquadSlot:1,
+      slots:{...existing.slots,"1":team}
+    };
+    delete records["local:halloween2026:match"];
+    const errors=[],coachApp=createApp();
+    const trial=E.create({app:coachApp,storage,squadView,runView:nativeRunView,
+      toast:(message,kind)=>errors.push({message,kind})});
+    await trial.open();
+    const coachSaved=records["local:halloween2026:squad"].slots["1"];
+    assert.deepEqual(coachSaved.coachPowerSelection,selection,
+      "Opening Halloween must not discard a configured staff power");
+    await coachApp.controls["data-halloween-start"][0].fire();
+    const snapshot=records["local:halloween2026:match"];
+    assert.ok(snapshot,"Kickoff must create a real Halloween match for "+coachId+
+      ": "+errors.map(x=>x.message).join(", "));
+    assert.equal(snapshot.coachPowerEffect?.coachId,coachId,
+      "Saved "+coachId+" coach power must be snapshotted before kickoff");
+    if(coachId==="208"){
+      for(const id of eventIds){
+        assert.equal(snapshot.ptCurrentByPlayerId["user:"+id],250);
+        assert.equal(snapshot.ptMaxByPlayerId["user:"+id],250);
+      }
+      assert.equal(snapshot.ptCurrentByPlayerId["user:"+baseTeam.lineup[2]],150,
+        "Hillman never boosts an unselected starter");
+    }else{
+      for(let i=0;i<eventIds.length;i++){
+        const player=snapshot.userSquad.lineup.find(p=>p.cardId===eventIds[i]);
+        assert.equal(player.element,elements[i],
+          "Yi updates each selected player's actual match element");
+        assert.equal(
+          context.RoadToGloryCoachPowerRuntime.moveElement(
+            snapshot,"user",eventIds[i],0,"original"),elements[i],
+          "Yi changes all available moves to the selected element");
+        assert.equal(player.halloweenMoves.length,4);
+        assert.equal(context.RoadToGloryCoachPowerRuntime.moveCost(
+          snapshot,"user",eventIds[i],0,50),50,
+          "Yi must not change move costs");
+      }
+      assert.equal(E.eventPlayer("custom_0001").element,targets[0].element,
+        "The event player's original card remains unchanged");
+    }
+    trial.dispose();
+    delete records["local:halloween2026:match"];
+  }
+  context.RoadToGloryMatchEngine.createMatch=originalMatchCreator;
   console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 200-pumpkin pulls, cloud compatibility PASS");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
