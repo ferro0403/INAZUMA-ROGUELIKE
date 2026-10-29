@@ -259,17 +259,27 @@
           .flatMap(([role,count])=>Array.from({length:Number(count)||0},()=>role));
       if(roles.length!==11)throw fail("halloween-invalid-formation-slots");
       const pool=unique([...line,...bench,...userCards()]);
-      const picked=[],used=new Set();
+      // Preserve every still-owned starter of an old incomplete/duplicate save.
+      // The normal RTG editor permits an off-role starter on any tactical slot,
+      // so never discard a selected player merely to fill natural-role quotas.
+      const picked=[...line].slice(0,11),used=new Set(picked);
       const roleFor=id=>asId(resolveCard(id)?.normalizedRole||resolveCard(id)?.position).toUpperCase();
-      for(const role of roles){
+      const rolesToFill=[...roles];
+      for(const id of picked){
+        const index=rolesToFill.indexOf(roleFor(id));
+        if(index>=0)rolesToFill.splice(index,1);
+      }
+      for(const role of rolesToFill){
+        if(picked.length>=11)break;
         const candidate=pool.find(id=>!used.has(id)&&roleFor(id)===role)||pool.find(id=>!used.has(id));
         if(!candidate)throw fail("halloween-squad-insufficient-players");
         used.add(candidate);picked.push(candidate);
       }
       const reserves=unique([...bench,...line,...pool]).filter(id=>!used.has(id)).slice(0,4);
       if(reserves.length!==4)throw fail("halloween-bench-insufficient");
-      return {...previous,formationId,lineup:picked,bench:reserves,lineupOrderedBySlot:true,
-        coachId:previous.coachId||"",activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}};
+      return orderedEventSquad({...previous,formationId,lineup:picked,bench:reserves,
+        lineupOrderedBySlot:false,coachId:previous.coachId||"",
+        activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}});
     }
     function activeEventSquad() {return {...shared,activeSeasonId:"ie1",gachaAcquiredCards:shared.gachaAcquiredCards,coachOwnedIds:shared.coachOwnedIds,squads:{ie1:localSquad}};}
     function eventOverallDiscount(squad=localSquad){
