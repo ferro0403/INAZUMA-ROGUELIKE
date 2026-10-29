@@ -882,8 +882,8 @@ async function main() {
   albumUnlockedIds.delete(lockedPid);
   const legacySquad=clone(records["local:halloween2026:squad"]);
   const slot=clone(legacySquad.slots["1"]);
-  const rosterBefore=[...slot.lineup,...slot.bench];
-  if(!rosterBefore.includes(lockedCard)){
+  const legacyRosterIds=[...slot.lineup,...slot.bench];
+  if(!legacyRosterIds.includes(lockedCard)){
     const replacement=slot.bench[0];
     slot.bench[0]=lockedCard;
     assert.notEqual(replacement,lockedCard);
