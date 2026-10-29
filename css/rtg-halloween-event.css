@@ -78,8 +78,17 @@
 .halloween-vending-classic .rtg-vending-head-v9{background:linear-gradient(#211013,#110e15)!important;border-color:#fe821a!important;color:#ff9f24!important}
 .halloween-vending-classic .rtg-vending-body-v9{background:linear-gradient(160deg,#f57f11,#bd441b)!important}
 .halloween-vending-classic .rtg-vending-window-v9{background:radial-gradient(circle at 45% 30%,#3c101b,#0c0911)!important}
-.halloween-vending-classic .rtg-vending-capsule-v9:nth-child(odd){background:radial-gradient(circle at 35% 30%,#ffcb52,#ff8812 67%,#7e2c0e)!important;border-color:#ffbf67!important}
-.halloween-vending-classic .rtg-vending-capsule-v9:nth-child(even){background:radial-gradient(circle at 35% 30%,#55505f,#1e1824 67%,#060509)!important;border-color:#d3561c!important}
+.halloween-vending-classic .rtg-vending-capsule-v9[data-capsule-rarity="orange"]{background:radial-gradient(circle at 35% 30%,#ffcb52,#ff8812 67%,#7e2c0e)!important;border-color:#ffbf67!important}
+.halloween-vending-classic .rtg-vending-capsule-v9[data-capsule-rarity="black"]{background:radial-gradient(circle at 35% 30%,#55505f,#1e1824 67%,#060509)!important;border-color:#d3561c!important}
+/* Same orange/black capsule shell in the outlet: never the default silver. */
+.halloween-vending-classic [data-halloween-prize-color="orange"] .rtg-vending-prize-v9{
+  background:radial-gradient(circle at 35% 30%,#ffcb52,#ff8812 67%,#7e2c0e)!important;
+  border-color:#ffbf67!important;
+}
+.halloween-vending-classic [data-halloween-prize-color="black"] .rtg-vending-prize-v9{
+  background:radial-gradient(circle at 35% 30%,#55505f,#1e1824 67%,#060509)!important;
+  border-color:#d3561c!important;
+}
 .halloween-vending-classic .rtg-vending-pull{color:#24120f!important;background:linear-gradient(120deg,#ffba27,#f96c11)!important}
 .halloween-vending-classic .rtg-vending-wallet-chip{background:#201013!important;color:#ffc574!important;border-color:#f7871c!important}
 .halloween-vending-classic .rtg-vending-wallet-chip .halloween-currency{color:#ffc574}
