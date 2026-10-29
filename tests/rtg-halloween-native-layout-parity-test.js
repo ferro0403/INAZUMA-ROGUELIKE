@@ -130,8 +130,8 @@ assert.doesNotMatch(eventSource,/rtg-coach-cap-note/,
   "Hekyll helper below OVR max must be removed, not just hidden");
 assert.match(eventSource,/data-halloween-prize-color/,
   "Selected orange or black colour must reach the exit capsule");
-assert.match(halloweenCss,/\\[data-halloween-prize-color="orange"\\] \\.rtg-vending-prize-v9/);
-assert.match(halloweenCss,/\\[data-halloween-prize-color="black"\\] \\.rtg-vending-prize-v9/);
+assert.ok(halloweenCss.includes('[data-halloween-prize-color="orange"] .rtg-vending-prize-v9'));
+assert.ok(halloweenCss.includes('[data-halloween-prize-color="black"] .rtg-vending-prize-v9'));
 
 assert.match(htmlShell,/rtg-coaches\.css\?v=20261029-halloween-reveal-contrast-v3/,
   "iPhone must fetch the updated staff contrast rules");
