@@ -991,3 +991,20 @@
 .rtg-coach-detail.rtg-coach-halloween .rtg-coach-power{
   background:#fff4e5!important
 }
+
+/* Halloween coach reward: keep all text legible against the dark burgundy
+   modal, without changing the standard RTG coach reveal. */
+.rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-heading{
+  color:#ffeac7!important;
+  border-bottom-color:#ff9c47!important;
+}
+.rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-title{
+  color:#fff2dd!important;
+  text-shadow:0 2px 0 #140c10;
+}
+.rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-info small{
+  color:#ffb45c!important;
+}
+.rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-info p{
+  color:#ffe3c3!important;
+}
