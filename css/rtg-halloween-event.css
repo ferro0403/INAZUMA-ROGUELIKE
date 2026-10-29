@@ -817,3 +817,34 @@
   .halloween-event-status{margin:9px 0 12px!important;}
   .rtg-halloween-run-screen .halloween-vending-teaser{padding:14px!important;}
 }
+
+/* Halloween-only development shortcut. The existing DEV flag controls whether
+   this markup exists at all; it never becomes part of the normal event UI. */
+.halloween-dev-quick-tools{
+  position:fixed;z-index:9998;
+  top:calc(env(safe-area-inset-top, 0px) + 58px);
+  right:calc(env(safe-area-inset-right, 0px) + 8px);
+  width:min(232px,calc(100vw - 16px));
+  color:#fff;font:750 12px/1.35 system-ui,sans-serif;
+  text-align:left;
+}
+.halloween-dev-quick-tools>summary{
+  display:block;float:right;cursor:pointer;list-style:none;
+  padding:9px 12px;border:2px solid #101116;border-radius:7px;
+  background:#ffda35;color:#101116;box-shadow:3px 4px 0 #101116;
+  font:900 12px/1.2 system-ui,sans-serif;
+}
+.halloween-dev-quick-tools>summary::-webkit-details-marker{display:none}
+.halloween-dev-quick-tools[open]>summary{float:none;width:max-content;margin-left:auto}
+.halloween-dev-quick-content{
+  clear:both;margin-top:5px;padding:12px;border:2px solid #ff9418;
+  border-radius:7px;background:#26131d;box-shadow:3px 5px 0 #101116;
+}
+.halloween-dev-quick-content p{margin:0 0 10px;color:#fff4db}
+.halloween-dev-quick-content button{
+  display:block;width:100%;min-height:42px;padding:9px 10px;
+  border:2px solid #0f0d12;border-radius:3px;background:#ffd21f;
+  color:#101116;font:900 13px/1.2 system-ui,sans-serif;
+  cursor:pointer;box-shadow:2px 3px 0 #0f0d12;
+}
+.halloween-dev-quick-content button:disabled{opacity:.55;cursor:wait}
