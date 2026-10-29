@@ -75,7 +75,7 @@ assert.doesNotMatch(matchView.duelVisualMarkup(samford,"opponent"),/halloween-va
 assert.doesNotMatch(matchView.duelVisualMarkup(normal,"user"),/halloween-vampiro/);
 assert.equal((fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8").match(/class="rtg-duel-render\$\{shawnFwClass\}\$\{halloweenClass\}"/g)||[]).length,2,"Both original duel renderers must apply the tagged filter");
 const htmlShell=fs.readFileSync("index.html","utf8");
-assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261029-slots-coach-actions-v18/,
+assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261029-coach-powers-v19/,
   "iOS cache must not serve the older pre-fix Halloween controller");
 const eventSource=fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8");
 assert.match(eventSource,/function tacticalLineupModel\(model\)/,
@@ -124,7 +124,16 @@ assert.match(eventSource,/frontFullbodyUrl:raw\.frontFullbodyUrl \|\| EVENT_FULL
   "Halloween player resolver must prefer the player-specific fullbody URL");
 const halloweenCss=fs.readFileSync("css/rtg-halloween-event.css","utf8");
 const coachesCss=fs.readFileSync("css/rtg-coaches.css","utf8");
-assert.match(htmlShell,/rtg-coaches\.css\?v=20261029-halloween-coach-contrast-v2/,
+assert.match(htmlShell,/rtg-halloween-event\\.css\\?v=20261029-capsule-consistency-v13/);
+assert.match(htmlShell,/rtg-coach-powers-runtime\\.js\\?v=20261029-halloween-moves-v2/);
+assert.doesNotMatch(eventSource,/rtg-coach-cap-note/,
+  "Hekyll helper below OVR max must be removed, not just hidden");
+assert.match(eventSource,/data-halloween-prize-color/,
+  "Selected orange or black colour must reach the exit capsule");
+assert.match(halloweenCss,/\\[data-halloween-prize-color="orange"\\] \\.rtg-vending-prize-v9/);
+assert.match(halloweenCss,/\\[data-halloween-prize-color="black"\\] \\.rtg-vending-prize-v9/);
+
+assert.match(htmlShell,/rtg-coaches\.css\?v=20261029-halloween-reveal-contrast-v3/,
   "iPhone must fetch the updated staff contrast rules");
 assert.match(coachesCss,/\.rtg-coach-squad-slot\.rtg-coach-halloween \.rtg-coach-squad-selected strong\s*\{\s*color:#24151a!important/,
   "Hekyll's name must be dark on the parchment background");
