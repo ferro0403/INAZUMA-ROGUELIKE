@@ -383,7 +383,11 @@
       const meta=deps.getUserTeamMeta?.()||{};
       const name=meta.name||"La tua squadra";
       const squadOvr=ovr(resolvedUser()?.lineup,eventOverallDiscount());
-      const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · Evento Halloween</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div></div>';
+      const coachDiscount=eventOverallDiscount(),coachTarget=coachDiscount&&resolveCard(coachDiscount.cardId);
+      const coachNote=coachTarget?'<p class="rtg-coach-cap-note">Maschera Maledetta attiva · '+
+        escape(coachTarget.name||coachTarget.playerId||"Titolare Halloween")+
+        ': −15 OVR solo per i requisiti, non in partita.</p>':"";
+      const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · Evento Halloween</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div>'+coachNote+'</div>';
       return '<div class="rtg-halloween-mode halloween-squad-mode">'+
         view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
           coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(
@@ -980,10 +984,14 @@
         if(!formation&&kind==="formation")throw fail("halloween-formation-unavailable");
         const roles=formation?.requirements||{FW:3,MF:3,DF:4,GK:1};
         const previous=[...curr.lineup,...curr.bench],previousSet=new Set(curr.lineup);
+        const discount=eventOverallDiscount(curr);
         const owned=userCards().map(id=>({id,p:resolveCard(id)})).filter(x=>x.p)
-          .map(x=>({...x,overall:Math.round(Number(x.p.overall??x.p.finalOverall??0)),
-            role:asId(x.p.normalizedRole||x.p.position||x.p.role).toUpperCase()}))
-          .filter(x=>Number.isFinite(x.overall));
+          .map(x=>{
+            const actualOverall=Math.round(Number(x.p.overall??x.p.finalOverall??0));
+            return {...x,actualOverall,overall:x.id===discount?.cardId
+              ?Math.max(0,actualOverall-Math.max(0,Number(discount.amount)||0)):actualOverall,
+              role:asId(x.p.normalizedRole||x.p.position||x.p.role).toUpperCase()};
+          }).filter(x=>Number.isFinite(x.overall));
         let line=[];
         if(kind==="adapt"){
           // Exact bounded knapsack on the REAL RTG owned-card pool. For each
