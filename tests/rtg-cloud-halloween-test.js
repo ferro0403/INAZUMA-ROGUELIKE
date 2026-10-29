@@ -200,6 +200,8 @@ async function main() {
   // temporary elevated test roster through the free-agent database.
   const actualLineup=(app.innerHTML.match(/data-rtg-player-detail="([^"]+)"/g)||[]).map(x=>x.split('"')[1]);
   assert.equal(actualLineup.length,11);
+  assert.ok(records["local:halloween2026:squad"].slots["3"].lineup.every(id=>actualLineup.includes(id)),
+    "Repair of an incomplete saved formation must retain every still-owned original starter");
   const selected=new Set(actualLineup);
   freeAgents.players.forEach(p=>{p.overall=selected.has("free_agents::"+p.playerId)?96:70;});
   await control("data-rtg-adapt").fire();
