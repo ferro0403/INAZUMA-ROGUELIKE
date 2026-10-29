@@ -487,6 +487,26 @@ async function main() {
   assert.equal(quickSwap.bench.includes(fieldBeforeQuick),true);
   assert.equal(quickSwap.bench.includes(benchBeforeQuick),false);
   assert.deepEqual(records["local:halloween2026:squad"].slots["2"],slot2);
+  // Failed persistence must not remove/duplicate anyone, even if the UI
+  // already registered a replacement click. The recovery guard remains owner
+  // of the transaction: no side effects until updateMany commits.
+  const beforeFailedWrite=clone(records["local:halloween2026:squad"]);
+  const realUpdateMany=storage.updateMany;
+  const oldConsoleError=context.console.error;
+  storage.updateMany=async()=>{throw new Error("test-halloween-disk-write-failure");};
+  context.console={...console,error:()=>{}}; // expected rejected write
+  try{
+    const failedFrom=quickSwap.lineup[0];
+    pickerActions.onOpenPlayer(failedFrom);
+    const failedCandidate=pickerEntries.find(e=>e.cardId!==failedFrom);
+    assert.ok(failedCandidate);
+    await pickRealCard(failedCandidate.cardId);
+    assert.deepEqual(records["local:halloween2026:squad"],beforeFailedWrite,
+      "Failed squad commit must leave every saved slot and player unchanged");
+  }finally{
+    storage.updateMany=realUpdateMany;
+    context.console=console;
+  }
   // Switching back to the other saved squad keeps all fifteen players.
   await pickerActions.onSelectSquadSlot(2);
   assertVisibleRtgSquad(records["local:halloween2026:squad"].slots["2"]);
