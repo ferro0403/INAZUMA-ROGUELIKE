@@ -124,11 +124,11 @@ assert.match(eventSource,/frontFullbodyUrl:raw\.frontFullbodyUrl \|\| EVENT_FULL
   "Halloween player resolver must prefer the player-specific fullbody URL");
 const halloweenCss=fs.readFileSync("css/rtg-halloween-event.css","utf8");
 const coachesCss=fs.readFileSync("css/rtg-coaches.css","utf8");
-assert.match(htmlShell,/rtg-coaches\\.css\\?v=20261029-halloween-coach-contrast-v2/,
+assert.match(htmlShell,/rtg-coaches\.css\?v=20261029-halloween-coach-contrast-v2/,
   "iPhone must fetch the updated staff contrast rules");
-assert.match(coachesCss,/\\.rtg-coach-squad-slot\\.rtg-coach-halloween \\.rtg-coach-squad-selected strong\\s*\\{\\s*color:#24151a!important/,
+assert.match(coachesCss,/\.rtg-coach-squad-slot\.rtg-coach-halloween \.rtg-coach-squad-selected strong\s*\{\s*color:#24151a!important/,
   "Hekyll's name must be dark on the parchment background");
-assert.match(coachesCss,/\\.rtg-coach-squad-slot\\.rtg-coach-halloween \\.rtg-coach-squad-selected span\\s*\\{\\s*color:#4c2d25!important/,
+assert.match(coachesCss,/\.rtg-coach-squad-slot\.rtg-coach-halloween \.rtg-coach-squad-selected span\s*\{\s*color:#4c2d25!important/,
   "Hekyll's team must remain readable, without affecting other coaches");
 // Regression: a player-only modal skin must NEVER recolour the normal coach
 // detail, even when the same modal root was used by an event player first.
