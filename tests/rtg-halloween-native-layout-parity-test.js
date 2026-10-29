@@ -74,6 +74,9 @@ assert.match(matchView.duelVisualMarkup(event,"opponent"),/halloween-vampiro/);
 assert.doesNotMatch(matchView.duelVisualMarkup(samford,"opponent"),/halloween-vampiro/);
 assert.doesNotMatch(matchView.duelVisualMarkup(normal,"user"),/halloween-vampiro/);
 assert.equal((fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8").match(/class="rtg-duel-render\$\{shawnFwClass\}\$\{halloweenClass\}"/g)||[]).length,2,"Both original duel renderers must apply the tagged filter");
+const htmlShell=fs.readFileSync("index.html","utf8");
+assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261029-canonical-slots-coach-v16/,
+  "iOS cache must not serve the older pre-fix Halloween controller");
 const eventSource=fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8");
 assert.match(eventSource,/function tacticalLineupModel\(model\)/,
   "Halloween must explicitly project the saved XI by tactical slot index");
