@@ -352,7 +352,7 @@
         '</section>';
     }
     function ensureEventPitchRows(model){
-      if(!model||!Array.isArray(model.lineup)||model.lineup.length!==11)return model;
+      if(!model||!Array.isArray(model.lineupRows)||!Array.isArray(model.lineup)||model.lineup.length!==11)return model;
       const visible=(model.lineupRows||[]).reduce((n,row)=>n+(row.entries||[]).length,0);
       if(visible===11)return model;
       const formation=model.formation;
