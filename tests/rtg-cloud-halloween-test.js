@@ -546,6 +546,14 @@ async function main() {
   const coachRules=context.RoadToGloryCoachPowerRuntime;
   const oldSaved=clone(records["local:halloween2026:squad"]);
   const powerSlot=clone(oldSaved.slots["1"]);
+  // Prior regression cases intentionally swapped Nathan out. Reinsert the
+  // already-owned event card as one starter for this independent coach test.
+  if(!powerSlot.lineup.includes(nathanId)){
+    const benchIndex=powerSlot.bench.indexOf(nathanId);
+    if(benchIndex>=0)powerSlot.bench[benchIndex]=powerSlot.lineup[1];
+    powerSlot.lineup[1]=nathanId;
+  }
+  assert.equal(new Set([...powerSlot.lineup,...powerSlot.bench]).size,15);
   assert.ok(powerSlot.lineup.includes(nathanId),"The event coach needs a REAL owned Halloween starter");
   powerSlot.coachId=coachId;
   powerSlot.coachPowerSelection={coachId,cardIds:[nathanId],moveIndices:[],element:"",targets:[]};
