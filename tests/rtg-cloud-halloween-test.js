@@ -913,7 +913,7 @@ async function main() {
   assert.equal([...repairedByEdit.lineup,...repairedByEdit.bench].includes(lockedCard),false,
     "A saved squad edit must exclude free agents locked in the canonical Album");
   assert.equal(new Set([...repairedByEdit.lineup,...repairedByEdit.bench]).size,15);
-  assert.deepEqual(records["shared:account"],sharedBeforeUnlock,
+  assert.deepEqual(clone(records["shared:account"]),sharedBeforeUnlock,
     "Album entitlement repair must not mutate the shared account");
   entitlementController.dispose();
   albumUnlockedIds.add(lockedPid);
