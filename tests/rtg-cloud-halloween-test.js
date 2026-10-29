@@ -776,6 +776,9 @@ async function main() {
     "Repeated DEV grants must not overflow or duplicate currency");
   devController.dispose();
 
+  // Normalize the old cap-solver test's artificially boosted free-agent
+  // OVR before these isolated match snapshots, so the event cap is realistic.
+  freeAgents.players.forEach(p=>{p.overall=70;});
   // Event kickoff parity: real configured staff powers must reach the
   // immutable match snapshot. Earlier coverage verified saved selection/OVR
   // but never checked Hillman's +100 PT or Yi's two elemental conversions.
