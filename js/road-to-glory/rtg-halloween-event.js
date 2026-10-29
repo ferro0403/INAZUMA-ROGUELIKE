@@ -118,7 +118,7 @@
     const app = deps.app, storage = deps.storage || global.RoadToGloryStorage.create();
     const notify = deps.toast || (()=>{});
     const devMode = deps.devMode === true;
-    let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false, squadEditPending = false;
+    let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false, squadEditPending = false, actionPending = false;
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
     let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved",pendingRevealHidden=false;
     let selectedAlbumTeamId=TEAM_ID;
@@ -668,10 +668,14 @@
         .sort((a,b)=>(descending?b.overall-a.overall:a.overall-b.overall)||a.player.name.localeCompare(b.player.name,"it"));
       const shown=list=>list.slice(0,visibleCount);
       let selecting=false;
-      function select(id){if(selecting)return;selecting=true;return perform(async()=>{
-        try{await editSquad("replace",{from:cardId,to:id});deps.closeModal?.();}
-        finally{selecting=false;}
-      });}
+      function select(id){
+        if(selecting||busy||squadEditPending||actionPending)return;
+        selecting=true;
+        return perform(async()=>{
+          await editSquad("replace",{from:cardId,to:id});
+          deps.closeModal?.();
+        }).finally(()=>{selecting=false;});
+      }
       function wireResults(){
         modalRoot()?.querySelector?.("[data-rtg-picker-results]")?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(b=>b.addEventListener("click",()=>select(b.dataset.rtgPickerPlayer)));
         modalRoot()?.querySelector?.("[data-rtg-picker-load-more]")?.addEventListener("click",()=>{visibleCount+=12;paint();});
@@ -789,7 +793,7 @@
       ui.open({getCampaign:currentState,getSquadDraft:()=>localSquad,seasonId:()=>"ie1",
         resolve:resolveCard,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
         closeModal:deps.closeModal,toast:notify,squadView:deps.squadView,getModel:model,
-        saveSquad:async draft=>editSquad("coachPower",draft),
+        saveSquad:async draft=>{await editSquad("coachPower",draft);render();},
         openPlayerDetails:key=>openNativeDetail(key),
         previewSquadOverall:selection=>{
           const line=resolvedUser()?.lineup;
@@ -947,7 +951,18 @@
         });
       }
     }
-    async function perform(op) {if(busy)return;try{await op();render();}catch(error){global.console?.error?.("[RTG Halloween]",error);const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento","halloween-coach-selection-invalid":"Scegli un titolare Halloween valido per Maschera Maledetta","halloween-squad-busy":"Cambio squadra già in corso"};notify(reasons[error?.code]||("Operazione Halloween fallita: "+(error?.code||error?.message||"errore sconosciuto")),"error");}}
+    async function perform(op) {
+      // Protect match progression, roster edits and capsule actions against
+      // competing taps. squadEditPending alone only protects editSquad().
+      if(busy||squadEditPending||actionPending)return;
+      actionPending=true;
+      try {await op();render();}
+      catch(error){
+        global.console?.error?.("[RTG Halloween]",error);
+        const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento","halloween-coach-selection-invalid":"Scegli un titolare Halloween valido per Maschera Maledetta","halloween-squad-busy":"Cambio squadra già in corso"};
+        notify(reasons[error?.code]||("Operazione Halloween fallita: "+(error?.code||error?.message||"errore sconosciuto")),"error");
+      } finally {actionPending=false;}
+    }
     async function editSquad(kind,arg) {
       if(squadEditPending)throw fail("halloween-squad-busy");
       if(match)throw fail("halloween-active-match");
