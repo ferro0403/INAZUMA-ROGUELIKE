@@ -688,9 +688,16 @@ async function main() {
   const pitchIds=()=>[...nativeApp.innerHTML.matchAll(/data-rtg-lineup-player="([^"]+)"/g)].map(m=>m[1]);
   await visualController.open();
   await nativeApp.querySelectorAll("[data-halloween-tab]").find(b=>b.dataset.halloweenTab==="squad").fire();
-  const mfId=liveSlot.lineup[3];
-  await nativeApp.querySelectorAll("[data-rtg-change-player]")
-    .find(button=>button.dataset.rtgChangePlayer===mfId).fire();
+  const beforeVisible=pitchIds();
+  assert.equal(beforeVisible.length,11,"The native event pitch must initially show all 11 starters");
+  assert.deepEqual(new Set(beforeVisible),
+    new Set(records["local:halloween2026:squad"].slots["1"].lineup),
+    "The native pitch must show the same 11 IDs as canonical storage before the GK swap");
+  const mfId=beforeVisible[3];
+  const mfChange=nativeApp.querySelectorAll("[data-rtg-change-player]")
+    .find(button=>button.dataset.rtgChangePlayer===mfId);
+  assert.ok(mfChange,"The real native third midfield-lineup change button must exist");
+  await mfChange.fire();
   assert.equal(typeof filterSearch,"function");
   filterSearch({target:{value:"Free 0"}});
   const keeperButton=pickerButtons.find(button=>button.dataset.rtgPickerPlayer===goalkeeperId);
