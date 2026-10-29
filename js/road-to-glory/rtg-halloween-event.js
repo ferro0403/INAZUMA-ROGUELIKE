@@ -178,7 +178,7 @@
       // Identical canonical unlock source as normal RTG. DEV pumpkins never
       // grant free agents. Missing album metadata must fail closed.
       return global.RoadToGloryEntitlements?.unlockedFreeAgentIds?.({
-        albumProgress:deps.getAlbumProgress?.(),freeAgentsDb:data.freeAgents
+        albumProgress:deps.getAlbumProgress?.()||global.AlbumProgress,freeAgentsDb:data.freeAgents
       })||[];
     }
     function userCards() {
