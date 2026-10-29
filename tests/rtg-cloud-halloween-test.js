@@ -448,16 +448,20 @@ async function main() {
     "Editing Slot 1 must never remove players from Slot 2");
   // Swap in an UNASSIGNED player of a different role: the outgoing player is
   // removed from this squad, the incoming one takes the exact same tactical slot.
-  const unassigned=freeAgents.players.map(p=>"free_agents::"+p.playerId)
-    .find(id=>![...swapped.lineup,...swapped.bench].includes(id));
-  assert.ok(unassigned);
   const outgoing=swapped.lineup[0];
   assert.ok(pickerActions?.onOpenPlayer);
   pickerActions.onOpenPlayer(outgoing);
-  await pickRealCard(unassigned);
+  // The native picker shows 12 at a time. Pick an actually visible,
+  // unassigned card of another role instead of bypassing pagination.
+  const rosterBefore=new Set([...swapped.lineup,...swapped.bench]);
+  const outgoingRole=freeAgents.players.find(p=>outgoing==="free_agents::"+p.playerId)?.position||"FW";
+  const unassigned=pickerEntries.find(e=>!rosterBefore.has(e.cardId)&&e.role!==outgoingRole)
+    ||pickerEntries.find(e=>!rosterBefore.has(e.cardId));
+  assert.ok(unassigned,"There must be at least one selectable unassigned card on the visible picker page");
+  await pickRealCard(unassigned.cardId);
   const incomingSquad=records["local:halloween2026:squad"].slots["1"];
   assertVisibleRtgSquad(incomingSquad);
-  assert.equal(incomingSquad.lineup.includes(unassigned),true);
+  assert.equal(incomingSquad.lineup.includes(unassigned.cardId),true);
   assert.equal([...incomingSquad.lineup,...incomingSquad.bench].includes(outgoing),false);
   assert.deepEqual(records["local:halloween2026:squad"].slots["2"],slot2);
   // Switching back to the other saved squad keeps all fifteen players.
