@@ -109,6 +109,6 @@ const seasons=[
   assert(index.includes("rtg-route-view.js?v=20261024-replay-farming-v1"),"Coach link removal must invalidate the route view on mobile");
   assert(index.includes("rtg-gacha.js?v=20261012-four-audit-fixes-1"));
   assert(index.includes("rtg-match-view.js?v=20261028-native-rtg-v8"),"PT match view cache key must update");
-  assert(index.includes("rtg-controller.js?v=20261028-native-rtg-v8"),"RTG controller cache key must track coach assignment update");
+  assert(index.includes("rtg-controller.js?v=20261029-halloween-album-entitlements-v9"),"RTG controller cache key must track coach assignment update");
   console.log("rtg-four-audit-fixes-test: five real map prices, IE3/Orion recruitment albums, Debole collection, terminal rewards PASS");
 })().catch(error=>{console.error(error);process.exitCode=1;});
