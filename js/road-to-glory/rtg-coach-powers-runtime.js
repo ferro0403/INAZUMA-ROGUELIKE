@@ -38,6 +38,13 @@
     };
   }
   function fourMoves(player,seasonId){
+    // Event cards carry their own extracted four moves. They have power but
+    // no ptCost field; normal RTG move costs use the exact final move power.
+    // Keep the original Season catalog untouched for every non-event card.
+    if(id(player?.cardId).startsWith("halloween2026::")&&Array.isArray(player?.halloweenMoves))
+      return player.halloweenMoves.map(move=>({
+        ...move,ptCost:move?.ptCost??move?.power
+      }));
     const canonical=id(player?.legacyCanonicalPlayerId||player?.playerId||player?.id).split("@")[0];
     const season=id(player?.resolvedSeasonId||player?.legacySeasonId||seasonId||"ie1");
     return global.RtgFourMovesRuntime?.movesFor?.(season,canonical)||[];
