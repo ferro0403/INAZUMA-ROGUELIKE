@@ -140,8 +140,10 @@
       squadSlots = stored?.slots || null;
       localSquad = stored?.slots?.[activeSquadSlot] || stored || initialEventSquad();
       const savedCards=[...(localSquad?.lineup||[]),...(localSquad?.bench||[])];
+      const accessible=new Set(userCards());
       if ((localSquad?.lineup||[]).length!==11||(localSquad?.bench||[]).length!==4||
-          new Set(savedCards).size!==15||savedCards.some(cardId=>!resolveCard(cardId)))
+          new Set(savedCards).size!==15||
+          savedCards.some(cardId=>!accessible.has(cardId)||!resolveCard(cardId)))
         localSquad=initialEventSquad(localSquad);
       if (!localSquad?.formationId) localSquad = {...localSquad,formationId:"4-3-3",activeRoleVariantByCardId:{}};
       localSquad=orderedEventSquad(localSquad);
@@ -172,12 +174,21 @@
         return saved;
       } finally { busy = false; }
     }
+    function unlockedFreeAgentIds(){
+      // Identical canonical unlock source as normal RTG. DEV pumpkins never
+      // grant free agents. Missing album metadata must fail closed.
+      return global.RoadToGloryEntitlements?.unlockedFreeAgentIds?.({
+        albumProgress:deps.getAlbumProgress?.(),freeAgentsDb:data.freeAgents
+      })||[];
+    }
     function userCards() {
       const r=global.RoadToGloryCardIdentity;
-      const freeAgents=data.freeAgents?.players||[];
-      const all=[...freeAgents.map(p=>r.cardIdForFreeAgent(p.playerId||p.id)),...(shared?.gachaAcquiredCards||[]).map(p=>p.cardId)];
+      const all=[...unlockedFreeAgentIds().map(pid=>r.cardIdForFreeAgent(pid)),
+        ...(shared?.gachaAcquiredCards||[]).map(p=>p.cardId)];
       return Array.from(new Set(all)).filter(Boolean);
     }
+    function eligibleFreeAgentIds(){return unlockedFreeAgentIds();}
+
     function resolveCard(cardId) {
       if(cardId.startsWith(EVENT_ID+"::"))return global.RoadToGloryPlayerResolver?.resolveOwnedAtLevel20?.(
         cardId,"ie1",null,data?.freeAgents,shared?.developmentByCardId||{}
@@ -388,7 +399,7 @@
     function squadSection() {
       const view=deps.squadView;
       if(!view?.renderModel||!view?.markup)return '<p>Layout RTG non disponibile</p>';
-      const freeAgentIds=(data.freeAgents?.players||[]).map(p=>asId(p.playerId||p.id));
+      const freeAgentIds=eligibleFreeAgentIds();
       const model=tacticalLineupModel(view.renderModel({state:activeEventSquad(),freeAgentIds,seasonDb:global.SeasonRegistry?.database?.("ie1")||{},
           freeAgentsDb:data.freeAgents,playerResolver:{resolveAtLevel20:cardId=>resolveCard(cardId)}}));
       const meta=deps.getUserTeamMeta?.()||{};
@@ -799,7 +810,7 @@
       };
       const currentState=()=>activeEventSquad(),resolver={resolveAtLevel20:id=>resolveCard(id)};
       const model=()=>tacticalLineupModel(deps.squadView?.renderModel?.({
-        state:currentState(),freeAgentIds:(data.freeAgents?.players||[]).map(p=>asId(p.playerId||p.id)),
+        state:currentState(),freeAgentIds:eligibleFreeAgentIds(),
         seasonDb:global.SeasonRegistry?.database?.("ie1")||{},freeAgentsDb:data.freeAgents,playerResolver:resolver
       })||{});
       ui.open({getCampaign:currentState,getSquadDraft:()=>localSquad,seasonId:()=>"ie1",
@@ -1141,6 +1152,9 @@
       if(squadEditPending)throw fail("halloween-squad-busy");
       if(!isOpen() || match)throw fail("halloween-event-closed-or-match-active");
       const squad=resolvedUser();if(!squad)throw fail("halloween-squad-incomplete");
+      const allowed=new Set(userCards());
+      if([...localSquad.lineup,...localSquad.bench].some(cardId=>!allowed.has(cardId)))
+        throw fail("halloween-squad-incomplete");
       if(ovr(squad.lineup,eventOverallDiscount())>opponentOverall()+1)throw fail("halloween-overall-cap");
       if(global.RtgFourMovesRuntime && !(await global.RtgFourMovesRuntime.ready))throw fail("halloween-move-catalog-not-ready");
       const epoch=session;
