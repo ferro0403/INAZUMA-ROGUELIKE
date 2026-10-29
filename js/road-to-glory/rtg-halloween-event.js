@@ -251,7 +251,7 @@
         index+=Number(row.count);
         return {...row,entries};
       });
-      if(index!==11||new Set(lineupRows.flatMap(row=>row.entries.map(entry=>entry.cardId))).size!==11)
+      if(index!==11||new Set(lineupRows.flatMap(row=>row.entries.map(entry=>asId(entry?.cardId||entry?.playerId||entry)))).size!==11)
         throw fail("halloween-squad-incomplete");
       return {...model,lineupRows};
     }
