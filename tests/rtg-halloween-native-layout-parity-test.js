@@ -31,6 +31,33 @@ assert.equal(model.lineupRows.reduce((sum,r)=>sum+r.entries.length,0),11,
 const html=view.markup(model,{teamName:"Squadra Halloween",teamPower:74});
 assert.equal((html.match(/data-rtg-lineup-player=/g)||[]).length,11);
 assert.equal((html.match(/data-rtg-bench-player=/g)||[]).length,4);
+assert.ok(ctx.RoadToGloryConfig?.season?.("ie1")?.formations?.length>=10,
+  "Use the real RTG formation catalog, not a single mocked 4-3-3");
+const allRealFormations=ctx.RoadToGloryConfig.season("ie1").formations;
+for(const formation of allRealFormations){
+  const mixedResolver=id=>{
+    const index=Number(id.split("::").pop())||0;
+    const natural=["GK","FW","MF","DF"][index%4];
+    return {cardId:id,playerId:id.split("::").pop(),name:"Mixed "+index,
+      position:natural,normalizedRole:natural,overall:75};
+  };
+  const variant=view.renderModel({
+    state:{activeSeasonId:"ie1",gachaAcquiredCards:[],squads:{ie1:{
+      formationId:formation.id,lineup,bench,lineupOrderedBySlot:true
+    }}},
+    freeAgentIds:[],seasonDb:{},freeAgentsDb:{players:[]},
+    playerResolver:{resolveAtLevel20:mixedResolver}
+  });
+  assert.equal(variant.lineupRows.reduce((sum,row)=>sum+row.entries.length,0),11,
+    "Every actual RTG formation must display all 11 off-role players: "+formation.id);
+  const ids=variant.lineupRows.flatMap(row=>row.entries.map(entry=>entry.cardId));
+  assert.equal(new Set(ids).size,11,"No missing or duplicated tactical card in "+formation.id);
+  assert.deepEqual(new Set(ids),new Set(lineup),"All 11 card IDs visible in "+formation.id);
+  const nativeHtml=view.markup(variant,{teamName:"Halloween",teamPower:75});
+  assert.equal((nativeHtml.match(/data-rtg-lineup-player=/g)||[]).length,11,
+    "Original RTG HTML must retain all tactical players in "+formation.id);
+}
+
 assert.ok(html.includes("data-rtg-open-formation"));
 assert.ok(html.includes("data-rtg-open-coaches"));
 const matchView=ctx.RoadToGloryMatchView.create({
@@ -47,7 +74,16 @@ assert.match(matchView.duelVisualMarkup(event,"opponent"),/halloween-vampiro/);
 assert.doesNotMatch(matchView.duelVisualMarkup(samford,"opponent"),/halloween-vampiro/);
 assert.doesNotMatch(matchView.duelVisualMarkup(normal,"user"),/halloween-vampiro/);
 assert.equal((fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8").match(/class="rtg-duel-render\$\{shawnFwClass\}\$\{halloweenClass\}"/g)||[]).length,2,"Both original duel renderers must apply the tagged filter");
+const htmlShell=fs.readFileSync("index.html","utf8");
+assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261029-canonical-slots-coach-v16/,
+  "iOS cache must not serve the older pre-fix Halloween controller");
 const eventSource=fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8");
+assert.match(eventSource,/function tacticalLineupModel\(model\)/,
+  "Halloween must explicitly project the saved XI by tactical slot index");
+assert.match(eventSource,/tacticalLineupModel\(view\.renderModel\(/,
+  "Halloween squad must pass the positional model to the original RTG renderer");
+assert.match(eventSource,/tacticalLineupModel\(deps\.squadView\?\.renderModel\?\.\(/,
+  "Coach power selection must see the same exact 11 tactical cards");
 assert.match(eventSource,/if\(before&&log\)\{/,
   "A terminal duel must never skip its own result overlay");
 assert.match(eventSource,/if\(\["completed","completed-draw","abandoned"\]\.includes\(match\.status\)&&!lastResolution\)/,

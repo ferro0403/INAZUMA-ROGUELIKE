@@ -118,7 +118,7 @@
     const app = deps.app, storage = deps.storage || global.RoadToGloryStorage.create();
     const notify = deps.toast || (()=>{});
     const devMode = deps.devMode === true;
-    let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false;
+    let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false, squadEditPending = false;
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
     let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved",pendingRevealHidden=false;
     let selectedAlbumTeamId=TEAM_ID;
@@ -229,6 +229,31 @@
         return remaining.splice(index>=0?index:0,1)[0];
       });
       return {...squad,lineup,lineupOrderedBySlot:true};
+    }
+    // Keep the original RTG cards and pitch; assign the XI to tactical rows
+    // by POSITION, never by the player's natural role. This makes off-role
+    // swaps visible even for legacy or previously converted Halloween saves.
+    function tacticalLineupModel(model){
+      const lineup=model?.lineup||[];
+      if(lineup.length!==11)throw fail("halloween-squad-incomplete");
+      const formation=model?.formation || (global.RoadToGloryConfig?.season?.("ie1")?.formations||[])
+        .find(f=>asId(f.id)===asId(localSquad?.formationId)) ||
+        {requirements:{FW:3,MF:3,DF:4,GK:1}};
+      const rows=global.FormationLayout?.displayRows?.(formation) ||
+        ["FW","MF","DF","GK"].map(role=>({
+          role,count:Number(formation?.requirements?.[role]||0)
+        })).filter(row=>row.count);
+      if(rows.reduce((n,row)=>n+Number(row.count||0),0)!==11)
+        throw fail("halloween-invalid-formation-slots");
+      let index=0;
+      const lineupRows=rows.map(row=>{
+        const entries=lineup.slice(index,index+Number(row.count));
+        index+=Number(row.count);
+        return {...row,entries};
+      });
+      if(index!==11||new Set(lineupRows.flatMap(row=>row.entries.map(entry=>asId(entry?.cardId||entry?.playerId||entry)))).size!==11)
+        throw fail("halloween-squad-incomplete");
+      return {...model,lineupRows};
     }
     function assertEventSquadIntegrity(squad){
       const all=[...(squad?.lineup||[]),...(squad?.bench||[])];
@@ -355,15 +380,22 @@
       const view=deps.squadView;
       if(!view?.renderModel||!view?.markup)return '<p>Layout RTG non disponibile</p>';
       const freeAgentIds=(data.freeAgents?.players||[]).map(p=>asId(p.playerId||p.id));
-      const model=view.renderModel({state:activeEventSquad(),freeAgentIds,seasonDb:global.SeasonRegistry?.database?.("ie1")||{},
-          freeAgentsDb:data.freeAgents,playerResolver:{resolveAtLevel20:cardId=>resolveCard(cardId)}});
+      const model=tacticalLineupModel(view.renderModel({state:activeEventSquad(),freeAgentIds,seasonDb:global.SeasonRegistry?.database?.("ie1")||{},
+          freeAgentsDb:data.freeAgents,playerResolver:{resolveAtLevel20:cardId=>resolveCard(cardId)}}));
       const meta=deps.getUserTeamMeta?.()||{};
       const name=meta.name||"La tua squadra";
       const squadOvr=ovr(resolvedUser()?.lineup,eventOverallDiscount());
-      const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · Evento Halloween</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div></div>';
+      const coachDiscount=eventOverallDiscount(),coachTarget=coachDiscount&&resolveCard(coachDiscount.cardId);
+      const coachNote=coachTarget?'<p class="rtg-coach-cap-note">Maschera Maledetta attiva · '+
+        escape(coachTarget.name||coachTarget.playerId||"Titolare Halloween")+
+        ': −15 OVR solo per i requisiti, non in partita.</p>':"";
+      const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · Evento Halloween</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div>'+coachNote+'</div>';
       return '<div class="rtg-halloween-mode halloween-squad-mode">'+
         view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
-          coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(activeEventSquad(),localSquad.coachId)||"",
+          coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(
+            activeEventSquad(),localSquad.coachId,
+            localSquad.coachId===HALLOWEEN_COACH_ID&&!eventOverallDiscount()
+              ?null:localSquad.coachPowerSelection)||"",
           requirementsMarkup:requirement,nextTeamName:"Occult Halloween",dirty:false})+'</div>';
     }
     function vendingSection() {
@@ -750,10 +782,10 @@
       const ui=global.RoadToGloryCoachSquadPowerUi;
       if(match||!ui?.open)return;
       const currentState=()=>activeEventSquad(),resolver={resolveAtLevel20:id=>resolveCard(id)};
-      const model=()=>deps.squadView?.renderModel?.({
+      const model=()=>tacticalLineupModel(deps.squadView?.renderModel?.({
         state:currentState(),freeAgentIds:(data.freeAgents?.players||[]).map(p=>asId(p.playerId||p.id)),
         seasonDb:global.SeasonRegistry?.database?.("ie1")||{},freeAgentsDb:data.freeAgents,playerResolver:resolver
-      })||{};
+      })||{});
       ui.open({getCampaign:currentState,getSquadDraft:()=>localSquad,seasonId:()=>"ie1",
         resolve:resolveCard,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
         closeModal:deps.closeModal,toast:notify,squadView:deps.squadView,getModel:model,
@@ -915,9 +947,12 @@
         });
       }
     }
-    async function perform(op) {if(busy)return;try{await op();render();}catch(error){global.console?.error?.("[RTG Halloween]",error);const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento"};notify(reasons[error?.code]||("Operazione Halloween fallita: "+(error?.code||error?.message||"errore sconosciuto")),"error");}}
+    async function perform(op) {if(busy)return;try{await op();render();}catch(error){global.console?.error?.("[RTG Halloween]",error);const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento","halloween-coach-selection-invalid":"Scegli un titolare Halloween valido per Maschera Maledetta","halloween-squad-busy":"Cambio squadra già in corso"};notify(reasons[error?.code]||("Operazione Halloween fallita: "+(error?.code||error?.message||"errore sconosciuto")),"error");}}
     async function editSquad(kind,arg) {
+      if(squadEditPending)throw fail("halloween-squad-busy");
       if(match)throw fail("halloween-active-match");
+      squadEditPending=true;
+      try{
       lock();
       const curr=orderedEventSquad(localSquad);
       let nextSlot=activeSquadSlot,nextSquad=curr;
@@ -946,6 +981,8 @@
       } else if(kind==="coachPower"){
         if(arg?.coachId!==curr.coachId)throw fail("halloween-coach-invalid");
         curr.coachPowerSelection=clone(arg.coachPowerSelection||null);
+        if(curr.coachPowerSelection&&!global.RoadToGloryCoachPowerRuntime?.validConfig?.(
+          curr,curr.lineup,"ie1",curr.bench))throw fail("halloween-coach-selection-invalid");
       } else if(kind==="adapt"||kind==="formation"){
         const cap=opponentOverall()+1,limit=Math.floor(cap*11);
         const formationId=kind==="formation"?asId(arg):curr.formationId;
@@ -954,10 +991,14 @@
         if(!formation&&kind==="formation")throw fail("halloween-formation-unavailable");
         const roles=formation?.requirements||{FW:3,MF:3,DF:4,GK:1};
         const previous=[...curr.lineup,...curr.bench],previousSet=new Set(curr.lineup);
+        const discount=eventOverallDiscount(curr);
         const owned=userCards().map(id=>({id,p:resolveCard(id)})).filter(x=>x.p)
-          .map(x=>({...x,overall:Math.round(Number(x.p.overall??x.p.finalOverall??0)),
-            role:asId(x.p.normalizedRole||x.p.position||x.p.role).toUpperCase()}))
-          .filter(x=>Number.isFinite(x.overall));
+          .map(x=>{
+            const actualOverall=Math.round(Number(x.p.overall??x.p.finalOverall??0));
+            return {...x,actualOverall,overall:x.id===discount?.cardId
+              ?Math.max(0,actualOverall-Math.max(0,Number(discount.amount)||0)):actualOverall,
+              role:asId(x.p.normalizedRole||x.p.position||x.p.role).toUpperCase()};
+          }).filter(x=>Number.isFinite(x.overall));
         let line=[];
         if(kind==="adapt"){
           // Exact bounded knapsack on the REAL RTG owned-card pool. For each
@@ -1035,6 +1076,16 @@
         nextSquad=orderedEventSquad(curr);
       }
       assertEventSquadIntegrity(nextSquad);
+      // An off-field Halloween target no longer reduces the OVR. Expire it
+      // visibly during the SAME atomic edit rather than leaving a stale power.
+      if(["replace","adapt","formation"].includes(kind)&&
+         nextSquad.coachId===HALLOWEEN_COACH_ID&&nextSquad.coachPowerSelection&&
+         !global.RoadToGloryCoachPowerRuntime?.validConfig?.(
+           nextSquad,nextSquad.lineup,"ie1",nextSquad.bench)){
+        nextSquad.coachPowerSelection=null;
+        const message="Maschera Maledetta: seleziona di nuovo un titolare Halloween.";
+        adaptMessage=adaptMessage?adaptMessage+" "+message:message;
+      }
       nextSlots[nextSlot]=clone(nextSquad);
       const epoch=session;
       const saved={...nextSquad,activeSquadSlot:nextSlot,slots:nextSlots};
@@ -1043,8 +1094,10 @@
       // Only advance the visible squad once the canonical event save commits.
       activeSquadSlot=nextSlot;localSquad=nextSquad;squadSlots=nextSlots;
       if(adaptMessage)notify(adaptMessage);
+      } finally { squadEditPending=false; }
     }
     async function startMatch() {
+      if(squadEditPending)throw fail("halloween-squad-busy");
       if(!isOpen() || match)throw fail("halloween-event-closed-or-match-active");
       const squad=resolvedUser();if(!squad)throw fail("halloween-squad-incomplete");
       if(ovr(squad.lineup,eventOverallDiscount())>opponentOverall()+1)throw fail("halloween-overall-cap");

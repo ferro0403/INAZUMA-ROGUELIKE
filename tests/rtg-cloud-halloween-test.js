@@ -98,6 +98,7 @@ const context={
   RoadToGloryRng:{int:()=>0}
 };
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches.js","utf8"),context);
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-runtime.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches-view.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-encounter-runtime.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),context);
@@ -540,6 +541,98 @@ async function main() {
   await coachController.open();
   assert.match(app.innerHTML,/DISTRIBUTORE STREGATO/);
   coachController.dispose();
+  // Characterization of the REAL coach power runtime, selection saved with
+  // the event squad (not the global account), and the native coach status.
+  const coachRules=context.RoadToGloryCoachPowerRuntime;
+  const oldSaved=clone(records["local:halloween2026:squad"]);
+  const powerSlot=clone(oldSaved.slots["1"]);
+  // Prior regression cases intentionally swapped Nathan out. Reinsert the
+  // already-owned event card as one starter for this independent coach test.
+  if(!powerSlot.lineup.includes(nathanId)){
+    const benchIndex=powerSlot.bench.indexOf(nathanId);
+    if(benchIndex>=0)powerSlot.bench[benchIndex]=powerSlot.lineup[1];
+    powerSlot.lineup[1]=nathanId;
+  }
+  assert.equal(new Set([...powerSlot.lineup,...powerSlot.bench]).size,15);
+  assert.ok(powerSlot.lineup.includes(nathanId),"The event coach needs a REAL owned Halloween starter");
+  powerSlot.coachId=coachId;
+  powerSlot.coachPowerSelection={coachId,cardIds:[nathanId],moveIndices:[],element:"",targets:[]};
+  assert.equal(coachRules.overallDiscountFor(powerSlot,records["shared:account"])?.amount,15,
+    "Maschera Maledetta must discount 15 points ONLY for the selected Halloween starter");
+  records["local:halloween2026:squad"]={...oldSaved,activeSquadSlot:1,
+    slots:{...oldSaved.slots,"1":powerSlot}};
+  const unmodifiedSlot2=clone(records["local:halloween2026:squad"].slots["2"]);
+  let coachSquadMarkup=null,powerActions=null;
+  const baseMarkup=squadView.markup,baseBind=squadView.bind;
+  squadView.markup=(model,opts)=>{
+    coachSquadMarkup={model,opts};
+    return baseMarkup(model,opts);
+  };
+  squadView.bind=(root,actions)=>{
+    powerActions=actions;
+    return baseBind(root,actions);
+  };
+  const powerMessages=[];
+  const powerController=E.create({app,storage,squadView,runView:nativeRunView,
+    toast:message=>powerMessages.push(message),getModalRoot:()=>pickerModal,
+    openModal:markup=>{pickerModal.innerHTML=markup;
+      const prefix="<div data-rtg-picker-results>";
+      const start=markup.indexOf(prefix),end=markup.indexOf("</div>",start);
+      pickerResults.innerHTML=start>=0&&end>start?markup.slice(start+prefix.length,end):"";
+    }});
+  await powerController.open();
+  await control("data-halloween-tab",d=>d.halloweenTab==="squad").fire();
+  assert.match(coachSquadMarkup.opts.coachSlotMarkup,/selezione salvata/,
+    "Equipped Halloween coach should visibly confirm its saved active power");
+  assert.match(coachSquadMarkup.opts.requirementsMarkup,/Maschera Maledetta attiva/,
+    "The requirements panel must explain the ACTIVE 15-point coach discount");
+  const preSwapTarget=coachRules.overallDiscountFor(records["local:halloween2026:squad"].slots["1"],
+    records["shared:account"]);
+  assert.equal(preSwapTarget?.cardId,nathanId);
+  assert.equal(preSwapTarget?.amount,15);
+  // Replace the coached starter with an unassigned card of another role.
+  // The XI must remain 11; the invalidated target is explicitly cleared.
+  assert.ok(powerActions?.onOpenPlayer);
+  powerActions.onOpenPlayer(nathanId);
+  const unassignedForPower=pickerEntries.find(entry=>
+    ![...powerSlot.lineup,...powerSlot.bench].includes(entry.cardId));
+  assert.ok(unassignedForPower,"A normal available card must be selectable in the picker");
+  await pickRealCard(unassignedForPower.cardId);
+  const afterPowerSwap=records["local:halloween2026:squad"].slots["1"];
+  assertVisibleRtgSquad(afterPowerSwap);
+  assert.ok(afterPowerSwap.lineup.includes(unassignedForPower.cardId));
+  assert.ok(!afterPowerSwap.lineup.includes(nathanId));
+  assert.equal(afterPowerSwap.coachPowerSelection,null,
+    "Moving the selected target off the field must not retain a silently stale power");
+  assert.equal(coachRules.overallDiscountFor(afterPowerSwap,records["shared:account"]),null);
+  assert.ok(powerMessages.some(message=>message.includes("Maschera Maledetta")),
+    "Coach cancellation must be communicated to the player after the atomic squad save");
+  assert.deepEqual(records["local:halloween2026:squad"].slots["2"],unmodifiedSlot2);
+  // Race regression: two rapid squad-slot taps must not concurrently write a
+  // stale snapshot and erase a valid lineup. Only the first commit is allowed.
+  const atomicUpdate=storage.updateMany;
+  let releaseSquadWrite=null,blockedWrites=0;
+  storage.updateMany=async(keys,handler)=>{
+    if(keys.includes("local:halloween2026:squad")){
+      blockedWrites++;
+      await new Promise(resolve=>{releaseSquadWrite=resolve;});
+    }
+    return atomicUpdate.call(storage,keys,handler);
+  };
+  try{
+    const firstSwitch=powerActions.onSelectSquadSlot(2);
+    assert.equal(typeof releaseSquadWrite,"function","First slot change must reach the commit boundary");
+    await powerActions.onSelectSquadSlot(3);
+    assert.equal(blockedWrites,1,"A second tap cannot start a competing squad save");
+    releaseSquadWrite();
+    await firstSwitch;
+    const savedAfterRace=records["local:halloween2026:squad"];
+    assert.equal(savedAfterRace.activeSquadSlot,2);
+    assertVisibleRtgSquad(savedAfterRace.slots["1"]);
+    assertVisibleRtgSquad(savedAfterRace.slots["2"]);
+  }finally{storage.updateMany=atomicUpdate;}
+  powerController.dispose();
+  squadView.markup=baseMarkup;squadView.bind=baseBind;
   // The Halloween pumpkin cheat must exist ONLY when RTG explicitly grants
   // devMode. It must commit to the existing shared:account, not a parallel key.
   const normalApp=createApp();
