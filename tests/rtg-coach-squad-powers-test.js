@@ -341,6 +341,44 @@ test("Squad power preview shows all five targeted effects without mutating canon
   assert.doesNotMatch(ui,/localStorage\.setItem|firebase|indexedDB/i);
 });
 
+test("Halloween squad powers resolve the event catalog and keep all real move PT costs",()=>{
+  const selected="halloween2026::custom_0001";
+  const halloweenPlayer={cardId:selected,playerId:"custom_0001",
+    resolvedSeasonId:"halloween2026",element:"Forest",halloweenMoves:[
+      {type:"shot",element:"Forest",power:50},
+      {type:"dribble",element:"Wind",power:60},
+      {type:"defense",element:"Forest",power:80},
+      {type:"shot",element:"Mountain",power:95}
+    ]};
+  const second={...halloweenPlayer,cardId:"halloween2026::custom_0002",playerId:"custom_0002"};
+  const lineup=[halloweenPlayer,second],state={coachOwnedIds:["208","4401"]};
+  assert.deepEqual(Array.from(rules.fourMoves(halloweenPlayer,"halloween2026"),x=>x.ptCost),[50,60,80,95]);
+  const yi={coachId:"4401",coachPowerSelection:{coachId:"4401",
+    cardIds:lineup.map(p=>p.cardId),targets:[
+      {cardId:selected,element:"fire",moveIndices:[]},
+      {cardId:second.cardId,element:"wind",moveIndices:[]}
+    ]}};
+  assert.ok(rules.validConfig(yi,lineup,"halloween2026",[]),
+    "Yi must accept the actual Halloween moves, not query a missing Season catalog");
+  const ptKeys=Object.fromEntries(lineup.map(p=>["user:"+p.cardId,150]));
+  const m={seasonId:"halloween2026",ptModeVersion:1,
+    ptCurrentByPlayerId:ptKeys,ptMaxByPlayerId:{...ptKeys},
+    userSquad:{lineup,bench:[]}};
+  const updated=rules.applyToMatch(m,yi,state);
+  assert.equal(updated.coachPowerEffect.coachId,"4401");
+  assert.equal(updated.userSquad.lineup[0].element,"fire");
+  assert.equal(updated.userSquad.lineup[1].element,"wind");
+  assert.equal(rules.moveElement(updated,"user",selected,3,"mountain"),"fire");
+  assert.equal(rules.moveCost(updated,"user",selected,3,95),95);
+  assert.equal(halloweenPlayer.element,"Forest");
+  const hillman={coachId:"208",coachPowerSelection:{coachId:"208",cardIds:lineup.map(p=>p.cardId)}};
+  assert.ok(rules.validConfig(hillman,lineup,"halloween2026",[]));
+  const buffed=rules.applyToMatch(m,hillman,state);
+  assert.equal(buffed.ptCurrentByPlayerId["user:"+selected],250);
+  assert.equal(buffed.ptMaxByPlayerId["user:"+second.cardId],250);
+  assert.equal(m.ptCurrentByPlayerId["user:"+selected],150);
+});
+
 test("All Squad powers hide yellow card footer; selector matches slim RTG card border",()=>{
   const view=read("js/road-to-glory/rtg-squad-view-base.js");
   assert.match(view,/trailingMarkup: \x60\$\{legacyBadge/);
@@ -352,7 +390,7 @@ test("All Squad powers hide yellow card footer; selector matches slim RTG card b
   assert.doesNotMatch(styles,/border-left-width:4px!important/);
   assert.match(styles,/outline:2px solid #ffd21f/);
   const html=read("index.html");
-  assert.match(html,/rtg-coaches\.css\?v=20261029-halloween-coach-contrast-v2/);
+  assert.match(html,/rtg-coaches\.css\?v=20261029-halloween-reveal-contrast-v3/);
   assert.match(html,/rtg-squad-view\.js\?v=20261023-halftime-scroll-v2/);
 });
 
