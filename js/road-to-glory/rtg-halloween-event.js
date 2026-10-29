@@ -118,7 +118,7 @@
     const app = deps.app, storage = deps.storage || global.RoadToGloryStorage.create();
     const notify = deps.toast || (()=>{});
     const devMode = deps.devMode === true;
-    let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false;
+    let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false, actionPending = false, squadWriting = false;
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
     let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved",pendingRevealHidden=false;
     let selectedAlbumTeamId=TEAM_ID;
@@ -353,10 +353,18 @@
     }
     function ensureEventPitchRows(model){
       if(!model||!Array.isArray(model.lineupRows)||!Array.isArray(model.lineup)||model.lineup.length!==11)return model;
-      const visible=(model.lineupRows||[]).reduce((n,row)=>n+(row.entries||[]).length,0);
-      if(visible===11)return model;
-      const formation=model.formation;
+      const expectedIds=model.lineup.map(entry=>asId(entry.cardId||entry.player?.cardId));
+      if(new Set(expectedIds).size!==11||expectedIds.some(id=>!id))
+        throw fail("halloween-squad-pitch-invalid");
+      const visibleEntries=model.lineupRows.flatMap(row=>row.entries||[]);
+      const visibleIds=visibleEntries.map(entry=>asId(entry.cardId||entry.player?.cardId));
       const roles=tacticalSlotRoles(model.formationId||localSquad?.formationId);
+      const correctRoles=model.lineupRows.every(row=>(row.entries||[]).every(entry=>
+        roles[expectedIds.indexOf(asId(entry.cardId||entry.player?.cardId))]===asId(row.role).toUpperCase()));
+      // Count alone is not enough: two copies of one player still make 11 DOM cards.
+      if(visibleIds.length===11&&new Set(visibleIds).size===11&&
+         visibleIds.every(id=>expectedIds.includes(id))&&correctRoles)return model;
+      const formation=model.formation;
       const rows=global.FormationLayout?.displayRows?.(formation)||
         ["FW","MF","DF","GK"].map(role=>({
           role,count:Number(formation?.requirements?.[role]||0)
@@ -659,10 +667,14 @@
         .sort((a,b)=>(descending?b.overall-a.overall:a.overall-b.overall)||a.player.name.localeCompare(b.player.name,"it"));
       const shown=list=>list.slice(0,visibleCount);
       let selecting=false;
-      function select(id){if(selecting)return;selecting=true;return perform(async()=>{
-        try{await editSquad("replace",{from:cardId,to:id});deps.closeModal?.();}
-        finally{selecting=false;}
-      });}
+      function select(id){
+        if(selecting||actionPending||squadWriting||busy)return;
+        selecting=true;
+        return perform(async()=>{
+          await editSquad("replace",{from:cardId,to:id});
+          deps.closeModal?.();
+        }).finally(()=>{selecting=false;});
+      }
       function wireResults(){
         modalRoot()?.querySelector?.("[data-rtg-picker-results]")?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(b=>b.addEventListener("click",()=>select(b.dataset.rtgPickerPlayer)));
         modalRoot()?.querySelector?.("[data-rtg-picker-load-more]")?.addEventListener("click",()=>{visibleCount+=12;paint();});
@@ -773,10 +785,10 @@
       const ui=global.RoadToGloryCoachSquadPowerUi;
       if(match||!ui?.open)return;
       const currentState=()=>activeEventSquad(),resolver={resolveAtLevel20:id=>resolveCard(id)};
-      const model=()=>deps.squadView?.renderModel?.({
+      const model=()=>ensureEventPitchRows(deps.squadView?.renderModel?.({
         state:currentState(),freeAgentIds:(data.freeAgents?.players||[]).map(p=>asId(p.playerId||p.id)),
         seasonDb:global.SeasonRegistry?.database?.("ie1")||{},freeAgentsDb:data.freeAgents,playerResolver:resolver
-      })||{};
+      })||{});
       ui.open({getCampaign:currentState,getSquadDraft:()=>localSquad,seasonId:()=>"ie1",
         resolve:resolveCard,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
         closeModal:deps.closeModal,toast:notify,squadView:deps.squadView,getModel:model,
@@ -938,8 +950,20 @@
         });
       }
     }
-    async function perform(op) {if(busy)return;try{await op();render();}catch(error){global.console?.error?.("[RTG Halloween]",error);const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento"};notify(reasons[error?.code]||("Operazione Halloween fallita: "+(error?.code||error?.message||"errore sconosciuto")),"error");}}
+    async function perform(op) {
+      if(actionPending||squadWriting||busy)return;
+      actionPending=true;
+      try{await op();render();}
+      catch(error){
+        global.console?.error?.("[RTG Halloween]",error);
+        const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento","halloween-coach-selection-invalid":"La selezione del potere allenatore non è più valida"};
+        notify(reasons[error?.code]||("Operazione Halloween fallita: "+(error?.code||error?.message||"errore sconosciuto")),"error");
+      } finally {actionPending=false;}
+    }
     async function editSquad(kind,arg) {
+      if(squadWriting)throw fail("halloween-squad-busy");
+      squadWriting=true;
+      try {
       if(match)throw fail("halloween-active-match");
       lock();
       const curr=orderedEventSquad(localSquad);
@@ -969,6 +993,9 @@
       } else if(kind==="coachPower"){
         if(arg?.coachId!==curr.coachId)throw fail("halloween-coach-invalid");
         curr.coachPowerSelection=clone(arg.coachPowerSelection||null);
+        if(curr.coachPowerSelection&&!global.RoadToGloryCoachPowerRuntime?.validConfig?.(
+            curr,curr.lineup,"ie1",curr.bench))
+          throw fail("halloween-coach-selection-invalid");
       } else if(kind==="adapt"||kind==="formation"){
         const cap=opponentOverall()+1,limit=Math.floor(cap*11);
         const formationId=kind==="formation"?asId(arg):curr.formationId;
@@ -977,8 +1004,12 @@
         if(!formation&&kind==="formation")throw fail("halloween-formation-unavailable");
         const roles=formation?.requirements||{FW:3,MF:3,DF:4,GK:1};
         const previous=[...curr.lineup,...curr.bench],previousSet=new Set(curr.lineup);
+        // The cap solver must use the same requirement-only discount as kickoff.
+        // The player's actual overall and the match snapshot are never changed.
+        const discount=kind==="adapt"?eventOverallDiscount(curr):null;
         const owned=userCards().map(id=>({id,p:resolveCard(id)})).filter(x=>x.p)
-          .map(x=>({...x,overall:Math.round(Number(x.p.overall??x.p.finalOverall??0)),
+          .map(x=>({...x,overall:Math.max(0,Math.round(Number(x.p.overall??x.p.finalOverall??0))-
+              (x.id===discount?.cardId?Math.max(0,Number(discount.amount)||0):0)),
             role:asId(x.p.normalizedRole||x.p.position||x.p.role).toUpperCase()}))
           .filter(x=>Number.isFinite(x.overall));
         let line=[];
@@ -1074,6 +1105,7 @@
       // Only advance the visible squad once the canonical event save commits.
       activeSquadSlot=nextSlot;localSquad=nextSquad;squadSlots=nextSlots;
       if(adaptMessage)notify(adaptMessage);
+      } finally {squadWriting=false;}
     }
     async function startMatch() {
       if(!isOpen() || match)throw fail("halloween-event-closed-or-match-active");
