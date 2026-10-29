@@ -45,6 +45,12 @@
       return player.halloweenMoves.map(move=>({
         ...move,ptCost:move?.ptCost??move?.power
       }));
+    // Free agents have no extracted four-move database. The match PT engine
+    // falls back to their verified legacy move; staff must use that same move.
+    if(id(player?.cardId).startsWith("free_agents::")&&(player?.activeMove||player?.move)){
+      const move=player.activeMove||player.move;
+      return [{...move,ptCost:move.ptCost??move.power}];
+    }
     const canonical=id(player?.legacyCanonicalPlayerId||player?.playerId||player?.id).split("@")[0];
     const season=id(player?.resolvedSeasonId||player?.legacySeasonId||seasonId||"ie1");
     return global.RtgFourMovesRuntime?.movesFor?.(season,canonical)||[];
