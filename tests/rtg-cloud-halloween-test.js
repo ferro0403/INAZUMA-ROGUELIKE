@@ -693,7 +693,9 @@ async function main() {
     assert.equal((matrixHtml.match(/data-rtg-lineup-player=/g)||[]).length,11);
     assert.equal((matrixHtml.match(/data-rtg-bench-player=/g)||[]).length,4);
   }
-  const coachReal=E.create({app:coachApp,storage,squadView:instrumentedView,runView:nativeRunView,toast:()=>{}});
+  const coachReal=E.create({app:coachApp,storage,squadView:instrumentedView,runView:nativeRunView,toast:()=>{},
+    getModalRoot:()=>realModal,openModal:markup=>{realModal.innerHTML=markup;},
+    closeModal:()=>{realModal.innerHTML="";}});
   await coachReal.open();
   await coachApp.controls["data-halloween-tab"].find(el=>el.dataset.halloweenTab==="squad").fire();
   assert.match(coachApp.innerHTML,/Potere configurabile · selezione salvata/,
@@ -712,6 +714,25 @@ async function main() {
   assert.match(coachApp.innerHTML,new RegExp('<strong>'+withPower.replace?.("x","")+'</strong>|<strong>'+withPower+'</strong>'),
     "Halloween home/squad must show the discounted eligibility average");
   assert.ok(withPower<baseAverage);
+  // Removing the selected Halloween starter through the REAL RTG change
+  // menu must clear the now-invalid power, without affecting unrelated cards.
+  const targetChange=coachApp.controls["data-rtg-change-player"]
+    .find(button=>button.dataset.rtgChangePlayer===coachCard);
+  assert.ok(targetChange,"Configured Hekyll starter must be visible in the native XI");
+  await targetChange.fire();
+  const existing=new Set([...realConfig.lineup,...realConfig.bench]);
+  const replacement=candidates.find(entry=>!existing.has(entry.cardId));
+  assert.ok(replacement);
+  const replacementButton=resultButtons.find(button=>button.dataset.rtgPickerPlayer===replacement.cardId);
+  assert.ok(replacementButton);
+  await replacementButton.fire();
+  const afterSubstitution=records["local:halloween2026:squad"].slots["1"];
+  assert.equal(afterSubstitution.coachPowerSelection,null,
+    "Changing out Hekyll's target must remove the stale coach selection");
+  assert.equal((coachApp.innerHTML.match(/data-rtg-lineup-player=/g)||[]).length,11);
+  assert.equal((coachApp.innerHTML.match(/data-rtg-bench-player=/g)||[]).length,4);
+  assert.doesNotMatch(coachApp.innerHTML,/Potere configurabile · selezione salvata/,
+    "Coach badge must not misreport an effect after target substitution");
   coachReal.dispose();
 
   console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 200-pumpkin pulls, cloud compatibility PASS");
