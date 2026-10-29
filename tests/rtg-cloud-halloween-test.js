@@ -617,7 +617,7 @@ async function main() {
       blockedWrites++;
       await new Promise(resolve=>{releaseSquadWrite=resolve;});
     }
-    return atomicUpdate(keys,handler);
+    return atomicUpdate.call(storage,keys,handler);
   };
   try{
     const firstSwitch=powerActions.onSelectSquadSlot(2);
