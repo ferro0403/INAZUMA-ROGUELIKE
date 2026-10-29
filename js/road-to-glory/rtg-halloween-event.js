@@ -785,6 +785,13 @@
       deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
       const ui=global.RoadToGloryCoachSquadPowerUi;
       if(match||!ui?.open)return;
+      // Refresh the underlying OVR and requirements AFTER the coach modal
+      // closes, based only on the committed squad (not the draft selection).
+      let coachPowerCommitted=false;
+      const closePowerModal=()=>{
+        deps.closeModal?.();
+        if(coachPowerCommitted){coachPowerCommitted=false;render();}
+      };
       const currentState=()=>activeEventSquad(),resolver={resolveAtLevel20:id=>resolveCard(id)};
       const model=()=>tacticalLineupModel(deps.squadView?.renderModel?.({
         state:currentState(),freeAgentIds:(data.freeAgents?.players||[]).map(p=>asId(p.playerId||p.id)),
@@ -792,8 +799,11 @@
       })||{});
       ui.open({getCampaign:currentState,getSquadDraft:()=>localSquad,seasonId:()=>"ie1",
         resolve:resolveCard,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
-        closeModal:deps.closeModal,toast:notify,squadView:deps.squadView,getModel:model,
-        saveSquad:async draft=>{await editSquad("coachPower",draft);render();},
+        closeModal:closePowerModal,toast:notify,squadView:deps.squadView,getModel:model,
+        saveSquad:async draft=>{
+          await editSquad("coachPower",draft);
+          coachPowerCommitted=true;
+        },
         openPlayerDetails:key=>openNativeDetail(key),
         previewSquadOverall:selection=>{
           const line=resolvedUser()?.lineup;
