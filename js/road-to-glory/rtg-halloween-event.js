@@ -1113,15 +1113,19 @@
         nextSquad=orderedEventSquad(curr);
       }
       assertEventSquadIntegrity(nextSquad);
-      // An off-field Halloween target no longer reduces the OVR. Expire it
-      // visibly during the SAME atomic edit rather than leaving a stale power.
-      if(["replace","adapt","formation"].includes(kind)&&
-         nextSquad.coachId===HALLOWEEN_COACH_ID&&nextSquad.coachPowerSelection&&
-         !global.RoadToGloryCoachPowerRuntime?.validConfig?.(
-           nextSquad,nextSquad.lineup,"ie1",nextSquad.bench)){
-        nextSquad.coachPowerSelection=null;
-        const message="Maschera Maledetta: seleziona di nuovo un titolare Halloween.";
-        adaptMessage=adaptMessage?adaptMessage+" "+message:message;
+      // Keep all configured squad powers in sync with the saved XI. A changed
+      // player can invalidate Hillman/Yi just as it can invalidate Hekyll.
+      // Clear only an invalid selection during this SAME atomic squad write.
+      if(["replace","adapt","formation"].includes(kind)&&nextSquad.coachPowerSelection){
+        const roster=resolvedPowerRoster(nextSquad);
+        if(!global.RoadToGloryCoachPowerRuntime?.validConfig?.(
+            nextSquad,roster.lineup,"ie1",roster.bench)){
+          const message=nextSquad.coachId===HALLOWEEN_COACH_ID
+            ?"Maschera Maledetta: seleziona di nuovo un titolare Halloween."
+            :"Potere allenatore: seleziona di nuovo i giocatori interessati.";
+          nextSquad.coachPowerSelection=null;
+          adaptMessage=adaptMessage?adaptMessage+" "+message:message;
+        }
       }
       nextSlots[nextSlot]=clone(nextSquad);
       const epoch=session;
