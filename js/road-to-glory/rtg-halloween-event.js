@@ -236,7 +236,9 @@
     function tacticalLineupModel(model){
       const lineup=model?.lineup||[];
       if(lineup.length!==11)throw fail("halloween-squad-incomplete");
-      const formation=model?.formation;
+      const formation=model?.formation || (global.RoadToGloryConfig?.season?.("ie1")?.formations||[])
+        .find(f=>asId(f.id)===asId(localSquad?.formationId)) ||
+        {requirements:{FW:3,MF:3,DF:4,GK:1}};
       const rows=global.FormationLayout?.displayRows?.(formation) ||
         ["FW","MF","DF","GK"].map(role=>({
           role,count:Number(formation?.requirements?.[role]||0)
