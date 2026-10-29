@@ -608,6 +608,29 @@ async function main() {
   assert.ok(powerMessages.some(message=>message.includes("Maschera Maledetta")),
     "Coach cancellation must be communicated to the player after the atomic squad save");
   assert.deepEqual(records["local:halloween2026:squad"].slots["2"],unmodifiedSlot2);
+  // Race regression: two rapid squad-slot taps must not concurrently write a
+  // stale snapshot and erase a valid lineup. Only the first commit is allowed.
+  const atomicUpdate=storage.updateMany;
+  let releaseSquadWrite=null,blockedWrites=0;
+  storage.updateMany=async(keys,handler)=>{
+    if(keys.includes("local:halloween2026:squad")){
+      blockedWrites++;
+      await new Promise(resolve=>{releaseSquadWrite=resolve;});
+    }
+    return atomicUpdate(keys,handler);
+  };
+  try{
+    const firstSwitch=powerActions.onSelectSquadSlot(2);
+    assert.equal(typeof releaseSquadWrite,"function","First slot change must reach the commit boundary");
+    await powerActions.onSelectSquadSlot(3);
+    assert.equal(blockedWrites,1,"A second tap cannot start a competing squad save");
+    releaseSquadWrite();
+    await firstSwitch;
+    const savedAfterRace=records["local:halloween2026:squad"];
+    assert.equal(savedAfterRace.activeSquadSlot,2);
+    assertVisibleRtgSquad(savedAfterRace.slots["1"]);
+    assertVisibleRtgSquad(savedAfterRace.slots["2"]);
+  }finally{storage.updateMany=atomicUpdate;}
   powerController.dispose();
   squadView.markup=baseMarkup;squadView.bind=baseBind;
   // The Halloween pumpkin cheat must exist ONLY when RTG explicitly grants
