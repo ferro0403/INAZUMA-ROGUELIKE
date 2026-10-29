@@ -379,8 +379,10 @@ async function main() {
   const pickerController=E.create({app,storage,squadView,runView:nativeRunView,toast:()=>{},
     getModalRoot:()=>pickerModal,openModal:markup=>{
       pickerModal.innerHTML=markup;
-      const range=markup.match(/<div data-rtg-picker-results>([\\s\\S]*?)<\\/div>/);
-      pickerResults.innerHTML=range?.[1]||"";
+      const prefix="<div data-rtg-picker-results>";
+      const start=markup.indexOf(prefix);
+      const end=markup.indexOf("</div>",start);
+      pickerResults.innerHTML=start>=0&&end>start?markup.slice(start+prefix.length,end):"";
     }});
   function assertVisibleRtgSquad(squad){
     const formation={id:"4-3-3",name:"4-3-3",
