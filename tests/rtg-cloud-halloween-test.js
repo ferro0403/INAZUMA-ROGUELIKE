@@ -590,6 +590,33 @@ async function main() {
     records["shared:account"]);
   assert.equal(preSwapTarget?.cardId,nathanId);
   assert.equal(preSwapTarget?.amount,15);
+  // Commit the coach choice while the modal is open. On close, the native
+  // squad OVR and requirements must refresh without changing screens.
+  const originalCoachUi=context.RoadToGloryCoachSquadPowerUi;
+  let coachUiArgs=null;
+  context.RoadToGloryCoachSquadPowerUi={open:args=>{coachUiArgs=args;}};
+  assert.ok(powerActions?.onConfigureCoachPower);
+  powerActions.onConfigureCoachPower();
+  assert.ok(coachUiArgs?.saveSquad&&coachUiArgs?.closeModal);
+  const effectiveBefore=coachSquadMarkup.opts.teamPower;
+  const originalPower=clone(powerSlot.coachPowerSelection);
+  await coachUiArgs.saveSquad({...records["local:halloween2026:squad"].slots["1"],coachPowerSelection:null});
+  coachUiArgs.closeModal();
+  const withoutPower=coachSquadMarkup.opts.teamPower;
+  assert.ok(withoutPower>effectiveBefore,"Removing Hekyll's power must update OVR immediately");
+  assert.doesNotMatch(coachSquadMarkup.opts.requirementsMarkup,/Maschera Maledetta attiva/,
+    "No stale power status after close and commit");
+  assert.doesNotMatch(coachSquadMarkup.opts.coachSlotMarkup,/selezione salvata/,
+    "Coach status must update without leaving Squadra");
+  powerActions.onConfigureCoachPower();
+  await coachUiArgs.saveSquad({...records["local:halloween2026:squad"].slots["1"],coachPowerSelection:originalPower});
+  coachUiArgs.closeModal();
+  assert.equal(coachSquadMarkup.opts.teamPower,effectiveBefore,
+    "Configuring Hekyll must immediately restore the discounted squad OVR");
+  assert.match(coachSquadMarkup.opts.requirementsMarkup,/Maschera Maledetta attiva/,
+    "Committed selection must show in the same Squadra screen");
+  assert.match(coachSquadMarkup.opts.coachSlotMarkup,/selezione salvata/);
+  context.RoadToGloryCoachSquadPowerUi=originalCoachUi;
   // Replace the coached starter with an unassigned card of another role.
   // The XI must remain 11; the invalidated target is explicitly cleared.
   assert.ok(powerActions?.onOpenPlayer);
