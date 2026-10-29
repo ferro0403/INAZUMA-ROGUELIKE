@@ -178,6 +178,7 @@ async function main() {
   assert.doesNotMatch(app.innerHTML,/rtg-map rtg-halloween-map/,"Cemetery is the whole RTG homepage background, not an extra content box");
   assert.match(app.innerHTML,/data-halloween-countdown/);
   assert.match(app.innerHTML,/data-halloween-open-vending/,"Gacha is opened from Run home");
+  assert.match(app.innerHTML,/1 capsula · 200 zucche/,"The Halloween home shows the new 200-pumpkin price");
   assert.doesNotMatch(app.innerHTML,/data-halloween-tab="album"/);
   assert.doesNotMatch(app.innerHTML,/data-halloween-tab="vending"/);
   await control("data-halloween-tab",d=>d.halloweenTab==="squad").fire();
@@ -235,6 +236,8 @@ async function main() {
   assert.equal(records["shared:account"].halloween.pumpkins,600,"Reload must not duplicate reward");
   await control("data-halloween-close-result").fire();
   await control("data-halloween-open-vending").fire();
+  assert.match(app.innerHTML,/1 CAPSULA/,"The capsule machine remains visible");
+  assert.match(app.innerHTML,/<strong>200<\/strong>/,"The vending machine itself shows 200");
   await control("data-halloween-pull").fire();
   assert.equal(records["shared:account"].halloween.pumpkins,400,"The first capsule costs exactly 200 pumpkins");
   assert.equal(records["shared:account"].halloween.ownedIds.length,1);
