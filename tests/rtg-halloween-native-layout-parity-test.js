@@ -75,7 +75,7 @@ assert.doesNotMatch(matchView.duelVisualMarkup(samford,"opponent"),/halloween-va
 assert.doesNotMatch(matchView.duelVisualMarkup(normal,"user"),/halloween-vampiro/);
 assert.equal((fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8").match(/class="rtg-duel-render\$\{shawnFwClass\}\$\{halloweenClass\}"/g)||[]).length,2,"Both original duel renderers must apply the tagged filter");
 const htmlShell=fs.readFileSync("index.html","utf8");
-assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261029-slots-coach-actions-v17/,
+assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261029-slots-coach-actions-v18/,
   "iOS cache must not serve the older pre-fix Halloween controller");
 const eventSource=fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8");
 assert.match(eventSource,/function tacticalLineupModel\(model\)/,
@@ -123,6 +123,13 @@ for (const [playerId, expectedPath] of [
 assert.match(eventSource,/frontFullbodyUrl:raw\.frontFullbodyUrl \|\| EVENT_FULLBODY_URLS/,
   "Halloween player resolver must prefer the player-specific fullbody URL");
 const halloweenCss=fs.readFileSync("css/rtg-halloween-event.css","utf8");
+const coachesCss=fs.readFileSync("css/rtg-coaches.css","utf8");
+assert.match(htmlShell,/rtg-coaches\\.css\\?v=20261029-halloween-coach-contrast-v2/,
+  "iPhone must fetch the updated staff contrast rules");
+assert.match(coachesCss,/\\.rtg-coach-squad-slot\\.rtg-coach-halloween \\.rtg-coach-squad-selected strong\\s*\\{\\s*color:#24151a!important/,
+  "Hekyll's name must be dark on the parchment background");
+assert.match(coachesCss,/\\.rtg-coach-squad-slot\\.rtg-coach-halloween \\.rtg-coach-squad-selected span\\s*\\{\\s*color:#4c2d25!important/,
+  "Hekyll's team must remain readable, without affecting other coaches");
 // Regression: a player-only modal skin must NEVER recolour the normal coach
 // detail, even when the same modal root was used by an event player first.
 assert.doesNotMatch(halloweenCss,/#modal-root\.halloween-detail-native \.player-detail-content\b/,
