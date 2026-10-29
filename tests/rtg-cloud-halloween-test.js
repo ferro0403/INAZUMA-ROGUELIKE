@@ -632,7 +632,8 @@ async function main() {
   assert.ok(clickChange,"Real RTG change buttons must bind on the pitch");
   await clickChange.fire();
   const assigned=new Set([...selectedSquad.lineup,...selectedSquad.bench]);
-  const offRole=candidates.find(e=>!assigned.has(e.cardId)&&naturalRole(e.cardId)!==wantedRole);
+  const offRole=candidates.find(e=>e.cardId.startsWith("halloween2026::")&&!assigned.has(e.cardId)&&naturalRole(e.cardId)!==wantedRole)
+    ||candidates.find(e=>!assigned.has(e.cardId)&&naturalRole(e.cardId)!==wantedRole);
   assert.ok(offRole,"Real picker must show a not-yet-assigned off-role candidate");
   const candidateButton=resultButtons.find(btn=>btn.dataset.rtgPickerPlayer===offRole.cardId);
   assert.ok(candidateButton,"Real RTG picker binds candidate click");
@@ -669,6 +670,29 @@ async function main() {
   targetSquad.coachPowerSelection={coachId,cardIds:[coachCard],moveIndices:[],element:"",targets:[]};
   records["local:halloween2026:squad"].activeSquadSlot=1;
   const coachApp=createApp();
+
+  // Every REAL formation must retain 11 cards even if their natural roles
+  // mismatch all tactical slots. The displayed roles are those of the slots,
+  // exactly as in ordinary RTG, never a reason to discard an owned card.
+  const nativeMatrix=context.RoadToGloryConfig.season("ie1").formations;
+  const matrixPlayers=Array.from({length:15},(_,i)=>"free_agents::matrix-"+i);
+  for(const formation of nativeMatrix){
+    const matrix=nativeSquad.renderModel({
+      state:{activeSeasonId:"ie1",gachaAcquiredCards:[],
+        squads:{ie1:{formationId:formation.id,lineup:matrixPlayers.slice(0,11),
+          bench:matrixPlayers.slice(11),lineupOrderedBySlot:true}}},
+      freeAgentIds:matrixPlayers.map(id=>id.slice("free_agents::".length)),
+      freeAgentsDb:{players:[]},
+      playerResolver:{resolveAtLevel20:id=>({
+        cardId:id,playerId:id,name:id,position:"DF",normalizedRole:"DF",overall:73
+      })}
+    });
+    const matrixHtml=nativeSquad.markup(matrix,{teamName:"Test",teamPower:73});
+    assert.equal(matrix.lineupRows.reduce((total,row)=>total+row.entries.length,0),11,
+      "Native RTG formation "+formation.id+" must never hide a card assigned off-role");
+    assert.equal((matrixHtml.match(/data-rtg-lineup-player=/g)||[]).length,11);
+    assert.equal((matrixHtml.match(/data-rtg-bench-player=/g)||[]).length,4);
+  }
   const coachReal=E.create({app:coachApp,storage,squadView:instrumentedView,runView:nativeRunView,toast:()=>{}});
   await coachReal.open();
   await coachApp.controls["data-halloween-tab"].find(el=>el.dataset.halloweenTab==="squad").fire();
