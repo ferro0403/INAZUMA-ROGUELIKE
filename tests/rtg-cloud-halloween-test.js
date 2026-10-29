@@ -572,6 +572,124 @@ async function main() {
   assert.equal(records["shared:account"].halloween.pumpkins,99999,
     "Repeated DEV grants must not overflow or duplicate currency");
   devController.dispose();
+
+  // Real integration regression: the preceding tests intentionally stub
+  // squadView.markup(), which cannot catch disappearing field cards. Now
+  // render the ACTUAL native RTG pitch and click its real data-attributes.
+  for(const file of [
+    "js/road-to-glory/rtg-config.js",
+    "js/formation-layout.js",
+    "js/road-to-glory/rtg-squad-view-base.js",
+    "js/road-to-glory/rtg-coach-powers-runtime.js"
+  ])vm.runInNewContext(fs.readFileSync(file,"utf8"),context,{filename:file});
+  const nativeSquad=context.RoadToGlorySquadView.create({escapeHtml:String});
+  const realApp=createApp();
+  let candidates=[],resultButtons=[];
+  const realModal={
+    innerHTML:"",
+    classList:{remove(){}},
+    querySelector(selector){
+      if(selector!=="[data-rtg-picker-results]")return null;
+      return {querySelectorAll(query){
+        if(query!=="[data-rtg-picker-player]")return [];
+        resultButtons=candidates.map(entry=>({
+          dataset:{rtgPickerPlayer:entry.cardId},callbacks:{},
+          addEventListener(name,cb){this.callbacks[name]=cb;},
+          fire(){return this.callbacks.click?.();}
+        }));
+        return resultButtons;
+      }};
+    },
+    querySelectorAll(){return [];}
+  };
+  const instrumentedView={...nativeSquad,
+    replacementPickerMarkup(options){
+      candidates=options.entries||[];
+      return nativeSquad.replacementPickerMarkup(options);
+    }
+  };
+  const liveController=E.create({app:realApp,storage,squadView:instrumentedView,
+    runView:nativeRunView,toast:()=>{},getModalRoot:()=>realModal,
+    openModal:markup=>{realModal.innerHTML=markup;},
+    closeModal:()=>{realModal.innerHTML="";}});
+  // Existing slots survive; no manual migration should run on read.
+  const initialStored=clone(records["local:halloween2026:squad"]);
+  records["local:halloween2026:squad"].activeSquadSlot=1;
+  await liveController.open();
+  await realApp.controls["data-halloween-tab"].find(el=>el.dataset.halloweenTab==="squad").fire();
+  const count=(attr,markup=realApp.innerHTML)=>(markup.match(new RegExp(attr+'="',"g"))||[]).length;
+  assert.equal(count("data-rtg-lineup-player"),11,
+    "The exact native HTML must contain 11 visible starters, not just 11 saved IDs");
+  assert.equal(count("data-rtg-bench-player"),4);
+  const selectedSquad=records["local:halloween2026:squad"].slots["1"];
+  const currentField=selectedSquad.lineup[0];
+  const naturalRole=id=>{
+    const f=freeAgents.players.find(p=>id==="free_agents::"+p.playerId);
+    return f?.position||E.eventPlayer(id.split("::")[1])?.position||"";
+  };
+  const wantedRole=naturalRole(currentField);
+  const clickChange=realApp.controls["data-rtg-change-player"].find(btn=>btn.dataset.rtgChangePlayer===currentField);
+  assert.ok(clickChange,"Real RTG change buttons must bind on the pitch");
+  await clickChange.fire();
+  const assigned=new Set([...selectedSquad.lineup,...selectedSquad.bench]);
+  const offRole=candidates.find(e=>!assigned.has(e.cardId)&&naturalRole(e.cardId)!==wantedRole);
+  assert.ok(offRole,"Real picker must show a not-yet-assigned off-role candidate");
+  const candidateButton=resultButtons.find(btn=>btn.dataset.rtgPickerPlayer===offRole.cardId);
+  assert.ok(candidateButton,"Real RTG picker binds candidate click");
+  await candidateButton.fire();
+  assert.equal(count("data-rtg-lineup-player"),11,
+    "After a real off-role replacement, all 11 cards must remain visible");
+  assert.equal(count("data-rtg-bench-player"),4);
+  assert.match(realApp.innerHTML,new RegExp('data-rtg-lineup-player="'+offRole.cardId+'"'),
+    "The off-role substitute must appear on the ACTUAL field");
+  const savedLive=records["local:halloween2026:squad"].slots["1"];
+  assert.equal(savedLive.lineup.includes(offRole.cardId),true);
+  assert.equal(savedLive.lineupOrderedBySlot,true);
+  assert.equal(new Set([...savedLive.lineup,...savedLive.bench]).size,15);
+  const otherSlot=clone(records["local:halloween2026:squad"].slots["2"]);
+  const switchControl=realApp.controls["data-rtg-squad-slot"].find(el=>el.dataset.rtgSquadSlot==="2");
+  assert.ok(switchControl,"The canonical UI exposes saved squad slots");
+  await switchControl.fire();
+  assert.equal(count("data-rtg-lineup-player"),11);
+  assert.deepEqual(records["local:halloween2026:squad"].slots["2"],otherSlot);
+  liveController.dispose();
+
+  // Hekyll: selection is a requirement-only effect. Its saved badge and
+  // effective team average must both use the ACTUAL event squad state.
+  const coachCard="halloween2026::custom_0001";
+  assert.ok(records["shared:account"].coachOwnedIds.includes(coachId));
+  const targetSquad=records["local:halloween2026:squad"].slots["1"];
+  if(!targetSquad.lineup.includes(coachCard)){
+    const backup=targetSquad.lineup[0];
+    targetSquad.lineup[0]=coachCard;
+    if(targetSquad.bench.includes(coachCard))targetSquad.bench[targetSquad.bench.indexOf(coachCard)]=backup;
+    else if(targetSquad.lineup.includes(backup))throw Error("invalid Halloween coach setup");
+  }
+  targetSquad.coachId=coachId;
+  targetSquad.coachPowerSelection={coachId,cardIds:[coachCard],moveIndices:[],element:"",targets:[]};
+  records["local:halloween2026:squad"].activeSquadSlot=1;
+  const coachApp=createApp();
+  const coachReal=E.create({app:coachApp,storage,squadView:instrumentedView,runView:nativeRunView,toast:()=>{}});
+  await coachReal.open();
+  await coachApp.controls["data-halloween-tab"].find(el=>el.dataset.halloweenTab==="squad").fire();
+  assert.match(coachApp.innerHTML,/Potere configurabile · selezione salvata/,
+    "Event coach's SAVED selection must reach the same native RTG staff UI");
+  const realConfig=records["local:halloween2026:squad"].slots["1"];
+  const effective=context.RoadToGloryCoachPowerRuntime.overallDiscountFor(realConfig,{
+    ...records["shared:account"],activeSeasonId:"ie1",squads:{ie1:realConfig}
+  });
+  assert.equal(effective.cardId,coachCard);
+  assert.equal(effective.amount,15,"Hekyll changes requirement contribution by 15 only");
+  const expectedRaw=realConfig.lineup.map(id=>id.startsWith("halloween2026::")
+    ? E.eventPlayer(id.slice("halloween2026::".length))
+    : freeAgents.players.find(p=>"free_agents::"+p.playerId===id));
+  const baseAverage=Math.round(expectedRaw.reduce((sum,p)=>sum+Number(p.overall),0)/11*10)/10;
+  const withPower=Math.round((expectedRaw.reduce((sum,p)=>sum+Number(p.overall),0)-15)/11*10)/10;
+  assert.match(coachApp.innerHTML,new RegExp('<strong>'+withPower.replace?.("x","")+'</strong>|<strong>'+withPower+'</strong>'),
+    "Halloween home/squad must show the discounted eligibility average");
+  assert.ok(withPower<baseAverage);
+  coachReal.dispose();
+
   console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 200-pumpkin pulls, cloud compatibility PASS");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
