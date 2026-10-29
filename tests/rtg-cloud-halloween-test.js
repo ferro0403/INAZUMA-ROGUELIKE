@@ -416,7 +416,7 @@ async function main() {
   await devController.open();
   assert.match(devApp.innerHTML,/data-halloween-dev-pumpkins/,"DEV Halloween has pumpkin shortcut");
   const prior=clone(records["shared:account"]);
-  await devApp.querySelector("[data-halloween-dev-pumpkins]").fire();
+  await devApp.controls["data-halloween-dev-pumpkins"][0].fire();
   const granted=records["shared:account"];
   assert.equal(granted.halloween.pumpkins,99999,"DEV grants enough pumpkins for all event pulls");
   assert.equal(granted.tokens,prior.tokens,"DEV pumpkins must never alter RTG tokens");
@@ -430,7 +430,7 @@ async function main() {
   assert.ok(devToasts.some(message=>message.includes("99.999")),
     "Successful DEV grant must be acknowledged AFTER commit");
   assert.match(devApp.innerHTML,/99\.999|99999/,"DEV screen rerenders with refreshed balance");
-  await devApp.querySelector("[data-halloween-dev-pumpkins]").fire();
+  await devApp.controls["data-halloween-dev-pumpkins"][0].fire();
   assert.equal(records["shared:account"].halloween.pumpkins,99999,
     "Repeated DEV grants must not overflow or duplicate currency");
   devController.dispose();
