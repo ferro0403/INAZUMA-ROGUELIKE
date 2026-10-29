@@ -164,6 +164,7 @@ async function main() {
   for(const p of assets.players.values())assert.equal(assets.moves.players[String(p.playerId)].moves.length,4);
   assert.equal(E.opponentOverall(),86);
   assert.equal(E.opponentOverall()+1,87);
+  assert.equal(E.PRICE,200,"Only the capsule cost changes; Halloween match rewards are unchanged");
   assert.equal(assets.players.size - [...assets.players.keys()].filter(pid=>E.eventPlayer(pid).halloweenVampire).length,2);
   assert.equal(E.eventPlayer("custom_0001").halloweenVampire,false);
   assert.equal(E.eventPlayer("custom_0002").halloweenVampire,false);
@@ -177,6 +178,7 @@ async function main() {
   assert.doesNotMatch(app.innerHTML,/rtg-map rtg-halloween-map/,"Cemetery is the whole RTG homepage background, not an extra content box");
   assert.match(app.innerHTML,/data-halloween-countdown/);
   assert.match(app.innerHTML,/data-halloween-open-vending/,"Gacha is opened from Run home");
+  assert.match(app.innerHTML,/1 capsula · 200 zucche/,"The Halloween home shows the new 200-pumpkin price");
   assert.doesNotMatch(app.innerHTML,/data-halloween-tab="album"/);
   assert.doesNotMatch(app.innerHTML,/data-halloween-tab="vending"/);
   await control("data-halloween-tab",d=>d.halloweenTab==="squad").fire();
@@ -199,6 +201,8 @@ async function main() {
   // temporary elevated test roster through the free-agent database.
   const actualLineup=(app.innerHTML.match(/data-rtg-player-detail="([^"]+)"/g)||[]).map(x=>x.split('"')[1]);
   assert.equal(actualLineup.length,11);
+  assert.ok(records["local:halloween2026:squad"].slots["3"].lineup.every(id=>actualLineup.includes(id)),
+    "Repair of an incomplete saved formation must retain every still-owned original starter");
   const selected=new Set(actualLineup);
   freeAgents.players.forEach(p=>{p.overall=selected.has("free_agents::"+p.playerId)?96:70;});
   await control("data-rtg-adapt").fire();
@@ -232,12 +236,14 @@ async function main() {
   assert.equal(records["shared:account"].halloween.pumpkins,600,"Reload must not duplicate reward");
   await control("data-halloween-close-result").fire();
   await control("data-halloween-open-vending").fire();
+  assert.match(app.innerHTML,/1 CAPSULA/,"The capsule machine remains visible");
+  assert.match(app.innerHTML,/<strong>200<\/strong>/,"The vending machine itself shows 200");
   await control("data-halloween-pull").fire();
-  assert.equal(records["shared:account"].halloween.pumpkins,300,"A 300-pumpkin pull must debit exactly 300");
+  assert.equal(records["shared:account"].halloween.pumpkins,400,"The first capsule costs exactly 200 pumpkins");
   assert.equal(records["shared:account"].halloween.ownedIds.length,1);
   assert.equal(records["shared:account"].gachaAcquiredCards.length,1);
   await control("data-halloween-pull").fire();
-  assert.equal(records["shared:account"].halloween.pumpkins,0,"Second 300-pumpkin pull consumes remaining balance");
+  assert.equal(records["shared:account"].halloween.pumpkins,200,"The second capsule also costs exactly 200 pumpkins");
   assert.equal(records["shared:account"].halloween.ownedIds.length,2);
   assert.equal(new Set(records["shared:account"].halloween.ownedIds).size,2);
   assert.equal(records["shared:account"].tokens,83,"Regular RTG tokens must not change");
@@ -245,7 +251,7 @@ async function main() {
   context.RoadToGloryMatchEngine.prepareNext=state=>!state.__testPrepared?{...clone(state),status:"active",__testPrepared:true}:({...clone(state),status:"completed",result:{winner:"opponent"}});
   await control("data-halloween-start").fire();
   await control("data-halloween-next").fire();
-  assert.equal(records["shared:account"].halloween.pumpkins,300,"Defeat must award 300");
+  assert.equal(records["shared:account"].halloween.pumpkins,500,"Defeat still awards 300, on top of the 200 left");
   assert.equal(records["shared:account"].halloween.completedIds.length,2);
   await controller.open("album");
   assert.equal(nativeAlbumTeamsRendered,true,"Event album starts with native RTG teams");
@@ -273,7 +279,7 @@ async function main() {
   const snapshot=context.RoadToGloryCloudSnapshot.project({
     trilogy:null,aresOrion:null,shared:records["shared:account"],album:{version:1,cardIds:[]}
   });
-  assert.equal(context.RoadToGloryCloudSnapshot.validate(snapshot).shared.halloween.pumpkins,300);
+  assert.equal(context.RoadToGloryCloudSnapshot.validate(snapshot).shared.halloween.pumpkins,500);
   const legacy=context.RoadToGloryCloudSnapshot.project({
     trilogy:null,aresOrion:null,
     shared:{tokens:83,gachaAcquiredCards:[],developmentByCardId:{},coachOwnedIds:[]}
@@ -351,15 +357,74 @@ async function main() {
   const slot1=clone(template),slot2=clone(template);
   // Place Nathan on a different starter spot from the player we are swapping.
   slot1.lineup[1]=nathanId;
+  slot1.lineupOrderedBySlot=false; // Legacy event saves predate the RTG tactical-slot contract.
   records["local:halloween2026:squad"]={activeSquadSlot:1,slots:{"1":slot1,"2":slot2}};
   const pickerModal=createApp();
-  let pickerEntries=[];
+  const pickerResults={innerHTML:"",buttons:[],querySelectorAll(selector){
+    if(selector!=="[data-rtg-picker-player]")return [];
+    const ids=[...this.innerHTML.matchAll(/data-rtg-picker-player="([^"]+)"/g)].map(match=>match[1]);
+    this.buttons=ids.map(id=>({dataset:{rtgPickerPlayer:id},callbacks:{},
+      addEventListener(name,handler){this.callbacks[name]=handler;},
+      fire(){return this.callbacks.click?.();}
+    }));
+    return this.buttons;
+  }};
+  pickerModal.querySelector=selector=>selector==="[data-rtg-picker-results]"?pickerResults:null;
+  let pickerQuick=[],quickButtons=[];
+  pickerModal.querySelectorAll=selector=>{
+    if(selector!==".rtg-picker-quick-bench [data-rtg-picker-player]")return [];
+    quickButtons=pickerQuick.map(entry=>({dataset:{rtgPickerPlayer:entry.cardId},callbacks:{},
+      addEventListener(name,handler){this.callbacks[name]=handler;},
+      fire(){return this.callbacks.click?.();}
+    }));
+    return quickButtons;
+  };
+  let pickerEntries=[],pickerActions=null;
+  const nativeBind=squadView.bind;
+  squadView.bind=(root,actions)=>{pickerActions=actions;nativeBind(root,actions);};
+  squadView.replacementPickerResultsMarkup=options=>
+    options.entries.map(entry=>'<button data-rtg-picker-player="'+entry.cardId+'">SCEGLI</button>').join("");
   squadView.replacementPickerMarkup=options=>{
-    pickerEntries=options.entries;
-    return '<section class="rtg-squad-picker"><div data-rtg-picker-results></div></section>';
+    pickerEntries=options.entries;pickerQuick=options.quickEntries||[];
+    return '<section class="rtg-squad-picker"><div data-rtg-picker-results>'+
+      squadView.replacementPickerResultsMarkup({entries:options.entries})+'</div></section>';
   };
   const pickerController=E.create({app,storage,squadView,runView:nativeRunView,toast:()=>{},
-    getModalRoot:()=>pickerModal,openModal:markup=>{pickerModal.innerHTML=markup;}});
+    getModalRoot:()=>pickerModal,openModal:markup=>{
+      pickerModal.innerHTML=markup;
+      const prefix="<div data-rtg-picker-results>";
+      const start=markup.indexOf(prefix);
+      const end=markup.indexOf("</div>",start);
+      pickerResults.innerHTML=start>=0&&end>start?markup.slice(start+prefix.length,end):"";
+    }});
+  function assertVisibleRtgSquad(squad){
+    const formation={id:"4-3-3",name:"4-3-3",
+      slotRoles:["FW","FW","FW","MF","MF","MF","DF","DF","DF","DF","GK"],
+      requirements:{FW:3,MF:3,DF:4,GK:1}};
+    context.RoadToGloryConfig={season:()=>({formations:[formation]})};
+    if(!context.RoadToGlorySquadView)
+      vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8"),context);
+    const native=context.RoadToGlorySquadView.create({escapeHtml:String});
+    const model=native.renderModel({
+      state:{activeSeasonId:"ie1",squads:{ie1:squad},gachaAcquiredCards:records["shared:account"].gachaAcquiredCards},
+      freeAgentIds:freeAgents.players.map(p=>p.playerId),freeAgentsDb:freeAgents,
+      playerResolver:{resolveAtLevel20:cardId=>cardId.startsWith("halloween2026::")
+        ?E.eventPlayer(cardId.split("::")[1])
+        :context.RoadToGloryPlayerResolver.resolveOwnedAtLevel20(cardId,"ie1",null,freeAgents)}
+    });
+    const html=native.markup(model,{teamPower:80});
+    assert.equal(model.lineupRows.reduce((sum,row)=>sum+row.entries.length,0),11,
+      "Every valid squad must render 11 starters even when a player is assigned off-role");
+    assert.equal((html.match(/data-rtg-lineup-player=/g)||[]).length,11);
+    assert.equal((html.match(/data-rtg-bench-player=/g)||[]).length,4);
+    assert.equal(squad.lineupOrderedBySlot,true);
+    assert.equal(new Set([...squad.lineup,...squad.bench]).size,15);
+  }
+  async function pickRealCard(cardId){
+    const button=pickerResults.buttons.find(button=>button.dataset.rtgPickerPlayer===cardId);
+    assert.ok(button,"Expected selectable card in actual bound replacement results: "+cardId);
+    await button.fire();
+  }
   await pickerController.open();
   // Halloween.open() accepts "album" as a special destination; the normal
   // user reaches Squadra through RUN → SQUADRA, not open("squad").
@@ -377,7 +442,80 @@ async function main() {
     "Slot 2 must list Nathan when he is unassigned");
   assert.strictEqual(records["shared:account"].gachaAcquiredCards.filter(card=>card.cardId===nathanId).length,1,
     "Catalog browsing must not duplicate event ownership or spend pumpkins");
+  // Act on the actual picker button, not just the list: off-role swaps used to
+  // render <11 because the old Halloween XI was grouped by natural roles.
+  records["local:halloween2026:squad"].activeSquadSlot=1;
+  const beforeLegacy=clone(records["local:halloween2026:squad"].slots["1"]);
+  await pickerController.open();
+  await control("data-halloween-tab",d=>d.halloweenTab==="squad").fire();
+  assert.equal(records["local:halloween2026:squad"].slots["1"].lineupOrderedBySlot,false,
+    "Opening an old saved squad is read-only: no hidden storage migration");
+  await control("data-rtg-change-player").fire();
+  await pickRealCard(nathanId);
+  const swapped=records["local:halloween2026:squad"].slots["1"];
+  assertVisibleRtgSquad(swapped);
+  assert.deepEqual(new Set([...swapped.lineup,...swapped.bench]),
+    new Set([...beforeLegacy.lineup,...beforeLegacy.bench]),
+    "Swapping two already-convoked starters changes positions, not the roster");
+  assert.deepEqual(records["local:halloween2026:squad"].slots["2"],slot2,
+    "Editing Slot 1 must never remove players from Slot 2");
+  // Swap in an UNASSIGNED player of a different role: the outgoing player is
+  // removed from this squad, the incoming one takes the exact same tactical slot.
+  const outgoing=swapped.lineup[0];
+  assert.ok(pickerActions?.onOpenPlayer);
+  pickerActions.onOpenPlayer(outgoing);
+  // The native picker shows 12 at a time. Pick an actually visible,
+  // unassigned card of another role instead of bypassing pagination.
+  const rosterBefore=new Set([...swapped.lineup,...swapped.bench]);
+  const outgoingRole=freeAgents.players.find(p=>outgoing==="free_agents::"+p.playerId)?.position||"FW";
+  const unassigned=pickerEntries.find(e=>!rosterBefore.has(e.cardId)&&e.role!==outgoingRole)
+    ||pickerEntries.find(e=>!rosterBefore.has(e.cardId));
+  assert.ok(unassigned,"There must be at least one selectable unassigned card on the visible picker page");
+  await pickRealCard(unassigned.cardId);
+  const incomingSquad=records["local:halloween2026:squad"].slots["1"];
+  assertVisibleRtgSquad(incomingSquad);
+  assert.equal(incomingSquad.lineup.includes(unassigned.cardId),true);
+  assert.equal([...incomingSquad.lineup,...incomingSquad.bench].includes(outgoing),false);
+  assert.deepEqual(records["local:halloween2026:squad"].slots["2"],slot2);
+  // Bench quick swap uses the SAME native picker UI. It must never duplicate a
+  // card or leave a hole in the XI after an off-role bench-to-field exchange.
+  const fieldBeforeQuick=incomingSquad.lineup[0],benchBeforeQuick=incomingSquad.bench[0];
+  pickerActions.onOpenPlayer(fieldBeforeQuick);
+  const quickButton=quickButtons.find(btn=>btn.dataset.rtgPickerPlayer===benchBeforeQuick);
+  assert.ok(quickButton,"Native quick bench selector must expose the saved substitute");
+  await quickButton.fire();
+  const quickSwap=records["local:halloween2026:squad"].slots["1"];
+  assertVisibleRtgSquad(quickSwap);
+  assert.equal(quickSwap.lineup.includes(benchBeforeQuick),true);
+  assert.equal(quickSwap.bench.includes(fieldBeforeQuick),true);
+  assert.equal(quickSwap.bench.includes(benchBeforeQuick),false);
+  assert.deepEqual(records["local:halloween2026:squad"].slots["2"],slot2);
+  // Failed persistence must not remove/duplicate anyone, even if the UI
+  // already registered a replacement click. The recovery guard remains owner
+  // of the transaction: no side effects until updateMany commits.
+  const beforeFailedWrite=clone(records["local:halloween2026:squad"]);
+  const realUpdateMany=storage.updateMany;
+  const oldConsoleError=context.console.error;
+  storage.updateMany=async()=>{throw new Error("test-halloween-disk-write-failure");};
+  context.console={...console,error:()=>{}}; // expected rejected write
+  try{
+    const failedFrom=quickSwap.lineup[0];
+    pickerActions.onOpenPlayer(failedFrom);
+    const failedCandidate=pickerEntries.find(e=>e.cardId!==failedFrom);
+    assert.ok(failedCandidate);
+    await pickRealCard(failedCandidate.cardId);
+    assert.deepEqual(records["local:halloween2026:squad"],beforeFailedWrite,
+      "Failed squad commit must leave every saved slot and player unchanged");
+  }finally{
+    storage.updateMany=realUpdateMany;
+    context.console=console;
+  }
+  // Switching back to the other saved squad keeps all fifteen players.
+  await pickerActions.onSelectSquadSlot(2);
+  assertVisibleRtgSquad(records["local:halloween2026:squad"].slots["2"]);
+  assertVisibleRtgSquad(records["local:halloween2026:squad"].slots["1"]);
   pickerController.dispose();
+  squadView.bind=nativeBind;
   // Event coach is a separate rare prize (same weight as the two specials).
   // The last unowned prize must award into the EXISTING account coachOwnedIds,
   // never into player ownedIds or gachaAcquiredCards.
@@ -385,14 +523,14 @@ async function main() {
   assert.equal(E.weightedPick(["custom_0002",coachId],.49),"custom_0002");
   const account=records["shared:account"];
   account.halloween.ownedIds=Array.from(assets.players.keys());
-  account.halloween.pumpkins=300;
+  account.halloween.pumpkins=200;
   const originalPlayerCount=account.gachaAcquiredCards.length;
   assert.equal(account.coachOwnedIds.includes(coachId),false);
   const coachController=E.create({app,storage,toast:()=>{},squadView,runView:nativeRunView});
   await coachController.open();
   await control("data-halloween-open-vending").fire();
   await control("data-halloween-pull").fire();
-  assert.equal(records["shared:account"].halloween.pumpkins,0,"Coach draw debits exactly 300 pumpkins");
+  assert.equal(records["shared:account"].halloween.pumpkins,0,"Coach draw debits exactly 200 pumpkins");
   assert.equal(records["shared:account"].coachOwnedIds.filter(id=>id===coachId).length,1,"Coach is owned exactly once");
   assert.equal(records["shared:account"].halloween.ownedIds.length,18,"No imaginary nineteenth player");
   assert.equal(records["shared:account"].gachaAcquiredCards.length,originalPlayerCount,
@@ -434,6 +572,6 @@ async function main() {
   assert.equal(records["shared:account"].halloween.pumpkins,99999,
     "Repeated DEV grants must not overflow or duplicate currency");
   devController.dispose();
-  console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 300-pumpkin pulls, cloud compatibility PASS");
+  console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 200-pumpkin pulls, cloud compatibility PASS");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
