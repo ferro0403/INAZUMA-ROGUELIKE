@@ -633,6 +633,82 @@ async function main() {
   }finally{storage.updateMany=atomicUpdate;}
   powerController.dispose();
   squadView.markup=baseMarkup;squadView.bind=baseBind;
+  // Native end-to-end regression for the exact report: put a goalkeeper in
+  // midfield using the REAL RTG player-picker and pitch, not a stub markup.
+  const liveSlot=records["local:halloween2026:squad"].slots["1"];
+  const goalkeeperId="free_agents::halloween-free-0";
+  const keeperLine=liveSlot.lineup.indexOf(goalkeeperId);
+  const keeperBench=liveSlot.bench.indexOf(goalkeeperId);
+  if(keeperLine>=0){
+    [liveSlot.lineup[10],liveSlot.lineup[keeperLine]]=
+      [liveSlot.lineup[keeperLine],liveSlot.lineup[10]];
+  }else if(keeperBench>=0){
+    [liveSlot.lineup[10],liveSlot.bench[keeperBench]]=
+      [liveSlot.bench[keeperBench],liveSlot.lineup[10]];
+  }else{
+    liveSlot.lineup[10]=goalkeeperId;
+  }
+  liveSlot.lineupOrderedBySlot=true;
+  assert.equal(new Set([...liveSlot.lineup,...liveSlot.bench]).size,15);
+  records["local:halloween2026:squad"].activeSquadSlot=1;
+  const nativeView=context.RoadToGlorySquadView.create({escapeHtml:String});
+  const nativeApp=createApp();
+  let pickerButtons=[],filterSearch=null;
+  const pickerRoot={
+    innerHTML:"",classList:{remove(){}},
+    querySelector(selector){
+      if(selector==="[data-rtg-picker-results]"){
+        return {set innerHTML(markup){pickerRoot.innerHTML=markup;},
+          querySelectorAll(name){return name==="[data-rtg-picker-player]"?pickerButtons:[];}};
+      }
+      if(selector==="[data-rtg-picker-search]")
+        return {addEventListener(event,callback){if(event==="input")filterSearch=callback;}};
+      return null;
+    },
+    querySelectorAll(){return [];}
+  };
+  const buttonsFor=entries=>entries.map(entry=>({
+    dataset:{rtgPickerPlayer:entry.cardId},listeners:{},
+    addEventListener(name,callback){this.listeners[name]=callback;},
+    fire(){return this.listeners.click?.();}
+  }));
+  const instrumentedNative={...nativeView,
+    replacementPickerMarkup(options){
+      pickerButtons=buttonsFor(options.entries||[]);
+      return nativeView.replacementPickerMarkup(options);
+    },
+    replacementPickerResultsMarkup(options){
+      pickerButtons=buttonsFor(options.entries||[]);
+      return nativeView.replacementPickerResultsMarkup(options);
+    }
+  };
+  const visualController=E.create({app:nativeApp,storage,squadView:instrumentedNative,
+    runView:nativeRunView,toast:()=>{},getModalRoot:()=>pickerRoot,
+    openModal:html=>{pickerRoot.innerHTML=html;},closeModal:()=>{}});
+  const pitchIds=()=>[...nativeApp.innerHTML.matchAll(/data-rtg-lineup-player="([^"]+)"/g)].map(m=>m[1]);
+  await visualController.open();
+  await nativeApp.querySelectorAll("[data-halloween-tab]").find(b=>b.dataset.halloweenTab==="squad").fire();
+  const mfId=liveSlot.lineup[3];
+  await nativeApp.querySelectorAll("[data-rtg-change-player]")
+    .find(button=>button.dataset.rtgChangePlayer===mfId).fire();
+  assert.equal(typeof filterSearch,"function");
+  filterSearch({target:{value:"Free 0"}});
+  const keeperButton=pickerButtons.find(button=>button.dataset.rtgPickerPlayer===goalkeeperId);
+  assert.ok(keeperButton,"A goalkeeper must be selectable as a midfielder");
+  await keeperButton.fire();
+  const afterGkSwap=records["local:halloween2026:squad"].slots["1"];
+  assert.equal(afterGkSwap.lineup[3],goalkeeperId);
+  assert.equal(afterGkSwap.lineup[10],mfId);
+  assert.equal(pitchIds().length,11);
+  assert.equal(new Set(pitchIds()).size,11);
+  assert.deepEqual(new Set(pitchIds()),new Set(afterGkSwap.lineup),
+    "All eleven saved IDs must appear in actual Halloween pitch markup");
+  visualController.dispose();
+  await visualController.open();
+  await nativeApp.querySelectorAll("[data-halloween-tab]").find(b=>b.dataset.halloweenTab==="squad").fire();
+  assert.deepEqual(new Set(pitchIds()),new Set(afterGkSwap.lineup),
+    "Reload must not hide a goalkeeper assigned to midfield");
+  visualController.dispose();
   // The Halloween pumpkin cheat must exist ONLY when RTG explicitly grants
   // devMode. It must commit to the existing shared:account, not a parallel key.
   const normalApp=createApp();
