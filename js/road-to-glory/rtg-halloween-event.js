@@ -310,6 +310,15 @@
     function eventOverallDiscount(squad=localSquad){
       return global.RoadToGloryCoachPowerRuntime?.overallDiscountFor?.(squad,activeEventSquad())||null;
     }
+    function resolvedPowerRoster(squad){
+      // Coach validation needs the resolved 15 cards, not raw saved ID strings.
+      // Never modify canonical lineup, bench or player development here.
+      const unpack=keys=>(keys||[]).map(cardId=>{
+        const p=resolveCard(cardId);
+        return p?{...p,cardId}:null;
+      });
+      return {lineup:unpack(squad?.lineup),bench:unpack(squad?.bench)};
+    }
     function nativeCard(p,opts={}) {
       const cls=opts.event&&p?.halloweenVampire?" halloween-vampire-card":"";
       const attr=opts.attr||"";
@@ -385,11 +394,7 @@
       const meta=deps.getUserTeamMeta?.()||{};
       const name=meta.name||"La tua squadra";
       const squadOvr=ovr(resolvedUser()?.lineup,eventOverallDiscount());
-      const coachDiscount=eventOverallDiscount(),coachTarget=coachDiscount&&resolveCard(coachDiscount.cardId);
-      const coachNote=coachTarget?'<p class="rtg-coach-cap-note">Maschera Maledetta attiva · '+
-        escape(coachTarget.name||coachTarget.playerId||"Titolare Halloween")+
-        ': −15 OVR solo per i requisiti, non in partita.</p>':"";
-      const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · Evento Halloween</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div>'+coachNote+'</div>';
+      const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · Evento Halloween</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div></div>';
       return '<div class="rtg-halloween-mode halloween-squad-mode">'+
         view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
           coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(
@@ -907,6 +912,9 @@
           const machine=app.querySelector?.("[data-rtg-vending-machine]");
           const rarity=String(drawn.result.rarity||"").toLowerCase();
           const capsuleColour=rarity==="leggenda"||rarity==="elite"?"orange":"black";
+          // The static chute prize must match the capsule that was drawn,
+          // including the reduced-motion fallback (not always silver).
+          machine?.setAttribute?.("data-halloween-prize-color",capsuleColour);
           if(vendingMotion){
             try{await vendingMotion.play(capsuleColour);}
             catch(error){global.console?.warn?.("[Halloween] Animazione distributore",error);}
@@ -969,7 +977,7 @@
       try {await op();render();}
       catch(error){
         global.console?.error?.("[RTG Halloween]",error);
-        const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento","halloween-coach-selection-invalid":"Scegli un titolare Halloween valido per Maschera Maledetta","halloween-squad-busy":"Cambio squadra già in corso"};
+        const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento","halloween-coach-selection-invalid":"Selezione potere allenatore non valida: riconfiguralo in Squadra","halloween-coach-power-not-applied":"Il potere allenatore non è stato applicato: verifica i PT e riconfiguralo","halloween-squad-busy":"Cambio squadra già in corso"};
         notify(reasons[error?.code]||("Operazione Halloween fallita: "+(error?.code||error?.message||"errore sconosciuto")),"error");
       } finally {actionPending=false;}
     }
@@ -1006,8 +1014,12 @@
       } else if(kind==="coachPower"){
         if(arg?.coachId!==curr.coachId)throw fail("halloween-coach-invalid");
         curr.coachPowerSelection=clone(arg.coachPowerSelection||null);
-        if(curr.coachPowerSelection&&!global.RoadToGloryCoachPowerRuntime?.validConfig?.(
-          curr,curr.lineup,"ie1",curr.bench))throw fail("halloween-coach-selection-invalid");
+        if(curr.coachPowerSelection){
+          const roster=resolvedPowerRoster(curr);
+          if(!global.RoadToGloryCoachPowerRuntime?.validConfig?.(
+              curr,roster.lineup,"ie1",roster.bench))
+            throw fail("halloween-coach-selection-invalid");
+        }
       } else if(kind==="adapt"||kind==="formation"){
         const cap=opponentOverall()+1,limit=Math.floor(cap*11);
         const formationId=kind==="formation"?asId(arg):curr.formationId;
@@ -1134,12 +1146,23 @@
       if(meta.teamIdentity)squad.teamIdentity=clone(meta.teamIdentity);
       let created=global.RoadToGloryMatchEngine.createMatch({seasonId:EVENT_ID,matchId,seed:matchId,nodeId:"event:occult-halloween",matchType:"event",attemptNumber:1,userSquad:squad,opponentSquad:opponent()});
       const state=activeEventSquad(),coach=global.RoadToGloryCoachPreMatchRuntime?.coachFor?.(state,"ie1")||"";
-      created=global.RoadToGloryCoachPowerRuntime?.applyToMatch?.(created,localSquad,state,{
+      const coachRules=global.RoadToGloryCoachPowerRuntime;
+      const selectedPower=coachRules?.selected?.(localSquad);
+      const ownedCoach=!!selectedPower&&shared.coachOwnedIds.includes(selectedPower.coachId);
+      const powerConfig=ownedCoach?coachRules.validConfig(
+        localSquad,created.userSquad.lineup,EVENT_ID,created.userSquad.bench):null;
+      if(ownedCoach&&!powerConfig)throw fail("halloween-coach-selection-invalid");
+      created=coachRules?.applyToMatch?.(created,localSquad,state,{
         upgradeRarity:(player,targetRarity,cardId)=>global.RoadToGloryCoachRarityPower?.upgrade?.({
           player,targetRarity,cardId,playerResolver:global.RoadToGloryPlayerResolver,
           freeAgentsDb:data.freeAgents,seasonId:"ie1",squad:localSquad
         })
       })||created;
+      // A saved power must never silently disappear in the match snapshot.
+      // Hekyll is intentionally eligibility-only and has no combat effect.
+      if(powerConfig&&powerConfig.coachId!==HALLOWEEN_COACH_ID&&
+         created.coachPowerEffect?.coachId!==powerConfig.coachId)
+        throw fail("halloween-coach-power-not-applied");
       if(coach){created.preMatchCoachId=coach;created.presentation={...(created.presentation||{}),preMatchPowerStatus:"pending"};}
       else created=global.RoadToGloryMatchEngine.prepareNext(created);
       created.presentation={...(created.presentation||{}),preMatchSeen:false};
