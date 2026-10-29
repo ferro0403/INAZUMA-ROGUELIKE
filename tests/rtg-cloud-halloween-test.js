@@ -69,8 +69,11 @@ function createApp() {
 }
 const app=createApp();
 let nextId=0;
+const albumUnlockedIds=new Set(freeAgents.players.map(player=>player.playerId));
 const context={
   console,Date,
+  AlbumProgress:{read:()=>({schemaVersion:2,
+    sharedUnlockedPlayerIds:Object.fromEntries([...albumUnlockedIds].map(id=>[id,{firstSource:"run"}]))})},
   crypto:{randomUUID:()=>String(++nextId),getRandomValues:a=>(a[0]=1,a)},
   setInterval:()=>null,clearInterval:()=>{},
   fetch:async url=>({
@@ -97,6 +100,7 @@ const context={
   },
   RoadToGloryRng:{int:()=>0}
 };
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-entitlements.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-runtime.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches-view.js","utf8"),context);
@@ -801,18 +805,16 @@ async function main() {
   assert.equal(field.length,11);
   assert.equal(reserves.length,4);
   const baseTeam={...currentTeam,lineup:field,bench:reserves,lineupOrderedBySlot:true};
-  const originalMatchCreator=context.RoadToGloryMatchEngine.createMatch;
-  context.RoadToGloryMatchEngine.createMatch=options=>{
-    const match=originalMatchCreator(options);
-    match.ptModeVersion=1;
-    match.ptCurrentByPlayerId={};
-    match.ptMaxByPlayerId={};
-    for(const player of [...options.userSquad.lineup,...options.userSquad.bench]){
-      match.ptCurrentByPlayerId["user:"+player.cardId]=150;
-      match.ptMaxByPlayerId["user:"+player.cardId]=150;
-    }
-    return match;
-  };
+  // Use the real match engine and real PT initializer rather than fabricating
+  // +100 PT in a fake createMatch() result. Only the encounter progression is
+  // parked, so this test inspects the actual kickoff snapshot atomically.
+  context.RoadToGloryRng.float=()=>.5;
+  context.RtgFourMovesRuntime={ready:Promise.resolve(true),isReady:()=>true,error:()=>null,
+    ptBreakdown:()=>({base:150,bonus:0,total:150}),movesFor:()=>[]};
+  vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-pt-runtime.js","utf8"),context);
+  vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-engine.js","utf8"),context);
+  const genuineEngine=context.RoadToGloryMatchEngine;
+  context.RoadToGloryMatchEngine={...genuineEngine,prepareNext:state=>state};
   for(const coachId of ["208","4401"]){
     const targets=eventIds.map(cardId=>E.eventPlayer(cardId.split("::")[1]));
     const elements=targets.map((target,index)=>{
@@ -842,6 +844,8 @@ async function main() {
     const snapshot=records["local:halloween2026:match"];
     assert.ok(snapshot,"Kickoff must create a real Halloween match for "+coachId+
       ": "+errors.map(x=>x.message).join(", "));
+    assert.equal(snapshot.ptModeVersion,1,
+      "Real Halloween kickoff must activate the native PT engine");
     assert.equal(snapshot.coachPowerEffect?.coachId,coachId,
       "Saved "+coachId+" coach power must be snapshotted before kickoff");
     if(coachId==="208"){
@@ -871,7 +875,48 @@ async function main() {
     trial.dispose();
     delete records["local:halloween2026:match"];
   }
-  context.RoadToGloryMatchEngine.createMatch=originalMatchCreator;
+  // A legacy saved event slot may contain a free agent never earned in runs.
+  // Opening repairs it IN MEMORY, and the next canonical squad save removes
+  // the unauthorized card. The shared account and cloud are never rewritten.
+  const lockedPid="halloween-free-15",lockedCard="free_agents::"+lockedPid;
+  albumUnlockedIds.delete(lockedPid);
+  const legacySquad=clone(records["local:halloween2026:squad"]);
+  const slot=clone(legacySquad.slots["1"]);
+  const rosterBefore=[...slot.lineup,...slot.bench];
+  if(!rosterBefore.includes(lockedCard)){
+    const replacement=slot.bench[0];
+    slot.bench[0]=lockedCard;
+    assert.notEqual(replacement,lockedCard);
+  }
+  legacySquad.slots["1"]=slot;
+  records["local:halloween2026:squad"]=clone(legacySquad);
+  const sharedBeforeUnlock=clone(records["shared:account"]);
+  let uiAllowedFreeAgents=null;
+  const entitlementView={...squadView,renderModel(args){
+    uiAllowedFreeAgents=args.freeAgentIds;
+    return squadView.renderModel(args);
+  }};
+  const entitlementApp=createApp(),entitlementErrors=[];
+  const entitlementController=E.create({app:entitlementApp,storage,squadView:entitlementView,
+    runView:nativeRunView,toast:(message)=>entitlementErrors.push(message)});
+  await entitlementController.open();
+  assert.deepEqual(records["local:halloween2026:squad"],legacySquad,
+    "Read and repair must not write or migrate legacy squads implicitly");
+  await entitlementApp.controls["data-halloween-tab"]
+    .find(button=>button.dataset.halloweenTab==="squad").fire();
+  assert.ok(Array.isArray(uiAllowedFreeAgents));
+  assert.equal(uiAllowedFreeAgents.includes(lockedPid),false,
+    "The Halloween RTG squad view receives only album-unlocked free agents");
+  assert.ok(entitlementApp.innerHTML.includes("rtg-squad-shell"));
+  await entitlementApp.controls["data-rtg-adapt"][0].fire();
+  const repairedByEdit=records["local:halloween2026:squad"].slots["1"];
+  assert.equal([...repairedByEdit.lineup,...repairedByEdit.bench].includes(lockedCard),false,
+    "A saved squad edit must exclude free agents locked in the canonical Album");
+  assert.equal(new Set([...repairedByEdit.lineup,...repairedByEdit.bench]).size,15);
+  assert.deepEqual(records["shared:account"],sharedBeforeUnlock,
+    "Album entitlement repair must not mutate the shared account");
+  entitlementController.dispose();
+  albumUnlockedIds.add(lockedPid);
   console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 200-pumpkin pulls, cloud compatibility PASS");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
