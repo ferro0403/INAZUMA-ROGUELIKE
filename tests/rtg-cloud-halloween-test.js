@@ -164,6 +164,7 @@ async function main() {
   for(const p of assets.players.values())assert.equal(assets.moves.players[String(p.playerId)].moves.length,4);
   assert.equal(E.opponentOverall(),86);
   assert.equal(E.opponentOverall()+1,87);
+  assert.equal(E.PRICE,200,"Only the capsule cost changes; Halloween match rewards are unchanged");
   assert.equal(assets.players.size - [...assets.players.keys()].filter(pid=>E.eventPlayer(pid).halloweenVampire).length,2);
   assert.equal(E.eventPlayer("custom_0001").halloweenVampire,false);
   assert.equal(E.eventPlayer("custom_0002").halloweenVampire,false);
@@ -233,11 +234,11 @@ async function main() {
   await control("data-halloween-close-result").fire();
   await control("data-halloween-open-vending").fire();
   await control("data-halloween-pull").fire();
-  assert.equal(records["shared:account"].halloween.pumpkins,300,"A 300-pumpkin pull must debit exactly 300");
+  assert.equal(records["shared:account"].halloween.pumpkins,400,"The first capsule costs exactly 200 pumpkins");
   assert.equal(records["shared:account"].halloween.ownedIds.length,1);
   assert.equal(records["shared:account"].gachaAcquiredCards.length,1);
   await control("data-halloween-pull").fire();
-  assert.equal(records["shared:account"].halloween.pumpkins,0,"Second 300-pumpkin pull consumes remaining balance");
+  assert.equal(records["shared:account"].halloween.pumpkins,200,"The second capsule also costs exactly 200 pumpkins");
   assert.equal(records["shared:account"].halloween.ownedIds.length,2);
   assert.equal(new Set(records["shared:account"].halloween.ownedIds).size,2);
   assert.equal(records["shared:account"].tokens,83,"Regular RTG tokens must not change");
@@ -245,7 +246,7 @@ async function main() {
   context.RoadToGloryMatchEngine.prepareNext=state=>!state.__testPrepared?{...clone(state),status:"active",__testPrepared:true}:({...clone(state),status:"completed",result:{winner:"opponent"}});
   await control("data-halloween-start").fire();
   await control("data-halloween-next").fire();
-  assert.equal(records["shared:account"].halloween.pumpkins,300,"Defeat must award 300");
+  assert.equal(records["shared:account"].halloween.pumpkins,500,"Defeat still awards 300, on top of the 200 left");
   assert.equal(records["shared:account"].halloween.completedIds.length,2);
   await controller.open("album");
   assert.equal(nativeAlbumTeamsRendered,true,"Event album starts with native RTG teams");
@@ -385,14 +386,14 @@ async function main() {
   assert.equal(E.weightedPick(["custom_0002",coachId],.49),"custom_0002");
   const account=records["shared:account"];
   account.halloween.ownedIds=Array.from(assets.players.keys());
-  account.halloween.pumpkins=300;
+  account.halloween.pumpkins=200;
   const originalPlayerCount=account.gachaAcquiredCards.length;
   assert.equal(account.coachOwnedIds.includes(coachId),false);
   const coachController=E.create({app,storage,toast:()=>{},squadView,runView:nativeRunView});
   await coachController.open();
   await control("data-halloween-open-vending").fire();
   await control("data-halloween-pull").fire();
-  assert.equal(records["shared:account"].halloween.pumpkins,0,"Coach draw debits exactly 300 pumpkins");
+  assert.equal(records["shared:account"].halloween.pumpkins,0,"Coach draw debits exactly 200 pumpkins");
   assert.equal(records["shared:account"].coachOwnedIds.filter(id=>id===coachId).length,1,"Coach is owned exactly once");
   assert.equal(records["shared:account"].halloween.ownedIds.length,18,"No imaginary nineteenth player");
   assert.equal(records["shared:account"].gachaAcquiredCards.length,originalPlayerCount,
@@ -434,6 +435,6 @@ async function main() {
   assert.equal(records["shared:account"].halloween.pumpkins,99999,
     "Repeated DEV grants must not overflow or duplicate currency");
   devController.dispose();
-  console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 300-pumpkin pulls, cloud compatibility PASS");
+  console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 200-pumpkin pulls, cloud compatibility PASS");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
