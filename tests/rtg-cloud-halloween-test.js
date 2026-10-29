@@ -367,14 +367,22 @@ async function main() {
     return this.buttons;
   }};
   pickerModal.querySelector=selector=>selector==="[data-rtg-picker-results]"?pickerResults:null;
-  pickerModal.querySelectorAll=()=>[];
+  let pickerQuick=[],quickButtons=[];
+  pickerModal.querySelectorAll=selector=>{
+    if(selector!==".rtg-picker-quick-bench [data-rtg-picker-player]")return [];
+    quickButtons=pickerQuick.map(entry=>({dataset:{rtgPickerPlayer:entry.cardId},callbacks:{},
+      addEventListener(name,handler){this.callbacks[name]=handler;},
+      fire(){return this.callbacks.click?.();}
+    }));
+    return quickButtons;
+  };
   let pickerEntries=[],pickerActions=null;
   const nativeBind=squadView.bind;
   squadView.bind=(root,actions)=>{pickerActions=actions;nativeBind(root,actions);};
   squadView.replacementPickerResultsMarkup=options=>
     options.entries.map(entry=>'<button data-rtg-picker-player="'+entry.cardId+'">SCEGLI</button>').join("");
   squadView.replacementPickerMarkup=options=>{
-    pickerEntries=options.entries;
+    pickerEntries=options.entries;pickerQuick=options.quickEntries||[];
     return '<section class="rtg-squad-picker"><div data-rtg-picker-results>'+
       squadView.replacementPickerResultsMarkup({entries:options.entries})+'</div></section>';
   };
@@ -465,6 +473,19 @@ async function main() {
   assertVisibleRtgSquad(incomingSquad);
   assert.equal(incomingSquad.lineup.includes(unassigned.cardId),true);
   assert.equal([...incomingSquad.lineup,...incomingSquad.bench].includes(outgoing),false);
+  assert.deepEqual(records["local:halloween2026:squad"].slots["2"],slot2);
+  // Bench quick swap uses the SAME native picker UI. It must never duplicate a
+  // card or leave a hole in the XI after an off-role bench-to-field exchange.
+  const fieldBeforeQuick=incomingSquad.lineup[0],benchBeforeQuick=incomingSquad.bench[0];
+  pickerActions.onOpenPlayer(fieldBeforeQuick);
+  const quickButton=quickButtons.find(btn=>btn.dataset.rtgPickerPlayer===benchBeforeQuick);
+  assert.ok(quickButton,"Native quick bench selector must expose the saved substitute");
+  await quickButton.fire();
+  const quickSwap=records["local:halloween2026:squad"].slots["1"];
+  assertVisibleRtgSquad(quickSwap);
+  assert.equal(quickSwap.lineup.includes(benchBeforeQuick),true);
+  assert.equal(quickSwap.bench.includes(fieldBeforeQuick),true);
+  assert.equal(quickSwap.bench.includes(benchBeforeQuick),false);
   assert.deepEqual(records["local:halloween2026:squad"].slots["2"],slot2);
   // Switching back to the other saved squad keeps all fifteen players.
   await pickerActions.onSelectSquadSlot(2);
