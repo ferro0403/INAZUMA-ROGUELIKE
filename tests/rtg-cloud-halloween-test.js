@@ -700,6 +700,8 @@ async function main() {
   await coachApp.controls["data-halloween-tab"].find(el=>el.dataset.halloweenTab==="squad").fire();
   assert.match(coachApp.innerHTML,/Potere configurabile · selezione salvata/,
     "Event coach's SAVED selection must reach the same native RTG staff UI");
+  assert.match(coachApp.innerHTML,/data-rtg-coach-power-configure/,
+    "Hekyll's ordinary RTG configure-power button must remain accessible in Halloween squad");
   const realConfig=records["local:halloween2026:squad"].slots["1"];
   const effective=context.RoadToGloryCoachPowerRuntime.overallDiscountFor(realConfig,{
     ...records["shared:account"],activeSeasonId:"ie1",squads:{ie1:realConfig}
