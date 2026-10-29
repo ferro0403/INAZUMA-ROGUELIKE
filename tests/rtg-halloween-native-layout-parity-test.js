@@ -124,8 +124,8 @@ assert.match(eventSource,/frontFullbodyUrl:raw\.frontFullbodyUrl \|\| EVENT_FULL
   "Halloween player resolver must prefer the player-specific fullbody URL");
 const halloweenCss=fs.readFileSync("css/rtg-halloween-event.css","utf8");
 const coachesCss=fs.readFileSync("css/rtg-coaches.css","utf8");
-assert.match(htmlShell,/rtg-halloween-event\\.css\\?v=20261029-capsule-consistency-v13/);
-assert.match(htmlShell,/rtg-coach-powers-runtime\\.js\\?v=20261029-halloween-moves-v2/);
+assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261029-capsule-consistency-v13"));
+assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-runtime.js?v=20261029-halloween-moves-v2"));
 assert.doesNotMatch(eventSource,/rtg-coach-cap-note/,
   "Hekyll helper below OVR max must be removed, not just hidden");
 assert.match(eventSource,/data-halloween-prize-color/,
