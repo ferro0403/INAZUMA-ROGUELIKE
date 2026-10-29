@@ -117,6 +117,7 @@
   function create(deps = {}) {
     const app = deps.app, storage = deps.storage || global.RoadToGloryStorage.create();
     const notify = deps.toast || (()=>{});
+    const devMode = deps.devMode === true;
     let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false;
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
     let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved",pendingRevealHidden=false;
@@ -750,6 +751,22 @@
       }
       openCollection();
     }
+    // Debug-only overlay: shares the existing Halloween account transaction
+    // instead of touching localStorage, Firebase or the pull reward ledger.
+    function devToolsMarkup(){
+      return '<details class="halloween-dev-quick-tools" data-halloween-dev-tools>'+
+        '<summary>DEV HALLOWEEN</summary><div class="halloween-dev-quick-content">'+
+        '<p>Zucche: <b>'+escape(shared?.halloween?.pumpkins||0)+'</b></p>'+
+        '<button type="button" data-halloween-dev-pumpkins aria-label="Imposta almeno 99.999 zucche Halloween per test">🎃 99.999 ZUCCHE</button>'+
+        '</div></details>';
+    }
+    async function grantDevPumpkins(){
+      if(!devMode)throw fail("halloween-dev-unavailable");
+      await mutate("halloween-dev-pumpkins",account=>{
+        account.halloween.pumpkins=Math.max(account.halloween.pumpkins,99999);
+      });
+      notify("DEV: 99.999 zucche Halloween disponibili");
+    }
     function render() {
       if(!app)return;
       if(matchTimer!=null){global.clearTimeout?.(matchTimer);matchTimer=null;}
@@ -758,6 +775,13 @@
       else if(view==="album"||view==="album-roster")app.innerHTML=albumSection();
       else if(match&&view==="match"&&deps.matchView)app.innerHTML=nativeMatchMarkup();
       else app.innerHTML=shell(view==="vending"?vendingSection():match?pendingSection():matchSection());
+      if(devMode)app.innerHTML+=devToolsMarkup();
+      if(devMode)app.querySelector?.("[data-halloween-dev-pumpkins]")?.addEventListener("click",event=>{
+        const button=event.currentTarget;
+        if(button.disabled)return;
+        button.disabled=true;
+        return perform(grantDevPumpkins).finally(()=>{if(button.isConnected)button.disabled=false;});
+      });
       app.querySelectorAll?.("[data-halloween-back],[data-rtg-home]")?.forEach(el=>el.addEventListener("click",()=>{if(view==="match"){dispose();deps.onReturn?.();}else {view="match";render();}}));
       app.querySelector?.("[data-rtg-album-collection-back]")?.addEventListener("click",()=>{dispose();deps.onReturn?.();});
       app.querySelectorAll?.("[data-rtg-album-team]")?.forEach(button=>button.addEventListener("click",()=>{

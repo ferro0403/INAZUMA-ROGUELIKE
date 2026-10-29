@@ -402,6 +402,38 @@ async function main() {
   await coachController.open();
   assert.match(app.innerHTML,/DISTRIBUTORE STREGATO/);
   coachController.dispose();
+  // The Halloween pumpkin cheat must exist ONLY when RTG explicitly grants
+  // devMode. It must commit to the existing shared:account, not a parallel key.
+  const normalApp=createApp();
+  const normalController=E.create({app:normalApp,storage,squadView,runView:nativeRunView,toast:()=>{}});
+  await normalController.open();
+  assert.doesNotMatch(normalApp.innerHTML,/data-halloween-dev-pumpkins/,
+    "Normal Halloween event must never expose the developer pumpkin button");
+  normalController.dispose();
+  const devApp=createApp(),devToasts=[];
+  const devController=E.create({app:devApp,storage,squadView,runView:nativeRunView,
+    devMode:true,toast:(message)=>devToasts.push(message)});
+  await devController.open();
+  assert.match(devApp.innerHTML,/data-halloween-dev-pumpkins/,"DEV Halloween has pumpkin shortcut");
+  const prior=clone(records["shared:account"]);
+  await devApp.controls["data-halloween-dev-pumpkins"][0].fire();
+  const granted=records["shared:account"];
+  assert.equal(granted.halloween.pumpkins,99999,"DEV grants enough pumpkins for all event pulls");
+  assert.equal(granted.tokens,prior.tokens,"DEV pumpkins must never alter RTG tokens");
+  assert.deepEqual(granted.gachaAcquiredCards,prior.gachaAcquiredCards,
+    "DEV pumpkins must not grant any players or skip the gacha");
+  assert.deepEqual(granted.halloween.ownedIds,prior.halloween.ownedIds);
+  assert.equal(granted.halloween.pullCount,prior.halloween.pullCount,
+    "DEV grant must not count as a capsule pull");
+  assert.deepEqual(granted.halloween.completedIds,prior.halloween.completedIds,
+    "DEV grant must not fabricate completed matches");
+  assert.ok(devToasts.some(message=>message.includes("99.999")),
+    "Successful DEV grant must be acknowledged AFTER commit");
+  assert.match(devApp.innerHTML,/99\.999|99999/,"DEV screen rerenders with refreshed balance");
+  await devApp.controls["data-halloween-dev-pumpkins"][0].fire();
+  assert.equal(records["shared:account"].halloween.pumpkins,99999,
+    "Repeated DEV grants must not overflow or duplicate currency");
+  devController.dispose();
   console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 300-pumpkin pulls, cloud compatibility PASS");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
