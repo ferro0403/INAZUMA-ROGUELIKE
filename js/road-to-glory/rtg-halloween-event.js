@@ -351,19 +351,42 @@
         '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>APRI DISTRIBUTORE →</button>'+
         '</section>';
     }
+    function ensureEventPitchRows(model){
+      if(!model||!Array.isArray(model.lineupRows)||!Array.isArray(model.lineup)||model.lineup.length!==11)return model;
+      const visible=(model.lineupRows||[]).reduce((n,row)=>n+(row.entries||[]).length,0);
+      if(visible===11)return model;
+      const formation=model.formation;
+      const roles=tacticalSlotRoles(model.formationId||localSquad?.formationId);
+      const rows=global.FormationLayout?.displayRows?.(formation)||
+        ["FW","MF","DF","GK"].map(role=>({
+          role,count:Number(formation?.requirements?.[role]||0)
+        })).filter(row=>row.count>0);
+      const entries=model.lineup.map((entry,i)=>({...entry,tacticalRole:roles[i]}));
+      const byRole=new Map(["FW","MF","DF","GK"].map(role=>[
+        role,entries.filter(entry=>entry.tacticalRole===role)
+      ]));
+      const lineupRows=rows.map(row=>({...row,entries:(byRole.get(String(row.role).toUpperCase())||[]).splice(0,row.count)}));
+      if(lineupRows.reduce((n,row)=>n+row.entries.length,0)!==11)
+        throw fail("halloween-squad-pitch-invalid");
+      global.console?.warn?.("[RTG Halloween] XI visuale riallineato agli slot tattici");
+      return {...model,lineupRows};
+    }
     function squadSection() {
       const view=deps.squadView;
       if(!view?.renderModel||!view?.markup)return '<p>Layout RTG non disponibile</p>';
       const freeAgentIds=(data.freeAgents?.players||[]).map(p=>asId(p.playerId||p.id));
-      const model=view.renderModel({state:activeEventSquad(),freeAgentIds,seasonDb:global.SeasonRegistry?.database?.("ie1")||{},
+      const rawModel=view.renderModel({state:activeEventSquad(),freeAgentIds,seasonDb:global.SeasonRegistry?.database?.("ie1")||{},
           freeAgentsDb:data.freeAgents,playerResolver:{resolveAtLevel20:cardId=>resolveCard(cardId)}});
+      // Original RTG pitch/markup; repair only row grouping that hides off-role starters.
+      const model=ensureEventPitchRows(rawModel);
       const meta=deps.getUserTeamMeta?.()||{};
       const name=meta.name||"La tua squadra";
       const squadOvr=ovr(resolvedUser()?.lineup,eventOverallDiscount());
       const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · Evento Halloween</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div></div>';
       return '<div class="rtg-halloween-mode halloween-squad-mode">'+
         view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
-          coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(activeEventSquad(),localSquad.coachId)||"",
+          coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(activeEventSquad(),
+             localSquad.coachId,localSquad.coachPowerSelection)||"",
           requirementsMarkup:requirement,nextTeamName:"Occult Halloween",dirty:false})+'</div>';
     }
     function vendingSection() {
@@ -757,7 +780,7 @@
       ui.open({getCampaign:currentState,getSquadDraft:()=>localSquad,seasonId:()=>"ie1",
         resolve:resolveCard,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
         closeModal:deps.closeModal,toast:notify,squadView:deps.squadView,getModel:model,
-        saveSquad:async draft=>editSquad("coachPower",draft),
+        saveSquad:async draft=>{await editSquad("coachPower",draft);render();},
         openPlayerDetails:key=>openNativeDetail(key),
         previewSquadOverall:selection=>{
           const line=resolvedUser()?.lineup;
@@ -1033,6 +1056,14 @@
         curr.lineup=line;curr.bench=bench;curr.formationId=formationId;
         curr.lineupOrderedBySlot=false;
         nextSquad=orderedEventSquad(curr);
+      }
+      // Hekyll's selected HW starter may be removed or benched by a swap.
+      // Retire an invalid target instead of displaying a stale active power.
+      if(nextSquad?.coachId===HALLOWEEN_COACH_ID&&nextSquad?.coachPowerSelection){
+        const chosen=nextSquad.coachPowerSelection.cardIds||[];
+        if(chosen.length!==1||!chosen[0].startsWith(EVENT_ID+"::")||
+           !nextSquad.lineup.includes(chosen[0]))
+          nextSquad.coachPowerSelection=null;
       }
       assertEventSquadIntegrity(nextSquad);
       nextSlots[nextSlot]=clone(nextSquad);
