@@ -274,7 +274,7 @@ async function main() {
   const snapshot=context.RoadToGloryCloudSnapshot.project({
     trilogy:null,aresOrion:null,shared:records["shared:account"],album:{version:1,cardIds:[]}
   });
-  assert.equal(context.RoadToGloryCloudSnapshot.validate(snapshot).shared.halloween.pumpkins,300);
+  assert.equal(context.RoadToGloryCloudSnapshot.validate(snapshot).shared.halloween.pumpkins,500);
   const legacy=context.RoadToGloryCloudSnapshot.project({
     trilogy:null,aresOrion:null,
     shared:{tokens:83,gachaAcquiredCards:[],developmentByCardId:{},coachOwnedIds:[]}
