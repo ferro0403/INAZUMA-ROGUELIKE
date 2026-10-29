@@ -646,6 +646,28 @@ async function main() {
   assert.equal(savedLive.lineup.includes(offRole.cardId),true);
   assert.equal(savedLive.lineupOrderedBySlot,true);
   assert.equal(new Set([...savedLive.lineup,...savedLive.bench]).size,15);
+  // Reproduce the reported case precisely: put a real goalkeeper in midfield.
+  // This must SWAP the two tactical slots, not remove one player or hide a card.
+  const mfPosition=3,gkPosition=10;
+  const beforeOffRoleSwap=clone(records["local:halloween2026:squad"].slots["1"]);
+  const midfielder=beforeOffRoleSwap.lineup[mfPosition],goalkeeper=beforeOffRoleSwap.lineup[gkPosition];
+  assert.equal(naturalRole(goalkeeper),"GK","Fixture must really contain a goalkeeper");
+  const midfieldChange=realApp.controls["data-rtg-change-player"]
+    .find(button=>button.dataset.rtgChangePlayer===midfielder);
+  assert.ok(midfieldChange,"The midfield slot must be clickable");
+  await midfieldChange.fire();
+  const keeperChoice=resultButtons.find(button=>button.dataset.rtgPickerPlayer===goalkeeper);
+  assert.ok(keeperChoice,"Picker must list the goalkeeper despite his natural role");
+  await keeperChoice.fire();
+  const offRoleSaved=records["local:halloween2026:squad"].slots["1"];
+  assert.equal(offRoleSaved.lineup[mfPosition],goalkeeper);
+  assert.equal(offRoleSaved.lineup[gkPosition],midfielder);
+  assert.equal(count("data-rtg-lineup-player"),11);
+  assert.equal(count("data-rtg-bench-player"),4);
+  const visibleIds=[...realApp.innerHTML.matchAll(/data-rtg-lineup-player="([^"]+)"/g)].map(hit=>hit[1]);
+  assert.equal(new Set(visibleIds).size,11,"The 11 visible pitch cards must be distinct");
+  assert.deepEqual(new Set(visibleIds),new Set(offRoleSaved.lineup),
+    "The pitch must contain exactly the 11 IDs in the canonical Halloween lineup");
   const otherSlot=clone(records["local:halloween2026:squad"].slots["2"]);
   const switchControl=realApp.controls["data-rtg-squad-slot"].find(el=>el.dataset.rtgSquadSlot==="2");
   assert.ok(switchControl,"The canonical UI exposes saved squad slots");
@@ -653,6 +675,39 @@ async function main() {
   assert.equal(count("data-rtg-lineup-player"),11);
   assert.deepEqual(records["local:halloween2026:squad"].slots["2"],otherSlot);
   liveController.dispose();
+
+  // Delayed canonical write: two rapid taps may not enqueue two competing squad
+  // replacements. The old perform() lacked an action-level lock.
+  records["local:halloween2026:squad"].activeSquadSlot=1;
+  let releaseSquadWrite=null,numberOfSquadWrites=0;
+  const delayedStorage={
+    ...storage,
+    async updateMany(keys,mutation){
+      if(keys.length===1&&keys[0]==="local:halloween2026:squad"){
+        numberOfSquadWrites++;
+        if(numberOfSquadWrites===1)
+          await new Promise(resolve=>{releaseSquadWrite=resolve;});
+      }
+      return storage.updateMany(keys,mutation);
+    }
+  };
+  const raceApp=createApp();
+  const raceController=E.create({app:raceApp,storage:delayedStorage,
+    squadView:instrumentedView,runView:nativeRunView,toast:()=>{}});
+  await raceController.open();
+  await raceApp.controls["data-halloween-tab"].find(b=>b.dataset.halloweenTab==="squad").fire();
+  const toSlot=slot=>raceApp.controls["data-rtg-squad-slot"]
+    .find(button=>button.dataset.rtgSquadSlot===String(slot));
+  const firstTap=toSlot(2).fire();
+  assert.ok(releaseSquadWrite,"The first tap must reach the pending canonical write");
+  const secondTap=toSlot(3).fire();
+  assert.equal(numberOfSquadWrites,1,"While one squad save is pending a second tap must not write");
+  releaseSquadWrite();
+  await Promise.all([firstTap,secondTap]);
+  assert.equal(records["local:halloween2026:squad"].activeSquadSlot,2);
+  assert.equal(numberOfSquadWrites,1);
+  assert.equal(count("data-rtg-lineup-player",raceApp.innerHTML),11);
+  raceController.dispose();
 
   // Hekyll: selection is a requirement-only effect. Its saved badge and
   // effective team average must both use the ACTUAL event squad state.
