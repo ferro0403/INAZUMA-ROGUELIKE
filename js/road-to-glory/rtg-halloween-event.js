@@ -757,7 +757,7 @@
       return '<details class="halloween-dev-quick-tools" data-halloween-dev-tools>'+
         '<summary>DEV HALLOWEEN</summary><div class="halloween-dev-quick-content">'+
         '<p>Zucche: <b>'+escape(shared?.halloween?.pumpkins||0)+'</b></p>'+
-        '<button type="button" data-halloween-dev-pumpkins>🎃 99.999 ZUCCHE</button>'+
+        '<button type="button" data-halloween-dev-pumpkins aria-label="Imposta almeno 99.999 zucche Halloween per test">🎃 99.999 ZUCCHE</button>'+
         '</div></details>';
     }
     async function grantDevPumpkins(){
