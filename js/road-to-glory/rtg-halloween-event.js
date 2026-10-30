@@ -352,6 +352,48 @@
       });
       return {lineup:unpack(squad?.lineup),bench:unpack(squad?.bench)};
     }
+    // Only the Squadra player detail gets the saved, currently valid power
+    // projection. Album, collection, prizes and match details remain independent.
+    function squadCoachDetailPreview(cardId,player){
+      if(view!=="squad"||match||!localSquad?.coachPowerSelection||
+         ![...(localSquad.lineup||[]),...(localSquad.bench||[])].includes(cardId))
+        return null;
+      const rules=global.RoadToGloryCoachPowerRuntime;
+      const coachId=asId(localSquad.coachId);
+      if(!shared?.coachOwnedIds?.includes(coachId))return null;
+      const roster=resolvedPowerRoster(localSquad);
+      const config=rules?.validConfig?.(localSquad,roster.lineup,"ie1",roster.bench);
+      if(!config||!config.cardIds?.includes(cardId))return null;
+      if(coachId==="1974"&&cardId.startsWith(EVENT_ID+"::")){
+        // Event cards have no Season progression source. Reuse the exact
+        // temporary upgrade used at Halloween kickoff, only for this preview.
+        const nextRarity=rules?.nextRarity?.(rules.rarityOf(player));
+        const upgraded=nextRarity&&upgradeEventCoachRarity(player,nextRarity,cardId);
+        if(!upgraded)return null;
+        const labels={attack:"Tiro",control:"Controllo",speed:"Velocità",
+          stamina:"Resistenza",grit:"Grinta",defense:"Difesa",
+          physical:"Fisico",save:"Parata"};
+        const stats=Object.keys(labels).map(k=>({
+          label:labels[k],before:Number(player.stats?.[k]||0),
+          after:Number(upgraded.stats?.[k]||0)
+        })).filter(item=>item.after>item.before);
+        return {coachId,original:player,player:upgraded,stats,
+          pt:global.RtgFourMovesRuntime?.ptBreakdown?.(upgraded.stats,nextRarity)||null,
+          note:"POTENZIALE RISVEGLIATO · "+rules.rarityOf(player)+" → "+
+            nextRarity+" · OVR "+Number(player.overall)+" → "+Number(upgraded.overall)+
+            " in partita. Nessun cambiamento permanente; requisiti invariati."};
+      }
+      if(coachId===HALLOWEEN_COACH_ID){
+        return {coachId,original:player,player,stats:[],
+          note:"MASCHERA MALEDETTA · questo giocatore conta 15 OVR in meno "+
+            "soltanto per i requisiti dell'evento. Statistiche e partita invariati."};
+      }
+      return global.RoadToGloryCoachSquadPreview?.projected?.({
+        player,cardId,squad:localSquad,state:activeEventSquad(),
+        seasonId:"ie1",playerResolver:global.RoadToGloryPlayerResolver,
+        freeAgentsDb:data.freeAgents
+      })||null;
+    }
     function nativeCard(p,opts={}) {
       const cls=opts.event&&p?.halloweenVampire?" halloween-vampire-card":"";
       const attr=opts.attr||"";
@@ -361,16 +403,21 @@
         : '<button type="button" class="player-card player-card-compact '+cls+'" '+attr+'><span class="player-corner player-role">'+escape(p.position||"")+'</span><span class="player-corner player-overall">'+escape(p.overall||"")+'</span><img class="player-portrait" src="'+escape(p.portraitUrl||"")+'" alt=""><strong>'+escape(p.name||"")+'</strong></button>';
     }
     function openNativeDetail(cardId,albumUnlocked=false,fromAlbum=false,matchPlayer=null) {
-      // During the event match, never reread the owned original in place of
-      // the immutable coach-enhanced match snapshot.
-      const p=matchPlayer?.cardId===cardId?matchPlayer:resolveCard(cardId);
-      if(!p)return;
+      // The match owns the snapshot of temporary powers. Squadra shows the
+      // configured preview without ever altering the canonical owned card.
+      const original=matchPlayer?.cardId===cardId?matchPlayer:resolveCard(cardId);
+      if(!original)return;
+      const info=!fromAlbum&&!matchPlayer?squadCoachDetailPreview(cardId,original):null;
+      const p=info?.player||original;
       // The generic RTG detail resolver cannot resolve an unowned event card.
       // Use this event player's canonical render directly, even when locked.
       if(deps.showPlayerDetailsFor) {
         deps.showPlayerDetailsFor(p,{playerId:p.playerId,level:20,readOnly:true,rtgFourMoves:true,
           moveSeasonId:p.halloweenMoves?EVENT_ID:(p.resolvedSeasonId||p.legacySeasonId||"ie1"),
           rtgRarity:p.category,mode:fromAlbum?"album":"current",albumUnlocked});
+        if(info)global.RoadToGloryCoachSquadPreview?.decorateDetail?.({
+          root:deps.getModalRoot?.(),info
+        });
       } else if(deps.openPlayerDetails) {
         deps.openPlayerDetails(cardId,"",{mode:fromAlbum?"album":undefined,albumUnlocked});
       }
@@ -516,19 +563,6 @@
       return {attackingSide,shooter,keeper,userRole,ptMode,userOptions,userMove:userOptions[0]||null,userMoveAvailable:userOptions.length>0,
         userPt:rules?.pt?.(m,"user",asId(userPlayer?.cardId||userPlayer?.playerId))||null};
     }
-    function coachMatchStatus(html){
-      const effect=match?.coachPowerEffect||match?.preMatchCoachEffect;
-      if(!effect)return html;
-      const coach=global.RoadToGloryCoaches?.BY_ID?.[asId(effect.coachId)];
-      const detail=({"208":"DUE TITOLARI +100 PT","1329":"MOSSE A METÀ COSTO PT",
-        "4401":"ELEMENTI E MOSSE TRASFORMATI","1974":"RARITÀ POTENZIATE",
-        "1777":"RISERVA AGEVOLATA NEI REQUISITI","1940":"MOSSE AVVERSARIE BLOCCATE",
-        "1275":"PT AVVERSARI RIDOTTI","36":"SOSTITUZIONE FORZATA",
-        "1225":"PRESTITO ATTIVO","4761":"POSIZIONI SCAMBIATE"})[asId(effect.coachId)]||"EFFETTO APPLICATO";
-      const label='<div class="halloween-coach-match-status" role="status" aria-label="Potere allenatore applicato">'+
-        '<strong>'+escape(coach?.name||"Allenatore")+'</strong> · '+escape(detail)+'</div>';
-      return html.replace(/(<main\b[^>]*>)/,(_match,opening)=>opening+label);
-    }
     function nativeMatchMarkup(){
       const v=deps.matchView;if(!v||!match)return pendingSection();
       if(["completed","completed-draw","abandoned"].includes(match.status)&&!lastResolution){
@@ -540,9 +574,9 @@
         return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+result+'</div></main>';
       }
       if(match.presentation?.preMatchSeen===false)
-        return coachMatchStatus(v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match'));
+        return v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
       const presented=lastResolution&&["halftime","penalties","completed","completed-draw"].includes(match.status)?{...match,status:"active"}:match;
-      return coachMatchStatus(v.matchMarkup(presented).replace('<main class="screen','<main class="screen halloween-native-match'));
+      return v.matchMarkup(presented).replace('<main class="screen','<main class="screen halloween-native-match');
     }
     function bindNativeMatch(){
       const v=deps.matchView,m=match;
