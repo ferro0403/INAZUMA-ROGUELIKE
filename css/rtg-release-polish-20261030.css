@@ -64,45 +64,98 @@
   #clean-home .home-rtg-shortcuts--compact .home-rtg-shortcut:last-child{grid-column:1/-1!important;}
 }
 
-/* Svincolati: readable, purposeful match launch modal. */
-.rtg-node-modal--secondary{padding:19px 17px 20px!important;}
-.rtg-node-modal--secondary .rtg-secondary-heading{
-  display:grid;grid-template-columns:66px minmax(0,1fr);gap:12px;align-items:center;
-  border-bottom:3px solid #16171c;padding-bottom:17px;
+/* Secondary match: compact navy briefing, safe close area, one clear action. */
+.rtg-node-modal--secondary{
+  padding:12px 12px 15px!important;
+  text-align:left!important;color:#111216;
+  min-width:0;max-width:100%;overflow-wrap:anywhere;
 }
-.rtg-node-modal--secondary .rtg-secondary-symbol{
-  display:grid;place-items:center;width:62px;height:70px;
-  background:#183f60;border:3px solid #13161d;box-shadow:5px 5px 0 #14161d;
-  color:#ffd21f;font-size:2.4rem;font-weight:1000;
+.rtg-node-modal--secondary .rtg-secondary-hero{
+  background:linear-gradient(130deg,#141922 0%,#26364a 100%);
+  color:#fff;position:relative;overflow:hidden;
+  padding:15px 60px 16px 14px;
+  border-left:5px solid #ffcf24;
 }
-.rtg-node-modal--secondary .rtg-secondary-heading .eyebrow{
-  margin:0 0 4px;color:#866420;font-weight:1000;letter-spacing:.1em;font-size:.65rem;
+.rtg-node-modal--secondary .rtg-secondary-hero::after{
+  content:"";position:absolute;right:-38px;bottom:-72px;
+  width:140px;height:140px;border:24px solid #ffffff10;
+  transform:rotate(-19deg);pointer-events:none;
 }
-.rtg-node-modal--secondary .rtg-secondary-heading h2{
-  margin:0;color:#111216;line-height:1.05;font-size:clamp(1.14rem,4.5vw,1.6rem);
-  overflow-wrap:break-word;
+.rtg-node-modal--secondary .rtg-secondary-hero-top{
+  position:relative;z-index:1;display:flex;align-items:center;
+  gap:8px;min-width:0;margin-bottom:10px;
 }
-.rtg-node-modal--secondary .rtg-secondary-heading .muted{margin:6px 0 0;font-size:.76rem;line-height:1.35;}
-.rtg-node-modal--secondary .rtg-secondary-facts{
+.rtg-node-modal--secondary .rtg-secondary-mark{
+  display:inline-grid;place-items:center;flex-shrink:0;
+  width:31px;height:32px;background:#ffd21f;color:#13171e;
+  border:2px solid #ffd21f;font-size:1.3rem;font-weight:1000;
+}
+.rtg-node-modal--secondary .rtg-secondary-kicker{
+  display:block;min-width:0;color:#ffdc65;
+  font-size:clamp(.51rem,2.5vw,.67rem);
+  font-weight:1000;letter-spacing:.045em;line-height:1.2;
+}
+.rtg-node-modal--secondary .rtg-secondary-kicker i{
+  font-style:normal;color:#fff;opacity:.55;padding:0 1px;
+}
+.rtg-node-modal--secondary .rtg-secondary-hero h2{
+  position:relative;z-index:1;color:#fff!important;
+  font-size:clamp(1.35rem,6vw,1.85rem)!important;
+  line-height:1.01;letter-spacing:-.04em;
+  margin:0 0 6px!important;max-width:100%;
+  text-align:left;
+}
+.rtg-node-modal--secondary .rtg-secondary-hero p{
+  position:relative;z-index:1;margin:0;
+  color:#e4eaf0;font-size:.74rem;line-height:1.38;font-weight:650;
+}
+.rtg-node-modal--secondary .rtg-secondary-summary{
   display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  gap:8px;margin:15px 0 4px;
+  gap:8px;margin:12px 0;
 }
-.rtg-node-modal--secondary .rtg-secondary-facts>span{
-  display:flex;flex-direction:column;gap:5px;min-width:0;
-  padding:10px 9px;border:2px solid #16171d;background:#f0eee9;
+.rtg-node-modal--secondary .rtg-secondary-summary>div{
+  display:flex;flex-direction:column;justify-content:center;
+  min-width:0;gap:4px;min-height:58px;padding:9px 8px;
+  border:2px solid #17191f;background:#f3f1eb;
 }
-.rtg-node-modal--secondary .rtg-secondary-facts small{font-size:.59rem;font-weight:1000;letter-spacing:.1em;color:#554c44;}
-.rtg-node-modal--secondary .rtg-secondary-facts strong{font-size:.79rem;line-height:1.2;color:#13141a;overflow-wrap:anywhere;}
-.rtg-node-modal--secondary .rtg-secondary-reward{background:#ffedaf!important;}
-.rtg-node-modal--secondary .rtg-secondary-reward em{font-size:.56rem;font-style:normal;}
+.rtg-node-modal--secondary .rtg-secondary-summary>div:last-child{background:#ffefb6;}
+.rtg-node-modal--secondary .rtg-secondary-summary small{
+  display:block;font-size:.55rem;letter-spacing:.04em;
+  line-height:1.18;font-weight:1000;color:#71624b;
+}
+.rtg-node-modal--secondary .rtg-secondary-summary strong{
+  font-size:1.05rem;line-height:1.05;letter-spacing:-.02em;
+  color:#15191f;overflow-wrap:anywhere;
+}
+.rtg-node-modal--secondary .rtg-secondary-summary strong span{
+  display:block;font-size:.56rem;letter-spacing:0;line-height:1.4;
+}
 .rtg-node-modal--secondary .rtg-secondary-start{
-  width:100%;min-height:63px;margin-top:14px!important;
-  display:grid;grid-template-columns:32px 1fr 22px;align-items:center;gap:7px;
-  padding:10px 13px;background:#ffd21f!important;color:#111216!important;
-  font-weight:1000;font-size:clamp(.87rem,4vw,1.15rem);
-  box-shadow:5px 6px 0 #111216;
+  margin:0!important;min-height:57px;max-width:100%;
+  width:100%;display:grid;grid-template-columns:24px minmax(0,1fr) 17px;
+  align-items:center;gap:9px;padding:10px 12px!important;
+  border:3px solid #111216!important;border-radius:0!important;
+  box-shadow:4px 5px 0 #111216!important;
+  background:#ffd21f!important;color:#111216!important;
+  font-weight:1000;
 }
-.rtg-node-modal--secondary .rtg-secondary-start>b{font-size:1.8rem;}
+.rtg-node-modal--secondary .rtg-secondary-start strong{
+  color:#111216;font-size:clamp(.89rem,4vw,1.12rem);
+  line-height:1.05;white-space:normal;
+}
+.rtg-node-modal--secondary .rtg-secondary-play{
+  font-size:1.06rem;text-align:center;
+}
+.rtg-node-modal--secondary .rtg-secondary-arrow{
+  font-size:1.65rem;line-height:1;
+}
+@media(max-width:380px){
+  .rtg-node-modal--secondary{padding:11px 9px 13px!important;}
+  .rtg-node-modal--secondary .rtg-secondary-hero{padding:13px 47px 13px 11px;}
+  .rtg-node-modal--secondary .rtg-secondary-mark{width:27px;height:28px;}
+  .rtg-node-modal--secondary .rtg-secondary-summary{gap:6px;}
+  .rtg-node-modal--secondary .rtg-secondary-summary>div{padding:8px 6px;}
+}
 
 /* Halloween event: the SAME rendered tactical XI used by the native match. */
 .rtg-halloween-run-screen .halloween-opponent-preview{
@@ -147,6 +200,27 @@
 }
 .rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-prematch-single-pitch{
   width:100%;max-width:100%;min-width:0;
+}
+/* The gallery MUST use the actual match cards (role/OVR corners + HW badge). */
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-shared-match-side{
+  min-width:0;width:100%;max-width:100%;padding:12px 5px;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-shared-match-line{
+  width:100%;min-width:0;display:flex;justify-content:space-evenly;
+  align-items:center;gap:4px;max-width:100%;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-shared-match-card{
+  min-width:0;max-width:min(24%,135px);flex:1 1 0;
+  border-radius:2px!important;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-shared-match-line[data-row-count="2"] .rtg-shared-match-card{
+  flex:0 1 25%;max-width:25%;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-shared-match-line[data-row-count="1"] .rtg-shared-match-card{
+  flex:0 1 25%;max-width:25%;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-shared-match-card:focus-visible{
+  outline:3px solid #ffd21f;outline-offset:3px;
 }
 .rtg-halloween-run-screen .halloween-opponent-preview-field .squad-player-card{
   min-width:0;max-width:100%;height:auto;
