@@ -9,16 +9,22 @@ const home=read("js/home/home-view.js");
 const picker=read("js/road-to-glory/rtg-squad-controller.js");
 const event=read("js/road-to-glory/rtg-halloween-event.js");
 const run=read("js/road-to-glory/rtg-run-view.js");
-const css=read("css/rtg-release-polish-20261030.css");
+const css=[read("css/game.css"),read("css/rtg-run.css"),read("css/rtg-halloween-event.css")].join("\n");
 
 test("Mobile RTG home: compact CTA and existing navigation contracts",()=>{
   assert.match(home,/home-rtg-hero--compact/);
   assert.match(home,/ENTRA NELLE CAMPAGNE/);
   assert.match(home,/data-rtg-home-open="campaigns"/);
+  // The menu is data-driven; validate all declared destinations AND the live binding.
+  const shortcuts=home.match(/const shortcuts=\[([\s\S]*?)\];/)?.[1]||"";
   for(const section of ["squad","vending","album","shop","development"])
-    assert.match(home,new RegExp(`data-rtg-home-open=\\\"${section}\\\"`));
+    assert(shortcuts.includes('["'+section+'",'),"Missing shortcut "+section);
+  assert.match(home,/data-rtg-home-open="\$\{target\}"/);
   assert.match(css,/home-rtg-shortcuts--compact/);
-  assert(index.includes("css/rtg-release-polish-20261030.css?v=4"));
+  assert(!index.includes("rtg-release-polish-20261030.css"),"No illegal finishing stylesheets");
+  assert(index.includes("css/game.css?v=20261030-rtg-home-owner-v4"));
+  assert(index.includes("css/rtg-theme.css?v=20261030-secondary-briefing-owner-v4"));
+  assert(index.includes("css/rtg-halloween-event.css?v=20261030-native-XI-owner-v17"));
   assert(index.includes("home-view.js?v=20260923-rtg-direct-paint-p1-compact-v1"),
     "Mobile home HTML must be cache-busted");
 });
