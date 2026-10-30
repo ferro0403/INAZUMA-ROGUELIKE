@@ -454,7 +454,7 @@
       return '<section class="rtg-journey-summary halloween-journey-summary halloween-event-hero" aria-label="Prossima partita Halloween">'+
         '<div class="halloween-event-hero-top"><div class="halloween-event-hero-copy">'+
         '<p class="eyebrow">SFIDA EVENTO · IL CIMITERO STREGATO</p><h1>OCCULT<br>HALLOWEEN</h1>'+
-        '<p>Completa la partita: +'+PRIZE+' zucche.</p></div>'+
+        '<p>Vinci la partita: +'+PRIZE+' zucche.</p></div>'+
         '<img class="halloween-event-hero-crest" src="'+escape(LOGO_URL)+'" alt="Stemma Occult Halloween"></div>'+
         '<div class="halloween-event-ovr-strip" aria-label="Requisiti overall">'+
         '<div><span>OVR AVVERSARIO</span><strong>'+target+'</strong></div>'+
@@ -552,7 +552,7 @@
     function pendingSection() {
       if(!match)return matchSection();
       const m=match,ended=["completed","completed-draw","abandoned"].includes(m.status);
-      if(ended) return '<div class="halloween-graveyard"><div class="halloween-match-card"><h2>RISULTATO FINALE</h2><h1>'+escape(m.score.user)+' – '+escape(m.score.opponent)+'</h1><p>'+(m.status==="abandoned"?"Partita abbandonata":m.result?.winner==="user"?"VITTORIA!":"PARTITA CONCLUSA")+'</p><p>'+(m.halloweenAward?'Ricompensa accreditata: '+currency(m.halloweenAward):"")+'</p><button class="halloween-action" data-halloween-close-result>TORNA ALL’EVENTO</button></div></div>';
+      if(ended) return '<div class="halloween-graveyard"><div class="halloween-match-card"><h2>RISULTATO FINALE</h2><h1>'+escape(m.score.user)+' – '+escape(m.score.opponent)+'</h1><p>'+(m.status==="abandoned"?"Partita abbandonata":m.result?.winner==="user"?"VITTORIA!":"PARTITA CONCLUSA")+'</p><p>'+(m.status==="abandoned"?"":m.result?.winner==="user"&&m.halloweenAward?"Ricompensa accreditata: "+currency(m.halloweenAward):"Nessuna zucca ottenuta")+'</p><button class="halloween-action" data-halloween-close-result>TORNA ALL’EVENTO</button></div></div>';
       const info=m.pendingEncounter,options=info?.userMoveOptions||[];
       const status=m.status==="halftime"?"INTERVALLO":m.status==="penalties"?"CALCI DI RIGORE":info?"AZIONE DECISIVA":"INCONTRO";
       const opponentActor=[...(m.opponentSquad?.lineup||[]),...(m.opponentSquad?.bench||[])].find(p=>asId(p.cardId||p.playerId)===asId(info?.aiPlayerId));
@@ -580,9 +580,10 @@
       const v=deps.matchView;if(!v||!match)return pendingSection();
       if(["completed","completed-draw","abandoned"].includes(match.status)&&!lastResolution){
         const award=Number.isInteger(match.halloweenAward)?match.halloweenAward:0;
+        const won=match.status!=="abandoned"&&match.result?.winner==="user";
         const rewardHtml='<div class="halloween-final-award" role="status"><span>'+
-          (match.status==="abandoned"?"PARTITA ABBANDONATA · NESSUN PREMIO":"PREMIO HALLOWEEN ACCREDITATO")+
-          '</span><strong>'+(match.status==="abandoned"?"0":"+"+escape(award))+' ZUCCHE</strong></div>';
+          (match.status==="abandoned"?"PARTITA ABBANDONATA · NESSUN PREMIO":won?"PREMIO HALLOWEEN ACCREDITATO":"SCONFITTA O PAREGGIO · NESSUN PREMIO")+
+          '</span><strong>'+(won&&award>0?"+"+escape(award):"0")+' ZUCCHE</strong></div>';
         const result=v.resultMarkup(match,null).replace(/(<button[^>]*data-rtg-result-continue)/,rewardHtml+'$1');
         return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+result+'</div></main>';
       }
@@ -1341,8 +1342,9 @@
         const live=records[MATCH_KEY];if(!live||live.matchId!==m.matchId)throw fail("halloween-stale-match");
         const ledger=account.halloween.completedIds;
         const already=ledger.includes(m.matchId);
-        const lucky=global.RoadToGloryRng.int(m.matchId,"halloween-lucky",0,100)<10 && m.result?.winner==="user";
-        const award=already?Number(live.halloweenAward||0):(lucky?LUCKY_PRIZE:PRIZE);
+        const won=m.result?.winner==="user";
+        const lucky=won&&global.RoadToGloryRng.int(m.matchId,"halloween-lucky",0,100)<10;
+        const award=already?Number(live.halloweenAward||0):!won?0:(lucky?LUCKY_PRIZE:PRIZE);
         if(!already){account.halloween.pumpkins+=award;ledger.push(m.matchId);if(lucky)account.halloween.luckyWins++;}
         return {writes:{[MATCH_KEY]:{...m,halloweenAward:award}},match:m};
       },[SHARED_KEY,MATCH_KEY]);

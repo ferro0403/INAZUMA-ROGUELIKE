@@ -171,7 +171,9 @@ async function main() {
   for(const p of assets.players.values())assert.equal(assets.moves.players[String(p.playerId)].moves.length,4);
   assert.equal(E.opponentOverall(),86);
   assert.equal(E.opponentOverall()+1,87);
-  assert.equal(E.PRICE,200,"Only the capsule cost changes; Halloween match rewards are unchanged");
+  assert.equal(E.PRICE,200,"Halloween capsule price stays at 200 pumpkins");
+  assert.equal(E.PRIZE,300,"Normal Halloween win remains 300 pumpkins");
+  assert.equal(E.LUCKY_PRIZE,600,"Lucky Halloween win remains 600 pumpkins");
   assert.equal(assets.players.size - [...assets.players.keys()].filter(pid=>E.eventPlayer(pid).halloweenVampire).length,2);
   assert.equal(E.eventPlayer("custom_0001").halloweenVampire,false);
   assert.equal(E.eventPlayer("custom_0002").halloweenVampire,false);
@@ -273,8 +275,35 @@ async function main() {
   context.RoadToGloryMatchEngine.prepareNext=state=>!state.__testPrepared?{...clone(state),status:"active",__testPrepared:true}:({...clone(state),status:"completed",result:{winner:"opponent"}});
   await control("data-halloween-start").fire();
   await control("data-halloween-next").fire();
-  assert.equal(records["shared:account"].halloween.pumpkins,500,"Defeat still awards 300, on top of the 200 left");
-  assert.equal(records["shared:account"].halloween.completedIds.length,2);
+  assert.equal(records["shared:account"].halloween.pumpkins,200,"Defeat must award 0 pumpkins");
+  assert.equal(records["local:halloween2026:match"].halloweenAward,0,"Defeat result stores a zero award");
+  assert.equal(records["shared:account"].halloween.completedIds.length,2,"Loss still records a processed match for idempotence");
+  assert.equal(records["shared:account"].halloween.luckyWins,1,"A loss must not change lucky wins");
+  assert.match(app.innerHTML,/Nessuna zucca ottenuta/,"Loss result must show no pumpkin reward");
+  await controller.open();
+  assert.equal(records["shared:account"].halloween.pumpkins,200,"Reload must not re-credit defeated matches");
+  await control("data-halloween-close-result").fire();
+
+  // A draw is not a victory, even when a match reaches a completed terminal state.
+  context.RoadToGloryMatchEngine.prepareNext=state=>!state.__testPrepared?{...clone(state),status:"active",__testPrepared:true}:({...clone(state),status:"completed-draw",result:{winner:"draw"}});
+  await control("data-halloween-start").fire();
+  await control("data-halloween-next").fire();
+  assert.equal(records["shared:account"].halloween.pumpkins,200,"Draw must award 0 pumpkins");
+  assert.equal(records["local:halloween2026:match"].halloweenAward,0);
+  assert.equal(records["shared:account"].halloween.completedIds.length,3);
+  await control("data-halloween-close-result").fire();
+
+  // A regular (non-lucky) victory still awards the original 300 pumpkins.
+  context.RoadToGloryRng.int=(_matchId,purpose)=>purpose==="halloween-lucky"?50:0;
+  context.RoadToGloryMatchEngine.prepareNext=state=>!state.__testPrepared?{...clone(state),status:"active",__testPrepared:true}:({...clone(state),status:"completed",result:{winner:"user"}});
+  await control("data-halloween-start").fire();
+  await control("data-halloween-next").fire();
+  assert.equal(records["shared:account"].halloween.pumpkins,500,"Non-lucky win awards exactly 300 pumpkins");
+  assert.equal(records["local:halloween2026:match"].halloweenAward,300);
+  assert.equal(records["shared:account"].halloween.luckyWins,1,"Ordinary win does not increase lucky wins");
+  await controller.open();
+  assert.equal(records["shared:account"].halloween.pumpkins,500,"Reload must not duplicate regular win");
+  context.RoadToGloryRng.int=()=>0;
   await controller.open("album");
   assert.equal(nativeAlbumTeamsRendered,true,"Event album starts with native RTG teams");
   assert.equal(nativeAlbumRendered,false,"The album must NOT skip the teams page");
@@ -1165,6 +1194,6 @@ async function main() {
     "Album entitlement repair must not mutate the shared account");
   entitlementController.dispose();
   albumUnlockedIds.add(lockedPid);
-  console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 200-pumpkin pulls, cloud compatibility PASS");
+  console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 win-only prizes and zero-loss/draw prizes, unique 200-pumpkin pulls, cloud compatibility PASS");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
