@@ -29,6 +29,6 @@ assert.strictEqual(rtgAresCover, normalAresCover, "RTG Ares Album must reuse the
 
 assert(themeCss.includes('@import url("./rtg-run.css?v=20261001-rtg-qol-1")'), "RTG run stylesheet cache key must be refreshed");
 assert(indexHtml.includes("css/rtg-theme.css?v=20261010-vending-polish-2"), "RTG theme cache key must be refreshed");
-assert(indexHtml.includes("js/road-to-glory/rtg-config.js?v=20261030-postgame-rewards-v2"), "RTG config cache key must be refreshed");
+assert(indexHtml.includes("js/road-to-glory/rtg-config.js?v=20261030-postgame-rewards-v3"), "RTG config cache key must be refreshed");
 
 console.log("rtg-qol-visual-regression-test: PASS");
