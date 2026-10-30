@@ -125,6 +125,14 @@ assert.match(eventSource,/frontFullbodyUrl:raw\.frontFullbodyUrl \|\| EVENT_FULL
 const halloweenCss=fs.readFileSync("css/rtg-halloween-event.css","utf8");
 const coachesCss=fs.readFileSync("css/rtg-coaches.css","utf8");
 assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261030-remove-coach-banners-v15"));
+assert.doesNotMatch(eventSource,/coachMatchStatus\(|halloween-coach-match-status/,
+  "Never insert coach banners above native Halloween matches");
+assert.doesNotMatch(halloweenCss,/halloween-coach-match-status/,
+  "Remove banner styling, not only the coach banner HTML");
+assert.match(eventSource,/function squadCoachDetailPreview\(cardId,player\)/,
+  "Halloween Squadra must resolve the actual saved coach power for card details");
+assert.match(eventSource,/RoadToGloryCoachSquadPreview\?\.decorateDetail\?\.\(/,
+  "Halloween player details must render staff power stats and special moves");
 assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-runtime.js?v=20261030-yi-snapshot-v4"));
 assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-prematch.js?v=20261030-halloween-opponent-moves-v2"));
 assert.doesNotMatch(eventSource,/rtg-coach-cap-note/,
