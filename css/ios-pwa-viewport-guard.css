@@ -54,6 +54,13 @@
     padding-top: 10px;
   }
 
+  /* Development's mobile header uses position:relative (game.css).
+     A nonzero top offsets it visually WITHOUT moving the wallet in flow:
+     the global sticky top previously made header and wallet overlap. */
+  html.ios-pwa-safe-top .development-screen > .topbar {
+    top: 0;
+  }
+
   /* The match and prematch headers are full-height hero scoreboards.
      When sticky they cover the possession strip / preview as the page
      scrolls. Let these two large headers remain in normal document flow. */
