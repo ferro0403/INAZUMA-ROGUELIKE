@@ -1042,6 +1042,15 @@
         await global.RoadToGloryHalloween?.prepare?.();checkOpen();
       }
       progression?.setSeasonContext?.(campaign);
+      // An old save may already be stranded before a checkpoint it demonstrably
+      // earned. Repair only that inconsistency, with a single atomic commit.
+      // Never touch an active match or overwrite a failed persistence operation.
+      if(typeof progression?.repairCheckpointPosition==="function"&&
+         progression.repairCheckpointPosition(campaign)!==campaign){
+        campaign=await repository.update("rtg-recover-earned-checkpoint",current=>
+          progression.repairCheckpointPosition(current));
+        checkOpen();
+      }
       if(activeSeasonId()==="ie2"){
         try{await ensureAresRouteMap();}
         catch(error){global.console?.error?.("[RTG] Impossibile caricare lo sfondo Ares",error);}
