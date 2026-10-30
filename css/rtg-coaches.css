@@ -72,7 +72,7 @@
 .rtg-coach-album-collection .album-collection-cover{display:grid;place-items:center;background:linear-gradient(130deg,#ffb668,#ff8223)!important;}
 .rtg-coach-album-cover-icon{font-size:clamp(3.4rem,11vw,7rem);filter:drop-shadow(3px 5px 0 #12141855);}
 .rtg-coach-album-collection .album-collection-progress-bar>span{background:#ff8925!important;}
-.rtg-coach-album-collection .album-collection-title{color:#15171b!important;}
+.rtg-coach-album-collection .album-collection-title{color:#fffdf6!important;text-shadow:0 2px 9px #0a090ce6;}
 
 /* Match the genuine PlayerView detail fullbody scaling on mobile. */
 .rtg-coach-detail .player-detail-visual .player-fullbody{display:block;width:100%;height:100%;max-height:100%;object-fit:contain;object-position:center bottom;}
@@ -717,6 +717,24 @@
 .rtg-coach-preview-stat-grid b{color:#176d37}
 .rtg-coach-player-preview{padding:13px!important;background:#fff4dc;border:3px solid #141719!important}
 .rtg-coach-player-preview p{font-size:13px;line-height:1.55}
+/* Event details inherit pale text from the burgundy player-card theme.
+   Keep the existing parchment panel, but explicitly color its content dark. */
+#modal-root .rtg-coach-player-preview,
+#modal-root .rtg-coach-player-preview p,
+#modal-root .rtg-coach-player-preview .rtg-coach-preview-stat-grid span{
+  color:#24181a!important;
+  opacity:1!important;
+  text-shadow:none!important;
+}
+#modal-root .rtg-coach-player-preview h3,
+#modal-root .rtg-coach-player-preview h3 span{
+  color:#75370c!important;
+  opacity:1!important;
+  text-shadow:none!important;
+}
+#modal-root .rtg-coach-player-preview .rtg-coach-preview-stat-grid b{
+  color:#176d37!important;
+}
 .rtg-coach-move-discount .rtg-pt-cost strong{color:#11703d!important}
 .rtg-coach-move-select,.rtg-coach-moves-confirm{width:100%;min-height:42px;margin:9px 0!important;font-size:12px;font-weight:900}
 .rtg-coach-move-select.is-selected{background:#ffd21f!important;color:#111216!important}
