@@ -17,7 +17,7 @@ assert(/html\.ios-pwa-safe-top body\s*\{\s*padding-top:\s*var\(--ios-pwa-top-cle
 assert(css.includes("max(54px, env(safe-area-inset-top, 0px))"), "cover full iOS status bar with fallback");
 assert(css.includes(".topbar") && css.includes(".squad-topbar"), "sticky headers stay visible");
 assert(css.includes(".squad-screen:not(.rtg-squad-shell)"), "leave independent squad scroller usable");
-assert(!/\\bbackground(?:-image)?\\s*:/.test(css), "no changes to screen backgrounds or imagery");
+assert(!/\bbackground(?:-image)?\s*:/.test(css), "no changes to screen backgrounds or imagery");
 assert(css.includes("body::before") && css.includes("background-color: #d7e0d3"),
   "paint only the exposed status-bar gutter in native iOS background color");
 assert(css.includes("html.ios-pwa-safe-top .development-screen") && css.includes("padding-top: 12px"),
