@@ -99,9 +99,10 @@
     const wins=new Set((state?.defeatedTeamIds||[]).map(String));
     const firstClear=new Set();
     for(const raw of state?.firstClearMatchIds||[]) {
-      const match=String(raw).match(/^rtg:main:(.+):([1-9]\\d*)$/);
+      const match=String(raw).match(/^rtg:main:(.+):([1-9][0-9]*)$/);
       if(match)firstClear.add(match[1]);
     }
+    const attempts=state?.attemptsByNode||{};
     let achieved=-1;
     for(const index of season.checkpointMainIndexes||[]) {
       if(!Number.isInteger(index)||index<0||index>=season.mainTeams.length)continue;
@@ -110,7 +111,16 @@
       if(routeIndex<0)continue;
       const provenByMatch=firstClear.has(teamId);
       const reachedPastCheckpoint=routeIndex<reached;
-      if(provenByMatch||(reachedPastCheckpoint&&(wins.has(teamId)||saved===index)))
+      // Numeric metadata is a useful independent record, but must not be
+      // accepted alone in a save without ANY evidence of prior victories.
+      // This rejects the old phantom-checkpoint/future-unlock scenario.
+      const earlierMainWin=season.mainTeams.slice(0,index)
+        .some(team=>wins.has(team)||firstClear.has(team));
+      const earlierSecondaryClear=Object.entries(attempts).some(([id,entry])=>
+        Number(entry?.clears)>0&&list.findIndex(node=>node.id===id&&node.type==="secondary")<routeIndex&&
+        list.some(node=>node.id===id&&node.type==="secondary"));
+      const credibleSaved=saved===index&&(earlierMainWin||earlierSecondaryClear);
+      if(provenByMatch||(reachedPastCheckpoint&&(wins.has(teamId)||credibleSaved)))
         achieved=Math.max(achieved,index);
     }
     return achieved;
