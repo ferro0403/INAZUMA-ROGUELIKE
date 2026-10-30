@@ -55,7 +55,12 @@ for(const node of nodes){
   wins+=1;
  }else{
   const before=state.tokens;
+  // This scenario isolates ONE defeat on each secondary match. Reset only the
+  // fixture's lives so successive checks do not accidentally trigger the
+  // separate two-defeat checkpoint test.
+  state={...state,lives:2};
   const missed=P.recordSecondaryResult(state,{nodeId:node.id,result:"loss",attemptNumber:1});
+  assert.strictEqual(missed.lives,1,"The first secondary loss must consume exactly one life");
   assert.strictEqual(missed.currentNodeId,node.id);
   assert.strictEqual(missed.tokens,before);
   assert.strictEqual(missed.attemptsByNode[node.id].clears,0);
