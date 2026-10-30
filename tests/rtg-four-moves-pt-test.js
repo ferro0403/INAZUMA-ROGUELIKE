@@ -78,6 +78,51 @@ vm.runInNewContext(runtimeCode,context);
       assert.deepEqual(Array.from(runtime.movesFor(season, id), m => m.name), expected, season + " " + id + " original order");
     }
   }
+  // Ares source review (2026-10-30): restore 12 verified moves for four
+  // players. Orion shares Ares moves only where no Orion-specific list exists.
+  const repairedAres = {
+    "4408": ["Flame Dance", "Divine Dummy", "Illusory Ball", "Frosticle"],
+    "4425": ["Lunar Eclipse", "Grabber Arm", "Shot Pocket", "Shadow Catch"],
+    "4442": ["Toughness Block", "Burnout", "Power Shield", "Infinite Wall"],
+    "4446": ["The Wall", "Stone Wall", "Mega Quake", "Super Armadillo"]
+  };
+  for (const [id, names] of Object.entries(repairedAres)) {
+    assert.deepEqual(Array.from(runtime.movesFor("ie2", id), m => m.name), names,
+      "Ares original techniques restored for " + id);
+  }
+  for (const id of ["4408", "4442", "4446"]) {
+    assert.deepEqual(Array.from(runtime.movesFor("orion", id), m => m.name),
+      Array.from(runtime.movesFor("ie2", id), m => m.name),
+      "Orion inherits repaired Ares techniques for " + id);
+  }
+  assert.deepEqual(Array.from(runtime.movesFor("ie2", "4425"), m => m.name),
+    repairedAres["4425"], "Ares-only goalkeeper must have four moves");
+  assert.equal(runtime.movesFor("ie2", "4425")[1].ptCost, 100,
+    "Restored Grabber Arm retains its verified power");
+  const remainingAres = {
+    "4395": 2, "4409": 3, "4418": 3, "4426": 3, "4430": 3,
+    "4448": 3, "4502": 3, "4524": 3, "4559": 3
+  };
+  const actualRemainingAres = Object.fromEntries(
+    Object.entries(fullCatalog.s.ie2).filter(([, list]) => list.length !== 4)
+      .map(([id, list]) => [id, list.length])
+  );
+  assert.deepEqual(actualRemainingAres, remainingAres,
+    "Only explicitly incomplete Ares source records remain incomplete");
+  for (const [id, indices] of Object.entries(fullCatalog.s.ie2)) {
+    const names = indices.map(index => fullCatalog.d[index][0]);
+    assert.equal(new Set(names).size, names.length,
+      "Ares source must not repeat techniques for " + id);
+  }
+  const aresRoster=JSON.parse(fs.readFileSync("data/IE2_season_compact.json","utf8")).players;
+  const absentAres=aresRoster.filter(p => !Object.hasOwn(fullCatalog.s.ie2,String(p.playerId)))
+    .map(p => String(p.playerId));
+  assert.deepEqual(absentAres, ["4441"],
+    "Curt Gale is still absent in the provided Ares source; do not invent techniques");
+  const orionRoster=JSON.parse(fs.readFileSync("data/ORION_season_compact.json","utf8")).players;
+  const orionIncomplete=orionRoster.filter(p => runtime.movesFor("orion",p.playerId).length < 4);
+  assert.equal(orionIncomplete.length,11,
+    "Orion should inherit the three repaired Ares players, keeping its own unique lists");
   // Player details are opt-in: all classic / historical views still use a single move.
   vm.runInNewContext(fs.readFileSync('js/moves/move-presentation.js','utf8'),context);
   context.MatchMoveRuntime={moveForPlayer:()=>({name:'God Hand',type:'save',element:'Mountain',power:65})};
