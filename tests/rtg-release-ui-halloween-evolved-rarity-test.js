@@ -18,7 +18,7 @@ test("Mobile RTG home: compact CTA and existing navigation contracts",()=>{
   for(const section of ["squad","vending","album","shop","development"])
     assert.match(home,new RegExp(`data-rtg-home-open=\\\"${section}\\\"`));
   assert.match(css,/home-rtg-shortcuts--compact/);
-  assert(index.includes("css/rtg-release-polish-20261030.css?v=2"));
+  assert(index.includes("css/rtg-release-polish-20261030.css?v=3"));
   assert(index.includes("home-view.js?v=20260923-rtg-direct-paint-p1-compact-v1"),
     "Mobile home HTML must be cache-busted");
 });
