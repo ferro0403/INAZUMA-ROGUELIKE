@@ -18,7 +18,7 @@ test("Mobile RTG home: compact CTA and existing navigation contracts",()=>{
   for(const section of ["squad","vending","album","shop","development"])
     assert.match(home,new RegExp(`data-rtg-home-open=\\\"${section}\\\"`));
   assert.match(css,/home-rtg-shortcuts--compact/);
-  assert(index.includes("css/rtg-release-polish-20261030.css?v=1"));
+  assert(index.includes("css/rtg-release-polish-20261030.css?v=2"));
   assert(index.includes("home-view.js?v=20260923-rtg-direct-paint-p1-compact-v1"),
     "Mobile home HTML must be cache-busted");
 });
@@ -44,7 +44,7 @@ test("Svincolati modal keeps the exact data-rtg-start-node action with clearer C
   assert(run.includes("data-rtg-start-node"));
   assert(!run.includes("rtg-node-modal-secondary"));
   assert(css.includes("rtg-secondary-facts"));
-  assert(index.includes("rtg-run-view.js?v=20261011-balanced-economy-1-secondary-polish-v1"));
+  assert(index.includes("rtg-run-view.js?v=20261030-secondary-redesign-v2"));
 });
 
 test("Event Halloween opponent preview reuses the real native tactical pitch, 11 unique assets",()=>{
@@ -106,7 +106,9 @@ test("Event Halloween opponent preview reuses the real native tactical pitch, 11
   assert.match(event,/\.halloween-opponent-preview-field/);
   assert(event.indexOf("'</section>'+opponentPreviewSection()") > event.indexOf("data-halloween-open-vending"));
   assert(css.includes("halloween-opponent-preview-field"));
-  assert(index.includes("rtg-halloween-event.js?v=20261030-squad-player-preview-v22-release-polish-v1"));
+  assert(index.includes("rtg-halloween-event.js?v=20261030-squad-player-preview-v22-authentic-cards-v2"));
+  assert(index.includes("rtg-match-view.js?v=20261030-native-halloween-player-card-v9"));
+
 });
 
 test("Release scope: the requested UI changes never write save, cloud or rewards",()=>{
