@@ -103,6 +103,7 @@ const context={
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-entitlements.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-runtime.js","utf8"),context);
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-preview.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-squad-ui.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches-view.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-encounter-runtime.js","utf8"),context);
@@ -818,6 +819,32 @@ async function main() {
   vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-engine.js","utf8"),context);
   const genuineEngine=context.RoadToGloryMatchEngine;
   context.RoadToGloryMatchEngine={...genuineEngine,prepareNext:state=>state};
+  // Tiny DOM harness for the real shared RTG detail decorator. It verifies
+  // what gets put into the visible modal, not only the calculated model.
+  function coachDetailRoot(){
+    const content={banners:[],firstChild:null,
+      insertBefore(node){this.banners.push(node);}};
+    const ptTotal={textContent:""},ptBreakdown={innerHTML:""},ptNote={textContent:""};
+    const rows=Array.from({length:4},()=>{
+      const caption={textContent:""};
+      const classes=new Set(["move-element--forest"]);
+      const badge={classList:{add:key=>classes.add(key),
+        remove:key=>classes.delete(key),[Symbol.iterator]:()=>classes[Symbol.iterator]()},
+        querySelector:key=>key==="b"?caption:null};
+      const cost={textContent:""};
+      const row={classList:{add(){}},querySelector:key=>key===".player-move-element"?badge:
+        key===".rtg-pt-cost strong"?cost:null};
+      return {...row,caption,cost,classes};
+    });
+    return {content,ptTotal,ptBreakdown,ptNote,rows,
+      ownerDocument:{createElement:()=>({className:"",innerHTML:""})},
+      classList:{toggle(){}},
+      querySelector:key=>({
+        ".player-detail-content":content,".rtg-pt-top strong":ptTotal,
+        ".rtg-pt-breakdown":ptBreakdown,".rtg-pt-note":ptNote
+      })[key]||null,
+      querySelectorAll:key=>key===".rtg-four-moves-item"?rows:[]};
+  }
   for(const coachId of ["208","4401","1974"]){
     const targets=eventIds.map(cardId=>E.eventPlayer(cardId.split("::")[1]));
     const elements=targets.map((target,index)=>{
@@ -836,13 +863,63 @@ async function main() {
       slots:{...existing.slots,"1":team}
     };
     delete records["local:halloween2026:match"];
-    const errors=[],coachApp=createApp();
+    const errors=[],coachApp=createApp(),detailCalls=[];
+    let currentDetailRoot=null;
     const trial=E.create({app:coachApp,storage,squadView,runView:nativeRunView,
+      getModalRoot:()=>currentDetailRoot,
+      showPlayerDetailsFor:(player,options)=>{
+        currentDetailRoot=coachDetailRoot();
+        detailCalls.push({player,options,root:currentDetailRoot});
+      },
       toast:(message,kind)=>errors.push({message,kind})});
     await trial.open();
     const coachSaved=records["local:halloween2026:squad"].slots["1"];
     assert.deepEqual(coachSaved.coachPowerSelection,selection,
       "Opening Halloween must not discard a configured staff power");
+    const beforeDetail=clone(records["local:halloween2026:squad"]);
+    await coachApp.controls["data-halloween-tab"].find(
+      el=>el.dataset.halloweenTab==="squad").fire();
+    for(let i=0;i<eventIds.length;i++){
+      const detailButton=coachApp.controls["data-rtg-player-detail"]
+        .find(el=>el.dataset.rtgPlayerDetail===eventIds[i]);
+      assert.ok(detailButton,
+        "Selected Halloween starter must open its real Squadra player detail");
+      await detailButton.fire();
+      const detail=detailCalls.at(-1),root=detail.root;
+      assert.ok(root.content.banners.length,
+        "Squadra must display a visible coach-power preview inside the card");
+      if(coachId==="208"){
+        assert.match(root.content.banners[0].innerHTML,/100 PT/);
+        assert.equal(root.ptTotal.textContent,"250 PT",
+          "Hillman Squadra card must show the boosted PT, not the original 150");
+      }else if(coachId==="4401"){
+        assert.equal(context.RoadToGloryCoachPowerRuntime.elementKey(detail.player.element),
+          elements[i],"Yi must change the element displayed in Squadra details");
+        for(const row of root.rows)
+          assert.equal(context.RoadToGloryCoachPowerRuntime.elementKey(row.caption.textContent),
+            elements[i],"Yi must visibly transform all four move badges in Squadra");
+        assert.match(root.content.banners[0].innerHTML,/TRASFORMAZIONE TOTALE/);
+      }else{
+        assert.equal(detail.player.finalRarity,"Aurico",
+          "Arrows Squadra card must display the temporary improved rarity");
+        assert.equal(detail.player.overall,99,
+          "Arrows Squadra card must show temporary OVR 99");
+        assert.match(root.content.banners[0].innerHTML,/POTENZIALE RISVEGLIATO/);
+        assert.ok(root.content.banners[0].innerHTML.includes("→"),
+          "Arrows detail must show original and updated statistics");
+      }
+    }
+    const unselectedId=baseTeam.lineup.find(id=>!eventIds.includes(id));
+    const unselectedButton=coachApp.controls["data-rtg-player-detail"]
+      .find(el=>el.dataset.rtgPlayerDetail===unselectedId);
+    assert.ok(unselectedButton);
+    await unselectedButton.fire();
+    assert.equal(detailCalls.at(-1).root.content.banners.length,0,
+      "Unselected players must never display other players' powers");
+    assert.deepEqual(records["local:halloween2026:squad"],beforeDetail,
+      "Opening power previews is strictly read-only");
+    await coachApp.controls["data-rtg-tab"].find(
+      el=>el.dataset.rtgTab==="run").fire();
     await coachApp.controls["data-halloween-start"][0].fire();
     const snapshot=records["local:halloween2026:match"];
     assert.ok(snapshot,"Kickoff must create a real Halloween match for "+coachId+
