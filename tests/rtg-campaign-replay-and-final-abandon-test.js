@@ -98,7 +98,7 @@ test("Persistence errors and stale canonical state cannot partially restart a ca
   assert.equal(run.counts().renders,0);
  }
 });
-for(const sid of C.SEASON_IDS)test(sid+" final: abandonment consumes a life and rolls back to earned checkpoint",()=>{
+for(const sid of C.SEASON_IDS)test(sid+" final: one defeat costs one life; only exhaustion rolls back to checkpoint",()=>{
  const cfg=C.season(sid),teams=cfg.mainTeams;
  const checkpoint=cfg.checkpointMainIndexes.at(-1);
  assert(Number.isInteger(checkpoint)&&checkpoint<teams.length-1);
@@ -109,7 +109,7 @@ for(const sid of C.SEASON_IDS)test(sid+" final: abandonment consumes a life and 
   defeatedTeamIds:teams.slice(0,-1),firstClearMatchIds:["first"],lives:2,furthestNodeIndex:allNodes.length-1,
   seasonTransitionRewardedIds:[]};
  const firstLoss=P.recordMainLoss(base,{nodeId:base.currentNodeId});
- assert.equal(firstLoss.currentNodeId,expected,"first loss already returns to the last earned checkpoint");
+ assert.equal(firstLoss.currentNodeId,base.currentNodeId,"first loss must leave the final match available");
  assert.equal(firstLoss.lives,1);
  assert.equal(firstLoss.tokens,1200);
  const exhausted=P.recordMainLoss(firstLoss,{nodeId:base.currentNodeId});
