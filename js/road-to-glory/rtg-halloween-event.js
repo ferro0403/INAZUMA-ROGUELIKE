@@ -123,10 +123,11 @@
     let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved",pendingRevealHidden=false;
     let selectedAlbumTeamId=TEAM_ID;
     let vendingMotion=null;
+    let lastPresentedView=null;
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
     function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null;
       if(matchTimer!=null)global.clearTimeout?.(matchTimer);matchTimer=null;
-      vendingMotion?.stop?.();vendingMotion=null;lastResolution=null;lastResolutionStage="resolved";pendingRevealHidden=false;
+      vendingMotion?.stop?.();vendingMotion=null;lastResolution=null;lastResolutionStage="resolved";pendingRevealHidden=false;lastPresentedView=null;
       deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
     }
     function listen() { if(tick!=null)global.clearInterval?.(tick);tick=global.setInterval?.(()=>{const el=app?.querySelector?.("[data-halloween-countdown]"); if(el)el.textContent=isOpen()?countdown():"EVENTO TERMINATO";if(!isOpen())app?.querySelectorAll?.("[data-halloween-start],[data-halloween-pull]")?.forEach(b=>b.disabled=true);},1000); }
@@ -989,6 +990,8 @@
     }
     function render() {
       if(!app)return;
+      const resetScrollOnNavigation=lastPresentedView!==view;
+      lastPresentedView=view;
       if(matchTimer!=null){global.clearTimeout?.(matchTimer);matchTimer=null;}
       if(view!=="vending"){vendingMotion?.stop?.();vendingMotion=null;}
       if(view==="squad")app.innerHTML=squadSection();
@@ -1101,6 +1104,18 @@
           event.preventDefault?.();
           openNativeDetail(cardId,entry.dataset.albumUnlocked==="true",true);
         });
+      }
+      // Halloween switches HTML views without the common router. Only reset on
+      // navigation; in-match repaints must keep the current timeline position.
+      if(resetScrollOnNavigation){
+        const resetTop=()=>{
+          try{global.scrollTo?.({top:0,left:0,behavior:"auto"});}catch(_){}
+          for(const element of [global.document?.scrollingElement,global.document?.documentElement,global.document?.body,app,app.querySelector?.("main")]){
+            if(element)element.scrollTop=0;
+          }
+        };
+        resetTop();
+        global.requestAnimationFrame?.(()=>global.requestAnimationFrame?.(resetTop));
       }
     }
     async function perform(op) {
