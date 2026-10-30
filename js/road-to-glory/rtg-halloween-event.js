@@ -471,12 +471,12 @@
       // Reuse the native prematch pitch and cards as a read-only projection.
       // No opponent regeneration, match mutations or new persistence keys.
       const formation=opponent();
-      const pitch=deps.matchView?.formationPitchMarkup?.(formation,"opponent","prematch",null,{nativeMatchCards:true});
+      const pitch=deps.matchView?.formationPitchMarkup?.(formation,"opponent","prematch");
       if(!pitch)return "";
       return '<section class="halloween-opponent-preview halloween-native-match" aria-label="Formazione Occult Halloween">'+
         '<header class="halloween-opponent-preview-head"><div><span class="eyebrow">SCOPRI GLI AVVERSARI</span><h2>FORMAZIONE OCCULT HALLOWEEN</h2></div>'+
         '<div class="halloween-opponent-preview-stats"><span>'+escape(formation.formationId)+'</span><strong>OVR '+escape(opponentOverall())+'</strong></div></header>'+
-        '<div class="halloween-opponent-preview-field">'+pitch+'</div>'+
+        '<div class="halloween-opponent-preview-field rtg-prematch-shell">'+pitch+'</div>'+
         '<p class="halloween-opponent-preview-note">11 titolari · Stesse carte e posizioni del preview partita</p></section>';
     }
     function squadSection() {
@@ -1019,7 +1019,8 @@
       app.querySelector?.(".halloween-opponent-preview-field")?.addEventListener("click",event=>{
         const target=event.target?.closest?.("[data-rtg-prematch-player]");
         if(!target||!event.currentTarget.contains(target))return;
-        const pid=asId(target.dataset.rtgPrematchPlayer);
+        const rawId=asId(target.dataset.rtgPrematchPlayer);
+        const pid=rawId.startsWith(EVENT_ID+"::")?rawId.slice(EVENT_ID.length+2):rawId;
         if(!assets?.setup?.startingXI?.some(id=>asId(id)===pid))return;
         event.preventDefault?.();
         openNativeDetail(EVENT_ID+"::"+pid,isOwned(pid),true);
