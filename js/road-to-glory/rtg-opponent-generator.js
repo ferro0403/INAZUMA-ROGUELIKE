@@ -59,9 +59,13 @@
       const distance=candidate.teamPower<min?min-candidate.teamPower:candidate.teamPower-max;
       if(distance<closestDistance){closestDistance=distance;closest=candidate;}
     }
-    throw Object.assign(new Error("Nessuna squadra svincolati nella fascia RTG richiesta"),{
+    // Some advanced Season bands exceed the real Free Agents pool's maximum
+    // team power. Reuse the closest VALID seeded 11 rather than blocking a match.
+    // Exact in-band candidates retain their original selection and RNG behavior.
+    if(closest)return closest;
+    throw Object.assign(new Error("Nessuna squadra svincolati valida disponibile"),{
       code:"rtg-secondary-opponent-band-unavailable",
-      targetMin:min,targetMax:max,closestPower:closest?.teamPower??null,
+      targetMin:min,targetMax:max,closestPower:null,
     });
   }
 
