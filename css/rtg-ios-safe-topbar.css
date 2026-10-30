@@ -1,0 +1,18 @@
+/* RTG · iOS standalone: keep the back navigation below the native status bar.
+ * Browser chrome cannot be removed in Safari; this only affects installed PWAs.
+ * The status-bar safe area stays outside the scrollable page content.
+ */
+@media (max-width: 780px) and (display-mode: standalone) {
+  .rtg-campaign-select,
+  .rtg-run-screen {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .rtg-campaign-select > .rtg-main-topbar,
+  .rtg-run-screen > .rtg-main-topbar {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    padding-top: 12px;
+    z-index: 38;
+  }
+}
