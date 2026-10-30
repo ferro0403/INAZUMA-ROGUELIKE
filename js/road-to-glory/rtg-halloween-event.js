@@ -338,8 +338,10 @@
             dataAttr:attr,extraClass:"halloween-native-card"+cls})
         : '<button type="button" class="player-card player-card-compact '+cls+'" '+attr+'><span class="player-corner player-role">'+escape(p.position||"")+'</span><span class="player-corner player-overall">'+escape(p.overall||"")+'</span><img class="player-portrait" src="'+escape(p.portraitUrl||"")+'" alt=""><strong>'+escape(p.name||"")+'</strong></button>';
     }
-    function openNativeDetail(cardId,albumUnlocked=false,fromAlbum=false) {
-      const p=resolveCard(cardId);
+    function openNativeDetail(cardId,albumUnlocked=false,fromAlbum=false,matchPlayer=null) {
+      // During the event match, never reread the owned original in place of
+      // the immutable coach-enhanced match snapshot.
+      const p=matchPlayer?.cardId===cardId?matchPlayer:resolveCard(cardId);
       if(!p)return;
       // The generic RTG detail resolver cannot resolve an unowned event card.
       // Use this event player's canonical render directly, even when locked.
@@ -492,6 +494,19 @@
       return {attackingSide,shooter,keeper,userRole,ptMode,userOptions,userMove:userOptions[0]||null,userMoveAvailable:userOptions.length>0,
         userPt:rules?.pt?.(m,"user",asId(userPlayer?.cardId||userPlayer?.playerId))||null};
     }
+    function coachMatchStatus(html){
+      const effect=match?.coachPowerEffect||match?.preMatchCoachEffect;
+      if(!effect)return html;
+      const coach=global.RoadToGloryCoaches?.BY_ID?.[asId(effect.coachId)];
+      const detail=({"208":"DUE TITOLARI +100 PT","1329":"MOSSE A METÀ COSTO PT",
+        "4401":"ELEMENTI E MOSSE TRASFORMATI","1974":"RARITÀ POTENZIATE",
+        "1777":"RISERVA AGEVOLATA NEI REQUISITI","1940":"MOSSE AVVERSARIE BLOCCATE",
+        "1275":"PT AVVERSARI RIDOTTI","36":"SOSTITUZIONE FORZATA",
+        "1225":"PRESTITO ATTIVO","4761":"POSIZIONI SCAMBIATE"})[asId(effect.coachId)]||"EFFETTO APPLICATO";
+      const label='<div class="halloween-coach-match-status" role="status" aria-label="Potere allenatore applicato">'+
+        '<strong>'+escape(coach?.name||"Allenatore")+'</strong> · '+escape(detail)+'</div>';
+      return html.replace(/(<main\\b[^>]*>)/,(_match,opening)=>opening+label);
+    }
     function nativeMatchMarkup(){
       const v=deps.matchView;if(!v||!match)return pendingSection();
       if(["completed","completed-draw","abandoned"].includes(match.status)&&!lastResolution){
@@ -502,9 +517,10 @@
         const result=v.resultMarkup(match,null).replace(/(<button[^>]*data-rtg-result-continue)/,rewardHtml+'$1');
         return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+result+'</div></main>';
       }
-      if(match.presentation?.preMatchSeen===false)return v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
+      if(match.presentation?.preMatchSeen===false)
+        return coachMatchStatus(v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match'));
       const presented=lastResolution&&["halftime","penalties","completed","completed-draw"].includes(match.status)?{...match,status:"active"}:match;
-      return v.matchMarkup(presented).replace('<main class="screen','<main class="screen halloween-native-match');
+      return coachMatchStatus(v.matchMarkup(presented).replace('<main class="screen','<main class="screen halloween-native-match'));
     }
     function bindNativeMatch(){
       const v=deps.matchView,m=match;
@@ -537,8 +553,7 @@
       v.bind(app,{
         onOpenPlayerDetails:(id,side)=>{
           const p=findNativeMatchPlayer(side,id);
-          if(p&&side==="opponent")openNativeDetail(asId(p.cardId||p.playerId));
-          else if(p)openNativeDetail(asId(p.cardId||p.playerId));
+          if(p)openNativeDetail(asId(p.cardId||p.playerId),false,false,p);
         },
         onPreMatchStart:()=>m.presentation?.preMatchPowerStatus==="pending"?openNativePreMatchCoachPower():perform(()=>stepMatch("prematch")),
         onPreMatchCoachPower:()=>openNativePreMatchCoachPower(),
@@ -611,11 +626,16 @@
           const curr=match;
           const chosen=skip?global.RoadToGloryCoachPreMatchRuntime.skip(curr):
             global.RoadToGloryCoachPreMatchRuntime.apply(curr,curr.preMatchCoachId,selection);
+          // Match the canonical RTG pre-match controller: invalid selection
+          // must never persist a null match, and the next encounter is
+          // prepared from the powered snapshot BEFORE the one atomic write.
+          if(!chosen)throw fail("halloween-coach-selection-invalid");
+          const prepared=global.RoadToGloryMatchEngine.prepareNext(chosen);
           await storage.updateMany([MATCH_KEY],records=>{
             if(records[MATCH_KEY]?.matchId!==id)throw fail("halloween-stale-match");
-            return {writes:{[MATCH_KEY]:chosen},value:true};
+            return {writes:{[MATCH_KEY]:prepared},value:true};
           });
-          assertCurrent(epoch);match=chosen;
+          assertCurrent(epoch);match=prepared;
         },
         render:()=>render()});
     }
@@ -1170,11 +1190,39 @@
       const powerConfig=ownedCoach?coachRules.validConfig(
         localSquad,created.userSquad.lineup,EVENT_ID,created.userSquad.bench):null;
       if(ownedCoach&&!powerConfig)throw fail("halloween-coach-selection-invalid");
+      // Hillman, Schiller and Arrows depend on PT initialization. An outdated
+      // or unavailable PT runtime must never silently start a legacy match.
+      if(powerConfig&&["208","1329","1974"].includes(powerConfig.coachId)&&
+         created.ptModeVersion!==1)throw fail("halloween-coach-power-not-applied");
       created=coachRules?.applyToMatch?.(created,localSquad,state,{
-        upgradeRarity:(player,targetRarity,cardId)=>global.RoadToGloryCoachRarityPower?.upgrade?.({
-          player,targetRarity,cardId,playerResolver:global.RoadToGloryPlayerResolver,
-          freeAgentsDb:data.freeAgents,seasonId:"ie1",squad:localSquad
-        })
+        upgradeRarity:(player,targetRarity,cardId)=>{
+          if(asId(cardId).startsWith(EVENT_ID+"::")){
+            // The normal Season rarity updater cannot evolve event-only cards:
+            // resolveBaseAtLevel20 intentionally returns the original event
+            // asset. Apply the same InazumaProgression stat-growth oracle
+            // directly to a TEMPORARY match player, never to owned data.
+            const progression=global.InazumaProgression;
+            const threshold=progression?.RARITY_THRESHOLDS?.find?.(
+              row=>row.category===targetRarity)?.min;
+            const current=Number(player?.overall??player?.finalOverall);
+            const next=Math.min(99,Math.max(current+1,Number(threshold)));
+            if(!Number.isFinite(current)||!Number.isInteger(threshold)||
+               !Number.isFinite(next)||next<=current)return null;
+            const before=player.stats||player.baseStats;
+            const stats=progression?.growPlayerStatsToTargetOverall?.({
+              role:player.position||player.normalizedRole,
+              originalStats:before,currentStats:before,
+              currentOverall:current,targetOverall:next
+            });
+            if(!stats||typeof stats!=="object")return null;
+            return {...player,...stats,stats,overall:next,finalOverall:next,
+              category:targetRarity,finalRarity:targetRarity,potential:next};
+          }
+          return global.RoadToGloryCoachRarityPower?.upgrade?.({
+            player,targetRarity,cardId,playerResolver:global.RoadToGloryPlayerResolver,
+            freeAgentsDb:data.freeAgents,seasonId:"ie1",squad:localSquad
+          });
+        }
       })||created;
       // A saved power must never silently disappear in the match snapshot.
       // Hekyll is intentionally eligibility-only and has no combat effect.
