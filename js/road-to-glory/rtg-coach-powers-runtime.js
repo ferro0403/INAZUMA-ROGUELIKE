@@ -167,7 +167,22 @@
       const lineup=match.userSquad.lineup.map(player=>{
         const key=cardId(player);
         const nextElement=changeById.get(key)||(key===card?config.element:null);
-        return nextElement?{...player,element:nextElement}:player;
+        if(!nextElement)return player;
+        // The PT engine already reads the coach overlay; the Halloween card
+        // detail and prematch/halftime previews read the player snapshot itself.
+        // Transform event move elements in that immutable match snapshot too,
+        // without altering power, PT cost or the owned source card.
+        const target=effect.targets?.find(t=>t.cardId===key);
+        const updatedMoves=Array.isArray(player.halloweenMoves)?
+          player.halloweenMoves.map((move,index)=>
+            target?.moveIndices?.includes(index)?{...move,element:nextElement}:move):null;
+        const move=player.move&&target?.moveIndices?.includes(0)
+          ?{...player.move,element:nextElement}:player.move;
+        const activeMove=player.activeMove&&target?.moveIndices?.includes(0)
+          ?{...player.activeMove,element:nextElement}:player.activeMove;
+        return {...player,element:nextElement,
+          ...(updatedMoves?{halloweenMoves:updatedMoves}:{}),
+          ...(player.move?{move}:{}),...(player.activeMove?{activeMove}:{})};
       });
       return {...match,userSquad:{...match.userSquad,lineup},coachPowerEffect:effect};
     }
