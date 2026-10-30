@@ -102,10 +102,14 @@
     const state = cloneState(inputState);
     const maxLives = cfg(state).livesPerCheckpoint;
     const currentLives = Math.max(0, Number(state.lives) || 0);
-    // Every defeat returns to the last earned checkpoint; lives remain a separate
-    // two-attempt resource and refill only when exhausted or a new checkpoint is won.
-    state.lives = currentLives > 1 ? currentLives - 1 : maxLives;
-    if (state.seasonComplete !== true) state.currentNodeId = rollbackNodeId(state);
+    // First defeat: consume one life and retry the SAME story node.
+    // Only when the last life is lost may the run return to its last earned checkpoint.
+    if (currentLives > 1) {
+      state.lives = currentLives - 1;
+    } else {
+      state.lives = maxLives;
+      if (state.seasonComplete !== true) state.currentNodeId = rollbackNodeId(state);
+    }
     if (String(nodeId || "").startsWith("main:") && !state.lastFailedMainNodeId)
       state.lastFailedMainNodeId = String(nodeId);
     return state;
