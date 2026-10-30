@@ -20,6 +20,11 @@
     return a==="GK"?b==="GK":a!=="GK"&&b!=="GK";
   }
   function movesFor(match,player){
+    // Halloween opponents have their own four-move catalog, absent from the
+    // five-Season packed RTG database. Zoolan's block must use those SAME
+    // moves actually offered by the match PT engine.
+    if(Array.isArray(player?.halloweenMoves)&&player.halloweenMoves.length)
+      return player.halloweenMoves.map(move=>({...move,ptCost:move.ptCost??move.power}));
     const season=id(player?.resolvedSeasonId||player?.legacySeasonId||match?.seasonId||"ie1");
     const canonical=id(player?.legacyCanonicalPlayerId||player?.playerId||player?.id).split("@")[0];
     return global.RtgFourMovesRuntime?.movesFor?.(season,canonical)||[];
