@@ -47,7 +47,7 @@ for(const sid of c.RoadToGloryConfig.SEASON_IDS){
       const formation=season.formations.find(item=>item.id===opponent.formationId);
       assert(formation,node.id);
       const assigned=roles(opponent.playerIds);
-      assert.deepEqual(assigned,Array.from(formation.slotRoles),node.id+" incompatible slot roles");
+      assert.deepEqual(json(assigned),Array.from(formation.slotRoles),node.id+" incompatible slot roles");
       if(opponent.teamPower<node.opponentTargetMin||opponent.teamPower>node.opponentTargetMax){
         unreachable++;
         assert(opponent.teamPower<node.opponentTargetMin,
