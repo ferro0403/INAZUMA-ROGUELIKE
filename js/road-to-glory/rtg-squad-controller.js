@@ -91,11 +91,14 @@
         .sort((a,b)=>overallFor(b)-overallFor(a)||nameFor(a).localeCompare(nameFor(b),"it"));
     }
     function squadPickerRarity(playerId){
+      // The picker must filter the CURRENT owned card, not the base rarity from
+      // playerResolver.rarity(). Halloween and normal RTG evolutions are both
+      // already projected by deps.resolved, including developmentByCardId.
+      const evolved=deps.resolved(playerId,deps.squadDraft?.activeRoleVariantByCardId?.[deps.id(playerId)]||null);
       return String(
-        deps.playerResolver.rarity?.(playerId,"ie1",deps.freeAgentsDb)
-        || deps.rawPlayer(playerId)?.category
-        || deps.resolved(playerId,deps.squadDraft?.activeRoleVariantByCardId?.[deps.id(playerId)]||null)?.category
-        || ""
+        evolved?.finalRarity || evolved?.category
+        || deps.playerResolver.rarity?.(playerId,"ie1",deps.freeAgentsDb)
+        || deps.rawPlayer(playerId)?.category || ""
       ).trim();
     }
     function squadPickerRarityOptions(){
