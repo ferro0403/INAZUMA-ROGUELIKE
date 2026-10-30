@@ -1,0 +1,1034 @@
+
+/* Allenatori use the game's canonical PlayerView card, detail, vending and Album markup.
+   Only the orange visual token is changed; do not resize the base player components. */
+.rtg-coaches-window{width:min(100%,720px);margin:auto;--coach-orange:#ff8925;}
+.rtg-coaches-heading{display:flex;align-items:center;justify-content:space-between;padding:4px 0 12px;border-bottom:5px solid #ff8925;color:#131519;}
+.rtg-coaches-heading h2{font-size:clamp(24px,6vw,36px);line-height:1;margin:5px 0;font-weight:1000;}
+.rtg-coaches-heading p{margin:0;font-size:13px;}
+.rtg-coaches-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0;}
+.rtg-coaches-tabs button{min-height:46px;padding:7px;border:3px solid #131519;background:#fffdf6;font-size:12px;font-weight:1000;color:#131519;box-shadow:3px 4px 0 #131519;}
+.rtg-coaches-tabs button.active{background:#ff8925;}
+.rtg-coaches-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0;}
+.rtg-coach-entry{min-width:0;}
+.rtg-coach-entry.is-locked{filter:saturate(.65);}
+.rtg-coach-card.player-card{--rarity-color:#ff8925;--rarity-accent:#ff8925;--accent:#ff8925;--card-accent:#ff8925;background:linear-gradient(135deg,#fffaf3 0 67%,#ffb365 67%)!important;border-color:#ff8925!important;width:100%;max-width:100%;min-width:0;}
+.rtg-coach-card .player-corner.player-role{background:#fff!important;color:#131519!important;}
+.rtg-coach-card .player-corner.player-overall{background:#ff8925!important;color:#131519!important;}
+.rtg-coach-card .player-corner.player-level{background:#ff8925!important;color:#131519!important;}
+.rtg-coach-card .player-portrait{object-fit:contain;object-position:center bottom;}
+.rtg-coach-card .player-info{background:#fffaf2!important;}
+.rtg-coach-card .player-meta{font-size:9px;overflow-wrap:anywhere;}
+.rtg-coach-card .player-title strong{white-space:normal;overflow-wrap:anywhere;}
+.rtg-vending--coaches .rtg-vending-capsule-v9[data-capsule-rarity="coach"]{--rtg-capsule-color:#ff8925!important;}
+.rtg-vending--coaches .rtg-vending-title{border-bottom-color:#ff8925!important;}
+.rtg-vending--coaches .rtg-vending-pull{background:#ff8925!important;color:#131519!important;}
+.rtg-coach-vending-notice{text-align:center;margin:10px auto 14px;color:#47433e;font-weight:700;font-size:12px;}
+.rtg-coach-detail.player-detail-layout{--rarity-color:#ff8925;--rarity-accent:#ff8925;--accent:#ff8925;--detail-accent:#ff8925;}
+.rtg-coach-detail .player-detail-hero{background:linear-gradient(124deg,#fffdf5 0 59%,#ffd3a1 59% 100%)!important;}
+.rtg-coach-detail .player-detail-team{background:#fffdf6!important;border-color:#131519!important;}
+.rtg-coach-detail .player-detail-name{color:#131519!important;}
+.rtg-coach-detail .player-detail-visual{display:flex;align-items:flex-end;justify-content:center;}
+.rtg-coach-detail .player-fullbody{width:100%;height:100%;object-fit:contain;object-position:center bottom;}
+.rtg-coach-detail .detail-category{border-color:#ff8925!important;}
+.rtg-coach-detail .detail-category::before{background:#ff8925!important;}
+.rtg-coach-detail .player-detail-section h3{border-color:#ff8925!important;}
+.rtg-coach-team-icon{font-size:23px;display:inline-grid;place-items:center;}
+.rtg-coach-power{padding:14px;border:3px solid #17191b;background:#fff4e5;}
+.rtg-coach-power strong{font-size:18px;font-weight:1000;}
+.rtg-coach-power p{margin:7px 0 0;font-size:13px;line-height:1.55;}
+.rtg-coach-power-status{display:block;margin-top:12px;font-size:10px;font-weight:850;letter-spacing:.055em;color:#835322;}
+.rtg-coach-profile-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0;}
+.rtg-coach-profile-meta span{padding:8px 6px;border:2px solid #17191b;overflow-wrap:anywhere;background:#fffdf7;}
+.rtg-coach-profile-meta small{font-size:10px;display:block;color:#675a4e;text-transform:uppercase;}
+.rtg-coach-profile-meta b{font-size:12px;display:block;}
+.rtg-coach-equip,.rtg-coach-back{min-height:43px;margin:8px 0;width:100%;font-weight:900;}
+.rtg-coach-equip{background:#ff8925!important;color:#17191b!important;}
+.rtg-coaches-reward .rtg-pull-card-stage .rtg-coach-card{width:100%;}
+.rtg-coaches-reward .rtg-pull-rarity{background:#ff8925!important;}
+.rtg-coaches-album .album-roster-hero__bar>span{background:#ff8925!important;}
+.rtg-coaches-album .rtg-coach-album-entry .rtg-coach-card{width:100%;}
+.rtg-run-command>.rtg-coaches-cta{min-width:0!important;width:100%!important;grid-column:2;background:#ffd21f!important;color:#131519!important;border:3px solid #131519!important;box-shadow:4px 5px 0 #131519!important;font-weight:1000!important;}
+@media(max-width:710px){.rtg-run-command>.rtg-coaches-cta{grid-column:1/-1!important;}.rtg-coaches-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:390px){.rtg-coach-profile-meta{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* Squad coach slot – intentionally outside pitch/bench. */
+.rtg-squad-shell .rtg-coach-squad-slot{margin:12px 0;padding:12px;border:3px solid #17181b;box-shadow:4px 5px 0 #17181b33;background:#fffdf6;color:#17181b;}
+.rtg-coach-squad-heading{display:flex;align-items:center;justify-content:space-between;background:#17181b;color:white;margin:-12px -12px 12px;padding:10px 12px;border-bottom:4px solid #ff8a2a;}
+.rtg-coach-squad-heading h2{font-size:16px;font-weight:1000;color:#fff!important;margin:0;}.rtg-coach-squad-heading b{padding:4px 8px;background:#ff8a2a;color:#17181b;border:2px solid #17181b;font-size:11px;}
+.rtg-coach-squad-selected{display:flex;align-items:center;gap:12px;min-height:105px;border:2px solid #17181b;padding:8px;background:linear-gradient(120deg,#fffaf0 0 64%,#ffd5aa 64%);}
+.rtg-coach-squad-selected>div{min-width:0;flex:1;display:grid;gap:4px;overflow-wrap:anywhere;}
+.rtg-coach-squad-selected strong{font-size:clamp(13px,3vw,19px);font-weight:1000;text-transform:uppercase;}
+.rtg-coach-squad-selected span{font-size:12px;font-weight:800;}.rtg-coach-squad-selected small{font-size:10px;font-weight:900;text-transform:uppercase;color:#a04b12;}
+.rtg-coach-squad-image{width:76px;height:88px;min-width:76px;border:2px solid #17181b;background:#ffe4ca;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;padding:0;}
+.rtg-coach-squad-image img{object-fit:contain;object-position:center bottom;width:100%;height:100%;}.rtg-coach-squad-image .rtg-coach-placeholder{font-size:23px;min-height:0;}
+.rtg-coach-squad-empty{display:flex;gap:12px;align-items:center;padding:10px;min-height:80px;background:#fff5e9;border:2px dashed #bc7140;font-weight:900;font-size:12px;}
+.rtg-coach-squad-empty b{display:grid;place-items:center;border:2px solid #bc7140;width:45px;height:48px;font-size:25px;color:#a04b12;}
+.rtg-coach-squad-buttons{display:flex;gap:8px;margin-top:10px;}
+.rtg-squad-shell .rtg-coach-squad-buttons .btn{flex:1;min-width:0;min-height:41px;padding:7px 4px;background:#ff8a2a!important;border:2px solid #17181b!important;color:#17181b!important;font-size:11px;font-weight:950!important;border-radius:0!important;}
+.rtg-squad-shell .rtg-coach-squad-buttons .btn+ .btn{background:#fffdf6!important;}
+@media(max-width:370px){.rtg-coach-squad-image{width:60px;min-width:60px;height:75px}.rtg-coach-squad-selected{gap:7px}.rtg-coach-squad-buttons .btn{font-size:10px!important}}
+
+/* Album coach cover uses the canonical collection card, with an orange illustration. */
+.rtg-coach-album-collection .album-collection-cover{display:grid;place-items:center;background:linear-gradient(130deg,#ffb668,#ff8223)!important;}
+/* Show the full supplied coach cover without the default hero card's aggressive crop.
+   Scope to ALBUM / ALLENATORI: all other collections keep their current framing. */
+.album-collections-screen .rtg-coach-album-collection .album-collection-cover img{
+  object-fit:contain!important;
+  object-position:center center!important;
+}
+.rtg-coach-album-cover-icon{font-size:clamp(3.4rem,11vw,7rem);filter:drop-shadow(3px 5px 0 #12141855);}
+.rtg-coach-album-collection .album-collection-progress-bar>span{background:#ff8925!important;}
+.rtg-coach-album-collection .album-collection-title{color:#fffdf6!important;text-shadow:0 2px 9px #0a090ce6;}
+
+/* Match the genuine PlayerView detail fullbody scaling on mobile. */
+.rtg-coach-detail .player-detail-visual .player-fullbody{display:block;width:100%;height:100%;max-height:100%;object-fit:contain;object-position:center bottom;}
+
+/* October 21 UI parity: miniature cards use the actual Squad picker component,
+   album cards use the actual full-size album component. */
+.rtg-coaches-modal .rtg-coaches-window{color:#111216;background:#fffdf6;}
+.rtg-coaches-modal .rtg-coaches-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:start;}
+.rtg-coaches-modal .rtg-coach-entry{min-width:0;}
+.rtg-coaches-modal .rtg-coach-entry .player-card.rtg-coach-card{
+  --rarity-bg:#ffb16e;--rarity-border:#ec7b20;--rarity-text:#111216;--squad-ink:#101216;
+  width:100%!important;min-width:0!important;max-width:none!important;min-height:143px!important;
+  display:block!important;position:relative;padding:0!important;color:#101216!important;
+  border:3px solid #f1872f!important;border-radius:4px!important;
+  background:linear-gradient(155deg,#fff4e5 0%,#ffd7aa 63%,#ff9a44 63%)!important;
+  box-shadow:3px 4px 0 rgba(14,16,19,.27)!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-portrait-wrap{
+  display:grid!important;place-items:end center!important;width:100%!important;
+  aspect-ratio:auto!important;height:91px!important;padding:20px 6px 0!important;
+  overflow:hidden!important;background:transparent!important;
+}
+.rtg-coaches-modal .rtg-coach-card img.player-portrait{
+  width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain!important;object-position:center bottom!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-info{
+  width:100%!important;min-width:0!important;min-height:44px!important;
+  padding:5px 3px 8px!important;background:#fff9ef!important;color:#101216!important;
+  border-top:2px solid #18191b!important;text-align:center!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-title strong{
+  color:#101216!important;font-size:clamp(10px,2.9vw,14px)!important;
+  font-weight:1000!important;line-height:1.1!important;white-space:normal!important;
+  overflow-wrap:anywhere!important;text-shadow:none!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-meta{
+  display:flex!important;justify-content:center!important;flex-wrap:wrap!important;
+  color:#5a4637!important;font-size:9px!important;gap:3px!important;white-space:normal!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-corner{display:grid!important;z-index:4!important;}
+.rtg-coaches-modal .rtg-coach-card .player-level{
+  position:absolute!important;bottom:4px!important;right:4px!important;top:auto!important;
+  font-size:9px!important;min-height:16px!important;padding:2px 4px!important;
+}
+.rtg-coaches-modal .rtg-coach-entry.is-locked .player-portrait-wrap{filter:grayscale(.85);}
+.rtg-coaches-modal .rtg-coach-entry.is-locked .player-portrait{opacity:.62;}
+
+/* Orange takes the place of the player's rarity-gray hero art, including the
+   decorative trapezium generated by the canonical PlayerView pseudo-element. */
+.rtg-coach-detail.player-detail-layout{
+  --detail-rarity-bg:#ffb56c!important;
+  --detail-rarity-accent:#ef7f22!important;
+  --rarity-bg:#ffaf64!important;
+  --rarity-border:#f18a2b!important;
+}
+.rtg-coach-detail .player-detail-visual::before{
+  background:linear-gradient(126deg,transparent 0 13%,#ffead0 13% 27%,transparent 27% 31%,#ffbe80 31% 73%,#f1872f 73% 100%)!important;
+}
+.rtg-coach-detail .player-detail-hero{background:linear-gradient(124deg,#fffdf5 0 59%,#ffce97 59% 100%)!important;}
+
+/* Album parity: keep album-roster.css in charge of all geometry and locking;
+   only substitute the accent token for coach cards. */
+.rtg-coaches-album .album-player-entry{--album-rarity:#f58c30!important;--rarity-border:#f58c30!important;}
+.rtg-coaches-album .album-player-entry>.rtg-coach-album-card{
+  --rarity-bg:#ffd0a1;--rarity-border:#f58c30;--rarity-text:#101216;
+  background:var(--album-paper,#fffdf6)!important;
+  border-color:var(--album-ink,#111216)!important;color:var(--album-ink,#111216)!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-title strong{color:var(--album-ink,#111216)!important;}
+.rtg-coaches-album .rtg-coach-album-card .player-portrait-wrap{overflow:hidden!important;}
+.rtg-coaches-album .rtg-coach-album-card img.player-portrait{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center bottom!important;}
+.rtg-coaches-album .rtg-coach-album-entry.is-locked .player-portrait-wrap{filter:grayscale(.95);}
+.rtg-coaches-album .rtg-coach-album-entry.is-locked img.player-portrait{opacity:.55;}
+@media(max-width:420px){
+  .rtg-coaches-modal .rtg-coaches-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+  .rtg-coaches-modal .rtg-coach-card .player-portrait-wrap{height:108px!important;}
+}
+
+
+/* Coach-only mobile parity with the three-column RTG player collection.
+   The original two-column override made staff twice as large as player cards. */
+.rtg-coach-placeholder{min-width:0;min-height:100%;width:100%;display:grid;place-content:center;gap:3px;text-align:center;color:#7a481f;font-size:19px;font-weight:1000;background:#ffe7cb;}
+.rtg-coach-placeholder b{font-size:12px;}
+.rtg-coach-placeholder--backup{display:none;}
+.rtg-coaches-modal .rtg-coaches-grid{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:16px 8px!important;
+  align-items:start;
+  padding:8px 0 12px!important;
+}
+.rtg-coaches-modal .rtg-coach-entry{min-width:0;display:flex;flex-direction:column;gap:4px;}
+.rtg-coaches-modal .rtg-coach-entry .player-card.rtg-coach-card{
+  width:100%!important;min-width:0!important;max-width:none!important;
+  min-height:129px!important;height:129px!important;
+  border:3px solid #f18a2b!important;border-radius:5px!important;
+  background:linear-gradient(145deg,#fff9f0 0 68%,#ffae69 68% 100%)!important;
+  overflow:hidden!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-portrait-wrap{
+  height:94px!important;min-height:0!important;width:100%!important;
+  padding:21px 2px 0!important;display:grid!important;place-items:end center!important;
+  overflow:hidden!important;background:transparent!important;
+}
+.rtg-coaches-modal .rtg-coach-card img.player-portrait{max-height:100%!important;max-width:100%!important;transform:none!important;object-fit:contain!important;object-position:center bottom!important;}
+.rtg-coaches-modal .rtg-coach-card .player-info{
+  height:29px!important;min-height:29px!important;width:100%!important;
+  padding:5px 2px!important;border-top:2px solid #111216!important;
+  display:grid!important;place-content:center!important;overflow:hidden!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-title strong{
+  display:block!important;color:#111216!important;font-size:clamp(8px,2.3vw,11px)!important;
+  line-height:1.05!important;white-space:nowrap!important;overflow:hidden!important;
+  text-overflow:ellipsis!important;text-align:center!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-meta,
+.rtg-coaches-modal .rtg-coach-card .player-level{display:none!important;}
+.rtg-coaches-modal .rtg-coach-card .player-role,
+.rtg-coaches-modal .rtg-coach-card .player-overall{
+  top:4px!important;z-index:5!important;padding:2px 4px!important;
+  min-width:0!important;min-height:23px!important;font-size:10px!important;
+  border:2px solid #111216!important;border-radius:4px!important;
+  box-shadow:1px 2px 0 #11121633!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-role{left:4px!important;}
+.rtg-coaches-modal .rtg-coach-card .player-overall{right:4px!important;background:#ff8925!important;}
+.rtg-coach-quick-equip{
+  width:100%;min-height:25px;padding:3px 1px;border:2px solid #151619;
+  background:#ff902f;color:#141518;font-size:9px;font-weight:1000;
+  line-height:1.1;cursor:pointer;box-shadow:2px 2px 0 #14151833;
+}
+.rtg-coach-entry .rtg-coach-card.selected{outline:3px solid #101116;outline-offset:1px;}
+.rtg-coach-entry .rtg-coach-card:focus-visible,
+.rtg-coach-quick-equip:focus-visible{outline:3px solid #111216;outline-offset:2px;}
+.rtg-coach-entry.is-locked .player-portrait-wrap{filter:grayscale(.75);}
+.rtg-coach-quick-equip:disabled{opacity:.6;cursor:wait;}
+
+/* Album has the same three-across card rhythm as the player's 866-card listing. */
+.rtg-coaches-album .album-player-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:18px 9px!important;
+  align-items:start!important;
+}
+.rtg-coaches-album .album-player-entry{min-width:0!important;width:100%!important;}
+.rtg-coaches-album .album-player-entry>.rtg-coach-album-card{
+  width:100%!important;min-width:0!important;max-width:none!important;
+  height:142px!important;min-height:142px!important;overflow:hidden!important;
+  border:3px solid #f18a2b!important;border-radius:5px!important;
+  background:linear-gradient(150deg,#fffaf4 0 67%,#ffb477 67%)!important;
+  box-shadow:3px 4px 0 #11121666!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-portrait-wrap{
+  height:100px!important;min-height:0!important;padding:22px 2px 0!important;
+  display:grid!important;place-items:end center!important;background:transparent!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-info{
+  height:36px!important;min-height:36px!important;padding:4px 2px!important;
+  background:#fffaf4!important;display:grid!important;place-items:center!important;
+  border-top:2px solid #111216!important;overflow:hidden!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-title strong{
+  display:block!important;font-size:clamp(8px,2.35vw,12px)!important;
+  line-height:1.08!important;overflow:hidden!important;white-space:nowrap!important;
+  text-overflow:ellipsis!important;text-align:center!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-meta,
+.rtg-coaches-album .rtg-coach-album-card .player-level{display:none!important;}
+.rtg-coaches-album .rtg-coach-album-card .player-role,
+.rtg-coaches-album .rtg-coach-album-card .player-overall{
+  z-index:4!important;top:5px!important;padding:3px 4px!important;
+  font-size:10px!important;background:#fff!important;color:#111216!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-overall{background:#ff8925!important;}
+@media(min-width:700px){
+  .rtg-coaches-album .album-player-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:22px 15px!important;}
+  .rtg-coaches-modal .rtg-coaches-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:20px 12px!important;}
+}
+@media(max-width:360px){
+  .rtg-coaches-modal .rtg-coaches-grid{gap:14px 5px!important;}
+  .rtg-coaches-album .album-player-grid{gap:14px 5px!important;}
+  .rtg-coaches-modal .rtg-coach-entry .player-card.rtg-coach-card{height:117px!important;min-height:117px!important;}
+  .rtg-coaches-modal .rtg-coach-card .player-portrait-wrap{height:82px!important;}
+}
+
+/* Dedicated staff-unlock layout: does not inherit player-pull tilt or its
+   fixed 92px art column, which broke the 22 Oct phone preview. */
+.rtg-coaches-reward.rtg-paper-modal{
+  --coach-orange:#ff8925;
+  position:relative;display:flex;flex-direction:column;gap:14px;
+  width:min(100%,530px)!important;max-width:100%;min-height:0!important;
+  padding:18px!important;margin:0 auto!important;
+  background:radial-gradient(circle at 50% 36%,#ffe9cf,#fffdf6 64%)!important;
+  color:#111216;border:3px solid #111216!important;
+  border-radius:8px!important;box-shadow:5px 6px 0 #111216!important;
+  text-align:center!important;
+}
+.rtg-coaches-reward .rtg-coaches-reward-heading{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:0 0 12px;border-bottom:3px solid #111216;
+  font-size:10px;font-weight:1000;letter-spacing:.13em;
+}
+.rtg-coaches-reward-heading b{
+  padding:6px 9px;background:#ff8925;border:2px solid #111216;
+  transform:rotate(3deg);font-size:12px;letter-spacing:.08em;
+}
+.rtg-coaches-reward-title{
+  font-size:clamp(20px,5vw,29px)!important;font-weight:1000!important;
+  line-height:1.1!important;letter-spacing:.04em;margin:0!important;
+  color:#111216!important;
+}
+.rtg-coaches-reward-feature{
+  display:grid;grid-template-columns:170px minmax(0,1fr);gap:18px;
+  align-items:center;min-width:0;
+}
+.rtg-coaches-reward-art{display:grid;justify-items:center;min-width:0;}
+.rtg-coaches-reward-art .rtg-coach-card.player-card{
+  width:170px!important;max-width:170px!important;min-width:0!important;
+  height:205px!important;min-height:205px!important;
+  padding:0!important;display:block!important;
+  background:linear-gradient(145deg,#fff4e3 0 64%,#ff9f50 64%)!important;
+  border:4px solid #ff8925!important;border-radius:7px!important;
+  transform:none!important;box-shadow:4px 5px 0 #11121655!important;
+  overflow:hidden!important;
+}
+.rtg-coaches-reward-art .rtg-coach-card .player-portrait-wrap{
+  height:158px!important;min-height:0!important;
+  padding:26px 6px 0!important;display:grid!important;place-items:end center!important;
+  overflow:hidden!important;background:transparent!important;
+}
+.rtg-coaches-reward-art .rtg-coach-card .player-portrait{
+  width:100%!important;height:100%!important;max-width:100%!important;
+  object-fit:contain!important;object-position:center bottom!important;transform:none!important;
+}
+.rtg-coaches-reward-art .rtg-coach-card .player-info{
+  height:42px!important;min-height:42px!important;padding:6px 3px!important;
+  display:grid!important;place-items:center!important;background:#fffaf1!important;
+  border-top:3px solid #111216!important;overflow:hidden!important;
+}
+.rtg-coaches-reward-art .rtg-coach-card .player-title strong{
+  font-weight:1000!important;font-size:12px!important;line-height:1.1!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.rtg-coaches-reward-art .rtg-coach-card .player-meta,
+.rtg-coaches-reward-art .rtg-coach-card .player-level{display:none!important;}
+.rtg-coaches-reward-info{text-align:left;display:flex;flex-direction:column;gap:8px;min-width:0;}
+.rtg-coaches-reward-info small{font-size:11px;font-weight:1000;color:#a5511c;letter-spacing:.1em;}
+.rtg-coaches-reward-info h3{
+  font-size:clamp(21px,5vw,32px);font-weight:1000;line-height:1.05;
+  color:#111216;margin:0;overflow-wrap:anywhere;
+}
+.rtg-coaches-reward-info p{font-size:14px;font-weight:800;color:#62564c;margin:0;}
+.rtg-coaches-reward-unlocked{
+  display:block;padding:8px 6px;border:2px solid #111216;
+  background:#fff1de;color:#8a471a;font-size:10px;font-weight:1000;text-align:center;
+}
+.rtg-coaches-reward-balance{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 12px;border:2px solid #111216;background:#fffaf1;
+}
+.rtg-coaches-reward-balance span{font-size:11px;font-weight:950;}
+.rtg-coaches-reward-balance strong{font-size:21px;font-weight:1000;}
+.rtg-coaches-reward-continue.btn{
+  display:block;width:100%!important;min-height:51px!important;
+  padding:10px 12px!important;margin:0!important;background:#ffd21f!important;
+  color:#111216!important;border:3px solid #111216!important;border-radius:0!important;
+  font-size:18px!important;font-weight:1000!important;box-shadow:3px 4px 0 #111216!important;
+}
+@media(max-width:520px){
+  .rtg-coaches-reward.rtg-paper-modal{padding:13px!important;gap:11px;}
+  .rtg-coaches-reward-feature{grid-template-columns:1fr!important;gap:13px!important;}
+  .rtg-coaches-reward-info{align-items:center;text-align:center;}
+  .rtg-coaches-reward-art .rtg-coach-card.player-card{
+    width:154px!important;max-width:154px!important;height:184px!important;min-height:184px!important;
+  }
+  .rtg-coaches-reward-art .rtg-coach-card .player-portrait-wrap{height:139px!important;}
+  .rtg-coaches-reward-art .rtg-coach-card .player-info{height:39px!important;min-height:39px!important;}
+  .rtg-coaches-reward-info h3{font-size:23px;}
+}
+
+
+/* 22 Oct – official Season team crests in both places that show team identity. */
+.rtg-coach-detail .rtg-coach-team-logo{
+  display:block!important;width:27px!important;height:27px!important;flex:none!important;
+  object-fit:contain!important;object-position:center!important;
+  border:0!important;box-shadow:none!important;background:transparent!important;
+}
+.rtg-coach-detail .player-detail-team{display:flex!important;align-items:center!important;gap:8px!important;}
+.rtg-coach-detail .rtg-coach-team-chip{display:inline-flex!important;align-items:center!important;gap:6px!important;min-width:0!important;}
+.rtg-coach-detail .rtg-coach-team-chip .rtg-coach-team-logo{width:20px!important;height:20px!important;}
+.rtg-coach-detail .rtg-coach-profile-meta{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+.rtg-coach-detail .rtg-coach-profile-team{
+  display:flex!important;align-items:center!important;gap:7px!important;
+  min-width:0!important;line-height:1.2!important;
+}
+.rtg-coach-detail .rtg-coach-profile-team .rtg-coach-team-logo{width:28px!important;height:28px!important;}
+.rtg-coach-detail .rtg-coach-profile-meta>span{min-width:0!important;}
+
+/* Keep long coach-team badges (e.g. Inazuma National) inside the identity column on phones. */
+@media(max-width:700px){
+  .rtg-coach-detail .player-detail-tags{flex-wrap:wrap!important;max-width:100%!important;}
+  .rtg-coach-detail .rtg-coach-team-chip{
+    max-width:100%!important;box-sizing:border-box!important;flex:0 1 auto!important;
+    white-space:normal!important;overflow-wrap:anywhere!important;
+  }
+}
+
+
+/* Album: coach card is a self-contained compact card.
+   Never place the locked label over the portrait, name or season badge. */
+.rtg-coaches-album .album-player-grid{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:20px 9px!important;align-items:start!important;
+}
+.rtg-coaches-album .rtg-coach-album-entry{
+  display:flex!important;flex-direction:column!important;gap:5px!important;
+  width:100%!important;min-width:0!important;margin:0!important;
+  filter:none!important;opacity:1!important;
+}
+.rtg-coaches-album .rtg-coach-album-entry>button.rtg-coach-album-card{
+  --coach-orange:#ff8925;
+  position:relative!important;display:block!important;
+  box-sizing:border-box!important;width:100%!important;max-width:none!important;
+  height:160px!important;min-height:160px!important;max-height:160px!important;
+  padding:0!important;margin:0!important;overflow:hidden!important;
+  border:3px solid #f18a2b!important;border-radius:5px!important;
+  background:linear-gradient(151deg,#fffaf4 0 69%,#ffc393 69%)!important;
+  color:#111216!important;box-shadow:3px 4px 0 #11121644!important;
+  transform:none!important;
+}
+.rtg-coaches-album .rtg-coach-album-card::before,
+.rtg-coaches-album .rtg-coach-album-card::after{content:none!important;display:none!important;}
+.rtg-coaches-album .rtg-coach-album-card .player-portrait-wrap{
+  box-sizing:border-box!important;display:grid!important;place-items:end center!important;
+  width:100%!important;height:118px!important;min-height:0!important;
+  padding:23px 2px 0!important;margin:0!important;overflow:hidden!important;
+  border:0!important;background:transparent!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-portrait-wrap::before,
+.rtg-coaches-album .rtg-coach-album-card .player-portrait-wrap::after{
+  content:none!important;display:none!important;
+}
+.rtg-coaches-album .rtg-coach-album-card img.player-portrait{
+  display:block!important;width:100%!important;height:100%!important;
+  max-width:100%!important;max-height:100%!important;
+  object-fit:contain!important;object-position:center bottom!important;
+  transform:none!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-info{
+  box-sizing:border-box!important;display:grid!important;place-content:center!important;
+  width:100%!important;height:36px!important;min-height:36px!important;
+  padding:4px 3px!important;margin:0!important;overflow:hidden!important;
+  border-top:3px solid #111216!important;background:#fffaf4!important;
+  color:#111216!important;text-align:center!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-title{min-width:0!important;}
+.rtg-coaches-album .rtg-coach-album-card .player-title strong{
+  display:block!important;color:#111216!important;font-weight:1000!important;
+  font-size:clamp(9px,2.6vw,13px)!important;line-height:1.08!important;
+  max-width:100%!important;white-space:nowrap!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-corner{
+  display:grid!important;place-items:center!important;position:absolute!important;
+  z-index:6!important;top:5px!important;min-height:23px!important;
+  padding:3px 4px!important;border:2px solid #111216!important;
+  border-radius:4px!important;font-size:10px!important;font-weight:1000!important;
+  color:#111216!important;box-shadow:2px 2px 0 #11121644!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-role{
+  left:5px!important;right:auto!important;min-width:0!important;background:#fff!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-overall{
+  right:5px!important;left:auto!important;min-width:0!important;background:#ff902f!important;
+}
+.rtg-coaches-album .rtg-coach-album-entry.is-locked .player-portrait-wrap{
+  filter:grayscale(1)!important;
+}
+.rtg-coaches-album .rtg-coach-album-entry.is-locked img.player-portrait{opacity:.68!important;}
+.rtg-coaches-album .rtg-coach-album-status{
+  box-sizing:border-box;display:grid;place-items:center;
+  width:100%;min-height:21px;padding:4px 2px;margin:0;
+  border:1px solid #d2b79f;border-radius:3px;background:#fff8f0;
+  color:#6d5847;font-size:clamp(8px,2.1vw,10px);font-weight:1000;
+  line-height:1;text-align:center;white-space:nowrap;
+}
+.rtg-coaches-album .rtg-coach-album-status.is-owned{
+  border-color:#ff8925;background:#ffe3c1;color:#7e3f11;
+}
+.rtg-coaches-album .rtg-coach-album-card:focus-visible{
+  outline:3px solid #111216!important;outline-offset:3px!important;
+}
+@media(max-width:380px){
+  .rtg-coaches-album .album-player-grid{gap:17px 6px!important;}
+  .rtg-coaches-album .rtg-coach-album-entry>button.rtg-coach-album-card{
+    height:145px!important;min-height:145px!important;max-height:145px!important;
+  }
+  .rtg-coaches-album .rtg-coach-album-card .player-portrait-wrap{height:103px!important;}
+}
+@media(min-width:700px){
+  .rtg-coaches-album .album-player-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:24px 16px!important;
+  }
+  .rtg-coaches-album .rtg-coach-album-entry>button.rtg-coach-album-card{
+    height:205px!important;min-height:205px!important;max-height:205px!important;
+  }
+  .rtg-coaches-album .rtg-coach-album-card .player-portrait-wrap{height:163px!important;}
+}
+
+
+/* René Gadé: a reliable full-body source fills the small selector artwork area.
+   When the next CDN candidate is used, JS removes this class automatically. */
+.rtg-coaches-modal .rtg-coach-card img.rtg-coach-portrait--fullbody-thumbnail,
+.rtg-coaches-reward-art .rtg-coach-card img.rtg-coach-portrait--fullbody-thumbnail{
+  width:100%!important;height:100%!important;
+  object-fit:cover!important;
+  object-position:center 12%!important;
+}
+
+/* Every selection item must fill its grid track. The inherited rtg-picker-grid
+   sets justify-items:center: without this, an unowned coach such as David
+   Arrows shrinks to the intrinsic size of its portrait. */
+.rtg-coaches-modal .rtg-coaches-grid.rtg-picker-grid{
+  justify-items:stretch!important;
+  align-items:stretch!important;
+}
+.rtg-coaches-modal .rtg-coach-entry{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  justify-self:stretch!important;
+  align-self:stretch!important;
+}
+.rtg-coaches-modal .rtg-coach-entry>.rtg-coach-card.player-card{
+  box-sizing:border-box!important;
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  flex:none!important;
+}
+
+
+/* Rene Gadé (official Inazugle 4763): thumbnail is a direct PNG, not the
+   generic player-portrait cascade. The same rules cover selection, Album and
+   the Squad coach slot without changing other nine coaches. */
+.rtg-coach-portrait--rene-direct{
+  display:block!important;
+  position:relative!important;
+  z-index:3!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  opacity:1!important;
+  visibility:visible!important;
+  transform:none!important;
+}
+.rtg-coach-placeholder--backup.is-visible{
+  display:grid!important;
+  position:relative!important;
+  z-index:4!important;
+}
+.rtg-coach-detail img.rtg-coach-fullbody--portrait-fallback{
+  /* If Inazugle's true full-body fails, don't stretch a face-only PNG
+     across the whole hero as in the reported iPhone screenshot. */
+  max-width:70%!important;
+  max-height:65%!important;
+  width:auto!important;
+  height:auto!important;
+  object-fit:contain!important;
+}
+
+
+/* Safari: the last (Orion) coach is below the fold in a nested scroll
+   container. A decoded background sprite avoids the deferred <img> paint
+   that appeared only after an iPhone app/tab switch. */
+.rtg-coach-rene-artwork{
+  box-sizing:border-box!important;
+  display:block!important;
+  position:relative!important;
+  z-index:3!important;
+  flex:0 0 auto!important;
+  align-self:stretch!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  margin:0!important;
+  padding:0!important;
+  background-color:transparent!important;
+  background-repeat:no-repeat!important;
+  background-size:contain!important;
+  background-position:center bottom!important;
+  opacity:1!important;
+  visibility:visible!important;
+  transform:none!important;
+}
+.rtg-coach-rene-artwork .rtg-coach-rene-loading{
+  box-sizing:border-box!important;
+  display:grid!important;
+  place-items:center!important;
+  height:100%!important;
+  width:100%!important;
+  color:#a45c26!important;
+  font-size:18px!important;
+  font-weight:1000!important;
+  text-shadow:1px 1px 0 #fff9ed!important;
+}
+.rtg-coach-rene-artwork.is-ready .rtg-coach-rene-loading{
+  display:none!important;
+}
+.rtg-coach-rene-artwork.is-failed .rtg-coach-rene-loading{
+  color:#6f5946!important;
+}
+
+
+/* René (official Inazugle PNG): canvas rasterized at DOM insertion rather
+   than remote-image CSS background composited under Safari grayscale. */
+.rtg-coach-rene-wrap{
+  filter:none!important;
+}
+.rtg-coaches-modal .rtg-coach-entry.is-rene.is-locked,
+.rtg-coaches-modal .rtg-coach-entry.is-rene.is-locked .player-portrait-wrap,
+.rtg-coaches-album .rtg-coach-album-entry.is-rene.is-locked .player-portrait-wrap{
+  filter:none!important;
+}
+.rtg-coach-rene-frame{
+  position:relative!important;
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  align-self:stretch!important;
+  isolation:isolate;
+}
+.rtg-coach-rene-canvas{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  opacity:1!important;
+  visibility:visible!important;
+  transform:none!important;
+}
+.rtg-coach-entry.is-rene.is-locked .rtg-coach-rene-canvas,
+.rtg-coach-album-entry.is-rene.is-locked .rtg-coach-rene-canvas{
+  opacity:.65!important; /* avoid GPU grayscale filter on below-fold canvas */
+}
+.rtg-coach-rene-frame .rtg-coach-rene-loading{
+  position:absolute!important;
+  inset:0!important;
+  display:grid!important;
+  place-items:center!important;
+  width:100%!important;
+  height:100%!important;
+  background:transparent!important;
+  color:#7b4d2c!important;
+  font-weight:1000!important;
+  font-size:18px!important;
+  pointer-events:none!important;
+}
+.rtg-coach-rene-frame.is-ready .rtg-coach-rene-loading{
+  display:none!important;
+}
+
+/* Squad-configurable coach powers: separate from the coach collection and match UI. */
+.rtg-squad-shell .rtg-coach-squad-buttons [data-rtg-coach-power-configure]{
+  grid-column:1/-1;min-height:48px;width:100%;font-weight:950;background:#ffd31a!important;
+  color:#18191a!important;border:3px solid #18191a!important;box-shadow:3px 4px 0 #18191a!important;
+}
+.rtg-coach-power-config{padding:12px 6px 18px;width:min(100%,650px);margin:auto;color:#161718;}
+.rtg-coach-power-config h2{font-size:clamp(22px,5vw,32px);font-weight:1000;line-height:1.08;overflow-wrap:anywhere;margin:5px 0 10px;}
+.rtg-coach-power-config>p{font-size:14px;line-height:1.5;}
+.rtg-coach-power-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0;}
+.rtg-coach-power-choices h4{grid-column:1/-1;margin:0;font-size:13px;letter-spacing:.08em;font-weight:950;}
+.rtg-coach-power-choices>p{grid-column:1/-1;}
+.rtg-coach-power-option{
+  display:flex;flex-direction:column;gap:4px;min-width:0;min-height:70px;padding:11px 9px;
+  background:#fffdf6;color:#17181a;border:3px solid #17181a;box-shadow:2px 3px 0 #17181a;
+  text-align:left;overflow-wrap:anywhere;position:relative;cursor:pointer;
+}
+.rtg-coach-power-option strong{font-size:13px;font-weight:900;line-height:1.25;padding-right:12px;}
+.rtg-coach-power-option span{font-size:11px;font-weight:750;opacity:.8;}
+.rtg-coach-power-option b{position:absolute;top:5px;right:7px;font-size:18px;}
+.rtg-coach-power-option.is-selected{background:#ffcf28;border-color:#17181a;}
+.rtg-coach-power-option:disabled{opacity:.5;cursor:not-allowed;}
+.rtg-coach-power-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px;}
+.rtg-coach-power-actions [data-rtg-coach-power-save]{grid-column:1/-1;}
+.rtg-coach-power-actions .btn{width:100%;min-height:44px;font-weight:900;}
+.rtg-coach-power-actions [data-rtg-coach-power-save]:disabled{opacity:.55;}
+@media(max-width:370px){.rtg-coach-power-choices{gap:7px}.rtg-coach-power-option{padding:9px 7px}}
+
+/* Coach power Squad configuration: real RTG formation pitch and bench cards. */
+.rtg-coach-field-picker{max-width:690px;width:100%;padding:10px 0 22px}
+.rtg-coach-field-picker h3{font-size:14px;font-weight:1000;letter-spacing:.08em;margin:18px 0 10px}
+.rtg-coach-picker-pitch{margin:8px 0 16px;padding:7px;background:#fff;border:3px solid #141719;box-shadow:4px 5px 0 #141719}
+.rtg-coach-field-picker .rtg-squad-pitch-main.pitch{
+  padding:14px 7px!important;margin:0!important;min-height:490px!important;display:flex;flex-direction:column;
+  justify-content:space-around;gap:12px;border:3px solid #153b24!important;
+  background:radial-gradient(circle at center,transparent 0 35px,#ffffff55 36px 37px,transparent 38px),
+    linear-gradient(transparent 49.85%,#ffffff55 50%,transparent 50.15%),
+    repeating-linear-gradient(180deg,#326d43 0 12.5%,#265c38 12.5% 25%)!important;
+  box-shadow:inset 0 0 0 4px #245839,inset 0 0 0 6px #c2e0c544!important;
+}
+.rtg-coach-field-picker .rtg-squad-pitch-main .pitch-row{width:100%;display:flex;align-items:center;justify-content:center;gap:clamp(3px,1.5vw,11px)}
+.rtg-coach-field-picker .rtg-squad-card-slot{min-width:0;max-width:110px;flex:1 1 0;position:relative}
+.rtg-coach-field-picker .rtg-squad-card-slot .player-card{min-width:0!important;width:100%!important;max-width:100%!important;cursor:pointer;transition:transform .12s,border-color .12s}
+.rtg-coach-field-picker .rtg-squad-card-slot.rtg-coach-power-picked .player-card{
+  outline:2px solid #ffd21f;outline-offset:2px;filter:drop-shadow(0 0 5px #ffdd62);transform:translateY(-2px);
+}
+.rtg-coach-field-picker .rtg-squad-card-slot.rtg-coach-power-picked:after{
+  content:"✓";position:absolute;right:-4px;bottom:10px;z-index:5;
+  background:#ffd21f;border:1px solid #111216;color:#111216;padding:1px 6px;font-weight:1000;
+}
+.rtg-coach-field-picker [data-rtg-squad-player]:disabled{cursor:not-allowed;opacity:.55;filter:grayscale(.35)}
+.rtg-coach-picker-bench{border:3px solid #17181a;padding:10px;background:#fffdf4;box-shadow:3px 4px 0 #17181a}
+.rtg-coach-picker-bench-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:start;gap:clamp(4px,1.5vw,10px)}
+.rtg-coach-picker-bench-grid .rtg-squad-card-slot{width:100%;max-width:none;min-width:0}
+.rtg-coach-picker-bench-grid .player-card{width:100%!important;min-width:0!important;max-width:none!important}
+.rtg-coach-picker-elements{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.rtg-coach-picker-elements h4{grid-column:1/-1;margin:0;font-size:13px;font-weight:1000}
+.rtg-coach-picker-elements .btn{min-width:0;min-height:45px;background:#fff}
+.rtg-coach-picker-elements .btn.is-selected{background:#ffd21f!important;color:#111216!important}
+.rtg-coach-power-projection{border:3px solid #111216;background:#fff5df;padding:12px;margin:16px 0}
+.rtg-coach-power-projection h4{margin:0 0 8px;font-size:13px}
+.rtg-coach-power-projection p,.rtg-coach-power-projection strong{font-size:13px;line-height:1.45}
+.rtg-coach-preview-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:12px}
+.rtg-coach-preview-stat-grid span{padding:6px;background:#fff;border:2px solid #161718;font-size:12px}
+.rtg-coach-preview-stat-grid strong{font-weight:900}
+.rtg-coach-preview-stat-grid b{color:#176d37}
+.rtg-coach-player-preview{padding:13px!important;background:#fff4dc;border:3px solid #141719!important}
+.rtg-coach-player-preview p{font-size:13px;line-height:1.55}
+/* Event details inherit pale text from the burgundy player-card theme.
+   Keep the existing parchment panel, but explicitly color its content dark. */
+#modal-root .rtg-coach-player-preview,
+#modal-root .rtg-coach-player-preview p,
+#modal-root .rtg-coach-player-preview .rtg-coach-preview-stat-grid span{
+  color:#24181a!important;
+  opacity:1!important;
+  text-shadow:none!important;
+}
+#modal-root .rtg-coach-player-preview h3,
+#modal-root .rtg-coach-player-preview h3 span{
+  color:#75370c!important;
+  opacity:1!important;
+  text-shadow:none!important;
+}
+#modal-root .rtg-coach-player-preview .rtg-coach-preview-stat-grid b{
+  color:#176d37!important;
+}
+.rtg-coach-move-discount .rtg-pt-cost strong{color:#11703d!important}
+.rtg-coach-move-select,.rtg-coach-moves-confirm{width:100%;min-height:42px;margin:9px 0!important;font-size:12px;font-weight:900}
+.rtg-coach-move-select.is-selected{background:#ffd21f!important;color:#111216!important}
+.player-detail-rtg-four-moves .rtg-four-moves-item.is-selected{outline:3px solid #ffc91b;outline-offset:2px}
+.rtg-coach-moves-confirm{min-height:50px;background:#ffd21f!important;color:#17181b!important}
+.rtg-coach-moves-confirm:disabled{opacity:.55}
+@media(max-width:430px){
+ .rtg-coach-field-picker .rtg-squad-pitch-main.pitch{min-height:420px!important;padding:10px 5px!important;gap:9px}
+ .rtg-coach-picker-bench{padding:7px}
+ .rtg-coach-preview-stat-grid{gap:4px}
+ .rtg-coach-preview-stat-grid span{font-size:10px;padding:4px}
+}
+
+
+/* Squad card visuals in coach selector: restore canonical white rarity design. */
+.rtg-coach-field-picker.development-squad-card-scope .rtg-squad-card-slot .squad-player-card{
+  color:var(--squad-ink,#111216)!important;
+  background:linear-gradient(165deg,#fff 0 70%,#eee9dc 70%)!important;
+  border:2px solid var(--rarity-border,#646464)!important;
+  box-shadow:3px 4px 0 rgba(5,18,12,.38),0 0 10px var(--rarity-glow,transparent),inset 0 -3px 0 var(--rarity-border,#646464)!important;
+  overflow:visible!important;
+}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-info{
+  background:transparent!important;color:#111216!important;
+}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-title strong{
+  color:#111216!important;
+}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card :is(.player-role,.player-overall){
+  display:grid!important;place-items:center!important;color:#111216!important;border:1px solid #111216!important;
+}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-role{background:#fff!important}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-overall{background:#ffd21f!important}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-portrait-wrap{
+  background:linear-gradient(160deg,color-mix(in srgb,var(--rarity-border,#646464) 9%,#fff),#ddd7c8)!important;
+}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-portrait-wrap::after{
+  content:"";display:block!important;position:absolute;z-index:2;top:17px;right:-1px;width:13px;height:51px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--rarity-border,#646464) 82%,white),var(--rarity-border,#646464));
+  clip-path:polygon(58% 0,100% 0,42% 100%,0 100%);pointer-events:none;
+}
+/* Element pictograms and native square RTG buttons */
+.rtg-coach-picker-elements .rtg-coach-element-choice{
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;
+  padding:10px 8px!important;min-height:58px!important;background:#fffdf6!important;
+  border:3px solid #111216!important;border-radius:2px!important;
+  box-shadow:3px 4px 0 #111216!important;color:#111216!important;
+  font-size:13px!important;font-weight:1000!important;letter-spacing:.055em;
+}
+.rtg-coach-picker-elements .rtg-coach-element-choice.is-selected{
+  background:#ffd21f!important;box-shadow:inset 0 0 0 2px #fffdf6,3px 4px 0 #111216!important;
+}
+.rtg-coach-element-choice .rtg-coach-element-art{
+  width:30px;height:30px;display:grid;place-items:center;flex:0 0 30px;
+  border:2px solid currentColor;border-radius:2px;background:#fff;
+}
+.rtg-coach-element-art svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.rtg-coach-element-choice[data-element="fire"] .rtg-coach-element-art{color:#cb392e}
+.rtg-coach-element-choice[data-element="wind"] .rtg-coach-element-art{color:#2981c6}
+.rtg-coach-element-choice[data-element="forest"] .rtg-coach-element-art{color:#2b8452}
+.rtg-coach-element-choice[data-element="mountain"] .rtg-coach-element-art{color:#a66c2b}
+.player-detail-modal .rtg-coach-move-select,
+.player-detail-modal .rtg-coach-moves-confirm{
+  display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;
+  width:100%!important;min-height:49px!important;margin:11px 0 15px!important;padding:10px!important;
+  border:3px solid #111216!important;border-radius:2px!important;
+  box-shadow:4px 5px 0 #111216!important;background:#fffdf6!important;color:#111216!important;
+  font:1000 12px/1.2 system-ui,sans-serif!important;letter-spacing:.06em!important;text-transform:uppercase!important;
+}
+.player-detail-modal .rtg-coach-move-select.is-selected{background:#ffd21f!important;color:#111216!important}
+.player-detail-modal .rtg-coach-moves-confirm{
+  background:#ffd21f!important;min-height:57px!important;font-size:14px!important;
+}
+.player-detail-modal .rtg-coach-moves-confirm:disabled{
+  background:#eee5be!important;color:#716c5b!important;opacity:.75!important;
+  box-shadow:3px 4px 0 #777169!important;cursor:not-allowed!important;
+}
+@media(max-width:390px){
+  .rtg-coach-picker-elements .rtg-coach-element-choice{gap:5px!important;font-size:11px!important}
+  .rtg-coach-element-choice .rtg-coach-element-art{width:26px;height:26px;flex-basis:26px}
+}
+
+
+/* Mister Yi: two independently selected players and two techniques each. */
+.rtg-coach-yi-targets .rtg-coach-yi-target{
+  grid-column:1/-1;min-width:0;padding:12px;background:#fffaf0;
+  border:2px solid #161719;box-shadow:3px 4px 0 #161719;
+}
+.rtg-coach-yi-targets .rtg-coach-yi-target>h4{
+  margin:0 0 12px;font-size:13px;font-weight:950;letter-spacing:.065em;
+  overflow-wrap:anywhere;
+}
+.rtg-coach-yi-element-options{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(4px,1.2vw,9px);
+}
+.rtg-coach-yi-element-options .rtg-coach-element-choice{
+  min-height:60px!important;flex-direction:column;gap:5px!important;
+  padding:6px 3px!important;font-size:11px!important;letter-spacing:.02em!important;
+}
+.rtg-coach-yi-element-options .rtg-coach-element-choice .rtg-coach-element-art{
+  width:24px;height:24px;flex-basis:24px;
+}
+.rtg-coach-yi-element-options .rtg-coach-element-art svg{width:18px;height:18px}
+.rtg-coach-yi-moves-button{
+  display:block;width:100%;margin:15px 0 2px!important;
+  min-height:48px;padding:9px!important;background:#ffd21f!important;
+  color:#151719!important;border:2px solid #151719!important;border-radius:2px!important;
+  box-shadow:3px 4px 0 #151719!important;font-weight:950!important;
+  text-align:center;white-space:normal;
+}
+.rtg-coach-yi-moves-button:disabled{opacity:.55!important;cursor:not-allowed!important}
+.rtg-coach-move-transformed .player-move-element{
+  outline:2px solid #ffd21f;outline-offset:2px;
+}
+@media(max-width:360px){
+  .rtg-coach-yi-element-options{gap:3px}
+  .rtg-coach-yi-element-options .rtg-coach-element-choice{font-size:10px!important}
+}
+
+
+/* Pre-match coach powers reuse the same native Squad pitch and cards. */
+.rtg-coach-prematch-config{max-width:720px;padding:10px 0 22px}
+.rtg-coach-prematch-config .rtg-coach-prematch-area{margin:16px 0;min-width:0}
+.rtg-coach-prematch-config .rtg-coach-prematch-area>h3{
+  margin:0 0 10px;font-size:13px;font-weight:950;letter-spacing:.075em;
+}
+.rtg-coach-prematch-config .rtg-match-squad-field-shell{
+  background:#fff;border:3px solid #141719;padding:7px;margin:0;box-shadow:4px 5px 0 #141719;
+}
+.rtg-coach-prematch-config .rtg-match-squad-field-shell .pitch{
+  padding:10px 6px!important;min-height:430px!important;display:flex;flex-direction:column;
+  justify-content:space-around;gap:10px;background:repeating-linear-gradient(180deg,#326d43 0 12.5%,#265c38 12.5% 25%)!important;
+}
+.rtg-coach-prematch-config .rtg-match-squad-field-shell .pitch-row{
+  display:flex;width:100%;align-items:center;justify-content:center;gap:clamp(4px,1.4vw,10px);
+}
+.rtg-coach-prematch-config .rtg-squad-card-slot{min-width:0;max-width:110px;flex:1 1 0;position:relative}
+.rtg-coach-prematch-config .rtg-squad-card-slot .squad-player-card{width:100%!important;min-width:0!important;max-width:100%!important}
+.rtg-coach-prematch-config .rtg-coach-picker-bench-grid .rtg-squad-card-slot{max-width:none}
+.rtg-coach-prematch-config [data-rtg-squad-player]:disabled{opacity:.46!important;filter:grayscale(.6);cursor:not-allowed}
+.rtg-coach-prematch-config .rtg-squad-card-slot.rtg-coach-power-picked .squad-player-card{
+  outline:2px solid #ffd21f;outline-offset:2px;filter:drop-shadow(0 0 6px #ffda3f);
+}
+.rtg-coach-prematch-config .rtg-squad-card-slot.rtg-coach-power-picked::after{
+  content:"✓";position:absolute;bottom:7px;right:-5px;background:#ffd21f;color:#111;
+  border:2px solid #111;padding:2px 6px;font-size:17px;font-weight:950;z-index:5;
+}
+.rtg-coach-prematch-config .rtg-coach-prematch-empty{
+  font-size:13px;font-weight:750;padding:15px;border:2px solid #111;margin:0;
+}
+.rtg-prematch-coach-power-launch{
+  width:100%;min-height:50px;margin:12px 0!important;border:3px solid #101114!important;
+  border-radius:2px!important;background:#fffdf5!important;color:#111!important;
+  box-shadow:4px 5px 0 #101114!important;font-weight:950!important;
+}
+@media(max-width:390px){
+  .rtg-coach-prematch-config .rtg-match-squad-field-shell .pitch{min-height:390px!important}
+}
+
+/* The event coach reuses the exact existing RTG coach cards and detail.
+   Only HW colours change; native coach functionality and geometry remain. */
+.rtg-coach-card.rtg-coach-halloween.player-card,
+.rtg-coaches-modal .rtg-coach-entry .rtg-coach-card.rtg-coach-halloween.player-card,
+.rtg-coaches-album .album-player-entry>.rtg-coach-album-card.rtg-coach-halloween{
+  --rarity-color:#ff8c2b!important;--rarity-accent:#ff8c2b!important;
+  --accent:#ff8c2b!important;--card-accent:#ff8c2b!important;
+  background:linear-gradient(145deg,#31121e 0%,#6b241b 72%,#ee8027 100%)!important;
+  border-color:#ff8e32!important;color:#fff1df!important
+}
+.rtg-coach-card.rtg-coach-halloween .player-portrait-wrap,
+.rtg-coach-album-card.rtg-coach-halloween .player-portrait-wrap{
+  background:radial-gradient(circle at 50% 38%,#bd713488,#1a0b18 77%)!important
+}
+.rtg-coach-card.rtg-coach-halloween .player-info,
+.rtg-coach-album-card.rtg-coach-halloween .player-info{
+  background:#1b0e19!important;color:#fff2de!important
+}
+.rtg-coach-card.rtg-coach-halloween .player-title strong,
+.rtg-coach-album-card.rtg-coach-halloween .player-title strong,
+.rtg-coach-card.rtg-coach-halloween .player-meta{
+  color:#fff0d6!important
+}
+.rtg-coach-card.rtg-coach-halloween .player-corner.player-overall,
+.rtg-coach-album-card.rtg-coach-halloween .player-corner.player-overall{
+  background:#111016!important;color:#ffbc68!important;
+  border-color:#ff8c2b!important
+}
+.rtg-coach-card.rtg-coach-halloween .player-corner.player-role,
+.rtg-coach-album-card.rtg-coach-halloween .player-corner.player-role{
+  background:#fff2d9!important;color:#1a1014!important
+}
+.rtg-coach-detail.rtg-coach-halloween.player-detail-layout{
+  --rarity-color:#ff8e2e!important;--rarity-accent:#ff8e2e!important;
+  --accent:#ff8e2e!important;--detail-accent:#ff8e2e!important
+}
+.rtg-coach-detail.rtg-coach-halloween .player-detail-hero{
+  background:linear-gradient(127deg,#47171c,#a9451c 66%,#ff9a2c)!important
+}
+.rtg-coach-detail.rtg-coach-halloween .player-detail-name{
+  color:#fff1d8!important;text-shadow:2px 3px 0 #170a13!important
+}
+.rtg-coach-detail.rtg-coach-halloween .player-detail-visual{
+  background:radial-gradient(circle at 60% 40%,#c76b3588,#210b18 78%)!important
+}
+.rtg-coach-squad-slot.rtg-coach-halloween{
+  border-color:#ff8b2b!important;background:#26111a!important;color:#fff1db!important
+}
+/* Hekyll's compact card uses a light parchment panel: the previous ivory
+   title/club text became unreadable. Scope contrast to this coach only. */
+.rtg-coach-squad-slot.rtg-coach-halloween .rtg-coach-squad-selected strong{
+  color:#24151a!important;
+  text-shadow:none!important;
+}
+.rtg-coach-squad-slot.rtg-coach-halloween .rtg-coach-squad-selected span{
+  color:#4c2d25!important;
+  text-shadow:none!important;
+}
+.rtg-coaches-reward.rtg-coach-halloween{
+  border-color:#ff902e!important;background:linear-gradient(140deg,#230f19,#59201e)!important
+}
+.rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-info,
+.rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-info h3{
+  color:#fff2de!important
+}
+
+/* Halloween coach artwork: the bust belongs ONLY on the compact card;
+   the verified Inazugle full-body render belongs ONLY in the detail.
+   These filters are event-specific and never affect the other ten coaches. */
+.rtg-coach-halloween img.rtg-coach-portrait,
+.rtg-coach-halloween img.rtg-coach-fullbody{
+  filter:sepia(.14) saturate(.85) hue-rotate(322deg) contrast(1.13) brightness(.9)
+    drop-shadow(0 0 7px rgba(253,128,38,.34))!important;
+}
+.rtg-coach-detail.rtg-coach-halloween .rtg-coach-team-logo,
+.rtg-coach-squad-slot.rtg-coach-halloween .rtg-coach-team-logo,
+.rtg-coach-halloween .rtg-coach-team-logo{
+  filter:brightness(.7) contrast(1.48) saturate(.83) hue-rotate(306deg)
+    drop-shadow(0 0 4px rgba(255,105,46,.48))!important;
+}
+.rtg-coaches-album .rtg-coach-album-entry.rtg-coach-halloween.is-locked .player-portrait-wrap,
+.rtg-coaches-modal .rtg-coach-entry.rtg-coach-halloween.is-locked .player-portrait-wrap{
+  filter:none!important;
+}
+.rtg-coaches-album .rtg-coach-album-entry.rtg-coach-halloween.is-locked img.rtg-coach-portrait,
+.rtg-coaches-modal .rtg-coach-entry.rtg-coach-halloween.is-locked img.rtg-coach-portrait{
+  opacity:.8!important;
+}
+.rtg-coaches-album .rtg-coach-album-entry.rtg-coach-halloween{
+  --album-rarity:#ff8f32!important;
+}
+/* Do not give Hekyll custom artwork geometry: he now inherits the exact
+   fullbody scale and placement used by Ray Dark and every native RTG coach,
+   including the existing mobile 1.72x scale. Only his colours differ. */
+.rtg-coach-detail.rtg-coach-halloween .player-detail-content{
+  background:#1b1019!important;color:#ffe8d0!important
+}
+.rtg-coach-detail.rtg-coach-halloween .player-detail-section>h3{
+  color:#ffaf58!important
+}
+/* Coach ability text is DARK on the cream card in both standard and HW detail.
+   Avoid the inherited white-on-cream text observed in the event modal. */
+.rtg-coach-detail .rtg-coach-power,
+.rtg-coach-detail .rtg-coach-power strong,
+.rtg-coach-detail .rtg-coach-power p{
+  color:#17191b!important
+}
+.rtg-coach-detail .rtg-coach-profile-meta>span,
+.rtg-coach-detail .rtg-coach-profile-meta>span b{
+  color:#17191b!important
+}
+.rtg-coach-detail.rtg-coach-halloween .rtg-coach-power{
+  background:#fff4e5!important
+}
+
+/* Halloween coach reward: keep all text legible against the dark burgundy
+   modal, without changing the standard RTG coach reveal. */
+.rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-heading{
+  color:#ffeac7!important;
+  border-bottom-color:#ff9c47!important;
+}
+.rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-title{
+  color:#fff2dd!important;
+  text-shadow:0 2px 0 #140c10;
+}
+.rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-info small{
+  color:#ffb45c!important;
+}
+.rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-info p{
+  color:#ffe3c3!important;
+}

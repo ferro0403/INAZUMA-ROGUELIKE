@@ -1,0 +1,70 @@
+name: RTG Cloud Save validation
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/rtg-cloud-validation.yml'
+      - 'firestore.rules'
+      - 'index.html'
+      - 'js/cloud-*.js'
+      - 'js/firebase-cloud-save.js'
+      - 'js/road-to-glory/**'
+      - 'js/storage/permanent-cloud-bootstrap-gate.js'
+      - 'tests/rtg-cloud-*'
+      - 'tests/helpers/**'
+      - 'tests/fixtures/rtg-cloud-*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: RTG cloud failure and recovery regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in tests/rtg-cloud-*-test.js; do
+            node --experimental-vm-modules "$test_file"
+          done
+      - name: Real browser IndexedDB and restore fencing
+        run: node tests/rtg-cloud-browser-test.mjs
+
+  firestore_rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install isolated emulator test dependencies
+        run: npm install --prefix "$RUNNER_TEMP/rtg-rules" --no-audit --no-fund firebase-tools@14.12.0 @firebase/rules-unit-testing@4.0.1 firebase@11.10.0
+      - name: Create local-only emulator configuration
+        shell: python
+        run: |
+          import json, os, pathlib
+          config = {"firestore": {"rules": str(pathlib.Path("firestore.rules").resolve())},
+                    "emulators": {"firestore": {"host": "127.0.0.1", "port": 8080},
+                                  "ui": {"enabled": False}, "singleProjectMode": False}}
+          pathlib.Path(os.environ["RUNNER_TEMP"], "rtg-rules", "firebase.json").write_text(json.dumps(config))
+      - name: Enforce rules against the Firestore emulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          export NODE_PATH="$RUNNER_TEMP/rtg-rules/node_modules"
+          "$RUNNER_TEMP/rtg-rules/node_modules/.bin/firebase" emulators:exec \
+            --only firestore --project demo-rtg-cloud-ci \
+            --config "$RUNNER_TEMP/rtg-rules/firebase.json" \
+            "node tests/rtg-cloud-firestore-rules-test.js --require-emulator"

@@ -1,0 +1,817 @@
+{
+  "schemaVersion": 2,
+  "seasonId": "ie1",
+  "maxMovesPerPlayer": 4,
+  "players": {
+    "38": {
+      "primaryMoveId": "38_1",
+      "moves": [
+        {
+          "moveId": "38_1",
+          "name": "Warp Space",
+          "jpName": "ゆがむ空間",
+          "type": "save",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "38_2",
+          "name": "Whirlwind",
+          "jpName": "つむじ",
+          "type": "save",
+          "element": "Wind",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "38_5",
+          "name": "Killer Blade",
+          "jpName": "キラーブレード",
+          "type": "save",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "38_3",
+          "name": "Blade Attack",
+          "jpName": "ブレードアタック",
+          "type": "defense",
+          "element": "Wind",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        }
+      ]
+    },
+    "39": {
+      "primaryMoveId": "39_1",
+      "moves": [
+        {
+          "moveId": "39_1",
+          "name": "Ghost Pull",
+          "jpName": "怨霊",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "39_3",
+          "name": "Shadow Stitch",
+          "jpName": "影縫い",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "39_4",
+          "name": "Coil Turn",
+          "jpName": "コイルターン",
+          "type": "defense",
+          "element": "Wind",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "39_2",
+          "name": "Phantom Shot",
+          "jpName": "ファントムシュート",
+          "type": "shot",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        }
+      ]
+    },
+    "40": {
+      "primaryMoveId": "40_1",
+      "moves": [
+        {
+          "moveId": "40_1",
+          "name": "Ghost Pull",
+          "jpName": "怨霊",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "40_2",
+          "name": "Fake Ball",
+          "jpName": "フェイクボール",
+          "type": "defense",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "40_3",
+          "name": "Clone Defence",
+          "jpName": "分身ディフェンス",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "40_4",
+          "name": "Coil Turn",
+          "jpName": "コイルターン",
+          "type": "defense",
+          "element": "Wind",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        }
+      ]
+    },
+    "41": {
+      "primaryMoveId": "41_1",
+      "moves": [
+        {
+          "moveId": "41_1",
+          "name": "Earthquake",
+          "jpName": "アースクェイク",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "41_2",
+          "name": "Ghost Pull",
+          "jpName": "怨霊",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "41_3",
+          "name": "Mega Quake",
+          "jpName": "メガクェイク",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "41_4",
+          "name": "No Escape",
+          "jpName": "ノーエスケイプ",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        }
+      ]
+    },
+    "42": {
+      "primaryMoveId": "42_1",
+      "moves": [
+        {
+          "moveId": "42_1",
+          "name": "Shadow Stitch",
+          "jpName": "影縫い",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "42_3",
+          "name": "Ghost Pull",
+          "jpName": "怨霊",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "42_4",
+          "name": "Super Armadillo",
+          "jpName": "スーパーアルマジロ",
+          "type": "dribble",
+          "element": "Mountain",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "42_2",
+          "name": "Phantom Shot",
+          "jpName": "ファントムシュート",
+          "type": "shot",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        }
+      ]
+    },
+    "43": {
+      "primaryMoveId": "43_1",
+      "moves": [
+        {
+          "moveId": "43_1",
+          "name": "Ghost Pull",
+          "jpName": "怨霊",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "43_2",
+          "name": "Shadow Stitch",
+          "jpName": "影縫い",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "43_4",
+          "name": "Quick Draw",
+          "jpName": "クイックドロウ",
+          "type": "defense",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "43_3",
+          "name": "Phantom Shot",
+          "jpName": "ファントムシュート",
+          "type": "shot",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        }
+      ]
+    },
+    "44": {
+      "primaryMoveId": "44_1",
+      "moves": [
+        {
+          "moveId": "44_1",
+          "name": "Ghost Pull",
+          "jpName": "怨霊",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "44_2",
+          "name": "Spider Web",
+          "jpName": "蜘蛛の糸",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "44_4",
+          "name": "Shadow Stitch",
+          "jpName": "影縫い",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "44_3",
+          "name": "Warp Space",
+          "jpName": "ゆがむ空間",
+          "type": "save",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        }
+      ]
+    },
+    "45": {
+      "primaryMoveId": "45_4",
+      "moves": [
+        {
+          "moveId": "45_4",
+          "name": "Black Magic",
+          "jpName": "呪い",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "45_1",
+          "name": "Shadow Stitch",
+          "jpName": "影縫い",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "45_3",
+          "name": "Hurricane Arrows",
+          "jpName": "ハリケーンアロー",
+          "type": "defense",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "45_2",
+          "name": "Phantom Shot",
+          "jpName": "ファントムシュート",
+          "type": "shot",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        }
+      ]
+    },
+    "46": {
+      "primaryMoveId": "46_1",
+      "moves": [
+        {
+          "moveId": "46_1",
+          "name": "Phantom Shot",
+          "jpName": "ファントムシュート",
+          "type": "shot",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "46_2",
+          "name": "Astro Break",
+          "jpName": "アストロブレイク",
+          "type": "shot",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "46_3",
+          "name": "Will-o'-the-Wisp Shot",
+          "jpName": "マボロシショット",
+          "type": "shot",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "46_4",
+          "name": "Spatial Portal",
+          "jpName": "ディメンションカット",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        }
+      ]
+    },
+    "47": {
+      "primaryMoveId": "47_4",
+      "moves": [
+        {
+          "moveId": "47_4",
+          "name": "Ultra Moon",
+          "jpName": "ウルトラムーン",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "47_2",
+          "name": "Ghost Pull",
+          "jpName": "怨霊",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "47_1",
+          "name": "Phantom Shot",
+          "jpName": "ファントムシュート",
+          "type": "shot",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "47_3",
+          "name": "Twin Boost",
+          "jpName": "ツインブースト",
+          "type": "shot",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        }
+      ]
+    },
+    "48": {
+      "primaryMoveId": "48_4",
+      "moves": [
+        {
+          "moveId": "48_4",
+          "name": "Afterimage",
+          "jpName": "残像",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "48_2",
+          "name": "Ghost Pull",
+          "jpName": "怨霊",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "48_3",
+          "name": "Shadow Stitch",
+          "jpName": "影縫い",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "48_1",
+          "name": "Phantom Shot",
+          "jpName": "ファントムシュート",
+          "type": "shot",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        }
+      ]
+    },
+    "49": {
+      "primaryMoveId": "49_1",
+      "moves": [
+        {
+          "moveId": "49_1",
+          "name": "Warp Space",
+          "jpName": "ゆがむ空間",
+          "type": "save",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "49_4",
+          "name": "Rocket Kobushi",
+          "jpName": "ロケットこぶし",
+          "type": "save",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "49_2",
+          "name": "Sumo Stomp",
+          "jpName": "四股踏み",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "49_3",
+          "name": "Runaway Train",
+          "jpName": "ダッシュトレイン",
+          "type": "defense",
+          "element": "Fire",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        }
+      ]
+    },
+    "50": {
+      "primaryMoveId": "50_1",
+      "moves": [
+        {
+          "moveId": "50_1",
+          "name": "Phantom Shot",
+          "jpName": "ファントムシュート",
+          "type": "shot",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "50_4",
+          "name": "Aikido",
+          "jpName": "合気道",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "50_2",
+          "name": "Spider Web",
+          "jpName": "蜘蛛の糸",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "50_3",
+          "name": "Ghost Pull",
+          "jpName": "怨霊",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        }
+      ]
+    },
+    "51": {
+      "primaryMoveId": "51_2",
+      "moves": [
+        {
+          "moveId": "51_2",
+          "name": "Astro Break",
+          "jpName": "アストロブレイク",
+          "type": "shot",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "51_3",
+          "name": "Kung Fu Header",
+          "jpName": "クンフーヘッド",
+          "type": "shot",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "51_4",
+          "name": "Cosmic Blast",
+          "jpName": "ユニバースブラスト",
+          "type": "shot",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "51_1",
+          "name": "Ghost Pull",
+          "jpName": "怨霊",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        }
+      ]
+    },
+    "52": {
+      "primaryMoveId": "52_2",
+      "moves": [
+        {
+          "moveId": "52_2",
+          "name": "Deceptor Dribble",
+          "jpName": "まぼろしドリブル",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "52_1",
+          "name": "Ghost Pull",
+          "jpName": "怨霊",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "52_3",
+          "name": "Shadow Stitch",
+          "jpName": "影縫い",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "52_4",
+          "name": "Spatial Portal",
+          "jpName": "ディメンションカット",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        }
+      ]
+    },
+    "53": {
+      "primaryMoveId": "53_1",
+      "moves": [
+        {
+          "moveId": "53_1",
+          "name": "Ghost Pull",
+          "jpName": "怨霊",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "53_2",
+          "name": "Spider Web",
+          "jpName": "蜘蛛の糸",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "53_3",
+          "name": "Shadow Stitch",
+          "jpName": "影縫い",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "53_4",
+          "name": "Fake Ball",
+          "jpName": "フェイクボール",
+          "type": "defense",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        }
+      ]
+    },
+    "custom_0002": {
+      "primaryMoveId": "25_1",
+      "moves": [
+        {
+          "moveId": "25_1",
+          "name": "Killer Slide",
+          "jpName": "キラースライド",
+          "type": "defense",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "manual"
+        },
+        {
+          "moveId": "6_10",
+          "name": "Dark Phoenix",
+          "jpName": "ダークフェニックス",
+          "type": "shot",
+          "element": "Forest",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        },
+        {
+          "moveId": "164_5",
+          "name": "Moonsault",
+          "jpName": "ムーンサルト",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 50,
+          "tension": 50,
+          "source": "manual"
+        },
+        {
+          "moveId": "1861_2",
+          "name": "Emperor Penguin No. 2",
+          "jpName": "皇帝ペンギン２号",
+          "type": "shot",
+          "element": "Forest",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        }
+      ]
+    },
+    "custom_0001": {
+      "primaryMoveId": "3666_2",
+      "moves": [
+        {
+          "moveId": "3666_2",
+          "name": "Nocturne",
+          "jpName": "ザ・モンスターズ",
+          "type": "shot",
+          "element": "Wind",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        },
+        {
+          "moveId": "4508_6",
+          "name": "Tornado Barrier",
+          "jpName": "スピニングフェンス",
+          "type": "defense",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        },
+        {
+          "moveId": "9_1",
+          "name": "Cyclone",
+          "jpName": "サイクロン",
+          "type": "defense",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "73_3",
+          "name": "Heaven's Time",
+          "jpName": "ヘブンズタイム",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        }
+      ]
+    }
+  }
+}

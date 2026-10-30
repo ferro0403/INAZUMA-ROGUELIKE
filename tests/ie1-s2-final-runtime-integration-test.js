@@ -86,5 +86,5 @@ assert(seasonSelectionViewSource.includes("displaySeasonNumber"), "season number
 assert(!appSource.includes('seasonId || "1").match(/\\d+/'));
 assert(!appSource.includes("SEASON 1 COMPLETATA")); assert(!appSource.includes("CAMPIONI DELLA SEASON 1"));
 assert.strictEqual((htmlSource.match(/<title>(.*?)<\/title>/) || [])[1], "Inazuma Roguelike");
-assert(cloudSource.includes("core.SECTOR_NAMES.length + 2 + hallDocuments.length")); assert(!cloudSource.includes("restoreReadCount: 8"));
+assert(cloudSource.includes("names.length + 2 + hallDocuments.length")); assert(!cloudSource.includes("restoreReadCount: 8"));
 assert(firestoreRules.includes("'run_ie1_s2'"));

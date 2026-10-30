@@ -1,0 +1,45 @@
+<!doctype html><meta charset="utf-8"><title>RTG synthetic persistence verification</title>
+<script src="/js/persistence-recovery-guard.js"></script>
+<script src="/js/road-to-glory/rtg-persistence-runtime.js"></script>
+<script src="/js/road-to-glory/rtg-storage.js"></script>
+<script src="/js/road-to-glory/rtg-card-identity.js"></script>
+<script src="/js/road-to-glory/rtg-coaches.js"></script>
+<script src="/js/road-to-glory/rtg-state.js"></script>
+<script src="/js/road-to-glory/rtg-cloud-snapshot.js"></script>
+<script src="/js/road-to-glory/rtg-cloud-local-adapter.js"></script>
+<script src="/js/road-to-glory/rtg-cloud-restore-adapter.js"></script>
+<script src="/js/road-to-glory/rtg-album-controller.js"></script>
+<body><script>
+window.testResult=(async()=>{
+ const assert=(value,message)=>{if(!value)throw Error(message)},clone=value=>JSON.parse(JSON.stringify(value));
+ const storage=RoadToGloryStorage.create(),cases=[];
+ let trilogy=RoadToGloryState.createInitial({campaignSeed:'real-idb-trilogy'}),ares=RoadToGloryState.createInitial({campaignSeed:'real-idb-ares',campaignId:'rtg-ares-orion'});
+ trilogy.gacha={pullCount:4,recruitmentPullCount:9};trilogy.coachOwnedIds=['36'];trilogy.squads.ie1={formationId:'local-4-4-2',lineup:[],bench:[],coachId:'36',coachPowerSelection:{coachId:'36',cardIds:[]},activeRoleVariantByCardId:{}};
+ const shared={tokens:900,gachaAcquiredCards:[],developmentByCardId:{},coachOwnedIds:['36']};
+ await storage.write(trilogy,'state');await storage.write(ares,'state:rtg-ares-orion');await storage.write(shared,'shared:account');
+ localStorage.setItem('inazuma.rtg.album.v1',JSON.stringify({version:1,cardIds:['historic']}));
+ const capture=RoadToGloryCloudLocalAdapter.create({storage});assert((await capture.captureStable()).snapshot.campaigns['rtg-ie-trilogy'].gacha.recruitmentPullCount===9,'counter missing');cases.push('real IndexedDB coherent capture + recruitment counter');
+ const before=JSON.stringify(await storage.readMany(['state','shared:account']));
+ try{await storage.updateMany(['state','shared:account'],records=>{records.state.tokens=999;throw Error('synthetic abort')})}catch(e){assert(e.message==='synthetic abort','unexpected abort error')}
+ assert(JSON.stringify(await storage.readMany(['state','shared:account']))===before,'IDB abort changed records');cases.push('real IDB aborted transaction preserves both records');
+ const staleAlbum=RoadToGloryAlbumController.create({localStorage,id:String,cardMeta:ref=>({cardId:String(ref)}),acquiredCardIdSet:()=>new Set(),getCampaign:()=>trilogy});
+ const targetInput={trilogy:clone(trilogy),aresOrion:clone(ares),shared:{...shared,tokens:31,coachOwnedIds:[]},album:{version:1,cardIds:['cloud-only']}};
+ targetInput.trilogy.coachOwnedIds=[];targetInput.aresOrion.coachOwnedIds=[];
+ const frame=document.createElement('iframe');frame.src='/tests/fixtures/rtg-cloud-browser-tab.html';const loaded=new Promise(resolve=>frame.onload=resolve);document.body.append(frame);await loaded;const tab=frame.contentWindow;tab.PersistenceRecoveryGuard.bindUid('synthetic-user');const tabToken=tab.RoadToGloryPersistence.capture();
+ const target=RoadToGloryCloudSnapshot.project(targetInput),adapter=RoadToGloryCloudRestoreAdapter.create({storage}),journal={uid:'synthetic-user',operationId:'real-idb-restore',stage:'rtg'};
+ localStorage.setItem('inazuma.cloud.restoreJournal.synthetic-user',JSON.stringify(journal));PersistenceRecoveryGuard.bindUid('synthetic-user');RoadToGloryPersistence.beginRestore(journal);
+ let quota=true;const set=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(quota&&key==='inazuma.rtg.album.v1')throw new DOMException('synthetic quota','QuotaExceededError');return set.call(this,key,value)};
+ let failed=false;try{await adapter.apply(target,journal)}catch(e){failed=true}assert(failed,'quota failure hidden');assert((await storage.read('shared:account')).tokens===31,'committed IDB lost before Album retry');
+ assert(localStorage.getItem('inazuma.cloud.restoreJournal.synthetic-user'),'journal lost');cases.push('real cross-store Album failure retains durable target and journal');
+ quota=false;Storage.prototype.setItem=set;await adapter.apply(target,journal);assert(await adapter.verify(target,journal),'restore did not verify');
+ assert(JSON.stringify((await storage.read('state')).squads)===JSON.stringify(trilogy.squads),'device squads changed');assert((await storage.read('state')).coachOwnedIds.length===0,'coach resurrected');cases.push('idempotent retry + exact formations + replaced ownership');
+ let crossTabBlocked=false;try{tab.RoadToGloryPersistence.assertWritable()}catch(e){crossTabBlocked=true}assert(crossTabBlocked,'second tab bypassed active restore');cases.push('real second browsing context respects the persistent restore fence');
+ let blocked=false;try{staleAlbum.rememberRtgAlbumCard('stale')}catch(e){blocked=true}assert(blocked,'stale Album writable during restore');
+ RoadToGloryPersistence.completeRestore(journal);localStorage.removeItem('inazuma.cloud.restoreJournal.synthetic-user');PersistenceRecoveryGuard.clearBlocked(journal.operationId);
+ blocked=false;try{staleAlbum.rememberRtgAlbumCard('stale')}catch(e){blocked=e.code==='rtg-stale-runtime'}assert(blocked,'stale Album writable after completed restore');cases.push('stale Album rejected before and after restore');
+ let staleTab=false;try{tab.RoadToGloryPersistence.assertGeneration(tabToken)}catch(e){staleTab=e.code==='rtg-stale-runtime'}assert(staleTab,'second tab stale generation accepted');frame.remove();
+ const nullInput={...targetInput,trilogy:null};const nullTarget=RoadToGloryCloudSnapshot.project(nullInput),j2={...journal,operationId:'null-campaign',stage:'rtg'};localStorage.setItem('inazuma.cloud.restoreJournal.synthetic-user',JSON.stringify(j2));PersistenceRecoveryGuard.bindUid(j2.uid);RoadToGloryPersistence.beginRestore(j2);await adapter.apply(nullTarget,j2);assert(await storage.read('state')===null,'unstarted campaign recreated');assert(JSON.stringify(await storage.read('local:squads:rtg-ie-trilogy'))===JSON.stringify(trilogy.squads),'null campaign lost local squads');cases.push('unstarted cloud campaign preserves device-only squads');
+ RoadToGloryPersistence.completeRestore(j2);localStorage.removeItem('inazuma.cloud.restoreJournal.synthetic-user');PersistenceRecoveryGuard.clearBlocked(j2.operationId);storage.close();
+ return {status:'PASS',cases,userAgent:navigator.userAgent,firebaseAccountsUsed:0};
+})().catch(error=>({status:'FAIL',message:error.message,stack:error.stack}));
+</script>

@@ -42,7 +42,7 @@
         const tools = document.createElement("aside");
         tools.className = "persistence-dev-tools";
         tools.style.cssText = "position:fixed;top:calc(env(safe-area-inset-top, 0px) + 8px);right:calc(env(safe-area-inset-right, 0px) + 8px);z-index:10000;display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:min(300px,calc(100vw - 16px));pointer-events:none";
-        tools.innerHTML = '<button type="button" data-dev-diagnostics-trigger aria-expanded="false" aria-controls="dev-diagnostics-menu" style="pointer-events:auto;min-width:44px;min-height:36px;padding:6px 10px">DEV</button><div id="dev-diagnostics-menu" data-dev-diagnostics-menu hidden style="pointer-events:auto;background:#05080f;border:1px solid #52627a;border-radius:10px;padding:8px;box-shadow:0 10px 28px #000a;max-width:100%"><button type="button" data-persistence-diagnostic>COPIA DIAGNOSTICA SALVATAGGIO</button><button type="button" data-raw-save-diagnostic>COPIA RAW SAVE IE1/IE2</button><button type="button" data-persistence-repair>RIPARA SALVATAGGIO</button><span data-persistence-feedback role="status" aria-live="polite" style="display:block;color:#fff;font:700 11px sans-serif;margin-top:6px"></span></div>';
+        tools.innerHTML = '<button type="button" data-dev-diagnostics-trigger aria-expanded="false" aria-controls="dev-diagnostics-menu" style="pointer-events:auto;min-width:44px;min-height:36px;padding:6px 10px">DEV</button><div id="dev-diagnostics-menu" data-dev-diagnostics-menu hidden style="pointer-events:auto;background:#05080f;border:1px solid #52627a;border-radius:10px;padding:8px;box-shadow:0 10px 28px #000a;max-width:100%"><button type="button" data-persistence-diagnostic>COPIA DIAGNOSTICA SALVATAGGIO</button><button type="button" data-raw-save-diagnostic>COPIA RAW SAVE IE1/IE2</button><button type="button" data-persistence-repair>RIPARA SALVATAGGIO</button><button type="button" data-rtg-cloud-check>VERIFICA CLOUD RTG (SOLO LETTURA)</button><span data-persistence-feedback role="status" aria-live="polite" style="display:block;color:#fff;font:700 11px sans-serif;margin-top:6px"></span></div>';
         const trigger = tools.querySelector("[data-dev-diagnostics-trigger]");
         const menu = tools.querySelector("[data-dev-diagnostics-menu]");
         const setOpen = (open) => { menu.hidden = !open; trigger.setAttribute("aria-expanded", String(open)); };
@@ -54,6 +54,35 @@
         tools.querySelector("[data-persistence-diagnostic]").onclick = async () => { try { await copy(await global.InazumaPersistenceDiagnostics.snapshot()); } finally { setOpen(false); } };
         tools.querySelector("[data-raw-save-diagnostic]").onclick = async () => { try { const copied = await copy(await global.InazumaPersistenceDiagnostics.exportRawLegacySaves(), true); feedback.textContent = copied ? "DIAGNOSTICA RAW COPIATA" : "CLIPBOARD NON DISPONIBILE: JSON SCARICATO"; } finally { setOpen(false); } };
         tools.querySelector("[data-persistence-repair]").onclick = async () => { try { const result = await global.InazumaPersistenceDiagnostics.repair(); await copy(result); alert(repairResultMessage(result)); } finally { setOpen(false); } };
+        tools.querySelector("[data-rtg-cloud-check]").onclick = async (event) => {
+          const button = event.currentTarget;
+          if (button.disabled) return;
+          button.disabled = true;
+          feedback.textContent = "VERIFICA RTG IN CORSO...";
+          let message = "";
+          try {
+            // Read-only validation: no remote calls, no IDB/localStorage writes,
+            // no journal changes and no account conflict resolution.
+            const storage = global.RoadToGloryStorage?.create?.();
+            const adapter = global.RoadToGloryCloudLocalAdapter?.create?.({ storage });
+            if (!adapter?.captureStable) throw Object.assign(new Error("RTG adapter unavailable"), { code: "rtg-cloud-adapter-unavailable" });
+            const result = await adapter.captureStable();
+            if (result.status === "ready") {
+              global.RoadToGloryCloudBridge?.restoreAdapter?.()?.validateTarget(result.snapshot);
+              message = "RTG LOCALE VALIDO. Non verifica permessi remoti e non conferma alcun upload.";
+            } else {
+              message = "RTG CLOUD: " + String(result.reason || result.status || "capture-failed");
+            }
+          } catch (error) {
+            const field = typeof error?.detail === "string" && /^(rtg-ie-trilogy|rtg-ares-orion):[A-Za-z][A-Za-z.]*$/.test(error.detail)
+              ? " - CAMPO " + error.detail : "";
+            message = "RTG CLOUD: " + String(error?.code || "capture-failed") + field;
+          } finally {
+            button.disabled = false;
+          }
+          feedback.textContent = message;
+          global.alert?.(message);
+        };
         document.body.appendChild(tools);
       });
       return true;

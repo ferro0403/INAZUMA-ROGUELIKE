@@ -132,6 +132,33 @@
       function homeEmptyRunMarkup() {
         return `<div class="home-content"><section class="home-hero home-empty-dashboard" aria-label="Home senza run attiva">${homeIdentityMarkup(null)}<article class="home-empty-panel anime-panel"><div class="home-panel-kicker"><span>⚡</span> Nessuna run attiva</div><div class="home-empty-copy"><h1>Scrivi la tua leggenda</h1><p>Una nuova avventura ti aspetta.</p></div><button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="choose-run">Entra nel torneo »</strong></button></article>${homeQuickActionsMarkup()}</section></div>`;
       }
+      function homeRtgHubMarkup() {
+        const shortcuts=[
+          ["squad","♟","Squadra","Formazione e panchina"],
+          ["vending","◉","Distributore","Palline e reclute"],
+          ["album","▤","Album","La tua collezione"],
+          ["shop","▣","Negozio","Progetti evoluzione"],
+          ["development","⚙","Centro di sviluppo","Evolvi i giocatori"]
+        ];
+        return `<div class="home-content home-rtg-content"><section class="home-hero home-rtg-hub" aria-label="Road to Glory">
+          <article class="home-rtg-hero home-rtg-hero--compact anime-panel">
+            <div class="home-rtg-hero-heading"><span class="home-rtg-flash" aria-hidden="true">⚡</span><span>MODALITÀ ROAD TO GLORY</span><span class="home-rtg-hero-tag">2 CAMPAGNE</span></div>
+            <div class="home-rtg-title"><h1>ROAD TO <em>GLORY</em></h1><p>Costruisci la rosa. Conquista ogni Season.</p></div>
+            <button type="button" class="home-main-cta home-rtg-primary home-rtg-primary--compact" data-rtg-home-open="campaigns">
+              <span class="home-rtg-primary-icon" aria-hidden="true">▶</span>
+              <span class="home-rtg-primary-copy"><strong>ENTRA NELLE CAMPAGNE</strong><small>Inazuma 1–2–3 · Ares / Orion</small></span>
+              <span class="home-rtg-primary-arrow" aria-hidden="true">›</span>
+            </button>
+          </article>
+          <section class="home-rtg-shortcuts home-rtg-shortcuts--compact" aria-label="Sezioni Road to Glory">
+            ${shortcuts.map(([target,icon,title,subtitle])=>`<button type="button" class="home-rtg-shortcut home-rtg-shortcut--wide" data-rtg-home-open="${target}"><span aria-hidden="true">${icon}</span><strong>${title}</strong><small>${subtitle}</small><b aria-hidden="true">›</b></button>`).join("")}
+          </section>
+        </section></div>`;
+      }
+      function homePagerMarkup(mainMarkup, initialPage = "main") {
+        const rtgActive = initialPage === "rtg";
+        return `<div class="home-page-switcher" aria-label="Cambia Home"><button type="button" class="home-page-tab${rtgActive ? "" : " active"}" data-home-page-target="main" aria-current="${rtgActive ? "false" : "page"}"><i class="home-page-dot"></i><span>HOME</span></button><button type="button" class="home-page-tab${rtgActive ? " active" : ""}" data-home-page-target="rtg" aria-current="${rtgActive ? "page" : "false"}"><i class="home-page-dot"></i><span>RTG</span><b aria-hidden="true">›</b></button></div><div class="home-swipe-viewport" data-home-swipe-viewport><div class="home-swipe-track" data-home-swipe-track><section class="home-swipe-page home-swipe-page--main" data-home-page="main">${mainMarkup}</section><section class="home-swipe-page home-swipe-page--rtg" data-home-page="rtg">${homeRtgHubMarkup()}</section></div></div>`;
+      }
       return {
         runFormationLabel,
         runHeartsMarkup,
@@ -142,6 +169,8 @@
         homeIdentityMarkup,
         homeActiveRunMarkup,
         homeEmptyRunMarkup,
+        homeRtgHubMarkup,
+        homePagerMarkup,
         homeRunCardMarkup: (run) =>
           run ? homeActiveRunMarkup(run) : homeEmptyRunMarkup(),
       };
