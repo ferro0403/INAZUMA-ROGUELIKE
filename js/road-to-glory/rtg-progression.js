@@ -83,19 +83,79 @@
     return state;
   }
 
-  function rollbackNodeId(state) {
-    const season=cfg(state),wins=new Set(state?.defeatedTeamIds||[]);
-    // Recover an achieved checkpoint even if an old save's numeric index is stale.
-    const achieved=(season.checkpointMainIndexes||[]).filter(i=>
-      Number.isInteger(i)&&i>=0&&wins.has(season.mainTeams[i]));
-    const checkpointIndex=achieved.length?Math.max(...achieved):-1;
-    // Numeric checkpoint metadata may be stale in older saves: the wins are authoritative.
-    state.checkpointMainIndex=checkpointIndex;
+  // Saved campaigns have THREE independent pieces of checkpoint evidence:
+  // the explicit checkpointMainIndex, cleared bosses, and first-clear match IDs.
+  // Older/preview saves can have an incomplete defeatedTeamIds array. Never
+  // erase a genuinely earned numeric checkpoint because that array is missing.
+  // Conversely, DEV pool unlocks can contain future bosses: do not rewind
+  // forward to a checkpoint that the campaign has not reached.
+  function earnedCheckpointIndex(state) {
+    const season=cfg(state),list=nodes(state);
+    const current=indexForNodeId(state?.currentNodeId,state);
+    if(current<0||!list.length)return -1;
+    const furthest=Number(state?.furthestNodeIndex);
+    const reached=Math.max(current,Number.isSafeInteger(furthest)?Math.min(list.length-1,Math.max(0,furthest)):0);
+    const saved=Number(state?.checkpointMainIndex);
+    const wins=new Set((state?.defeatedTeamIds||[]).map(String));
+    const firstClear=new Set();
+    for(const raw of state?.firstClearMatchIds||[]) {
+      const match=String(raw).match(/^rtg:main:(.+):([1-9][0-9]*)$/);
+      if(match)firstClear.add(match[1]);
+    }
+    const attempts=state?.attemptsByNode||{};
+    let achieved=-1;
+    for(const index of season.checkpointMainIndexes||[]) {
+      if(!Number.isInteger(index)||index<0||index>=season.mainTeams.length)continue;
+      const teamId=season.mainTeams[index];
+      const routeIndex=list.findIndex(node=>node.id===`main:${teamId}`);
+      if(routeIndex<0)continue;
+      const provenByMatch=firstClear.has(teamId);
+      const reachedPastCheckpoint=routeIndex<reached;
+      // Numeric metadata is a useful independent record, but must not be
+      // accepted alone in a save without ANY evidence of prior victories.
+      // This rejects the old phantom-checkpoint/future-unlock scenario.
+      const earlierMainWin=season.mainTeams.slice(0,index)
+        .some(team=>wins.has(team)||firstClear.has(team));
+      const earlierSecondaryClear=Object.entries(attempts).some(([id,entry])=>
+        Number(entry?.clears)>0&&list.findIndex(node=>node.id===id&&node.type==="secondary")<routeIndex&&
+        list.some(node=>node.id===id&&node.type==="secondary"));
+      const credibleSaved=saved===index&&(earlierMainWin||earlierSecondaryClear);
+      if(provenByMatch||(reachedPastCheckpoint&&(wins.has(teamId)||credibleSaved)))
+        achieved=Math.max(achieved,index);
+    }
+    return achieved;
+  }
+
+  function checkpointResumeNodeId(state,checkpointIndex) {
+    const season=cfg(state);
     if(checkpointIndex<0)return `main:${season.mainTeams[0]}`;
-    const checkpointTeam = season.mainTeams[checkpointIndex];
-    const checkpointNodeIndex = indexForNodeId(`main:${checkpointTeam}`, state);
-    const list = nodes(state);
-    return list[checkpointNodeIndex + 1]?.id || `main:${checkpointTeam}`;
+    const teamId=season.mainTeams[checkpointIndex];
+    const index=indexForNodeId(`main:${teamId}`,state);
+    return nodes(state)[index+1]?.id || `main:${teamId}`;
+  }
+
+  function rollbackNodeId(state) {
+    const checkpointIndex=earnedCheckpointIndex(state);
+    state.checkpointMainIndex=checkpointIndex;
+    return checkpointResumeNodeId(state,checkpointIndex);
+  }
+
+  // Repair only a save that is visibly BEHIND an evidenced checkpoint.
+  // No change to a healthy save, an active match, or a completed Season.
+  // The caller persists the repaired state in one canonical RTG transaction.
+  function repairCheckpointPosition(inputState) {
+    if(!inputState||inputState.activeMatch||inputState.seasonComplete===true)return inputState;
+    const checkpointIndex=earnedCheckpointIndex(inputState);
+    if(checkpointIndex<0)return inputState;
+    const resumeId=checkpointResumeNodeId(inputState,checkpointIndex);
+    const current=indexForNodeId(inputState.currentNodeId,inputState);
+    const resume=indexForNodeId(resumeId,inputState);
+    if(current<0||resume<0||current>=resume)return inputState;
+    const state=cloneState(inputState);
+    state.currentNodeId=resumeId;
+    state.checkpointMainIndex=checkpointIndex;
+    state.lives=cfg(state).livesPerCheckpoint;
+    return state;
   }
 
   function recordMainLoss(inputState, { nodeId } = {}) {
@@ -156,5 +216,6 @@
     recordMainVictory,
     recordMainLoss,
     recordSecondaryResult,
+    repairCheckpointPosition,
   });
 })(globalThis);

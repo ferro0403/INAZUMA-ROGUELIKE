@@ -7,7 +7,11 @@ assert.match(view,/home-swipe-viewport/);
 assert.match(view,/data-home-page="main"/);
 assert.match(view,/data-home-page="rtg"/);
 assert.match(view,/home-rtg-hub/);
-for(const target of["campaigns","squad","vending","album","shop","development"]) assert.match(view,new RegExp(`data-rtg-home-open="${target}"`));
+assert.match(view,/data-rtg-home-open="campaigns"/);
+const shortcutData=view.match(/const shortcuts=\[([\s\S]*?)\];/)?.[1]||"";
+for(const target of ["squad","vending","album","shop","development"])
+  assert.ok(shortcutData.includes('["'+target+'",'),"Missing RTG shortcut "+target);
+assert.match(view,/data-rtg-home-open="\$\{target\}"/);
 assert.doesNotMatch(view,/data-rtg-home-open="catalog"/);
 assert.match(controller,/activateHomePage/);
 assert.match(controller,/touchstart/);

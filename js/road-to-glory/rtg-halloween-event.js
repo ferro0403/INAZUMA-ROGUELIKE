@@ -465,7 +465,19 @@
         '<div class="halloween-vending-teaser-copy"><span class="eyebrow">CAPSULE HALLOWEEN</span>'+
         '<h2>DISTRIBUTORE STREGATO</h2><p>1 capsula · '+PRICE+' zucche</p></div>'+
         '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>APRI DISTRIBUTORE →</button>'+
-        '</section>';
+        '</section>'+opponentPreviewSection();
+    }
+    function opponentPreviewSection() {
+      // Reuse the native prematch pitch and cards as a read-only projection.
+      // No opponent regeneration, match mutations or new persistence keys.
+      const formation=opponent();
+      const pitch=deps.matchView?.formationPitchMarkup?.(formation,"opponent","prematch");
+      if(!pitch)return "";
+      return '<section class="halloween-opponent-preview halloween-native-match" aria-label="Formazione Occult Halloween">'+
+        '<header class="halloween-opponent-preview-head"><div><span class="eyebrow">SCOPRI GLI AVVERSARI</span><h2>FORMAZIONE OCCULT HALLOWEEN</h2></div>'+
+        '<div class="halloween-opponent-preview-stats"><span>'+escape(formation.formationId)+'</span><strong>OVR '+escape(opponentOverall())+'</strong></div></header>'+
+        '<div class="halloween-opponent-preview-field rtg-prematch-shell development-squad-card-scope">'+pitch+'</div>'+
+        '<p class="halloween-opponent-preview-note">11 titolari · Stesse carte e posizioni del preview partita</p></section>';
     }
     function squadSection() {
       const view=deps.squadView;
@@ -1002,6 +1014,17 @@
         const target=el.dataset.halloweenTab || el.dataset.rtgTab;
         if(target==="squad"||target==="run"||target==="match"){view=target==="squad"?"squad":"match";render();}
       }));
+      // Read-only opponent XI: use the album's real card detail, including
+      // locked Halloween players. Never send a preview tap to startMatch.
+      app.querySelector?.(".halloween-opponent-preview-field")?.addEventListener("click",event=>{
+        const target=event.target?.closest?.("[data-rtg-prematch-player]");
+        if(!target||!event.currentTarget.contains(target))return;
+        const rawId=asId(target.dataset.rtgPrematchPlayer);
+        const pid=rawId.startsWith(EVENT_ID+"::")?rawId.slice(EVENT_ID.length+2):rawId;
+        if(!assets?.setup?.startingXI?.some(id=>asId(id)===pid))return;
+        event.preventDefault?.();
+        openNativeDetail(EVENT_ID+"::"+pid,isOwned(pid),true);
+      });
       app.querySelector?.("[data-halloween-open-vending]")?.addEventListener("click",()=>{view="vending";render();});
        app.querySelector?.("[data-halloween-close-vending]")?.addEventListener("click",()=>{view="match";render();});
       app.querySelectorAll?.("[data-halloween-start]")?.forEach(el=>el.addEventListener("click",()=>perform(startMatch)));

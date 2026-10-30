@@ -9,12 +9,12 @@ assert.match(view,/home-swipe-page--rtg/);
 assert.match(view,/data-rtg-home-open="campaigns"/);
 const rtgController=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
 assert.match(rtgController,/options\?\.destination==="campaigns"\)return renderCampaignSelect\(\)/);
-assert.match(view,/data-rtg-home-open="squad"/);
+// Shortcuts are data-driven: validate the actual list and template binding.
+const declaredShortcuts=view.match(/const shortcuts=\[([\s\S]*?)\];/)?.[1]||"";
+for(const target of ["squad","vending","album","shop","development"])
+  assert.ok(declaredShortcuts.includes('["'+target+'",'),"Missing RTG home shortcut: "+target);
+assert.match(view,/data-rtg-home-open="\$\{target\}"/);
 assert.doesNotMatch(view,/data-rtg-home-open="catalog"/);
-assert.match(view,/data-rtg-home-open="vending"/);
-assert.match(view,/data-rtg-home-open="album"/);
-assert.match(view,/data-rtg-home-open="shop"/);
-assert.match(view,/data-rtg-home-open="development"/);
 assert.match(controller,/bindHomePager/);
 assert.match(controller,/deps\.renderRoadToGlory\(\{ destination:/);
 assert.doesNotMatch(view,/id:\s*"open-rtg-home"/);

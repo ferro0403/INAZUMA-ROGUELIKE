@@ -1041,7 +1041,7 @@
       if((campaign?.gachaAcquiredCards||[]).some(card=>id(card?.cardId).startsWith("halloween2026::"))){
         await global.RoadToGloryHalloween?.prepare?.();checkOpen();
       }
-      progression?.setSeasonContext?.(campaign);
+      progression?.setSeasonContext?.(campaign);if(typeof progression?.repairCheckpointPosition==="function"&&progression.repairCheckpointPosition(campaign)!==campaign){campaign=await repository.update("rtg-recover-earned-checkpoint",current=>progression.repairCheckpointPosition(current));checkOpen();}
       if(activeSeasonId()==="ie2"){
         try{await ensureAresRouteMap();}
         catch(error){global.console?.error?.("[RTG] Impossibile caricare lo sfondo Ares",error);}

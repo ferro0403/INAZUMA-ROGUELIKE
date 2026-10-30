@@ -133,7 +133,27 @@
         return `<div class="home-content"><section class="home-hero home-empty-dashboard" aria-label="Home senza run attiva">${homeIdentityMarkup(null)}<article class="home-empty-panel anime-panel"><div class="home-panel-kicker"><span>⚡</span> Nessuna run attiva</div><div class="home-empty-copy"><h1>Scrivi la tua leggenda</h1><p>Una nuova avventura ti aspetta.</p></div><button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="choose-run">Entra nel torneo »</strong></button></article>${homeQuickActionsMarkup()}</section></div>`;
       }
       function homeRtgHubMarkup() {
-        return `<div class="home-content home-rtg-content"><section class="home-hero home-rtg-hub" aria-label="Road to Glory"><article class="home-rtg-hero anime-panel"><div class="home-panel-kicker"><span>⚡</span> Road to Glory</div><div class="home-rtg-title"><small>SEASON 1</small><h1>Road to Glory</h1><p>La tua rosa. Il tuo percorso. Una modalità tutta sua.</p></div><button type="button" class="home-main-cta home-rtg-primary" data-rtg-home-open="campaigns"><span aria-hidden="true">⚡</span><strong>Apri Road to Glory »</strong></button></article><section class="home-rtg-shortcuts" style="width:100%;max-width:none;grid-template-columns:minmax(0,1fr);justify-self:stretch;" aria-label="Sezioni Road to Glory"><button type="button" class="home-rtg-shortcut home-rtg-shortcut--wide" style="width:100%;max-width:none;grid-column:1/-1;justify-self:stretch;" data-rtg-home-open="squad"><span>♟</span><strong>Squadra</strong><small>Formazione e panchina</small><b>»</b></button><button type="button" class="home-rtg-shortcut home-rtg-shortcut--wide" style="width:100%;max-width:none;grid-column:1/-1;justify-self:stretch;" data-rtg-home-open="vending"><span>◉</span><strong>Distributore</strong><small>Palline Season 1</small><b>»</b></button><button type="button" class="home-rtg-shortcut home-rtg-shortcut--wide" style="width:100%;max-width:none;grid-column:1/-1;justify-self:stretch;" data-rtg-home-open="album"><span>▤</span><strong>Album</strong><small>Collezione Road to Glory</small><b>»</b></button><button type="button" class="home-rtg-shortcut home-rtg-shortcut--wide" style="width:100%;max-width:none;grid-column:1/-1;justify-self:stretch;" data-rtg-home-open="shop"><span>▣</span><strong>Negozio</strong><small>Progetti per le evoluzioni RTG</small><b>»</b></button><button type="button" class="home-rtg-shortcut home-rtg-shortcut--wide" style="width:100%;max-width:none;grid-column:1/-1;justify-self:stretch;" data-rtg-home-open="development"><span>⚙</span><strong>Centro di sviluppo</strong><small>Evolvi le carte Road to Glory</small><b>»</b></button></section></section></div>`;
+        const shortcuts=[
+          ["squad","♟","Squadra","Formazione e panchina"],
+          ["vending","◉","Distributore","Palline e reclute"],
+          ["album","▤","Album","La tua collezione"],
+          ["shop","▣","Negozio","Progetti evoluzione"],
+          ["development","⚙","Centro di sviluppo","Evolvi i giocatori"]
+        ];
+        return `<div class="home-content home-rtg-content"><section class="home-hero home-rtg-hub" aria-label="Road to Glory">
+          <article class="home-rtg-hero home-rtg-hero--compact anime-panel">
+            <div class="home-rtg-hero-heading"><span class="home-rtg-flash" aria-hidden="true">⚡</span><span>MODALITÀ ROAD TO GLORY</span><span class="home-rtg-hero-tag">2 CAMPAGNE</span></div>
+            <div class="home-rtg-title"><h1>ROAD TO <em>GLORY</em></h1><p>Costruisci la rosa. Conquista ogni Season.</p></div>
+            <button type="button" class="home-main-cta home-rtg-primary home-rtg-primary--compact" data-rtg-home-open="campaigns">
+              <span class="home-rtg-primary-icon" aria-hidden="true">▶</span>
+              <span class="home-rtg-primary-copy"><strong>ENTRA NELLE CAMPAGNE</strong><small>Inazuma 1–2–3 · Ares / Orion</small></span>
+              <span class="home-rtg-primary-arrow" aria-hidden="true">›</span>
+            </button>
+          </article>
+          <section class="home-rtg-shortcuts home-rtg-shortcuts--compact" aria-label="Sezioni Road to Glory">
+            ${shortcuts.map(([target,icon,title,subtitle])=>`<button type="button" class="home-rtg-shortcut home-rtg-shortcut--wide" data-rtg-home-open="${target}"><span aria-hidden="true">${icon}</span><strong>${title}</strong><small>${subtitle}</small><b aria-hidden="true">›</b></button>`).join("")}
+          </section>
+        </section></div>`;
       }
       function homePagerMarkup(mainMarkup, initialPage = "main") {
         const rtgActive = initialPage === "rtg";
