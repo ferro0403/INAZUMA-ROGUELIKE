@@ -30,6 +30,39 @@
     min-height: calc(100dvh - var(--ios-pwa-top-clearance));
   }
 
+  /* Make the tiny exposed strip below the native iOS status bar seamless.
+     Only paint the reserved top gutter; never replace a game background. */
+  html.ios-pwa-safe-top body::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: var(--ios-pwa-top-clearance);
+    background-color: #d7e0d3;
+    pointer-events: none;
+  }
+
+  /* Most views already have their own iOS safe-area top padding.
+     The body's common clearance replaces it; don't apply both. */
+  html.ios-pwa-safe-top .development-screen {
+    padding-top: 12px;
+  }
+  html.ios-pwa-safe-top .album-screen {
+    padding-top: 14px;
+  }
+  html.ios-pwa-safe-top .shop-screen,
+  html.ios-pwa-safe-top .settings-screen {
+    padding-top: 10px;
+  }
+
+  /* The match and prematch headers are full-height hero scoreboards.
+     When sticky they cover the possession strip / preview as the page
+     scrolls. Let these two large headers remain in normal document flow. */
+  html.ios-pwa-safe-top .rtg-match-shell > .rtg-match-scoreboard,
+  html.ios-pwa-safe-top .rtg-prematch-shell > .rtg-prematch-topbar {
+    position: relative;
+    top: auto;
+  }
+
   /* RTG run tabs already have their own sticky position beneath a topbar. */
   html.ios-pwa-safe-top .rtg-tabs--main-style {
     top: calc(64px + var(--ios-pwa-top-clearance));
