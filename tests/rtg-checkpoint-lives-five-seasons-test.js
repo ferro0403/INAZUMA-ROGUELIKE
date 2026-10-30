@@ -129,3 +129,28 @@ for (const sid of C.SEASON_IDS) {
     assert.equal(exhausted.currentNodeId, completed.currentNodeId);
   });
 }
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-route-view.js","utf8"), ctx, {
+  filename:"js/road-to-glory/rtg-route-view.js"
+});
+const view = ctx.RoadToGloryRouteView.create({
+  escapeHtml: String, teamEmblemMarkup: () => "<span>LOGO</span>",
+  seasonNumber: sid => C.season(sid).seasonNumber,
+  header: () => "", tabs: () => "",
+});
+for (const sid of C.SEASON_IDS) {
+  test(sid + ": rollback map locks previously cleared FUTURE matches, keeps earlier nodes complete", () => {
+    const cfg = C.season(sid), list = C.buildSeasonNodes(sid);
+    const checkpointIndex = list.findIndex(n => n.id === "main:" + cfg.mainTeams[2]);
+    const resumeNode = list[checkpointIndex + 1].id;
+    const futureMain = "main:" + cfg.mainTeams[4];
+    const previouslyClearSecondary = list.find(n => n.type === "secondary" && list.indexOf(n) > checkpointIndex);
+    const s = {...fresh(sid),currentNodeId:resumeNode,lives:2,checkpointMainIndex:2,
+      defeatedTeamIds:cfg.mainTeams.slice(0,5),
+      attemptsByNode:{[previouslyClearSecondary.id]:{clears:1,lastResult:"victory"}}};
+    const html = view.runMarkup({state:s,nodes:list,seasonConfig:cfg,seasonDb:{teams:[],bossOrder:[]}});
+    assert(html.includes('data-rtg-node-id="' + resumeNode + '" data-rtg-state="reachable"'));
+    assert(html.includes('data-rtg-node-id="' + futureMain + '" data-rtg-state="locked"'));
+    assert(html.includes('data-rtg-node-id="' + list[0].id + '" data-rtg-state="completed"'));
+    assert(html.includes('data-rtg-node-id="' + previouslyClearSecondary.id + '" data-rtg-state="locked"'));
+  });
+}
