@@ -705,7 +705,7 @@
         if(match.presentation?.preMatchPowerStatus==="pending")openPreMatchPower();
         return match;
       }
-      renderHtml(matchView.matchMarkup(match),{preserveMatchTimeline:true});
+      // A fresh live-match view must start at the scoreboard. Follow the latest\n      // action only on subsequent repaints of the *same* visible match screen.\n      const alreadyInLiveMatch=Boolean(app?.querySelector?.(".rtg-match-shell"));\n      renderHtml(matchView.matchMarkup(match),{preserveMatchTimeline:alreadyInLiveMatch});
       const minute=matchView.currentMinute?.(match)??0;
       matchView.animateClock?.(app,displayedMinute,minute);
       displayedMinute=minute;
