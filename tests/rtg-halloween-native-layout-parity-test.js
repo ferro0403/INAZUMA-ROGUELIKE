@@ -75,7 +75,7 @@ assert.doesNotMatch(matchView.duelVisualMarkup(samford,"opponent"),/halloween-va
 assert.doesNotMatch(matchView.duelVisualMarkup(normal,"user"),/halloween-vampiro/);
 assert.equal((fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8").match(/class="rtg-duel-render\$\{shawnFwClass\}\$\{halloweenClass\}"/g)||[]).length,2,"Both original duel renderers must apply the tagged filter");
 const htmlShell=fs.readFileSync("index.html","utf8");
-assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261029-owned-coaches-v20/,
+assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261030-coach-effects-v21/,
   "iOS cache must not serve the older pre-fix Halloween controller");
 const eventSource=fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8");
 assert.match(eventSource,/function tacticalLineupModel\(model\)/,
@@ -124,8 +124,9 @@ assert.match(eventSource,/frontFullbodyUrl:raw\.frontFullbodyUrl \|\| EVENT_FULL
   "Halloween player resolver must prefer the player-specific fullbody URL");
 const halloweenCss=fs.readFileSync("css/rtg-halloween-event.css","utf8");
 const coachesCss=fs.readFileSync("css/rtg-coaches.css","utf8");
-assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261029-capsule-consistency-v13"));
-assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-runtime.js?v=20261029-owned-moves-v3"));
+assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261030-coach-snapshot-v14"));
+assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-runtime.js?v=20261030-yi-snapshot-v4"));
+assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-prematch.js?v=20261030-halloween-opponent-moves-v2"));
 assert.doesNotMatch(eventSource,/rtg-coach-cap-note/,
   "Hekyll helper below OVR max must be removed, not just hidden");
 assert.match(eventSource,/data-halloween-prize-color/,
