@@ -9,6 +9,7 @@ for(let i=0;i<3;i++){s.currentNodeId="main:"+teams[i];s=P.recordMainVictory(s,{t
 assert.strictEqual(s.checkpointMainIndex,2);
 assert.strictEqual(s.lives,2);
 s.currentNodeId="main:"+teams[3];s=P.recordMainLoss(s,{nodeId:s.currentNodeId});assert.strictEqual(s.lives,1);
+assert.strictEqual(s.currentNodeId,"secondary:"+teams[2]+":"+teams[3]+":1");
 s=P.recordMainLoss(s,{nodeId:s.currentNodeId});assert.strictEqual(s.lives,2);
 assert.strictEqual(s.currentNodeId,"secondary:"+teams[2]+":"+teams[3]+":1");
 for(let i=3;i<6;i++){s.currentNodeId="main:"+teams[i];s=P.recordMainVictory(s,{teamId:teams[i],matchId:"m"+i});}
