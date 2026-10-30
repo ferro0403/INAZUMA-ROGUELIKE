@@ -71,7 +71,8 @@
 
 
 .rtg-halloween-album-collection{border-color:#ff8b16!important;background:#201019!important}
-.rtg-halloween-album-collection .album-collection-title{color:#ffaa30}
+.rtg-halloween-album-collection .album-collection-title{color:#fffdf6!important;text-shadow:0 2px 9px #0a090ce6}
+.rtg-halloween-album-collection .rtg-halloween-album-count{justify-content:flex-end}
 .halloween-vending-classic{width:min(100%,480px);margin:10px auto!important;padding:0!important;background:none!important}
 .halloween-vending-classic .rtg-vending-stage{margin:auto!important}
 .halloween-vending-classic .rtg-vending-machine-v9{filter:drop-shadow(0 9px 20px #07060c)}
