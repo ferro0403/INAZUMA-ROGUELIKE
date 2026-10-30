@@ -8821,4 +8821,3 @@ body:has(#modal-root.has-open-modal) .run-dev-quick-tools {
   #clean-home .home-rtg-shortcuts--compact{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
   #clean-home .home-rtg-shortcuts--compact .home-rtg-shortcut:last-child{grid-column:1/-1!important;}
 }
-
