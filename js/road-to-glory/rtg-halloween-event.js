@@ -377,14 +377,14 @@
           label:labels[k],before:Number(player.stats?.[k]||0),
           after:Number(upgraded.stats?.[k]||0)
         })).filter(item=>item.after>item.before);
-        return {coachId,original:player,player:upgraded,stats,
+        return {coachId,original:player,player:upgraded,stats,costs:{},moveElements:{},
           pt:global.RtgFourMovesRuntime?.ptBreakdown?.(upgraded.stats,nextRarity)||null,
           note:"POTENZIALE RISVEGLIATO · "+rules.rarityOf(player)+" → "+
             nextRarity+" · OVR "+Number(player.overall)+" → "+Number(upgraded.overall)+
             " in partita. Nessun cambiamento permanente; requisiti invariati."};
       }
       if(coachId===HALLOWEEN_COACH_ID){
-        return {coachId,original:player,player,stats:[],
+        return {coachId,original:player,player,stats:[],costs:{},moveElements:{},
           note:"MASCHERA MALEDETTA · questo giocatore conta 15 OVR in meno "+
             "soltanto per i requisiti dell'evento. Statistiche e partita invariati."};
       }
