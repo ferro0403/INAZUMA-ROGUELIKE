@@ -155,12 +155,9 @@ assert.ok(coachesCss.includes("#modal-root .rtg-coach-player-preview p"),
 assert.ok(coachesCss.includes("color:#24181a!important"),
   "Dark ink must contrast against the light parchment coach preview");
 assert.ok(coachesCss.includes(".rtg-coach-album-collection .album-collection-title{color:#fffdf6!important"),
-   "Coach artwork must have a readable white title");
- assert.match(coachesCss,/\.album-collections-screen \.rtg-coach-album-collection \.album-collection-cover img\s*\{\s*object-fit:contain!important;/,
-   "Coach album cover must show the full image, without default object-fit:cover cropping");
- // Original assertion follows, keep the remaining cover requirements unchanged.
- assert.ok(coachesCss.includes(".rtg-coach-album-collection .album-collection-title{color:#fffdf6!important"),
   "Coach artwork must have a readable white title");
+assert.match(coachesCss,/\.album-collections-screen \.rtg-coach-album-collection \.album-collection-cover img\s*\{\s*object-fit:contain!important;/,
+  "Coach album cover must show the full image, without default object-fit:cover cropping");
 assert.ok(halloweenCss.includes(".rtg-halloween-album-collection .album-collection-title{color:#fffdf6!important"),
   "Event title must be white over the artwork");
 
