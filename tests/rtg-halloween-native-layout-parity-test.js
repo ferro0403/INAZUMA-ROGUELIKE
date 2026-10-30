@@ -161,7 +161,7 @@ assert.match(coachesCss,/\.album-collections-screen \.rtg-coach-album-collection
 assert.ok(halloweenCss.includes(".rtg-halloween-album-collection .album-collection-title{color:#fffdf6!important"),
   "Event title must be white over the artwork");
 
-assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261030-album-event-white-v16"));
+assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261030-native-XI-owner-v17"));
 assert.doesNotMatch(eventSource,/coachMatchStatus\(|halloween-coach-match-status/,
   "Never insert coach banners above native Halloween matches");
 assert.doesNotMatch(halloweenCss,/halloween-coach-match-status/,
