@@ -28,5 +28,12 @@ for(const [role,required] of Object.entries(formation.requirements)){assert.stri
 const next=c.RoadToGloryOpponentGenerator.generate({...input,attemptNumber:2});
 assert.notDeepStrictEqual(Array.from(next.playerIds),Array.from(a.playerIds));
 const late=c.RoadToGloryOpponentGenerator.generate({...input,seed:"late-seed",attemptNumber:1,targetMin:83,targetMax:86});assert(late.teamPower>=83&&late.teamPower<=86);
-assert.throws(()=>c.RoadToGloryOpponentGenerator.generate({...input,targetMin:99,targetMax:99}),e=>e.code==="rtg-secondary-opponent-band-unavailable");
+const unreachable={...input,targetMin:99,targetMax:99};
+const fallback=c.RoadToGloryOpponentGenerator.generate(unreachable);
+const fallbackAgain=c.RoadToGloryOpponentGenerator.generate(unreachable);
+assert.strictEqual(fallback.playerIds.length,11);
+assert.strictEqual(new Set(fallback.playerIds).size,11);
+assert(fallback.teamPower<99,"Unreachable band should select the closest real Free Agents, not invent power");
+assert.deepStrictEqual(JSON.parse(JSON.stringify(fallback)),JSON.parse(JSON.stringify(fallbackAgain)));
+assert.throws(()=>c.RoadToGloryOpponentGenerator.generate({...input,formations:[]}),e=>e.code==="rtg-secondary-formation-unavailable");
 console.log("rtg-opponent-generator-test: PASS");
