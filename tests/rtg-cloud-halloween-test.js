@@ -918,7 +918,9 @@ async function main() {
   // not only programmatically manufactured selections. Catch regressions where
   // the popup opens but tapping cards/CONFERMA produces no persisted effect.
   function fakeCoachModal(){
-    const modal={html:"",classList:{remove(){}},clickables:new Map()};
+    const modal={_html:"",classList:{remove(){}},clickables:new Map()};
+    Object.defineProperty(modal,"html",{get(){return modal._html;},
+      set(value){modal._html=value;modal.clickables.clear();}});
     function button(key,disabled=false){
       const el={dataset:key,disabled,click:null,addEventListener(kind,fn){
         if(kind==="click")this.click=fn;
@@ -927,27 +929,33 @@ async function main() {
       return el;
     }
     modal.querySelectorAll=selector=>{
+      if(modal.clickables.has(selector))return modal.clickables.get(selector);
+      let entries=[];
       if(selector===".rtg-coach-field-picker [data-rtg-squad-player]"){
-        return [...modal.html.matchAll(/data-rtg-squad-player="([^"]+)"/g)]
+        entries=[...modal.html.matchAll(/data-rtg-squad-player="([^"]+)"/g)]
           .map(match=>button({rtgSquadPlayer:match[1]}));
-      }
-      if(selector==="[data-rtg-coach-power-element]"){
-        return [...modal.html.matchAll(/data-rtg-coach-power-element="([^"]+)" data-rtg-coach-power-target="([^"]+)"/g)]
+      }else if(selector==="[data-rtg-coach-power-element]"){
+        entries=[...modal.html.matchAll(/data-rtg-coach-power-element="([^"]+)" data-rtg-coach-power-target="([^"]+)"/g)]
           .map(match=>button({rtgCoachPowerElement:match[1],rtgCoachPowerTarget:match[2]}));
       }
-      return [];
+      modal.clickables.set(selector,entries);
+      return entries;
     };
     modal.querySelector=selector=>{
       if(selector===".rtg-coach-power-config")
         return modal.html.includes('class="rtg-coach-power-config ')
           ?{set outerHTML(value){modal.html=value;}}:null;
       if(selector===".modal")return {scrollTop:0,isConnected:true};
-      if(selector==="[data-rtg-coach-power-save]"){
-        const found=modal.html.match(/<button[^>]*data-rtg-coach-power-save( disabled)?/);
-        return found?button({},Boolean(found[1])):null;
+      if(selector==="[data-rtg-coach-power-save]"||
+         selector==="[data-rtg-coach-power-clear]"||selector==="[data-rtg-coach-power-cancel]"){
+        if(modal.clickables.has(selector))return modal.clickables.get(selector);
+        const found=selector==="[data-rtg-coach-power-save]"
+          ?modal.html.match(/<button[^>]*data-rtg-coach-power-save( disabled)?/):
+          modal.html.includes(selector.slice(1,-1))?[true]:null;
+        const el=found?button({},Boolean(found[1]===undefined?false:found[1])):null;
+        modal.clickables.set(selector,el);
+        return el;
       }
-      if(selector==="[data-rtg-coach-power-clear]"||selector==="[data-rtg-coach-power-cancel]")
-        return button({});
       return null;
     };
     return modal;
@@ -970,7 +978,10 @@ async function main() {
     assert.ok(configure,"The coach power button must exist in Halloween Squadra");
     await configure.fire();
     let cards=root.querySelectorAll(".rtg-coach-field-picker [data-rtg-squad-player]");
-    assert.equal(cards.length,11,"All 11 Halloween starters must be selectable in the actual coach modal");
+    assert.equal(cards.length,15,
+      "The coach modal shows 11 starters plus 4 reserves");
+    assert.equal(cards.filter(card=>!card.disabled).length,11,
+      "Hillman and Yi must allow exactly the 11 starters, not the bench");
     for(const id of eventIds){
       const item=cards.find(card=>card.dataset.rtgSquadPlayer===id);
       assert.ok(item,"Owned event starter must be present in coach picker");
