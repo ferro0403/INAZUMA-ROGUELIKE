@@ -100,7 +100,15 @@ test("Halloween XI: EXACT original prematch cards, HW badges and Album detail ro
   assert.equal(new Set(ids).size,11);
   assert.deepEqual(ids,Array.from(lineup.startingXI,id=>"halloween2026::"+id),
     "The real lineup IDs must survive into Album card click data");
-  assert.match(event,/halloween-opponent-preview-field rtg-prematch-shell/);
+  // Share the actual prematch renderer AND its CSS ancestor. Without this
+  // context, iOS does not display the original FW/OVR + rarity corner rules.
+  const actualPrematchSource=read("js/road-to-glory/rtg-match-view.js");
+  const canonicalCSS=read("css/game.css");
+  assert(actualPrematchSource.includes("boss-match-screen rtg-prematch-shell rtg-prematch-revolution development-squad-card-scope"));
+  assert(event.includes("halloween-opponent-preview-field rtg-prematch-shell development-squad-card-scope"));
+  assert(canonicalCSS.includes(":is(.squad-screen, .development-squad-card-scope) .squad-player-card .player-role, :is(.squad-screen, .development-squad-card-scope) .squad-player-card .player-overall {"));
+  assert(canonicalCSS.includes(":is(.squad-screen, .development-squad-card-scope) .squad-player-card::before"));
+  assert(!event.includes("nativeMatchCards:true"), "No substitute renderer: use the prematch original");
   assert.match(event,/const pitch=deps\.matchView\?\.formationPitchMarkup\?\.\(formation,"opponent","prematch"\)/);
   assert.match(event,/rawId\.startsWith\(EVENT_ID\+"::"\)\?rawId\.slice\(EVENT_ID\.length\+2\):rawId/);
   assert.match(event,/openNativeDetail\(EVENT_ID\+"::"\+pid,isOwned\(pid\),true\)/,
