@@ -62,10 +62,18 @@ test("Event Halloween opponent preview reuses the real native tactical pitch, 11
   const squadView=ctx.RoadToGlorySquadView.create({
     escapeHtml:String,compactPlayerCardMarkup:compact,playerResolver:{resolveAtLevel20:()=>null}
   });
+  let squadRendererCalls=0,nativeCardCalls=0;
   const matchView=ctx.RoadToGloryMatchView.create({
     escapeHtml:String,compactPlayerCardMarkup:compact,
     teamEmblemMarkup:()=>"",
-    squadPitchMarkup:(squad,options)=>squadView.matchPitchMarkup(squad,options)
+    squadPitchMarkup:(squad,options)=>{
+      squadRendererCalls++;
+      return squadView.matchPitchMarkup(squad,options);
+    },
+    matchFormationCardMarkup:(player)=>{
+      nativeCardCalls++;
+      return `<button type="button" class="player-card boss-match-card"><span class="player-role">${player.position}</span><span class="player-overall">${player.overall}</span><strong>${player.name}</strong><span class="rtg-legacy-badge">HW</span></button>`;
+    },
   });
   const formation={
     name:"Occult Halloween",formationId:"4-4-2",seasonId:"halloween2026",
@@ -75,13 +83,27 @@ test("Event Halloween opponent preview reuses the real native tactical pitch, 11
       tacticalRole:playerById.get(id).position
     }))
   };
-  const html=matchView.formationPitchMarkup(formation,"opponent","prematch");
-  assert(html.includes("rtg-match-squad-field-shell"));
+  // Exercise the REAL mismatch: injected squadPitchMarkup used to intercept
+  // the native preview, and render simplified cards without role/OVR corners.
+  const simplified=matchView.formationPitchMarkup(formation,"opponent","prematch");
+  assert(simplified.includes("rtg-match-squad-field-shell"));
+  assert.equal(squadRendererCalls,1);
+  const html=matchView.formationPitchMarkup(formation,"opponent","prematch",null,{nativeMatchCards:true});
+  assert.equal(squadRendererCalls,1,"No shortcut through simplified Squad renderer");
+  assert.equal(nativeCardCalls,11,"Every opponent card uses matchFormationCardMarkup");
+  assert(!html.includes("rtg-match-squad-field-shell"),"Do not use the wrong squad panel");
+  assert(html.includes("rtg-shared-match-card"));
+  assert.equal((html.match(/class="player-role"/g)||[]).length,11);
+  assert.equal((html.match(/class="player-overall"/g)||[]).length,11);
+  assert.equal((html.match(/rtg-legacy-badge/g)||[]).length,11);
   assert.equal((html.match(/data-rtg-prematch-player=/g)||[]).length,11,
     "The SAME native match preview must show all 11 Halloween cards");
   assert.equal(new Set(Array.from(html.matchAll(/data-rtg-prematch-player="([^"]+)"/g),m=>m[1])).size,11);
   assert.match(event,/opponentPreviewSection\(\)/);
-  assert.match(event,/deps\.matchView\?\.formationPitchMarkup\?\.\(formation,"opponent","prematch"\)/);
+  assert.match(event,/nativeMatchCards:true/);
+  assert.match(event,/openNativeDetail\(EVENT_ID\+"::"\+pid,isOwned\(pid\),true\)/,
+    "Tap should open the canonical Halloween Album detail, even when locked");
+  assert.match(event,/\.halloween-opponent-preview-field/);
   assert(event.indexOf("'</section>'+opponentPreviewSection()") > event.indexOf("data-halloween-open-vending"));
   assert(css.includes("halloween-opponent-preview-field"));
   assert(index.includes("rtg-halloween-event.js?v=20261030-squad-player-preview-v22-release-polish-v1"));
