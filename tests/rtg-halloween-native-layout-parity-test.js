@@ -77,6 +77,32 @@ assert.equal((fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8").match
 const htmlShell=fs.readFileSync("index.html","utf8");
 assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261030-squad-player-preview-v22/,
   "iOS cache must not serve the older pre-fix Halloween controller");
+const albumViewSource=fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8");
+assert.ok(htmlShell.includes("js/road-to-glory/rtg-album-view.js?v=20261030-coach-event-art-v3"),
+  "Safari must fetch the latest album covers");
+ctx.RoadToGloryCoaches={catalog:()=>[{id:"208",name:"Hillman"}],
+  owned:()=>new Set(["208"])};
+vm.runInNewContext(albumViewSource,ctx);
+const albumView=ctx.RoadToGloryAlbumView.create({
+  escapeHtml:String,teamEmblemMarkup:()=>"",seasonNumber:()=>1,
+  albumRarityClass:()=>"",albumCoverUrl:"/test/default.jpg"
+});
+const collectionsMarkup=albumView.albumCollectionMarkup({
+  state:{activeSeasonId:"ie1"},collections:[{seasonId:"ie1",unlocked:0,total:1}]
+});
+const coachTile=collectionsMarkup.match(/<button[^>]*data-rtg-album-coaches-open[\\s\\S]*?<\\/button>/)?.[0]||"";
+const eventTile=collectionsMarkup.match(/<button[^>]*data-rtg-album-halloween[\\s\\S]*?<\\/button>/)?.[0]||"";
+assert.ok(coachTile.includes("https://easycdn.es/1/series/capi/capitulo_12840.jpg"),
+  "The coach collection must use the exact artwork provided by the user");
+assert.doesNotMatch(coachTile,/rtg-coach-album-cover-icon|⚽/,
+  "The coach collection must not keep the default football icon");
+assert.ok(eventTile.includes("https://static.wikia.nocookie.net/inazuma-eleven/images/7/7e/%28Artwork%29_Inazuma_Eleven_RE.png/revision/latest?cb=20240924195746"),
+  "Event collection must use the requested Inazuma artwork");
+assert.match(eventTile,/<span class="album-collection-title">GIOCATORI EVENTO<\\/span>/);
+assert.doesNotMatch(eventTile,/🎃|Occult Halloween/,
+  "No Halloween pumpkin emoji or Occult Halloween caption on the album tile");
+assert.match(eventTile,/rtg-halloween-album-count"><strong>18<\\/strong>/,
+  "Keep the player count without the removed subtitle");
 const eventSource=fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8");
 assert.match(eventSource,/function tacticalLineupModel\(model\)/,
   "Halloween must explicitly project the saved XI by tactical slot index");
@@ -124,7 +150,16 @@ assert.match(eventSource,/frontFullbodyUrl:raw\.frontFullbodyUrl \|\| EVENT_FULL
   "Halloween player resolver must prefer the player-specific fullbody URL");
 const halloweenCss=fs.readFileSync("css/rtg-halloween-event.css","utf8");
 const coachesCss=fs.readFileSync("css/rtg-coaches.css","utf8");
-assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261030-remove-coach-banners-v15"));
+assert.match(coachesCss,/#modal-root \\.rtg-coach-player-preview p/,
+  "Halloween coach preview requires a direct readable text-color override");
+assert.ok(coachesCss.includes("color:#24181a!important"),
+  "Dark ink must contrast against the light parchment coach preview");
+assert.match(coachesCss,/\\.rtg-coach-album-collection \\.album-collection-title\\{color:#fffdf6!important/,
+  "Coach artwork must have a readable white title");
+assert.match(halloweenCss,/\\.rtg-halloween-album-collection \\.album-collection-title\\{color:#fffdf6!important/,
+  "Event title must be white over the artwork");
+
+assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261030-album-event-white-v16"));
 assert.doesNotMatch(eventSource,/coachMatchStatus\(|halloween-coach-match-status/,
   "Never insert coach banners above native Halloween matches");
 assert.doesNotMatch(halloweenCss,/halloween-coach-match-status/,
@@ -142,7 +177,7 @@ assert.match(eventSource,/data-halloween-prize-color/,
 assert.ok(halloweenCss.includes('[data-halloween-prize-color="orange"] .rtg-vending-prize-v9'));
 assert.ok(halloweenCss.includes('[data-halloween-prize-color="black"] .rtg-vending-prize-v9'));
 
-assert.match(htmlShell,/rtg-coaches\.css\?v=20261029-halloween-reveal-contrast-v3/,
+assert.match(htmlShell,/rtg-coaches\.css\?v=20261030-halloween-preview-contrast-v4/,
   "iPhone must fetch the updated staff contrast rules");
 assert.match(coachesCss,/\.rtg-coach-squad-slot\.rtg-coach-halloween \.rtg-coach-squad-selected strong\s*\{\s*color:#24151a!important/,
   "Hekyll's name must be dark on the parchment background");
