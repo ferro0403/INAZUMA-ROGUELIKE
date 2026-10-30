@@ -2,7 +2,7 @@
   "use strict";
   const EVENT_ID = "halloween2026";
   const TEAM_ID = "occult-2";
-  const EVENT_END_MS = Date.UTC(2026, 10, 4, 22, 59, 59);
+  const EVENT_END_MS = Date.UTC(2026, 10, 6, 22, 59, 59);
   const MATCH_KEY = "local:halloween2026:match";
   const SQUAD_KEY = "local:halloween2026:squad";
   const SHARED_KEY = "shared:account";

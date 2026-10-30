@@ -175,7 +175,22 @@ async function main() {
   assert.equal(assets.players.size - [...assets.players.keys()].filter(pid=>E.eventPlayer(pid).halloweenVampire).length,2);
   assert.equal(E.eventPlayer("custom_0001").halloweenVampire,false);
   assert.equal(E.eventPlayer("custom_0002").halloweenVampire,false);
-  assert.equal(E.EVENT_END_MS,Date.UTC(2026,10,4,22,59,59));
+  assert.equal(E.EVENT_END_MS,Date.UTC(2026,10,6,22,59,59));
+  // Event stays accessible after the old cutoff and closes exactly after the new one.
+  const realNow=Date.now;
+  try {
+    Date.now=()=>Date.UTC(2026,10,4,23,0,0);
+    assert.equal(E.isOpen(),true,"Halloween must stay open after its original Nov 4 cutoff");
+    assert.doesNotMatch(E.eventCard(),/disabled aria-disabled="true"/);
+    Date.now=()=>Date.UTC(2026,10,6,22,59,59);
+    assert.equal(E.isOpen(),true,"Halloween remains open until 23:59:59 CET on Nov 6");
+    assert.match(E.countdown(),/^0g 00h 00m 00s$/);
+    Date.now=()=>Date.UTC(2026,10,6,23,0,0);
+    assert.equal(E.isOpen(),false,"Halloween must close immediately after Nov 6 cutoff");
+    assert.match(E.eventCard(),/disabled aria-disabled="true"/);
+  } finally {
+    Date.now=realNow;
+  }
   assert.equal(E.weightedPick(["custom_0002","custom_0001"],0),"custom_0002");
   assert.throws(()=>E.eventState({pumpkins:-1,ownedIds:[],completedIds:[],pullCount:0,luckyWins:0}),/halloween-invalid-account/);
   const controller=E.create({app,storage,toast:()=>{},squadView,runView:nativeRunView,
