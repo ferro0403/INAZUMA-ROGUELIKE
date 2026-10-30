@@ -103,6 +103,7 @@ const context={
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-entitlements.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-runtime.js","utf8"),context);
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-squad-ui.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches-view.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-encounter-runtime.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),context);
@@ -912,6 +913,93 @@ async function main() {
     }
     trial.dispose();
     delete records["local:halloween2026:match"];
+  }
+  // Use the ACTUAL Halloween Squadra -> Configura potere modal wiring,
+  // not only programmatically manufactured selections. Catch regressions where
+  // the popup opens but tapping cards/CONFERMA produces no persisted effect.
+  function fakeCoachModal(){
+    const modal={html:"",classList:{remove(){}},clickables:new Map()};
+    function button(key,disabled=false){
+      const el={dataset:key,disabled,click:null,addEventListener(kind,fn){
+        if(kind==="click")this.click=fn;
+      },setAttribute(){},closest:()=>({classList:{toggle(){}}}),
+      fire(){if(this.disabled)throw Error("Power button disabled");return this.click?.();}};
+      return el;
+    }
+    modal.querySelectorAll=selector=>{
+      if(selector===".rtg-coach-field-picker [data-rtg-squad-player]"){
+        return [...modal.html.matchAll(/data-rtg-squad-player="([^"]+)"/g)]
+          .map(match=>button({rtgSquadPlayer:match[1]}));
+      }
+      if(selector==="[data-rtg-coach-power-element]"){
+        return [...modal.html.matchAll(/data-rtg-coach-power-element="([^"]+)" data-rtg-coach-power-target="([^"]+)"/g)]
+          .map(match=>button({rtgCoachPowerElement:match[1],rtgCoachPowerTarget:match[2]}));
+      }
+      return [];
+    };
+    modal.querySelector=selector=>{
+      if(selector===".rtg-coach-power-config")
+        return modal.html.includes('class="rtg-coach-power-config ')
+          ?{set outerHTML(value){modal.html=value;}}:null;
+      if(selector===".modal")return {scrollTop:0,isConnected:true};
+      if(selector==="[data-rtg-coach-power-save]"){
+        const found=modal.html.match(/<button[^>]*data-rtg-coach-power-save( disabled)?/);
+        return found?button({},Boolean(found[1])):null;
+      }
+      if(selector==="[data-rtg-coach-power-clear]"||selector==="[data-rtg-coach-power-cancel]")
+        return button({});
+      return null;
+    };
+    return modal;
+  }
+  for(const coachId of ["208","4401"]){
+    const team={...baseTeam,coachId,coachPowerSelection:null};
+    const stored=records["local:halloween2026:squad"];
+    records["local:halloween2026:squad"]={
+      ...stored,activeSquadSlot:1,slots:{...stored.slots,"1":team}
+    };
+    const uiApp=createApp(),root=fakeCoachModal(),errors=[];
+    const controller=E.create({app:uiApp,storage,squadView:nativeView,
+      runView:nativeRunView,getModalRoot:()=>root,
+      openModal:html=>{root.html=html;},closeModal:()=>{},
+      toast:(message,kind)=>errors.push({message,kind})});
+    await controller.open();
+    await uiApp.controls["data-halloween-tab"]
+      .find(item=>item.dataset.halloweenTab==="squad").fire();
+    const configure=uiApp.controls["data-rtg-coach-power-configure"]?.[0];
+    assert.ok(configure,"The coach power button must exist in Halloween Squadra");
+    await configure.fire();
+    let cards=root.querySelectorAll(".rtg-coach-field-picker [data-rtg-squad-player]");
+    assert.equal(cards.length,11,"All 11 Halloween starters must be selectable in the actual coach modal");
+    for(const id of eventIds){
+      const item=cards.find(card=>card.dataset.rtgSquadPlayer===id);
+      assert.ok(item,"Owned event starter must be present in coach picker");
+      await item.fire();
+      cards=root.querySelectorAll(".rtg-coach-field-picker [data-rtg-squad-player]");
+    }
+    if(coachId==="4401"){
+      for(const id of eventIds){
+        const target=E.eventPlayer(id.split("::")[1]);
+        const current=context.RoadToGloryCoachPowerRuntime.elementKey(target.element);
+        const option=root.querySelectorAll("[data-rtg-coach-power-element]")
+          .find(item=>item.dataset.rtgCoachPowerTarget===id&&
+            item.dataset.rtgCoachPowerElement!==current);
+        assert.ok(option,"Yi must offer alternate elements for both selected players");
+        await option.fire();
+      }
+    }
+    const save=root.querySelector("[data-rtg-coach-power-save]");
+    assert.ok(save&&!save.disabled,
+      "Valid "+coachId+" selection must enable CONFERMA POTERE in the real popup");
+    await save.fire();
+    const canonical=records["local:halloween2026:squad"].slots["1"];
+    assert.equal(canonical.coachPowerSelection?.coachId,coachId,
+      "Confirming from UI must persist the selected "+coachId+" power");
+    assert.equal(canonical.coachPowerSelection.cardIds.length,2);
+    if(coachId==="4401")assert.equal(canonical.coachPowerSelection.targets.length,2);
+    assert.equal(errors.filter(x=>x.kind==="error").length,0,
+      "Coach selection must not raise an error in Halloween UI");
+    controller.dispose();
   }
   // A legacy saved event slot may contain a free agent never earned in runs.
   // Opening repairs it IN MEMORY, and the next canonical squad save removes
