@@ -24,7 +24,7 @@
     const seasonNumber=deps.seasonNumber;
     const header=deps.header;
     const tabs=deps.tabs;
-    function nodeState(state,node,index){if(state?.seasonComplete)return"completed";if(node.id===state?.currentNodeId)return"reachable";const currentIndex=Math.max(0,Number(state?.currentNodeIndex??-1));if(index<currentIndex)return"completed";const clearedSecondary=Number(state?.attemptsByNode?.[node.id]?.clears||0)>0;const defeatedMain=node.type==="main"&&(state?.defeatedTeamIds||[]).includes(node.teamId);if(clearedSecondary||defeatedMain)return"completed";return"locked";}
+    function nodeState(state,node,index){if(state?.seasonComplete)return"completed";if(node.id===state?.currentNodeId)return"reachable";const currentIndex=Math.max(0,Number(state?.currentNodeIndex??-1));/* After losing the last life, later nodes must visibly lock again, even when their first-clear rewards remain owned. */return index<currentIndex?"completed":"locked";}
     function teamRecord(seasonDb,teamId){
       const key=String(teamId||"");
       return (seasonDb?.teams||[]).find((entry)=>String(entry.teamId||entry.id)===key)

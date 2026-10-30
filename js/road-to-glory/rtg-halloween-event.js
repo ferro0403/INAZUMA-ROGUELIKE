@@ -118,7 +118,7 @@
     const app = deps.app, storage = deps.storage || global.RoadToGloryStorage.create();
     const notify = deps.toast || (()=>{});
     const devMode = deps.devMode === true;
-    let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false, squadEditPending = false;
+    let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false, squadEditPending = false, actionPending = false;
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
     let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved",pendingRevealHidden=false;
     let selectedAlbumTeamId=TEAM_ID;
@@ -140,8 +140,10 @@
       squadSlots = stored?.slots || null;
       localSquad = stored?.slots?.[activeSquadSlot] || stored || initialEventSquad();
       const savedCards=[...(localSquad?.lineup||[]),...(localSquad?.bench||[])];
+      const accessible=new Set(userCards());
       if ((localSquad?.lineup||[]).length!==11||(localSquad?.bench||[]).length!==4||
-          new Set(savedCards).size!==15||savedCards.some(cardId=>!resolveCard(cardId)))
+          new Set(savedCards).size!==15||
+          savedCards.some(cardId=>!accessible.has(cardId)||!resolveCard(cardId)))
         localSquad=initialEventSquad(localSquad);
       if (!localSquad?.formationId) localSquad = {...localSquad,formationId:"4-3-3",activeRoleVariantByCardId:{}};
       localSquad=orderedEventSquad(localSquad);
@@ -172,12 +174,21 @@
         return saved;
       } finally { busy = false; }
     }
+    function unlockedFreeAgentIds(){
+      // Identical canonical unlock source as normal RTG. DEV pumpkins never
+      // grant free agents. Missing album metadata must fail closed.
+      return global.RoadToGloryEntitlements?.unlockedFreeAgentIds?.({
+        albumProgress:deps.getAlbumProgress?.()||global.AlbumProgress,freeAgentsDb:data.freeAgents
+      })||[];
+    }
     function userCards() {
       const r=global.RoadToGloryCardIdentity;
-      const freeAgents=data.freeAgents?.players||[];
-      const all=[...freeAgents.map(p=>r.cardIdForFreeAgent(p.playerId||p.id)),...(shared?.gachaAcquiredCards||[]).map(p=>p.cardId)];
+      const all=[...unlockedFreeAgentIds().map(pid=>r.cardIdForFreeAgent(pid)),
+        ...(shared?.gachaAcquiredCards||[]).map(p=>p.cardId)];
       return Array.from(new Set(all)).filter(Boolean);
     }
+    function eligibleFreeAgentIds(){return unlockedFreeAgentIds();}
+
     function resolveCard(cardId) {
       if(cardId.startsWith(EVENT_ID+"::"))return global.RoadToGloryPlayerResolver?.resolveOwnedAtLevel20?.(
         cardId,"ie1",null,data?.freeAgents,shared?.developmentByCardId||{}
@@ -310,6 +321,79 @@
     function eventOverallDiscount(squad=localSquad){
       return global.RoadToGloryCoachPowerRuntime?.overallDiscountFor?.(squad,activeEventSquad())||null;
     }
+    function upgradeEventCoachRarity(player,targetRarity,cardId){
+      if(!asId(cardId).startsWith(EVENT_ID+"::"))return null;
+      // Unlike the ordinary Season resolver, event cards have no progression
+      // database. Work solely on the temporary snapshot; use the same
+      // canonical stat-growth oracle and rarity thresholds as normal RTG.
+      const progression=global.InazumaProgression;
+      const threshold=progression?.RARITY_THRESHOLDS?.find?.(
+        row=>row.category===targetRarity)?.min;
+      const current=Number(player?.overall??player?.finalOverall);
+      const next=Math.min(99,Math.max(current+1,Number(threshold)));
+      if(!Number.isFinite(current)||!Number.isInteger(threshold)||
+         !Number.isFinite(next)||next<=current)return null;
+      const before=player.stats||player.baseStats;
+      const stats=progression?.growPlayerStatsToTargetOverall?.({
+        role:player.position||player.normalizedRole,
+        originalStats:before,currentStats:before,
+        currentOverall:current,targetOverall:next
+      });
+      if(!stats||typeof stats!=="object")return null;
+      return {...player,...stats,stats,overall:next,finalOverall:next,
+        category:targetRarity,finalRarity:targetRarity,potential:next};
+    }
+    function resolvedPowerRoster(squad){
+      // Coach validation needs the resolved 15 cards, not raw saved ID strings.
+      // Never modify canonical lineup, bench or player development here.
+      const unpack=keys=>(keys||[]).map(cardId=>{
+        const p=resolveCard(cardId);
+        return p?{...p,cardId}:null;
+      });
+      return {lineup:unpack(squad?.lineup),bench:unpack(squad?.bench)};
+    }
+    // Only the Squadra player detail gets the saved, currently valid power
+    // projection. Album, collection, prizes and match details remain independent.
+    function squadCoachDetailPreview(cardId,player){
+      if(view!=="squad"||!localSquad?.coachPowerSelection||
+         ![...(localSquad.lineup||[]),...(localSquad.bench||[])].includes(cardId))
+        return null;
+      const rules=global.RoadToGloryCoachPowerRuntime;
+      const coachId=asId(localSquad.coachId);
+      if(!shared?.coachOwnedIds?.includes(coachId))return null;
+      const roster=resolvedPowerRoster(localSquad);
+      const config=rules?.validConfig?.(localSquad,roster.lineup,"ie1",roster.bench);
+      if(!config||!config.cardIds?.includes(cardId))return null;
+      if(coachId==="1974"&&cardId.startsWith(EVENT_ID+"::")){
+        // Event cards have no Season progression source. Reuse the exact
+        // temporary upgrade used at Halloween kickoff, only for this preview.
+        const nextRarity=rules?.nextRarity?.(rules.rarityOf(player));
+        const upgraded=nextRarity&&upgradeEventCoachRarity(player,nextRarity,cardId);
+        if(!upgraded)return null;
+        const labels={attack:"Tiro",control:"Controllo",speed:"Velocità",
+          stamina:"Resistenza",grit:"Grinta",defense:"Difesa",
+          physical:"Fisico",save:"Parata"};
+        const stats=Object.keys(labels).map(k=>({
+          label:labels[k],before:Number(player.stats?.[k]||0),
+          after:Number(upgraded.stats?.[k]||0)
+        })).filter(item=>item.after>item.before);
+        return {coachId,original:player,player:upgraded,stats,costs:{},moveElements:{},
+          pt:global.RtgFourMovesRuntime?.ptBreakdown?.(upgraded.stats,nextRarity)||null,
+          note:"POTENZIALE RISVEGLIATO · "+rules.rarityOf(player)+" → "+
+            nextRarity+" · OVR "+Number(player.overall)+" → "+Number(upgraded.overall)+
+            " in partita. Nessun cambiamento permanente; requisiti invariati."};
+      }
+      if(coachId===HALLOWEEN_COACH_ID){
+        return {coachId,original:player,player,stats:[],costs:{},moveElements:{},
+          note:"MASCHERA MALEDETTA · questo giocatore conta 15 OVR in meno "+
+            "soltanto per i requisiti dell'evento. Statistiche e partita invariati."};
+      }
+      return global.RoadToGloryCoachSquadPreview?.projected?.({
+        player,cardId,squad:localSquad,state:activeEventSquad(),
+        seasonId:"ie1",playerResolver:global.RoadToGloryPlayerResolver,
+        freeAgentsDb:data.freeAgents
+      })||null;
+    }
     function nativeCard(p,opts={}) {
       const cls=opts.event&&p?.halloweenVampire?" halloween-vampire-card":"";
       const attr=opts.attr||"";
@@ -318,15 +402,22 @@
             dataAttr:attr,extraClass:"halloween-native-card"+cls})
         : '<button type="button" class="player-card player-card-compact '+cls+'" '+attr+'><span class="player-corner player-role">'+escape(p.position||"")+'</span><span class="player-corner player-overall">'+escape(p.overall||"")+'</span><img class="player-portrait" src="'+escape(p.portraitUrl||"")+'" alt=""><strong>'+escape(p.name||"")+'</strong></button>';
     }
-    function openNativeDetail(cardId,albumUnlocked=false,fromAlbum=false) {
-      const p=resolveCard(cardId);
-      if(!p)return;
+    function openNativeDetail(cardId,albumUnlocked=false,fromAlbum=false,matchPlayer=null) {
+      // The match owns the snapshot of temporary powers. Squadra shows the
+      // configured preview without ever altering the canonical owned card.
+      const original=matchPlayer?.cardId===cardId?matchPlayer:resolveCard(cardId);
+      if(!original)return;
+      const info=!fromAlbum&&!matchPlayer?squadCoachDetailPreview(cardId,original):null;
+      const p=info?.player||original;
       // The generic RTG detail resolver cannot resolve an unowned event card.
       // Use this event player's canonical render directly, even when locked.
       if(deps.showPlayerDetailsFor) {
         deps.showPlayerDetailsFor(p,{playerId:p.playerId,level:20,readOnly:true,rtgFourMoves:true,
           moveSeasonId:p.halloweenMoves?EVENT_ID:(p.resolvedSeasonId||p.legacySeasonId||"ie1"),
           rtgRarity:p.category,mode:fromAlbum?"album":"current",albumUnlocked});
+        if(info)global.RoadToGloryCoachSquadPreview?.decorateDetail?.({
+          root:deps.getModalRoot?.(),info
+        });
       } else if(deps.openPlayerDetails) {
         deps.openPlayerDetails(cardId,"",{mode:fromAlbum?"album":undefined,albumUnlocked});
       }
@@ -379,17 +470,13 @@
     function squadSection() {
       const view=deps.squadView;
       if(!view?.renderModel||!view?.markup)return '<p>Layout RTG non disponibile</p>';
-      const freeAgentIds=(data.freeAgents?.players||[]).map(p=>asId(p.playerId||p.id));
+      const freeAgentIds=eligibleFreeAgentIds();
       const model=tacticalLineupModel(view.renderModel({state:activeEventSquad(),freeAgentIds,seasonDb:global.SeasonRegistry?.database?.("ie1")||{},
           freeAgentsDb:data.freeAgents,playerResolver:{resolveAtLevel20:cardId=>resolveCard(cardId)}}));
       const meta=deps.getUserTeamMeta?.()||{};
       const name=meta.name||"La tua squadra";
       const squadOvr=ovr(resolvedUser()?.lineup,eventOverallDiscount());
-      const coachDiscount=eventOverallDiscount(),coachTarget=coachDiscount&&resolveCard(coachDiscount.cardId);
-      const coachNote=coachTarget?'<p class="rtg-coach-cap-note">Maschera Maledetta attiva · '+
-        escape(coachTarget.name||coachTarget.playerId||"Titolare Halloween")+
-        ': −15 OVR solo per i requisiti, non in partita.</p>':"";
-      const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · Evento Halloween</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div>'+coachNote+'</div>';
+      const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · Evento Halloween</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div></div>';
       return '<div class="rtg-halloween-mode halloween-squad-mode">'+
         view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
           coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(
@@ -486,7 +573,8 @@
         const result=v.resultMarkup(match,null).replace(/(<button[^>]*data-rtg-result-continue)/,rewardHtml+'$1');
         return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+result+'</div></main>';
       }
-      if(match.presentation?.preMatchSeen===false)return v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
+      if(match.presentation?.preMatchSeen===false)
+        return v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
       const presented=lastResolution&&["halftime","penalties","completed","completed-draw"].includes(match.status)?{...match,status:"active"}:match;
       return v.matchMarkup(presented).replace('<main class="screen','<main class="screen halloween-native-match');
     }
@@ -521,8 +609,7 @@
       v.bind(app,{
         onOpenPlayerDetails:(id,side)=>{
           const p=findNativeMatchPlayer(side,id);
-          if(p&&side==="opponent")openNativeDetail(asId(p.cardId||p.playerId));
-          else if(p)openNativeDetail(asId(p.cardId||p.playerId));
+          if(p)openNativeDetail(asId(p.cardId||p.playerId),false,false,p);
         },
         onPreMatchStart:()=>m.presentation?.preMatchPowerStatus==="pending"?openNativePreMatchCoachPower():perform(()=>stepMatch("prematch")),
         onPreMatchCoachPower:()=>openNativePreMatchCoachPower(),
@@ -595,11 +682,16 @@
           const curr=match;
           const chosen=skip?global.RoadToGloryCoachPreMatchRuntime.skip(curr):
             global.RoadToGloryCoachPreMatchRuntime.apply(curr,curr.preMatchCoachId,selection);
+          // Match the canonical RTG pre-match controller: invalid selection
+          // must never persist a null match, and the next encounter is
+          // prepared from the powered snapshot BEFORE the one atomic write.
+          if(!chosen)throw fail("halloween-coach-selection-invalid");
+          const prepared=global.RoadToGloryMatchEngine.prepareNext(chosen);
           await storage.updateMany([MATCH_KEY],records=>{
             if(records[MATCH_KEY]?.matchId!==id)throw fail("halloween-stale-match");
-            return {writes:{[MATCH_KEY]:chosen},value:true};
+            return {writes:{[MATCH_KEY]:prepared},value:true};
           });
-          assertCurrent(epoch);match=chosen;
+          assertCurrent(epoch);match=prepared;
         },
         render:()=>render()});
     }
@@ -668,10 +760,14 @@
         .sort((a,b)=>(descending?b.overall-a.overall:a.overall-b.overall)||a.player.name.localeCompare(b.player.name,"it"));
       const shown=list=>list.slice(0,visibleCount);
       let selecting=false;
-      function select(id){if(selecting)return;selecting=true;return perform(async()=>{
-        try{await editSquad("replace",{from:cardId,to:id});deps.closeModal?.();}
-        finally{selecting=false;}
-      });}
+      function select(id){
+        if(selecting||busy||squadEditPending||actionPending)return;
+        selecting=true;
+        return perform(async()=>{
+          await editSquad("replace",{from:cardId,to:id});
+          deps.closeModal?.();
+        }).finally(()=>{selecting=false;});
+      }
       function wireResults(){
         modalRoot()?.querySelector?.("[data-rtg-picker-results]")?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(b=>b.addEventListener("click",()=>select(b.dataset.rtgPickerPlayer)));
         modalRoot()?.querySelector?.("[data-rtg-picker-load-more]")?.addEventListener("click",()=>{visibleCount+=12;paint();});
@@ -781,16 +877,50 @@
       deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
       const ui=global.RoadToGloryCoachSquadPowerUi;
       if(match||!ui?.open)return;
+      // Refresh the underlying OVR and requirements AFTER the coach modal
+      // closes, based only on the committed squad (not the draft selection).
+      let coachPowerCommitted=false;
+      const closePowerModal=()=>{
+        deps.closeModal?.();
+        if(coachPowerCommitted){coachPowerCommitted=false;render();}
+      };
       const currentState=()=>activeEventSquad(),resolver={resolveAtLevel20:id=>resolveCard(id)};
       const model=()=>tacticalLineupModel(deps.squadView?.renderModel?.({
-        state:currentState(),freeAgentIds:(data.freeAgents?.players||[]).map(p=>asId(p.playerId||p.id)),
+        state:currentState(),freeAgentIds:eligibleFreeAgentIds(),
         seasonDb:global.SeasonRegistry?.database?.("ie1")||{},freeAgentsDb:data.freeAgents,playerResolver:resolver
       })||{});
       ui.open({getCampaign:currentState,getSquadDraft:()=>localSquad,seasonId:()=>"ie1",
         resolve:resolveCard,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
-        closeModal:deps.closeModal,toast:notify,squadView:deps.squadView,getModel:model,
-        saveSquad:async draft=>editSquad("coachPower",draft),
+        closeModal:closePowerModal,toast:notify,squadView:deps.squadView,getModel:model,
+        saveSquad:async draft=>{
+          await editSquad("coachPower",draft);
+          coachPowerCommitted=true;
+        },
         openPlayerDetails:key=>openNativeDetail(key),
+        previewChoice:(key,selection)=>{
+          const p=resolveCard(key);
+          if(!p)return null;
+          if(localSquad.coachId==="1974"&&asId(key).startsWith(EVENT_ID+"::")){
+            const rarityRules=global.RoadToGloryCoachPowerRuntime;
+            const nextRarity=rarityRules?.nextRarity?.(rarityRules.rarityOf(p));
+            const upgraded=nextRarity&&selection?.cardIds?.includes(key)
+              ?upgradeEventCoachRarity(p,nextRarity,key):null;
+            if(!upgraded)return null;
+            const label={attack:"Tiro",control:"Controllo",speed:"Velocità",
+              stamina:"Resistenza",grit:"Grinta",defense:"Difesa",
+              physical:"Fisico",save:"Parata"};
+            const stats=Object.keys(label).map(k=>({
+              label:label[k],before:Number(p.stats?.[k]||0),
+              after:Number(upgraded.stats?.[k]||0)
+            })).filter(v=>v.after>v.before);
+            return {original:p,player:upgraded,stats};
+          }
+          return global.RoadToGloryCoachSquadPreview?.projected?.({
+            player:p,cardId:key,squad:{...localSquad,coachPowerSelection:selection},
+            state:activeEventSquad(),seasonId:"ie1",
+            playerResolver:global.RoadToGloryPlayerResolver,freeAgentsDb:data.freeAgents
+          })||null;
+        },
         previewSquadOverall:selection=>{
           const line=resolvedUser()?.lineup;
           return {before:ovr(line),after:ovr(line,
@@ -893,6 +1023,9 @@
           const machine=app.querySelector?.("[data-rtg-vending-machine]");
           const rarity=String(drawn.result.rarity||"").toLowerCase();
           const capsuleColour=rarity==="leggenda"||rarity==="elite"?"orange":"black";
+          // The static chute prize must match the capsule that was drawn,
+          // including the reduced-motion fallback (not always silver).
+          machine?.setAttribute?.("data-halloween-prize-color",capsuleColour);
           if(vendingMotion){
             try{await vendingMotion.play(capsuleColour);}
             catch(error){global.console?.warn?.("[Halloween] Animazione distributore",error);}
@@ -947,7 +1080,18 @@
         });
       }
     }
-    async function perform(op) {if(busy)return;try{await op();render();}catch(error){global.console?.error?.("[RTG Halloween]",error);const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento","halloween-coach-selection-invalid":"Scegli un titolare Halloween valido per Maschera Maledetta","halloween-squad-busy":"Cambio squadra già in corso"};notify(reasons[error?.code]||("Operazione Halloween fallita: "+(error?.code||error?.message||"errore sconosciuto")),"error");}}
+    async function perform(op) {
+      // Protect match progression, roster edits and capsule actions against
+      // competing taps. squadEditPending alone only protects editSquad().
+      if(busy||squadEditPending||actionPending)return;
+      actionPending=true;
+      try {await op();render();}
+      catch(error){
+        global.console?.error?.("[RTG Halloween]",error);
+        const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento","halloween-coach-selection-invalid":"Selezione potere allenatore non valida: riconfiguralo in Squadra","halloween-coach-power-not-applied":"Il potere allenatore non è stato applicato: verifica i PT e riconfiguralo","halloween-squad-busy":"Cambio squadra già in corso"};
+        notify(reasons[error?.code]||("Operazione Halloween fallita: "+(error?.code||error?.message||"errore sconosciuto")),"error");
+      } finally {actionPending=false;}
+    }
     async function editSquad(kind,arg) {
       if(squadEditPending)throw fail("halloween-squad-busy");
       if(match)throw fail("halloween-active-match");
@@ -981,8 +1125,12 @@
       } else if(kind==="coachPower"){
         if(arg?.coachId!==curr.coachId)throw fail("halloween-coach-invalid");
         curr.coachPowerSelection=clone(arg.coachPowerSelection||null);
-        if(curr.coachPowerSelection&&!global.RoadToGloryCoachPowerRuntime?.validConfig?.(
-          curr,curr.lineup,"ie1",curr.bench))throw fail("halloween-coach-selection-invalid");
+        if(curr.coachPowerSelection){
+          const roster=resolvedPowerRoster(curr);
+          if(!global.RoadToGloryCoachPowerRuntime?.validConfig?.(
+              curr,roster.lineup,"ie1",roster.bench))
+            throw fail("halloween-coach-selection-invalid");
+        }
       } else if(kind==="adapt"||kind==="formation"){
         const cap=opponentOverall()+1,limit=Math.floor(cap*11);
         const formationId=kind==="formation"?asId(arg):curr.formationId;
@@ -1076,15 +1224,19 @@
         nextSquad=orderedEventSquad(curr);
       }
       assertEventSquadIntegrity(nextSquad);
-      // An off-field Halloween target no longer reduces the OVR. Expire it
-      // visibly during the SAME atomic edit rather than leaving a stale power.
-      if(["replace","adapt","formation"].includes(kind)&&
-         nextSquad.coachId===HALLOWEEN_COACH_ID&&nextSquad.coachPowerSelection&&
-         !global.RoadToGloryCoachPowerRuntime?.validConfig?.(
-           nextSquad,nextSquad.lineup,"ie1",nextSquad.bench)){
-        nextSquad.coachPowerSelection=null;
-        const message="Maschera Maledetta: seleziona di nuovo un titolare Halloween.";
-        adaptMessage=adaptMessage?adaptMessage+" "+message:message;
+      // Keep all configured squad powers in sync with the saved XI. A changed
+      // player can invalidate Hillman/Yi just as it can invalidate Hekyll.
+      // Clear only an invalid selection during this SAME atomic squad write.
+      if(["replace","adapt","formation"].includes(kind)&&nextSquad.coachPowerSelection){
+        const roster=resolvedPowerRoster(nextSquad);
+        if(!global.RoadToGloryCoachPowerRuntime?.validConfig?.(
+            nextSquad,roster.lineup,"ie1",roster.bench)){
+          const message=nextSquad.coachId===HALLOWEEN_COACH_ID
+            ?"Maschera Maledetta: seleziona di nuovo un titolare Halloween."
+            :"Potere allenatore: seleziona di nuovo i giocatori interessati.";
+          nextSquad.coachPowerSelection=null;
+          adaptMessage=adaptMessage?adaptMessage+" "+message:message;
+        }
       }
       nextSlots[nextSlot]=clone(nextSquad);
       const epoch=session;
@@ -1100,6 +1252,9 @@
       if(squadEditPending)throw fail("halloween-squad-busy");
       if(!isOpen() || match)throw fail("halloween-event-closed-or-match-active");
       const squad=resolvedUser();if(!squad)throw fail("halloween-squad-incomplete");
+      const allowed=new Set(userCards());
+      if([...localSquad.lineup,...localSquad.bench].some(cardId=>!allowed.has(cardId)))
+        throw fail("halloween-squad-incomplete");
       if(ovr(squad.lineup,eventOverallDiscount())>opponentOverall()+1)throw fail("halloween-overall-cap");
       if(global.RtgFourMovesRuntime && !(await global.RtgFourMovesRuntime.ready))throw fail("halloween-move-catalog-not-ready");
       const epoch=session;
@@ -1109,12 +1264,31 @@
       if(meta.teamIdentity)squad.teamIdentity=clone(meta.teamIdentity);
       let created=global.RoadToGloryMatchEngine.createMatch({seasonId:EVENT_ID,matchId,seed:matchId,nodeId:"event:occult-halloween",matchType:"event",attemptNumber:1,userSquad:squad,opponentSquad:opponent()});
       const state=activeEventSquad(),coach=global.RoadToGloryCoachPreMatchRuntime?.coachFor?.(state,"ie1")||"";
-      created=global.RoadToGloryCoachPowerRuntime?.applyToMatch?.(created,localSquad,state,{
-        upgradeRarity:(player,targetRarity,cardId)=>global.RoadToGloryCoachRarityPower?.upgrade?.({
-          player,targetRarity,cardId,playerResolver:global.RoadToGloryPlayerResolver,
-          freeAgentsDb:data.freeAgents,seasonId:"ie1",squad:localSquad
-        })
+      const coachRules=global.RoadToGloryCoachPowerRuntime;
+      const selectedPower=coachRules?.selected?.(localSquad);
+      const ownedCoach=!!selectedPower&&shared.coachOwnedIds.includes(selectedPower.coachId);
+      const powerConfig=ownedCoach?coachRules.validConfig(
+        localSquad,created.userSquad.lineup,EVENT_ID,created.userSquad.bench):null;
+      if(ownedCoach&&!powerConfig)throw fail("halloween-coach-selection-invalid");
+      // Hillman, Schiller and Arrows depend on PT initialization. An outdated
+      // or unavailable PT runtime must never silently start a legacy match.
+      if(powerConfig&&["208","1329","1974"].includes(powerConfig.coachId)&&
+         created.ptModeVersion!==1)throw fail("halloween-coach-power-not-applied");
+      created=coachRules?.applyToMatch?.(created,localSquad,state,{
+        upgradeRarity:(player,targetRarity,cardId)=>{
+          if(asId(cardId).startsWith(EVENT_ID+"::"))
+            return upgradeEventCoachRarity(player,targetRarity,cardId);
+          return global.RoadToGloryCoachRarityPower?.upgrade?.({
+            player,targetRarity,cardId,playerResolver:global.RoadToGloryPlayerResolver,
+            freeAgentsDb:data.freeAgents,seasonId:"ie1",squad:localSquad
+          });
+        }
       })||created;
+      // A saved power must never silently disappear in the match snapshot.
+      // Hekyll is intentionally eligibility-only and has no combat effect.
+      if(powerConfig&&powerConfig.coachId!==HALLOWEEN_COACH_ID&&
+         created.coachPowerEffect?.coachId!==powerConfig.coachId)
+        throw fail("halloween-coach-power-not-applied");
       if(coach){created.preMatchCoachId=coach;created.presentation={...(created.presentation||{}),preMatchPowerStatus:"pending"};}
       else created=global.RoadToGloryMatchEngine.prepareNext(created);
       created.presentation={...(created.presentation||{}),preMatchSeen:false};

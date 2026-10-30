@@ -55,8 +55,8 @@
     <link rel="stylesheet" href="css/rtg-theme.css?v=20261010-vending-polish-2" />
     <link rel="stylesheet" href="css/player-detail-team-name-fit.css?v=20261011-shared-team-ellipsis-1" />
     <link rel="stylesheet" href="css/rtg-match-pt-preview.css?v=20261021-rtg-element-ux-6" />
-    <link rel="stylesheet" href="css/rtg-coaches.css?v=20261025-coach-chip-v1" />
-    <link rel="stylesheet" href="css/rtg-halloween-event.css?v=20261028-native-rtg-v12" />
+    <link rel="stylesheet" href="css/rtg-coaches.css?v=20261030-coach-album-fit-v5" />
+    <link rel="stylesheet" href="css/rtg-halloween-event.css?v=20261030-album-event-white-v16" />
   </head>
   <body>
     <div id="app" class="app-shell">
@@ -131,14 +131,14 @@
     <script src="js/smart-lineup.js?v=20260819-full-roster-1"></script>
     <script src="js/smart-lineup-runtime.js?v=20260823-persistence-final-1"></script>
     <script src="js/moves/move-runtime.js?v=20260915-ie3-inherited-moves-1"></script>
-    <script src="js/road-to-glory/rtg-config.js?v=20261011-balanced-economy-1"></script>
+    <script src="js/road-to-glory/rtg-config.js?v=20261030-postgame-rewards-v3"></script>
     <script src="js/road-to-glory/rtg-card-identity.js?v=20261028-halloween-identity-v10"></script>
     <script src="js/road-to-glory/rtg-economy.js?v=20261012-moderate-development-1"></script>
     <script src="js/road-to-glory/rtg-persistence-runtime.js?v=20261026-rtg-cloud-1"></script>
     <script src="js/road-to-glory/rtg-storage.js?v=20261026-rtg-cloud-1"></script>
     <script src="js/road-to-glory/rtg-coaches.js?v=20261026-three-coach-balance-v1"></script>
-    <script src="js/road-to-glory/rtg-coach-powers-runtime.js?v=20261026-three-coach-balance-v1"></script>
-    <script src="js/road-to-glory/rtg-coach-powers-prematch.js?v=20261026-three-coach-balance-v1"></script>
+    <script src="js/road-to-glory/rtg-coach-powers-runtime.js?v=20261030-yi-snapshot-v4"></script>
+    <script src="js/road-to-glory/rtg-coach-powers-prematch.js?v=20261030-halloween-opponent-moves-v2"></script>
     <script src="js/road-to-glory/rtg-coach-opponent-bench.js?v=20261023-prematch-five-v1"></script>
     <script src="js/road-to-glory/rtg-state.js?v=20261023-yi-total-v1"></script>
     <script src="js/road-to-glory/rtg-repository.js?v=20261026-rtg-cloud-1"></script>
@@ -146,13 +146,13 @@
     <script src="js/road-to-glory/rtg-cloud-local-adapter.js?v=20261026-rtg-cloud-1"></script>
     <script src="js/road-to-glory/rtg-cloud-restore-adapter.js?v=20261026-rtg-cloud-1"></script>
     <script src="js/road-to-glory/rtg-cloud-bridge.js?v=20261027-rtg-cloud-fielddiag-2"></script>
-    <script src="js/road-to-glory/rtg-halloween-event.js?v=20261029-canonical-slots-coach-v16"></script>
+    <script src="js/road-to-glory/rtg-halloween-event.js?v=20261030-squad-player-preview-v22"></script>
     <script src="js/road-to-glory/rtg-entitlements.js?v=20260916-rtg-foundation-1"></script>
     <script src="js/road-to-glory/rtg-player-resolver.js?v=20261003-permanent-free-agent-dev-1"></script>
     <script src="js/road-to-glory/rtg-coach-powers-rarity.js?v=20261023-squad-power-v2"></script>
     <script src="js/road-to-glory/rtg-coach-powers-preview.js?v=20261026-three-coach-balance-v1"></script>
     <script src="js/road-to-glory/rtg-rng.js?v=20260916-rtg-progression-1"></script>
-    <script src="js/road-to-glory/rtg-progression.js?v=20261023-campaign-replay-v1"></script>
+    <script src="js/road-to-glory/rtg-progression.js?v=20261030-checkpoints-two-lives-v2"></script>
     <script src="js/road-to-glory/rtg-gacha.js?v=20261012-four-audit-fixes-1"></script>
     <script src="js/road-to-glory/rtg-squad-runtime.js?v=20261023-squad-visual-v3"></script>
     <script src="js/road-to-glory/rtg-encounter-runtime.js?v=20260916-rtg-match-1"></script>
@@ -161,8 +161,8 @@
     <script src="js/road-to-glory/rtg-penalty-runtime.js?v=20260916-rtg-match-1"></script>
     <script src="js/road-to-glory/rtg-match-pt-runtime.js?v=20261023-prematch-five-v1"></script>
     <script src="js/road-to-glory/rtg-match-engine.js?v=20261021-rtg-pt-match-1"></script>
-    <script src="js/road-to-glory/rtg-route-view.js?v=20261024-replay-farming-v1"></script>
-    <script src="js/road-to-glory/rtg-album-view.js?v=20261021-canonical-ui-2"></script>
+    <script src="js/road-to-glory/rtg-route-view.js?v=20261030-checkpoint-map-lock-v2"></script>
+    <script src="js/road-to-glory/rtg-album-view.js?v=20261030-coach-event-art-v3"></script>
     <script src="js/road-to-glory/rtg-run-view.js?v=20261011-balanced-economy-1"></script>
     <script src="js/road-to-glory/rtg-economy-view.js?v=20260925-rtg-shop-development-1"></script>
     <script src="js/road-to-glory/rtg-squad-view.js?v=20261023-halftime-scroll-v2"></script>
@@ -180,7 +180,7 @@
     <script src="js/road-to-glory/rtg-squad-auto-adapt.js?v=20261025-rtg-priority-v2"></script>
     <script src="js/road-to-glory/rtg-squad-controller.js?v=20261025-rtg-priority-v1"></script>
     <script src="js/road-to-glory/rtg-coaches-controller.js?v=20261025-coach-navigation-v1"></script>
-    <script src="js/road-to-glory/rtg-controller.js?v=20261028-native-rtg-v8"></script>
+    <script src="js/road-to-glory/rtg-controller.js?v=20261029-halloween-album-entitlements-v9"></script>
     <script src="js/moves/move-presentation.js?v=20260914-season-visual-fix-1"></script>
     <script src="js/match-simulator-config.js?v=20260914-match-moves-v2-1"></script>
     <script src="js/match-simulator.js?v=20260915-ie2-moves-v2-1"></script>

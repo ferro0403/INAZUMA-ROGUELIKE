@@ -6,11 +6,11 @@ context.RoadToGloryRng={weightedPick:items=>items[0],float:()=>0};
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-progression.js","utf8"),context);
 const C=context.RoadToGloryConfig,P=context.RoadToGloryProgression;
 const cases=[
-  {id:"ie1",team:157,free:0,transition:0,extra:55,price:250,agent:null,post:500},
-  {id:"ie1_s2",team:230,free:0,transition:1000,extra:61,price:200,agent:null,post:500},
-  {id:"ie1_s3",team:296,free:288,transition:1000,extra:69,price:180,agent:90,post:900},
-  {id:"ie2",team:157,free:0,transition:0,extra:59,price:250,agent:null,post:500},
-  {id:"orion",team:180,free:129,transition:1000,extra:52,price:200,agent:100,post:700},
+  {id:"ie1",team:157,free:0,transition:0,extra:37,price:250,agent:null,post:750},
+  {id:"ie1_s2",team:230,free:0,transition:1000,extra:41,price:200,agent:null,post:750},
+  {id:"ie1_s3",team:296,free:288,transition:1000,extra:57,price:180,agent:90,post:1100},
+  {id:"ie2",team:157,free:0,transition:0,extra:39,price:250,agent:null,post:750},
+  {id:"orion",team:180,free:129,transition:1000,extra:41,price:200,agent:100,post:900},
 ];
 for(const test of cases){
   const conf=C.season(test.id),nodes=Array.from(C.buildSeasonNodes(test.id));

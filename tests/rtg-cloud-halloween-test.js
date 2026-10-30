@@ -69,8 +69,11 @@ function createApp() {
 }
 const app=createApp();
 let nextId=0;
+const albumUnlockedIds=new Set(freeAgents.players.map(player=>player.playerId));
 const context={
   console,Date,
+  AlbumProgress:{read:()=>({schemaVersion:2,
+    sharedUnlockedPlayerIds:Object.fromEntries([...albumUnlockedIds].map(id=>[id,{firstSource:"run"}]))})},
   crypto:{randomUUID:()=>String(++nextId),getRandomValues:a=>(a[0]=1,a)},
   setInterval:()=>null,clearInterval:()=>{},
   fetch:async url=>({
@@ -97,8 +100,11 @@ const context={
   },
   RoadToGloryRng:{int:()=>0}
 };
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-entitlements.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-runtime.js","utf8"),context);
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-preview.js","utf8"),context);
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-squad-ui.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches-view.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-encounter-runtime.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),context);
@@ -584,12 +590,39 @@ async function main() {
   await control("data-halloween-tab",d=>d.halloweenTab==="squad").fire();
   assert.match(coachSquadMarkup.opts.coachSlotMarkup,/selezione salvata/,
     "Equipped Halloween coach should visibly confirm its saved active power");
-  assert.match(coachSquadMarkup.opts.requirementsMarkup,/Maschera Maledetta attiva/,
+  assert.doesNotMatch(coachSquadMarkup.opts.requirementsMarkup,/Maschera Maledetta attiva/,
     "The requirements panel must explain the ACTIVE 15-point coach discount");
   const preSwapTarget=coachRules.overallDiscountFor(records["local:halloween2026:squad"].slots["1"],
     records["shared:account"]);
   assert.equal(preSwapTarget?.cardId,nathanId);
   assert.equal(preSwapTarget?.amount,15);
+  // Commit the coach choice while the modal is open. On close, the native
+  // squad OVR and requirements must refresh without changing screens.
+  const originalCoachUi=context.RoadToGloryCoachSquadPowerUi;
+  let coachUiArgs=null;
+  context.RoadToGloryCoachSquadPowerUi={open:args=>{coachUiArgs=args;}};
+  assert.ok(powerActions?.onConfigureCoachPower);
+  powerActions.onConfigureCoachPower();
+  assert.ok(coachUiArgs?.saveSquad&&coachUiArgs?.closeModal);
+  const effectiveBefore=coachSquadMarkup.opts.teamPower;
+  const originalPower=clone(powerSlot.coachPowerSelection);
+  await coachUiArgs.saveSquad({...records["local:halloween2026:squad"].slots["1"],coachPowerSelection:null});
+  coachUiArgs.closeModal();
+  const withoutPower=coachSquadMarkup.opts.teamPower;
+  assert.ok(withoutPower>effectiveBefore,"Removing Hekyll's power must update OVR immediately");
+  assert.doesNotMatch(coachSquadMarkup.opts.requirementsMarkup,/Maschera Maledetta attiva/,
+    "No stale power status after close and commit");
+  assert.doesNotMatch(coachSquadMarkup.opts.coachSlotMarkup,/selezione salvata/,
+    "Coach status must update without leaving Squadra");
+  powerActions.onConfigureCoachPower();
+  await coachUiArgs.saveSquad({...records["local:halloween2026:squad"].slots["1"],coachPowerSelection:originalPower});
+  coachUiArgs.closeModal();
+  assert.equal(coachSquadMarkup.opts.teamPower,effectiveBefore,
+    "Configuring Hekyll must immediately restore the discounted squad OVR");
+  assert.doesNotMatch(coachSquadMarkup.opts.requirementsMarkup,/Maschera Maledetta attiva/,
+    "Committed selection must show in the same Squadra screen");
+  assert.match(coachSquadMarkup.opts.coachSlotMarkup,/selezione salvata/);
+  context.RoadToGloryCoachSquadPowerUi=originalCoachUi;
   // Replace the coached starter with an unassigned card of another role.
   // The XI must remain 11; the invalidated target is explicitly cleared.
   assert.ok(powerActions?.onOpenPlayer);
@@ -633,6 +666,89 @@ async function main() {
   }finally{storage.updateMany=atomicUpdate;}
   powerController.dispose();
   squadView.markup=baseMarkup;squadView.bind=baseBind;
+  // Native end-to-end regression for the exact report: put a goalkeeper in
+  // midfield using the REAL RTG player-picker and pitch, not a stub markup.
+  const liveSlot=records["local:halloween2026:squad"].slots["1"];
+  const goalkeeperId="free_agents::halloween-free-0";
+  const keeperLine=liveSlot.lineup.indexOf(goalkeeperId);
+  const keeperBench=liveSlot.bench.indexOf(goalkeeperId);
+  if(keeperLine>=0){
+    [liveSlot.lineup[10],liveSlot.lineup[keeperLine]]=
+      [liveSlot.lineup[keeperLine],liveSlot.lineup[10]];
+  }else if(keeperBench>=0){
+    [liveSlot.lineup[10],liveSlot.bench[keeperBench]]=
+      [liveSlot.bench[keeperBench],liveSlot.lineup[10]];
+  }else{
+    liveSlot.lineup[10]=goalkeeperId;
+  }
+  liveSlot.lineupOrderedBySlot=true;
+  assert.equal(new Set([...liveSlot.lineup,...liveSlot.bench]).size,15);
+  records["local:halloween2026:squad"].activeSquadSlot=1;
+  const nativeView=context.RoadToGlorySquadView.create({escapeHtml:String});
+  const nativeApp=createApp();
+  let pickerButtons=[],filterSearch=null;
+  const pickerRoot={
+    innerHTML:"",classList:{remove(){}},
+    querySelector(selector){
+      if(selector==="[data-rtg-picker-results]"){
+        return {set innerHTML(markup){pickerRoot.innerHTML=markup;},
+          querySelectorAll(name){return name==="[data-rtg-picker-player]"?pickerButtons:[];}};
+      }
+      if(selector==="[data-rtg-picker-search]")
+        return {addEventListener(event,callback){if(event==="input")filterSearch=callback;}};
+      return null;
+    },
+    querySelectorAll(){return [];}
+  };
+  const buttonsFor=entries=>entries.map(entry=>({
+    dataset:{rtgPickerPlayer:entry.cardId},listeners:{},
+    addEventListener(name,callback){this.listeners[name]=callback;},
+    fire(){return this.listeners.click?.();}
+  }));
+  const instrumentedNative={...nativeView,
+    replacementPickerMarkup(options){
+      pickerButtons=buttonsFor(options.entries||[]);
+      return nativeView.replacementPickerMarkup(options);
+    },
+    replacementPickerResultsMarkup(options){
+      pickerButtons=buttonsFor(options.entries||[]);
+      return nativeView.replacementPickerResultsMarkup(options);
+    }
+  };
+  const visualController=E.create({app:nativeApp,storage,squadView:instrumentedNative,
+    runView:nativeRunView,toast:()=>{},getModalRoot:()=>pickerRoot,
+    openModal:html=>{pickerRoot.innerHTML=html;},closeModal:()=>{}});
+  const pitchIds=()=>[...nativeApp.innerHTML.matchAll(/data-rtg-lineup-player="([^"]+)"/g)].map(m=>m[1]);
+  await visualController.open();
+  await nativeApp.controls["data-halloween-tab"].find(b=>b.dataset.halloweenTab==="squad").fire();
+  const beforeVisible=pitchIds();
+  assert.equal(beforeVisible.length,11,"The native event pitch must initially show all 11 starters");
+  assert.deepEqual(new Set(beforeVisible),
+    new Set(records["local:halloween2026:squad"].slots["1"].lineup),
+    "The native pitch must show the same 11 IDs as canonical storage before the GK swap");
+  const mfId=beforeVisible[3];
+  const mfChange=nativeApp.controls["data-rtg-change-player"]
+    .find(button=>button.dataset.rtgChangePlayer===mfId);
+  assert.ok(mfChange,"The real native third midfield-lineup change button must exist");
+  await mfChange.fire();
+  assert.equal(typeof filterSearch,"function");
+  filterSearch({target:{value:"Free 0"}});
+  const keeperButton=pickerButtons.find(button=>button.dataset.rtgPickerPlayer===goalkeeperId);
+  assert.ok(keeperButton,"A goalkeeper must be selectable as a midfielder");
+  await keeperButton.fire();
+  const afterGkSwap=records["local:halloween2026:squad"].slots["1"];
+  assert.equal(afterGkSwap.lineup[3],goalkeeperId);
+  assert.equal(afterGkSwap.lineup[10],mfId);
+  assert.equal(pitchIds().length,11);
+  assert.equal(new Set(pitchIds()).size,11);
+  assert.deepEqual(new Set(pitchIds()),new Set(afterGkSwap.lineup),
+    "All eleven saved IDs must appear in actual Halloween pitch markup");
+  visualController.dispose();
+  await visualController.open();
+  await nativeApp.controls["data-halloween-tab"].find(b=>b.dataset.halloweenTab==="squad").fire();
+  assert.deepEqual(new Set(pitchIds()),new Set(afterGkSwap.lineup),
+    "Reload must not hide a goalkeeper assigned to midfield");
+  visualController.dispose();
   // The Halloween pumpkin cheat must exist ONLY when RTG explicitly grants
   // devMode. It must commit to the existing shared:account, not a parallel key.
   const normalApp=createApp();
@@ -665,6 +781,375 @@ async function main() {
   assert.equal(records["shared:account"].halloween.pumpkins,99999,
     "Repeated DEV grants must not overflow or duplicate currency");
   devController.dispose();
+
+  // Normalize the old cap-solver test's artificially boosted free-agent
+  // OVR before these isolated match snapshots, so the event cap is realistic.
+  freeAgents.players.forEach(p=>{p.overall=70;});
+  // Event kickoff parity: real configured staff powers must reach the
+  // immutable match snapshot. Earlier coverage verified saved selection/OVR
+  // but never checked Hillman's +100 PT or Yi's two elemental conversions.
+  const eventIds=["halloween2026::custom_0001","halloween2026::custom_0002"];
+  const id2Record=context.RoadToGloryCardIdentity.record({
+    playerId:"custom_0002",legacySeasonId:"halloween2026"
+  });
+  const accountForCoaches=records["shared:account"];
+  if(!accountForCoaches.gachaAcquiredCards.some(x=>x.cardId===eventIds[1]))
+    accountForCoaches.gachaAcquiredCards.push(id2Record);
+  if(!accountForCoaches.halloween.ownedIds.includes("custom_0002"))
+    accountForCoaches.halloween.ownedIds.push("custom_0002");
+  for(const coachId of ["208","4401","1974","1940"])
+    if(!accountForCoaches.coachOwnedIds.includes(coachId))
+      accountForCoaches.coachOwnedIds.push(coachId);
+  const currentTeam=clone(records["local:halloween2026:squad"].slots["1"]);
+  const roster=Array.from(new Set([...eventIds,...currentTeam.lineup,...currentTeam.bench]));
+  const field=[...eventIds,...roster.filter(key=>!eventIds.includes(key)).slice(0,9)];
+  const reserves=roster.filter(key=>!field.includes(key)).slice(0,4);
+  assert.equal(field.length,11);
+  assert.equal(reserves.length,4);
+  const baseTeam={...currentTeam,lineup:field,bench:reserves,lineupOrderedBySlot:true};
+  // Use the real match engine and real PT initializer rather than fabricating
+  // +100 PT in a fake createMatch() result. Only the encounter progression is
+  // parked, so this test inspects the actual kickoff snapshot atomically.
+  context.RoadToGloryRng.float=()=>.5;
+  vm.runInNewContext(fs.readFileSync("js/roguelike_progression.js","utf8"),context);
+  vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-prematch.js","utf8"),context);
+  context.RtgFourMovesRuntime={ready:Promise.resolve(true),isReady:()=>true,error:()=>null,
+    ptBreakdown:()=>({base:150,bonus:0,total:150}),movesFor:()=>[]};
+  vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-pt-runtime.js","utf8"),context);
+  vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-engine.js","utf8"),context);
+  const genuineEngine=context.RoadToGloryMatchEngine;
+  context.RoadToGloryMatchEngine={...genuineEngine,prepareNext:state=>state};
+  // Tiny DOM harness for the real shared RTG detail decorator. It verifies
+  // what gets put into the visible modal, not only the calculated model.
+  function coachDetailRoot(){
+    const content={banners:[],firstChild:null,
+      insertBefore(node){this.banners.push(node);}};
+    const ptTotal={textContent:""},ptBreakdown={innerHTML:""},ptNote={textContent:""};
+    const rows=Array.from({length:4},()=>{
+      const caption={textContent:""};
+      const classes=new Set(["move-element--forest"]);
+      const badge={classList:{add:key=>classes.add(key),
+        remove:key=>classes.delete(key),[Symbol.iterator]:()=>classes[Symbol.iterator]()},
+        querySelector:key=>key==="b"?caption:null};
+      const cost={textContent:""};
+      const row={classList:{add(){}},querySelector:key=>key===".player-move-element"?badge:
+        key===".rtg-pt-cost strong"?cost:null};
+      return {...row,caption,cost,classes};
+    });
+    return {content,ptTotal,ptBreakdown,ptNote,rows,
+      ownerDocument:{createElement:()=>({className:"",innerHTML:""})},
+      classList:{toggle(){}},
+      querySelector:key=>({
+        ".player-detail-content":content,".rtg-pt-top strong":ptTotal,
+        ".rtg-pt-breakdown":ptBreakdown,".rtg-pt-note":ptNote
+      })[key]||null,
+      querySelectorAll:key=>key===".rtg-four-moves-item"?rows:[]};
+  }
+  for(const coachId of ["208","4401","1974"]){
+    const targets=eventIds.map(cardId=>E.eventPlayer(cardId.split("::")[1]));
+    const elements=targets.map((target,index)=>{
+      const current=String(target.element||"").toLowerCase();
+      return (index===0?["fire","wind","forest","mountain"]:["mountain","fire","wind","forest"])
+        .find(element=>element!==current);
+    });
+    const selection=coachId==="208"||coachId==="1974"
+      ?{coachId,cardIds:eventIds.slice(),moveIndices:[],element:"",targets:[]}
+      :{coachId,cardIds:eventIds.slice(),moveIndices:[],element:"",
+        targets:eventIds.map((cardId,index)=>({cardId,element:elements[index],moveIndices:[]}))};
+    const team={...baseTeam,coachId,coachPowerSelection:selection};
+    const existing=records["local:halloween2026:squad"];
+    records["local:halloween2026:squad"]={
+      ...existing,activeSquadSlot:1,
+      slots:{...existing.slots,"1":team}
+    };
+    delete records["local:halloween2026:match"];
+    const errors=[],coachApp=createApp(),detailCalls=[];
+    let currentDetailRoot=null;
+    const trial=E.create({app:coachApp,storage,squadView,runView:nativeRunView,
+      getModalRoot:()=>currentDetailRoot,
+      showPlayerDetailsFor:(player,options)=>{
+        currentDetailRoot=coachDetailRoot();
+        detailCalls.push({player,options,root:currentDetailRoot});
+      },
+      toast:(message,kind)=>errors.push({message,kind})});
+    await trial.open();
+    const coachSaved=records["local:halloween2026:squad"].slots["1"];
+    assert.deepEqual(coachSaved.coachPowerSelection,selection,
+      "Opening Halloween must not discard a configured staff power");
+    const beforeDetail=clone(records["local:halloween2026:squad"]);
+    await coachApp.controls["data-halloween-tab"].find(
+      el=>el.dataset.halloweenTab==="squad").fire();
+    for(let i=0;i<eventIds.length;i++){
+      const detailButton=coachApp.controls["data-rtg-player-detail"]
+        .find(el=>el.dataset.rtgPlayerDetail===eventIds[i]);
+      assert.ok(detailButton,
+        "Selected Halloween starter must open its real Squadra player detail");
+      await detailButton.fire();
+      const detail=detailCalls.at(-1),root=detail.root;
+      assert.ok(root.content.banners.length,
+        "Squadra must display a visible coach-power preview inside the card");
+      if(coachId==="208"){
+        assert.match(root.content.banners[0].innerHTML,/100 PT/);
+        assert.equal(root.ptTotal.textContent,"250 PT",
+          "Hillman Squadra card must show the boosted PT, not the original 150");
+      }else if(coachId==="4401"){
+        assert.equal(context.RoadToGloryCoachPowerRuntime.elementKey(detail.player.element),
+          elements[i],"Yi must change the element displayed in Squadra details");
+        for(const row of root.rows)
+          assert.equal(context.RoadToGloryCoachPowerRuntime.elementKey(row.caption.textContent),
+            elements[i],"Yi must visibly transform all four move badges in Squadra");
+        assert.match(root.content.banners[0].innerHTML,/TRASFORMAZIONE TOTALE/);
+      }else{
+        assert.equal(detail.player.finalRarity,"Aurico",
+          "Arrows Squadra card must display the temporary improved rarity");
+        assert.equal(detail.player.overall,99,
+          "Arrows Squadra card must show temporary OVR 99");
+        assert.match(root.content.banners[0].innerHTML,/POTENZIALE RISVEGLIATO/);
+        assert.ok(root.content.banners[0].innerHTML.includes("→"),
+          "Arrows detail must show original and updated statistics");
+      }
+    }
+    const unselectedId=baseTeam.lineup.find(id=>!eventIds.includes(id));
+    const unselectedButton=coachApp.controls["data-rtg-player-detail"]
+      .find(el=>el.dataset.rtgPlayerDetail===unselectedId);
+    assert.ok(unselectedButton);
+    await unselectedButton.fire();
+    assert.equal(detailCalls.at(-1).root.content.banners.length,0,
+      "Unselected players must never display other players' powers");
+    assert.deepEqual(records["local:halloween2026:squad"],beforeDetail,
+      "Opening power previews is strictly read-only");
+    await coachApp.controls["data-rtg-tab"].find(
+      el=>el.dataset.rtgTab==="run").fire();
+    await coachApp.controls["data-halloween-start"][0].fire();
+    const snapshot=records["local:halloween2026:match"];
+    assert.ok(snapshot,"Kickoff must create a real Halloween match for "+coachId+
+      ": "+errors.map(x=>x.message).join(", "));
+    assert.equal(snapshot.ptModeVersion,1,
+      "Real Halloween kickoff must activate the native PT engine");
+    assert.equal(snapshot.coachPowerEffect?.coachId,coachId,
+      "Saved "+coachId+" coach power must be snapshotted before kickoff");
+    if(coachId==="208"){
+      for(const id of eventIds){
+        assert.equal(snapshot.ptCurrentByPlayerId["user:"+id],250);
+        assert.equal(snapshot.ptMaxByPlayerId["user:"+id],250);
+      }
+      assert.equal(snapshot.ptCurrentByPlayerId["user:"+baseTeam.lineup[2]],150,
+        "Hillman never boosts an unselected starter");
+    }else if(coachId==="1974"){
+      for(const id of eventIds){
+        const player=snapshot.userSquad.lineup.find(p=>p.cardId===id);
+        const original=E.eventPlayer(id.split("::")[1]);
+        assert.equal(player.finalRarity,"Aurico",
+          "Arrows must upgrade the actual Halloween player in the match snapshot");
+        assert.equal(player.overall,99);
+        assert.ok(Object.keys(original.stats).some(k=>player.stats[k]>original.stats[k]),
+          "Arrows must increase real player statistics, not just rarity text");
+        assert.equal(original.category,"Leggenda",
+          "Temporary rarity must never mutate the Halloween owned card");
+      }
+      assert.equal(snapshot.coachPowerEffect.targets.length,2);
+    }else{
+      for(let i=0;i<eventIds.length;i++){
+        const player=snapshot.userSquad.lineup.find(p=>p.cardId===eventIds[i]);
+        assert.equal(player.element,elements[i],
+          "Yi updates each selected player's actual match element");
+        assert.equal(
+          context.RoadToGloryCoachPowerRuntime.moveElement(
+            snapshot,"user",eventIds[i],0,"original"),elements[i],
+          "Yi changes all available moves to the selected element");
+        assert.equal(player.halloweenMoves.length,4);
+        for(let moveIndex=0;moveIndex<4;moveIndex++){
+          assert.equal(player.halloweenMoves[moveIndex].element,elements[i],
+            "Yi's transformation must appear on the native Halloween card/detail");
+          assert.equal(player.halloweenMoves[moveIndex].power,
+            targets[i].halloweenMoves[moveIndex].power,
+            "Yi must retain each original move's power");
+        }
+        assert.equal(context.RoadToGloryCoachPowerRuntime.moveCost(
+          snapshot,"user",eventIds[i],0,50),50,
+          "Yi must not change move costs");
+      }
+      assert.equal(E.eventPlayer("custom_0001").element,targets[0].element,
+        "The event player's original card remains unchanged");
+    }
+    if(coachId==="208"){
+      // Halloween opponent moves are not present in RTG's packed 5-Season
+      // catalog. Zoolan must still see and block all FOUR event moves.
+      const victim=snapshot.opponentSquad.lineup[0],victimId=victim.cardId;
+      const pending={...snapshot,preMatchCoachId:"1940",
+        presentation:{preMatchSeen:false,preMatchPowerStatus:"pending"}};
+      const selection={playerIds:[victimId]};
+      const checked=context.RoadToGloryCoachPreMatchRuntime.validate(pending,"1940",selection);
+      assert.equal(checked?.moveIndices.length,4,
+        "Zoolan must recognize Halloween opponent's four special moves");
+      const blocked=context.RoadToGloryCoachPreMatchRuntime.apply(pending,"1940",selection);
+      assert.equal(blocked.preMatchCoachEffect.coachId,"1940");
+      for(let moveIndex=0;moveIndex<4;moveIndex++)
+        assert.equal(context.RoadToGloryCoachPreMatchRuntime.blocked(
+          blocked,"opponent",victimId,moveIndex),true);
+    }
+    trial.dispose();
+    delete records["local:halloween2026:match"];
+  }
+  // Use the ACTUAL Halloween Squadra -> Configura potere modal wiring,
+  // not only programmatically manufactured selections. Catch regressions where
+  // the popup opens but tapping cards/CONFERMA produces no persisted effect.
+  function fakeCoachModal(){
+    const modal={_html:"",classList:{remove(){}},clickables:new Map()};
+    Object.defineProperty(modal,"html",{get(){return modal._html;},
+      set(value){modal._html=value;modal.clickables.clear();}});
+    function button(key,disabled=false){
+      const el={dataset:key,disabled,click:null,addEventListener(kind,fn){
+        if(kind==="click")this.click=fn;
+      },setAttribute(){},closest:()=>({classList:{toggle(){}}}),
+      fire(){if(this.disabled)throw Error("Power button disabled");return this.click?.();}};
+      return el;
+    }
+    modal.querySelectorAll=selector=>{
+      if(modal.clickables.has(selector))return modal.clickables.get(selector);
+      let entries=[];
+      if(selector===".rtg-coach-field-picker [data-rtg-squad-player]"){
+        entries=[...modal.html.matchAll(/data-rtg-squad-player="([^"]+)"/g)]
+          .map(match=>button({rtgSquadPlayer:match[1]}));
+      }else if(selector==="[data-rtg-coach-power-element]"){
+        entries=[...modal.html.matchAll(/data-rtg-coach-power-element="([^"]+)" data-rtg-coach-power-target="([^"]+)"/g)]
+          .map(match=>button({rtgCoachPowerElement:match[1],rtgCoachPowerTarget:match[2]}));
+      }
+      modal.clickables.set(selector,entries);
+      return entries;
+    };
+    modal.querySelector=selector=>{
+      if(selector===".rtg-coach-power-config")
+        return modal.html.includes('class="rtg-coach-power-config ')
+          ?{set outerHTML(value){modal.html=value;}}:null;
+      if(selector===".modal")return {scrollTop:0,isConnected:true};
+      if(selector==="[data-rtg-coach-power-save]"||
+         selector==="[data-rtg-coach-power-clear]"||selector==="[data-rtg-coach-power-cancel]"){
+        if(modal.clickables.has(selector))return modal.clickables.get(selector);
+        const found=selector==="[data-rtg-coach-power-save]"
+          ?modal.html.match(/<button[^>]*data-rtg-coach-power-save( disabled)?/):
+          modal.html.includes(selector.slice(1,-1))?[true]:null;
+        const el=found?button({},Boolean(found[1]===undefined?false:found[1])):null;
+        modal.clickables.set(selector,el);
+        return el;
+      }
+      return null;
+    };
+    return modal;
+  }
+  for(const coachId of ["208","4401"]){
+    const team={...baseTeam,coachId,coachPowerSelection:null};
+    const stored=records["local:halloween2026:squad"];
+    records["local:halloween2026:squad"]={
+      ...stored,activeSquadSlot:1,slots:{...stored.slots,"1":team}
+    };
+    const uiApp=createApp(),root=fakeCoachModal(),errors=[];
+    const controller=E.create({app:uiApp,storage,squadView:nativeView,
+      runView:nativeRunView,getModalRoot:()=>root,
+      openModal:html=>{root.html=html;},closeModal:()=>{},
+      toast:(message,kind)=>errors.push({message,kind})});
+    await controller.open();
+    await uiApp.controls["data-halloween-tab"]
+      .find(item=>item.dataset.halloweenTab==="squad").fire();
+    const configure=uiApp.controls["data-rtg-coach-power-configure"]?.[0];
+    assert.ok(configure,"The coach power button must exist in Halloween Squadra");
+    await configure.fire();
+    let cards=root.querySelectorAll(".rtg-coach-field-picker [data-rtg-squad-player]");
+    assert.equal(cards.length,15,
+      "The coach modal shows 11 starters plus 4 reserves");
+    assert.equal(cards.filter(card=>!card.disabled).length,11,
+      "Hillman and Yi must allow exactly the 11 starters, not the bench");
+    for(const id of eventIds){
+      const item=cards.find(card=>card.dataset.rtgSquadPlayer===id);
+      assert.ok(item,"Owned event starter must be present in coach picker");
+      await item.fire();
+      cards=root.querySelectorAll(".rtg-coach-field-picker [data-rtg-squad-player]");
+    }
+    if(coachId==="4401"){
+      for(const id of eventIds){
+        const target=E.eventPlayer(id.split("::")[1]);
+        const current=context.RoadToGloryCoachPowerRuntime.elementKey(target.element);
+        const option=root.querySelectorAll("[data-rtg-coach-power-element]")
+          .find(item=>item.dataset.rtgCoachPowerTarget===id&&
+            item.dataset.rtgCoachPowerElement!==current);
+        assert.ok(option,"Yi must offer alternate elements for both selected players");
+        await option.fire();
+      }
+    }
+    const save=root.querySelector("[data-rtg-coach-power-save]");
+    assert.ok(save&&!save.disabled,
+      "Valid "+coachId+" selection must enable CONFERMA POTERE in the real popup");
+    await save.fire();
+    const canonical=records["local:halloween2026:squad"].slots["1"];
+    assert.equal(canonical.coachPowerSelection?.coachId,coachId,
+      "Confirming from UI must persist the selected "+coachId+" power");
+    assert.equal(canonical.coachPowerSelection.cardIds.length,2);
+    if(coachId==="4401")assert.equal(canonical.coachPowerSelection.targets.length,2);
+    assert.equal(errors.filter(x=>x.kind==="error").length,0,
+      "Coach selection must not raise an error in Halloween UI");
+    // Complete the user's actual flow: CONFIRM -> RUN -> PREPARA PARTITA.
+    await uiApp.controls["data-rtg-tab"].find(el=>el.dataset.rtgTab==="run").fire();
+    const kickoff=uiApp.controls["data-halloween-start"]?.[0];
+    assert.ok(kickoff,"Configured coach must leave the Halloween run playable");
+    await kickoff.fire();
+    const liveMatch=records["local:halloween2026:match"];
+    assert.ok(liveMatch,"Configured coach must survive the real UI kickoff");
+    assert.equal(liveMatch.coachPowerEffect?.coachId,coachId,
+      "UI-configured coach must really apply to the persisted match snapshot");
+    if(coachId==="208")
+      for(const id of eventIds)assert.equal(
+        liveMatch.ptCurrentByPlayerId["user:"+id],250,
+        "Hillman's +100 PT must be present after UI configuration AND match start");
+    else
+      for(const player of liveMatch.userSquad.lineup.filter(p=>eventIds.includes(p.cardId)))
+        assert.ok(player.halloweenMoves.every(move=>
+          move.element===liveMatch.coachPowerEffect.targets.find(t=>t.cardId===player.cardId).element),
+          "Yi must transform all moves after the real UI configuration");
+    controller.dispose();
+    delete records["local:halloween2026:match"];
+  }
+  // A legacy saved event slot may contain a free agent never earned in runs.
+  // Opening repairs it IN MEMORY, and the next canonical squad save removes
+  // the unauthorized card. The shared account and cloud are never rewritten.
+  const lockedPid="halloween-free-15",lockedCard="free_agents::"+lockedPid;
+  albumUnlockedIds.delete(lockedPid);
+  const legacySquad=clone(records["local:halloween2026:squad"]);
+  const slot=clone(legacySquad.slots["1"]);
+  const legacyRosterIds=[...slot.lineup,...slot.bench];
+  if(!legacyRosterIds.includes(lockedCard)){
+    const replacement=slot.bench[0];
+    slot.bench[0]=lockedCard;
+    assert.notEqual(replacement,lockedCard);
+  }
+  legacySquad.slots["1"]=slot;
+  records["local:halloween2026:squad"]=clone(legacySquad);
+  const sharedBeforeUnlock=clone(records["shared:account"]);
+  let uiAllowedFreeAgents=null;
+  const entitlementView={...squadView,renderModel(args){
+    uiAllowedFreeAgents=args.freeAgentIds;
+    return squadView.renderModel(args);
+  }};
+  const entitlementApp=createApp(),entitlementErrors=[];
+  const entitlementController=E.create({app:entitlementApp,storage,squadView:entitlementView,
+    runView:nativeRunView,toast:(message)=>entitlementErrors.push(message)});
+  await entitlementController.open();
+  assert.deepEqual(records["local:halloween2026:squad"],legacySquad,
+    "Read and repair must not write or migrate legacy squads implicitly");
+  await entitlementApp.controls["data-halloween-tab"]
+    .find(button=>button.dataset.halloweenTab==="squad").fire();
+  assert.ok(Array.isArray(uiAllowedFreeAgents));
+  assert.equal(uiAllowedFreeAgents.includes(lockedPid),false,
+    "The Halloween RTG squad view receives only album-unlocked free agents");
+  assert.ok(entitlementApp.innerHTML.includes("rtg-squad-shell"));
+  await entitlementApp.controls["data-rtg-adapt"][0].fire();
+  const repairedByEdit=records["local:halloween2026:squad"].slots["1"];
+  assert.equal([...repairedByEdit.lineup,...repairedByEdit.bench].includes(lockedCard),false,
+    "A saved squad edit must exclude free agents locked in the canonical Album");
+  assert.equal(new Set([...repairedByEdit.lineup,...repairedByEdit.bench]).size,15);
+  assert.deepEqual(clone(records["shared:account"]),sharedBeforeUnlock,
+    "Album entitlement repair must not mutate the shared account");
+  entitlementController.dispose();
+  albumUnlockedIds.add(lockedPid);
   console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 200-pumpkin pulls, cloud compatibility PASS");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

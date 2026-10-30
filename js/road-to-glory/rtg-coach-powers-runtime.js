@@ -38,6 +38,19 @@
     };
   }
   function fourMoves(player,seasonId){
+    // Event cards carry their own extracted four moves. They have power but
+    // no ptCost field; normal RTG move costs use the exact final move power.
+    // Keep the original Season catalog untouched for every non-event card.
+    if(id(player?.cardId).startsWith("halloween2026::")&&Array.isArray(player?.halloweenMoves))
+      return player.halloweenMoves.map(move=>({
+        ...move,ptCost:move?.ptCost??move?.power
+      }));
+    // Free agents have no extracted four-move database. The match PT engine
+    // falls back to their verified legacy move; staff must use that same move.
+    if(id(player?.cardId).startsWith("free_agents::")&&(player?.activeMove||player?.move)){
+      const move=player.activeMove||player.move;
+      return [{...move,ptCost:move.ptCost??move.power}];
+    }
     const canonical=id(player?.legacyCanonicalPlayerId||player?.playerId||player?.id).split("@")[0];
     const season=id(player?.resolvedSeasonId||player?.legacySeasonId||seasonId||"ie1");
     return global.RtgFourMovesRuntime?.movesFor?.(season,canonical)||[];
@@ -154,7 +167,22 @@
       const lineup=match.userSquad.lineup.map(player=>{
         const key=cardId(player);
         const nextElement=changeById.get(key)||(key===card?config.element:null);
-        return nextElement?{...player,element:nextElement}:player;
+        if(!nextElement)return player;
+        // The PT engine already reads the coach overlay; the Halloween card
+        // detail and prematch/halftime previews read the player snapshot itself.
+        // Transform event move elements in that immutable match snapshot too,
+        // without altering power, PT cost or the owned source card.
+        const target=effect.targets?.find(t=>t.cardId===key);
+        const updatedMoves=Array.isArray(player.halloweenMoves)?
+          player.halloweenMoves.map((move,index)=>
+            target?.moveIndices?.includes(index)?{...move,element:nextElement}:move):null;
+        const move=player.move&&target?.moveIndices?.includes(0)
+          ?{...player.move,element:nextElement}:player.move;
+        const activeMove=player.activeMove&&target?.moveIndices?.includes(0)
+          ?{...player.activeMove,element:nextElement}:player.activeMove;
+        return {...player,element:nextElement,
+          ...(updatedMoves?{halloweenMoves:updatedMoves}:{}),
+          ...(player.move?{move}:{}),...(player.activeMove?{activeMove}:{})};
       });
       return {...match,userSquad:{...match.userSquad,lineup},coachPowerEffect:effect};
     }
