@@ -22,6 +22,8 @@ assert(css.includes("body::before") && css.includes("background-color: #d7e0d3")
   "paint only the exposed status-bar gutter in native iOS background color");
 assert(css.includes("html.ios-pwa-safe-top .development-screen") && css.includes("padding-top: 12px"),
   "avoid double safe-area padding on development center");
+assert(/\.development-screen > \.topbar\s*\{\s*top:\s*0;/.test(css),
+  "relative Development header must not shift down over its resource wallet");
 assert(css.includes("html.ios-pwa-safe-top .album-screen") &&
        css.includes("html.ios-pwa-safe-top .shop-screen"),
   "deduplicate album/shop safe-area spacing");
