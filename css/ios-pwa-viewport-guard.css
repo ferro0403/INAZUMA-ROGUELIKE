@@ -1,39 +1,43 @@
-/* Legacy iOS Home Screen PWA viewport guard.
+/* iOS Home Screen PWA: global status-bar clearance.
  *
- * Old Home Screen icons can preserve their install-time black-translucent
- * status-bar viewport even after the meta tag was removed from index.html.
- * The inline, read-only geometry detector adds the html class ONLY when
- * iOS standalone exposes the full screen under the system status bar.
+ * Safari / normal browser tabs are not affected. Installed iOS PWAs always
+ * receive a usable top inset; screen.height - innerHeight was an unreliable
+ * heuristic and kept the previous guard disabled on the affected device.
  *
- * Shift the DOCUMENT (not an individual screen) so every RTG view,
- * Halloween, shop and match starts below the clock. Do not alter visual
- * backgrounds, rewards, gameplay, modals, IndexedDB or cloud persistence.
+ * Apply the clearance to the document rather than screen-specific panels.
+ * That covers RTG, Halloween (which sets padding:0!important), Squadra,
+ * Negozio, matches and all other screens without altering their backgrounds.
  */
 @media screen and (max-width: 780px) {
-  html.ios-pwa-viewport-overlap {
-    --ios-pwa-top-clearance: max(64px, env(safe-area-inset-top, 0px));
+  html.ios-pwa-safe-top {
+    --ios-pwa-top-clearance: max(54px, env(safe-area-inset-top, 0px));
+    scroll-padding-top: var(--ios-pwa-top-clearance);
   }
 
-  html.ios-pwa-viewport-overlap body {
+  html.ios-pwa-safe-top body {
     padding-top: var(--ios-pwa-top-clearance);
   }
 
-  /* A sticky heading must stop BELOW the native status bar, not at y=0. */
-  html.ios-pwa-viewport-overlap .topbar,
-  html.ios-pwa-viewport-overlap .squad-topbar {
+  /* Sticky headers must remain below the iOS clock while scrolling. */
+  html.ios-pwa-safe-top .topbar,
+  html.ios-pwa-safe-top .squad-topbar {
     top: var(--ios-pwa-top-clearance);
-    padding-top: 12px;
   }
 
-  /* The standard squad has its OWN inner scroller and a fixed 100dvh shell.
-     Shrink that shell by exactly the space given to the document. */
-  html.ios-pwa-viewport-overlap .squad-screen:not(.rtg-squad-shell) {
+  /* The regular Squadra screen has an independent 100dvh scroll layout. */
+  html.ios-pwa-safe-top .squad-screen:not(.rtg-squad-shell) {
     height: calc(100dvh - var(--ios-pwa-top-clearance));
     min-height: calc(100dvh - var(--ios-pwa-top-clearance));
   }
 
-  /* RTG's section tabs are also sticky beneath the RTG topbar. */
-  html.ios-pwa-viewport-overlap .rtg-tabs--main-style {
+  /* RTG run tabs already have their own sticky position beneath a topbar. */
+  html.ios-pwa-safe-top .rtg-tabs--main-style {
     top: calc(64px + var(--ios-pwa-top-clearance));
+  }
+}
+
+@media screen and (max-width: 780px) and (orientation: landscape) {
+  html.ios-pwa-safe-top {
+    --ios-pwa-top-clearance: max(16px, env(safe-area-inset-top, 0px));
   }
 }
