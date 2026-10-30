@@ -10,26 +10,20 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon-180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <script>
-      /* Installed iOS PWA icons may retain an old translucent status-bar mode.
-         In that legacy full-height viewport, controls render under the clock.
-         Detect the actual geometry; keep newer already-inset installs untouched. */
+      /* A Home Screen PWA can keep an under-status-bar viewport after iOS
+         updates. Never infer this from screen.height - innerHeight: on iPhone
+         that value is often larger even when the clock overlays the game. */
       (function () {
         var ios = /iPhone|iPad|iPod/.test(navigator.userAgent || "") ||
           (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
         if (!ios) return;
-        function syncIosPwaViewport() {
+        function syncIosStandalone() {
           var standalone = navigator.standalone === true ||
             (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
-          var screenHeight = window.screen && window.screen.height;
-          var viewportHeight = window.innerHeight;
-          var overlaysStatusBar = standalone &&
-            Number.isFinite(screenHeight) && Number.isFinite(viewportHeight) &&
-            screenHeight - viewportHeight < 40;
-          document.documentElement.classList.toggle("ios-pwa-viewport-overlap", Boolean(overlaysStatusBar));
+          document.documentElement.classList.toggle("ios-pwa-safe-top", Boolean(standalone));
         }
-        syncIosPwaViewport();
-        window.addEventListener("pageshow", syncIosPwaViewport);
-        window.addEventListener("orientationchange", syncIosPwaViewport);
+        syncIosStandalone();
+        window.addEventListener("pageshow", syncIosStandalone);
       })();
     </script>
     <link rel="preload" as="image" href="https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.png" fetchpriority="high" />
@@ -79,7 +73,7 @@
     <link rel="stylesheet" href="css/rtg-match-pt-preview.css?v=20261021-rtg-element-ux-6" />
     <link rel="stylesheet" href="css/rtg-coaches.css?v=20261030-coach-album-fit-v5" />
     <link rel="stylesheet" href="css/rtg-halloween-event.css?v=20261030-native-XI-owner-v17" />
-    <link rel="stylesheet" href="css/ios-pwa-viewport-guard.css?v=20261030-install-geometry-v1" />
+    <link rel="stylesheet" href="css/ios-pwa-viewport-guard.css?v=20261030-standalone-safe-top-v2" />
   </head>
   <body>
     <div id="app" class="app-shell">
