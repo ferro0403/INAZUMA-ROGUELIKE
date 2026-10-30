@@ -70,6 +70,12 @@
 
 /* Album coach cover uses the canonical collection card, with an orange illustration. */
 .rtg-coach-album-collection .album-collection-cover{display:grid;place-items:center;background:linear-gradient(130deg,#ffb668,#ff8223)!important;}
+/* Show the full supplied coach cover without the default hero card's aggressive crop.
+   Scope to ALBUM / ALLENATORI: all other collections keep their current framing. */
+.album-collections-screen .rtg-coach-album-collection .album-collection-cover img{
+  object-fit:contain!important;
+  object-position:center center!important;
+}
 .rtg-coach-album-cover-icon{font-size:clamp(3.4rem,11vw,7rem);filter:drop-shadow(3px 5px 0 #12141855);}
 .rtg-coach-album-collection .album-collection-progress-bar>span{background:#ff8925!important;}
 .rtg-coach-album-collection .album-collection-title{color:#fffdf6!important;text-shadow:0 2px 9px #0a090ce6;}
