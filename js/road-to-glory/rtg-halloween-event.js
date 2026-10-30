@@ -465,7 +465,19 @@
         '<div class="halloween-vending-teaser-copy"><span class="eyebrow">CAPSULE HALLOWEEN</span>'+
         '<h2>DISTRIBUTORE STREGATO</h2><p>1 capsula · '+PRICE+' zucche</p></div>'+
         '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>APRI DISTRIBUTORE →</button>'+
-        '</section>';
+        '</section>'+opponentPreviewSection();
+    }
+    function opponentPreviewSection() {
+      // Reuse the native prematch pitch and cards as a read-only projection.
+      // No opponent regeneration, match mutations or new persistence keys.
+      const formation=opponent();
+      const pitch=deps.matchView?.formationPitchMarkup?.(formation,"opponent","prematch");
+      if(!pitch)return "";
+      return '<section class="halloween-opponent-preview halloween-native-match" aria-label="Formazione Occult Halloween">'+
+        '<header class="halloween-opponent-preview-head"><div><span class="eyebrow">SCOPRI GLI AVVERSARI</span><h2>FORMAZIONE OCCULT HALLOWEEN</h2></div>'+
+        '<div class="halloween-opponent-preview-stats"><span>'+escape(formation.formationId)+'</span><strong>OVR '+escape(opponentOverall())+'</strong></div></header>'+
+        '<div class="halloween-opponent-preview-field">'+pitch+'</div>'+
+        '<p class="halloween-opponent-preview-note">11 titolari · Stesse carte e posizioni del preview partita</p></section>';
     }
     function squadSection() {
       const view=deps.squadView;
