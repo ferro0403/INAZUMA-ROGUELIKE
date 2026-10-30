@@ -47,7 +47,7 @@ test("Svincolati modal keeps the exact data-rtg-start-node action with clearer C
   assert(index.includes("rtg-run-view.js?v=20261030-secondary-redesign-v2"));
 });
 
-test("Event Halloween opponent preview reuses the real native tactical pitch, 11 unique assets",()=>{
+test("Halloween XI: EXACT original prematch cards, HW badges and Album detail routing",()=>{
   const lineup=JSON.parse(read("data/rtg-halloween-occult-lineup.json")).teams[0];
   const team=JSON.parse(read("data/rtg-halloween-occult-players.json"))[0];
   assert.equal(lineup.startingXI.length,11);
@@ -55,60 +55,60 @@ test("Event Halloween opponent preview reuses the real native tactical pitch, 11
   const playerById=new Map(team.players.map(p=>[String(p.playerId),p]));
   assert(lineup.startingXI.every(id=>playerById.has(id)));
   const ctx={console};ctx.globalThis=ctx;
-  vm.runInNewContext(read("js/road-to-glory/rtg-config.js"),ctx);
-  vm.runInNewContext(read("js/road-to-glory/rtg-squad-view-base.js"),ctx);
-  vm.runInNewContext(read("js/road-to-glory/rtg-match-view.js"),ctx);
-  const compact=(p,o)=>`<span class="card" ${o?.dataAttr||""}>${p.playerId}</span>`;
+  for(const script of ["js/road-to-glory/rtg-card-identity.js",
+    "js/road-to-glory/rtg-config.js","js/road-to-glory/rtg-squad-view-base.js",
+    "js/road-to-glory/rtg-match-view.js"])
+    vm.runInNewContext(read(script),ctx,{filename:script});
+  assert.equal(ctx.RoadToGloryCardIdentity.legacyLabel("halloween2026"),"HW");
+  // Reflect the important part of canonical PlayerView.compactCard:
+  // its markup includes the trailing legacy badge from SquadView.playerCard.
+  const compact=(p,o)=>`<button type="button" class="player-card halloween-event-card"
+    ${o.dataAttr||""}><span class="player-role">${p.position}</span>
+    <span class="player-overall">${p.overall}</span>
+    <img class="player-portrait" alt="" src="${p.portraitUrl||""}">
+    <strong class="player-name">${p.name}</strong>${o.trailingMarkup||""}</button>`;
   const squadView=ctx.RoadToGlorySquadView.create({
     escapeHtml:String,compactPlayerCardMarkup:compact,playerResolver:{resolveAtLevel20:()=>null}
   });
-  let squadRendererCalls=0,nativeCardCalls=0;
+  let rendererCalls=0;
   const matchView=ctx.RoadToGloryMatchView.create({
     escapeHtml:String,compactPlayerCardMarkup:compact,
-    teamEmblemMarkup:()=>"",
     squadPitchMarkup:(squad,options)=>{
-      squadRendererCalls++;
+      rendererCalls++;
       return squadView.matchPitchMarkup(squad,options);
-    },
-    matchFormationCardMarkup:(player)=>{
-      nativeCardCalls++;
-      return `<button type="button" class="player-card boss-match-card"><span class="player-role">${player.position}</span><span class="player-overall">${player.overall}</span><strong>${player.name}</strong><span class="rtg-legacy-badge">HW</span></button>`;
-    },
+    }
   });
   const formation={
     name:"Occult Halloween",formationId:"4-4-2",seasonId:"halloween2026",
     lineup:lineup.startingXI.map(id=>({
       ...playerById.get(id),playerId:id,cardId:"halloween2026::"+id,
-      normalizedRole:playerById.get(id).position,
+      legacySeasonId:"halloween2026",normalizedRole:playerById.get(id).position,
       tacticalRole:playerById.get(id).position
     }))
   };
-  // Exercise the REAL mismatch: injected squadPitchMarkup used to intercept
-  // the native preview, and render simplified cards without role/OVR corners.
-  const simplified=matchView.formationPitchMarkup(formation,"opponent","prematch");
-  assert(simplified.includes("rtg-match-squad-field-shell"));
-  assert.equal(squadRendererCalls,1);
-  const html=matchView.formationPitchMarkup(formation,"opponent","prematch",null,{nativeMatchCards:true});
-  assert.equal(squadRendererCalls,1,"No shortcut through simplified Squad renderer");
-  assert.equal(nativeCardCalls,11,"Every opponent card uses matchFormationCardMarkup");
-  assert(!html.includes("rtg-match-squad-field-shell"),"Do not use the wrong squad panel");
-  assert(html.includes("rtg-shared-match-card"));
+  const html=matchView.formationPitchMarkup(formation,"opponent","prematch");
+  assert.equal(rendererCalls,1,"Must use the ACTUAL native prematch squad renderer");
+  assert.match(html,/rtg-match-squad-field-shell/);
+  assert.equal((html.match(/class="rtg-legacy-badge rtg-legacy-tab" data-legacy-season="HW"/g)||[]).length,11,
+    "Every original Halloween card needs the actual black HW badge");
   assert.equal((html.match(/class="player-role"/g)||[]).length,11);
   assert.equal((html.match(/class="player-overall"/g)||[]).length,11);
-  assert.equal((html.match(/rtg-legacy-badge/g)||[]).length,11);
-  assert.equal((html.match(/data-rtg-prematch-player=/g)||[]).length,11,
-    "The SAME native match preview must show all 11 Halloween cards");
-  assert.equal(new Set(Array.from(html.matchAll(/data-rtg-prematch-player="([^"]+)"/g),m=>m[1])).size,11);
-  assert.match(event,/opponentPreviewSection\(\)/);
-  assert.match(event,/nativeMatchCards:true/);
+  assert.equal((html.match(/class="player-portrait"/g)||[]).length,11);
+  assert.equal((html.match(/class="player-name"/g)||[]).length,11);
+  const ids=Array.from(html.matchAll(/data-rtg-prematch-player="([^"]+)"/g),m=>m[1]);
+  assert.equal(ids.length,11);
+  assert.equal(new Set(ids).size,11);
+  assert.deepEqual(ids,Array.from(lineup.startingXI,id=>"halloween2026::"+id),
+    "The real lineup IDs must survive into Album card click data");
+  assert.match(event,/halloween-opponent-preview-field rtg-prematch-shell/);
+  assert.match(event,/const pitch=deps\.matchView\?\.formationPitchMarkup\?\.\(formation,"opponent","prematch"\)/);
+  assert.match(event,/rawId\.startsWith\(EVENT_ID\+"::"\)\?rawId\.slice\(EVENT_ID\.length\+2\):rawId/);
   assert.match(event,/openNativeDetail\(EVENT_ID\+"::"\+pid,isOwned\(pid\),true\)/,
-    "Tap should open the canonical Halloween Album detail, even when locked");
-  assert.match(event,/\.halloween-opponent-preview-field/);
+    "Every field card must open the canonical Halloween Album player detail");
   assert(event.indexOf("'</section>'+opponentPreviewSection()") > event.indexOf("data-halloween-open-vending"));
-  assert(css.includes("halloween-opponent-preview-field"));
-  assert(index.includes("rtg-halloween-event.js?v=20261030-squad-player-preview-v22-authentic-cards-v2"));
-  assert(index.includes("rtg-match-view.js?v=20261030-native-halloween-player-card-v9"));
-
+  assert.match(css,/\.halloween-opponent-preview-field\.rtg-prematch-shell/);
+  assert.doesNotMatch(css,/Exact tactical card anatomy|rtg-shared-match-card\.boss-match-card/);
+  assert(index.includes("rtg-halloween-event.js?v=20261030-squad-player-preview-v22-compact-album-v3"));
 });
 
 test("Release scope: the requested UI changes never write save, cloud or rewards",()=>{
