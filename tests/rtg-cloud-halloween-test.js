@@ -795,7 +795,7 @@ async function main() {
     accountForCoaches.gachaAcquiredCards.push(id2Record);
   if(!accountForCoaches.halloween.ownedIds.includes("custom_0002"))
     accountForCoaches.halloween.ownedIds.push("custom_0002");
-  for(const coachId of ["208","4401"])
+  for(const coachId of ["208","4401","1974","1940"])
     if(!accountForCoaches.coachOwnedIds.includes(coachId))
       accountForCoaches.coachOwnedIds.push(coachId);
   const currentTeam=clone(records["local:halloween2026:squad"].slots["1"]);
@@ -809,20 +809,22 @@ async function main() {
   // +100 PT in a fake createMatch() result. Only the encounter progression is
   // parked, so this test inspects the actual kickoff snapshot atomically.
   context.RoadToGloryRng.float=()=>.5;
+  vm.runInNewContext(fs.readFileSync("js/roguelike_progression.js","utf8"),context);
+  vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-prematch.js","utf8"),context);
   context.RtgFourMovesRuntime={ready:Promise.resolve(true),isReady:()=>true,error:()=>null,
     ptBreakdown:()=>({base:150,bonus:0,total:150}),movesFor:()=>[]};
   vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-pt-runtime.js","utf8"),context);
   vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-engine.js","utf8"),context);
   const genuineEngine=context.RoadToGloryMatchEngine;
   context.RoadToGloryMatchEngine={...genuineEngine,prepareNext:state=>state};
-  for(const coachId of ["208","4401"]){
+  for(const coachId of ["208","4401","1974"]){
     const targets=eventIds.map(cardId=>E.eventPlayer(cardId.split("::")[1]));
     const elements=targets.map((target,index)=>{
       const current=String(target.element||"").toLowerCase();
       return (index===0?["fire","wind","forest","mountain"]:["mountain","fire","wind","forest"])
         .find(element=>element!==current);
     });
-    const selection=coachId==="208"
+    const selection=coachId==="208"||coachId==="1974"
       ?{coachId,cardIds:eventIds.slice(),moveIndices:[],element:"",targets:[]}
       :{coachId,cardIds:eventIds.slice(),moveIndices:[],element:"",
         targets:eventIds.map((cardId,index)=>({cardId,element:elements[index],moveIndices:[]}))};
@@ -855,6 +857,19 @@ async function main() {
       }
       assert.equal(snapshot.ptCurrentByPlayerId["user:"+baseTeam.lineup[2]],150,
         "Hillman never boosts an unselected starter");
+    }else if(coachId==="1974"){
+      for(const id of eventIds){
+        const player=snapshot.userSquad.lineup.find(p=>p.cardId===id);
+        const original=E.eventPlayer(id.split("::")[1]);
+        assert.equal(player.finalRarity,"Aurico",
+          "Arrows must upgrade the actual Halloween player in the match snapshot");
+        assert.equal(player.overall,99);
+        assert.ok(Object.keys(original.stats).some(k=>player.stats[k]>original.stats[k]),
+          "Arrows must increase real player statistics, not just rarity text");
+        assert.equal(original.category,"Leggenda",
+          "Temporary rarity must never mutate the Halloween owned card");
+      }
+      assert.equal(snapshot.coachPowerEffect.targets.length,2);
     }else{
       for(let i=0;i<eventIds.length;i++){
         const player=snapshot.userSquad.lineup.find(p=>p.cardId===eventIds[i]);
@@ -865,12 +880,35 @@ async function main() {
             snapshot,"user",eventIds[i],0,"original"),elements[i],
           "Yi changes all available moves to the selected element");
         assert.equal(player.halloweenMoves.length,4);
+        for(let moveIndex=0;moveIndex<4;moveIndex++){
+          assert.equal(player.halloweenMoves[moveIndex].element,elements[i],
+            "Yi's transformation must appear on the native Halloween card/detail");
+          assert.equal(player.halloweenMoves[moveIndex].power,
+            targets[i].halloweenMoves[moveIndex].power,
+            "Yi must retain each original move's power");
+        }
         assert.equal(context.RoadToGloryCoachPowerRuntime.moveCost(
           snapshot,"user",eventIds[i],0,50),50,
           "Yi must not change move costs");
       }
       assert.equal(E.eventPlayer("custom_0001").element,targets[0].element,
         "The event player's original card remains unchanged");
+    }
+    if(coachId==="208"){
+      // Halloween opponent moves are not present in RTG's packed 5-Season
+      // catalog. Zoolan must still see and block all FOUR event moves.
+      const victim=snapshot.opponentSquad.lineup[0],victimId=victim.cardId;
+      const pending={...snapshot,preMatchCoachId:"1940",
+        presentation:{preMatchSeen:false,preMatchPowerStatus:"pending"}};
+      const selection={playerIds:[victimId]};
+      const checked=context.RoadToGloryCoachPreMatchRuntime.validate(pending,"1940",selection);
+      assert.equal(checked?.moveIndices.length,4,
+        "Zoolan must recognize Halloween opponent's four special moves");
+      const blocked=context.RoadToGloryCoachPreMatchRuntime.apply(pending,"1940",selection);
+      assert.equal(blocked.preMatchCoachEffect.coachId,"1940");
+      for(let moveIndex=0;moveIndex<4;moveIndex++)
+        assert.equal(context.RoadToGloryCoachPreMatchRuntime.blocked(
+          blocked,"opponent",victimId,moveIndex),true);
     }
     trial.dispose();
     delete records["local:halloween2026:match"];
