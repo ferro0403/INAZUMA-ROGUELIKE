@@ -65,7 +65,14 @@
         const bonus=firstFinal?` Bonus finale (una sola volta): +${escape(config.SEASON_COMPLETION_REWARD||0)} Gettoni RTG.`:"";
         return `<div class="rtg-node-modal rtg-paper-modal"><div class="modal-head rtg-node-modal-head"><span class="rtg-node-modal-emblem">${teamLogoMarkup(seasonDb,node.teamId)}</span><div><p class="eyebrow">Partita principale</p><h2>${escape(label)}</h2><p class="muted">Prepara la squadra e rispetta i requisiti della sfida. Vittoria: ${escape(reward)} Gettoni RTG.${bonus}</p></div></div>${requirementsMarkup(eligibility)}<button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed||!eligibility?.eligible?"disabled":""}>GIOCA</button></div>`;
       }
-      return `<div class="rtg-node-modal rtg-paper-modal"><div class="modal-head rtg-node-modal-head"><span class="rtg-node-modal-secondary" aria-hidden="true">?</span><div><p class="eyebrow">Svincolati</p><h2>Partita secondaria</h2><p class="muted">Avversari generati nella fascia di potenza del percorso. Vittoria: ${escape(reward)} Gettoni RTG.</p></div></div><button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed?"disabled":""}>GIOCA</button></div>`;
+      const min=Number(node.opponentTargetMin),max=Number(node.opponentTargetMax);
+      const targetLabel=Number.isFinite(min)&&Number.isFinite(max)?`OVR indicativo ${escape(min)}–${escape(max)}`:"Squadra di svincolati";
+      return `<div class="rtg-node-modal rtg-paper-modal rtg-node-modal--secondary">
+        <div class="rtg-secondary-heading"><span class="rtg-secondary-symbol" aria-hidden="true">?</span>
+          <div><p class="eyebrow">SFIDA EXTRA · SVINCOLATI</p><h2>PARTITA SECONDARIA</h2><p class="muted">Affronta una formazione generata per questa tappa.</p></div></div>
+        <div class="rtg-secondary-facts"><span><small>DIFFICOLTÀ</small><strong>${targetLabel}</strong></span><span class="rtg-secondary-reward"><small>VITTORIA</small><strong>+${escape(reward)} <em>GETTONI RTG</em></strong></span></div>
+        <button type="button" class="btn btn-yellow rtg-secondary-start" data-rtg-start-node ${!allowed?"disabled":""}><span aria-hidden="true">▶</span><span>PREPARA PARTITA</span><b aria-hidden="true">›</b></button>
+      </div>`;
     }
     function vendingCapsulePalette(rarities=[]){
       const allowed=["normale","buono","forte","elite","mondiale","leggenda","aurico"];
