@@ -471,7 +471,7 @@
       // Reuse the native prematch pitch and cards as a read-only projection.
       // No opponent regeneration, match mutations or new persistence keys.
       const formation=opponent();
-      const pitch=deps.matchView?.formationPitchMarkup?.(formation,"opponent","prematch");
+      const pitch=deps.matchView?.formationPitchMarkup?.(formation,"opponent","prematch",null,{nativeMatchCards:true});
       if(!pitch)return "";
       return '<section class="halloween-opponent-preview halloween-native-match" aria-label="Formazione Occult Halloween">'+
         '<header class="halloween-opponent-preview-head"><div><span class="eyebrow">SCOPRI GLI AVVERSARI</span><h2>FORMAZIONE OCCULT HALLOWEEN</h2></div>'+
@@ -1014,6 +1014,16 @@
         const target=el.dataset.halloweenTab || el.dataset.rtgTab;
         if(target==="squad"||target==="run"||target==="match"){view=target==="squad"?"squad":"match";render();}
       }));
+      // Read-only opponent XI: use the album's real card detail, including
+      // locked Halloween players. Never send a preview tap to startMatch.
+      app.querySelector?.(".halloween-opponent-preview-field")?.addEventListener("click",event=>{
+        const target=event.target?.closest?.("[data-rtg-prematch-player]");
+        if(!target||!event.currentTarget.contains(target))return;
+        const pid=asId(target.dataset.rtgPrematchPlayer);
+        if(!assets?.setup?.startingXI?.some(id=>asId(id)===pid))return;
+        event.preventDefault?.();
+        openNativeDetail(EVENT_ID+"::"+pid,isOwned(pid),true);
+      });
       app.querySelector?.("[data-halloween-open-vending]")?.addEventListener("click",()=>{view="vending";render();});
        app.querySelector?.("[data-halloween-close-vending]")?.addEventListener("click",()=>{view="match";render();});
       app.querySelectorAll?.("[data-halloween-start]")?.forEach(el=>el.addEventListener("click",()=>perform(startMatch)));
