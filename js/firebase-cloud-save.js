@@ -3,7 +3,7 @@ import { doc, getDoc, getDocFromServer, writeBatch, runTransaction, serverTimest
 const core = globalThis.InazumaCloudSaveCore;
 const DEVICE_KEY = "inazuma.cloud.deviceId";
 const DEBOUNCE_MS = 2000;
-const initial = { status: "idle", uid: null, revision: null, deviceId: null, pendingSectors: [], lastSyncedAt: null, error: null, problemSector: null, cloudRevision: null, localRevision: null, manifestRevisionStart: null, manifestRevisionEnd: null, restoreStage: null, hallOfFameCount: 0, lastCompletedAt: null, localProgressSummary: null, restoreReadCount: 0 };
+const initial = { status: "idle", uid: null, revision: null, deviceId: null, pendingSectors: [], lastSyncedAt: null, error: null, errorOrigin: null, errorStage: null, problemSector: null, cloudRevision: null, localRevision: null, manifestRevisionStart: null, manifestRevisionEnd: null, restoreStage: null, hallOfFameCount: 0, lastCompletedAt: null, localProgressSummary: null, restoreReadCount: 0 };
 let state = { ...initial }, generation = 0, associationInFlight = null, restoreInFlight = null, syncInFlight = null, checkInFlight = null, conflictInFlight = null;
 let localSaveSerial = 0;
 let automaticUid = null, cachedManifest = null, reloadUsed = false, debounceTimer = null, dirtySectors = new Set(), lastRestoreType = "initial", cloudUpdateBaseline = null;
@@ -335,14 +335,14 @@ function requestConflictResolution(choice) { if (state.status !== "local-conflic
 async function resolveConflictUseLocal() {
   if (conflictInFlight) return conflictInFlight; if (state.status !== "conflict-confirm-local" || !cachedManifest) return null;
   const token = generation, uid = cachedManifest.uid, cached = cachedManifest, id = deviceId();
-  conflictInFlight = (async () => { let attemptedRevision = null; try {
+  conflictInFlight = (async () => { let attemptedRevision = null, uploadStage = "local-snapshot-validation"; try {
     if (!current(token, uid)) return; publish({ status: "conflict-resolving-local", error: null }, token);
     const prepared = await prepareStableLocalSnapshot(); if (prepared.rtgDeferred) throw restoreError(prepared.rtgCapture?.reason || "rtg-cloud-capture-deferred", "rtg", prepared.rtgCapture?.detail || null); core.preflight(prepared); if (!current(token, uid)) return;
     const old = cached.data, nextRevision = old.revision + 1; attemptedRevision = nextRevision;
     const db = globalThis.InazumaAccount.getFirestoreInstance(), commitId = newCloudCommitId();
-    const committed = await commitBundle(uid, id, prepared, db, old, commitId);
+    const committed = await commitBundle(uid, id, prepared, db, old, commitId, (stage) => { uploadStage = stage; });
     if (!current(token, uid)) return; cached.raw = committed; cached.data = core.validateManifest(committed, uid); const metadata = metadataFrom(uid, id, cached.data, prepared, readMetadata(uid, id) || {}); try { writeMetadata(uid, metadata); } catch (error) { throw Object.assign(error, { code: "metadata-repair-needed", serverCommitted: true }); } if (localSaveSerial === prepared.sourceSerial) dirtySectors.clear(); if (guard()?.getState?.().status === "terminal-recovery") clearTerminalRecovery(uid); publish({ status: "synced", revision: nextRevision, localRevision: nextRevision, cloudRevision: nextRevision, pendingSectors: [...dirtySectors], lastSyncedAt: metadata.lastSyncedAt, error: null }, token);
-  } catch (error) { const failure = classifyCloudWriteFailure(error); publish({ ...failure, attemptedRevision, pendingSectors: [...dirtySectors] }, token); } finally { conflictInFlight = null; if (dirtySectors.size && state.status === "synced") scheduleSync(token); } })(); return conflictInFlight;
+  } catch (error) { const failure = classifyCloudWriteFailure(error); if (failure.error === "invalid-argument") failure.errorStage = uploadStage; publish({ ...failure, errorOrigin: "explicit-local-conflict", attemptedRevision, pendingSectors: [...dirtySectors] }, token); } finally { conflictInFlight = null; if (dirtySectors.size && state.status === "synced") scheduleSync(token); } })(); return conflictInFlight;
 }
 async function resolveConflictUseCloud() { if (conflictInFlight) return conflictInFlight; if (state.status !== "conflict-confirm-cloud") return null; const token = generation; publish({ status: "conflict-resolving-cloud", error: null }, token); conflictInFlight = restoreCloudSave({ explicitConflict: true }); try { return await conflictInFlight; } finally { conflictInFlight = null; } }
 function updateFromCloud() { return state.status === "cloud-update-available" ? restoreCloudSave() : null; }
