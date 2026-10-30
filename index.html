@@ -9,23 +9,6 @@
     <title>Inazuma Roguelike</title>
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon-180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <script>
-      /* A Home Screen PWA can keep an under-status-bar viewport after iOS
-         updates. Never infer this from screen.height - innerHeight: on iPhone
-         that value is often larger even when the clock overlays the game. */
-      (function () {
-        var ios = /iPhone|iPad|iPod/.test(navigator.userAgent || "") ||
-          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-        if (!ios) return;
-        function syncIosStandalone() {
-          var standalone = navigator.standalone === true ||
-            (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
-          document.documentElement.classList.toggle("ios-pwa-safe-top", Boolean(standalone));
-        }
-        syncIosStandalone();
-        window.addEventListener("pageshow", syncIosStandalone);
-      })();
-    </script>
     <link rel="preload" as="image" href="https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.png" fetchpriority="high" />
     <link rel="stylesheet" href="css/game.css?v=20261030-rtg-home-owner-v4" />
     <link rel="stylesheet" href="css/season-delete-modal-restyle.css?v=20260818-delete-modal-1" />
@@ -73,7 +56,6 @@
     <link rel="stylesheet" href="css/rtg-match-pt-preview.css?v=20261021-rtg-element-ux-6" />
     <link rel="stylesheet" href="css/rtg-coaches.css?v=20261030-coach-album-fit-v5" />
     <link rel="stylesheet" href="css/rtg-halloween-event.css?v=20261030-native-XI-owner-v17" />
-    <link rel="stylesheet" href="css/ios-pwa-viewport-guard.css?v=20261030-compact-safe-gutter-v4" />
   </head>
   <body>
     <div id="app" class="app-shell">
