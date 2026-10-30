@@ -11,13 +11,33 @@ const script = match[0].replace(/^<script>/, "").replace(/<\/script>$/, "");
 assert(index.includes("viewport-fit=cover"), "preserve viewport support");
 assert(!index.includes("black-translucent"), "avoid deprecated status bar mode");
 assert(!script.includes("screenHeight - viewportHeight"), "never gate protection on the unreliable viewport-height delta");
-assert(index.includes("css/ios-pwa-viewport-guard.css?v=20261030-standalone-safe-top-v2"), "cache bust new safe top");
+assert(index.includes("css/ios-pwa-viewport-guard.css?v=20261030-layout-polish-v3"), "cache bust new safe top");
 assert(index.indexOf("A Home Screen PWA") < index.indexOf("css/game.css"), "set class before styles");
 assert(/html\.ios-pwa-safe-top body\s*\{\s*padding-top:\s*var\(--ios-pwa-top-clearance\)/.test(css), "document, not individual panels, receives clearance");
 assert(css.includes("max(54px, env(safe-area-inset-top, 0px))"), "cover full iOS status bar with fallback");
 assert(css.includes(".topbar") && css.includes(".squad-topbar"), "sticky headers stay visible");
 assert(css.includes(".squad-screen:not(.rtg-squad-shell)"), "leave independent squad scroller usable");
-assert(!/background(-color|-image)?\s*:/.test(css), "retain all existing backgrounds");
+assert(!/\\bbackground(?:-image)?\\s*:/.test(css), "no changes to screen backgrounds or imagery");
+assert(css.includes("body::before") && css.includes("background-color: #d7e0d3"),
+  "paint only the exposed status-bar gutter in native iOS background color");
+assert(css.includes("html.ios-pwa-safe-top .development-screen") && css.includes("padding-top: 12px"),
+  "avoid double safe-area padding on development center");
+assert(css.includes("html.ios-pwa-safe-top .album-screen") &&
+       css.includes("html.ios-pwa-safe-top .shop-screen"),
+  "deduplicate album/shop safe-area spacing");
+assert(css.includes(".rtg-match-shell > .rtg-match-scoreboard") &&
+       css.includes(".rtg-prematch-shell > .rtg-prematch-topbar") &&
+       css.includes("position: relative"),
+  "prevent large match and prematch headers covering the controls while scrolling");
+const rtg = fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+assert(rtg.includes('const alreadyInLiveMatch=Boolean(app?.querySelector?.(".rtg-match-shell"));'),
+  "only existing live matches should auto-scroll to their event timeline");
+assert(rtg.includes("preserveMatchTimeline:alreadyInLiveMatch"),
+  "first live match frame must reset to scoreboard");
+assert(index.includes("css/ios-pwa-viewport-guard.css?v=20261030-layout-polish-v3"),
+  "invalidate installed PWA CSS cache after layout fix");
+assert(index.includes("js/road-to-glory/rtg-controller.js?v=20261030-layout-polish-v2"),
+  "invalidate installed PWA JS cache after match fix");
 
 function detect({ua="Mozilla/5.0 (iPhone; CPU iPhone OS 27_0)",platform="iPhone",standalone=true,screenHeight=844,innerHeight=759}={}) {
   let selected=null;
