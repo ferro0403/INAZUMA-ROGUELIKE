@@ -40,7 +40,7 @@ for(const sid of C.SEASON_IDS){
       state.activeSeasonId=sid;state.currentNodeId=boss.id;
       state.furthestNodeIndex=nodes.indexOf(boss);
       state.checkpointMainIndex=2;state.lives=2;
-      state.seasonComplete=false;state.defeatedTeamIds=[];state.firstClearMatchIds=[];
+      state.seasonComplete=false;state.defeatedTeamIds=[cfg.mainTeams[0]];state.firstClearMatchIds=[];
       state.tokens=12345;state.attemptsByNode={};
       return state;
     });
