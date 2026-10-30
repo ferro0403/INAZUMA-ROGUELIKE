@@ -858,3 +858,117 @@
   cursor:pointer;box-shadow:2px 3px 0 #0f0d12;
 }
 .halloween-dev-quick-content button:disabled{opacity:.55;cursor:wait}
+
+/* Original 2026-10-30 component-owner migration; no finishing stylesheet. */
+/* Halloween event: the SAME rendered tactical XI used by the native match. */
+.rtg-halloween-run-screen .halloween-opponent-preview{
+  margin:18px 0 8px;padding:13px 12px 16px;min-width:0;
+  border:3px solid #ff8d20;background:linear-gradient(155deg,#21111a,#120d15);
+  box-shadow:6px 7px 0 #09070d;color:#fff0d2;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-head{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;min-width:0;margin-bottom:12px;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-head>div:first-child{min-width:0;}
+.rtg-halloween-run-screen .halloween-opponent-preview-head .eyebrow{
+  display:block;margin:0 0 4px;color:#ffb864;font-size:.61rem;font-weight:1000;letter-spacing:.11em;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-head h2{
+  margin:0;color:#fff5e7;font-size:clamp(.9rem,3.8vw,1.3rem);
+  line-height:1.1;overflow-wrap:anywhere;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-stats{
+  display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0;
+  font-size:.62rem;font-weight:900;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-stats span{
+  border:1px solid #e77a32;padding:3px 7px;color:#ffc995;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-stats strong{
+  padding:4px 7px;background:#fff1dc;color:#17101a;border:2px solid #111;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field{
+  overflow:hidden;min-width:0;border:2px solid #e06a25;
+  background:repeating-linear-gradient(to bottom,#326e43 0 73px,#367749 73px 146px);
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-match-squad-field-shell{
+  margin:0!important;padding:0!important;max-width:100%!important;
+  width:100%!important;background:transparent!important;border:0!important;
+  box-shadow:none!important;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-squad-pitch-main{
+  width:100%!important;max-width:100%!important;margin:0!important;
+  border:0!important;box-shadow:none!important;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-prematch-single-pitch{
+  width:100%;max-width:100%;min-width:0;
+}
+/* EXACT preview-match layout: the same Squad card + HW legacy badge.
+   Scope to the exhibition below the Halloween distributor. Do not restyle
+   the cards here; .rtg-prematch-shell applies the canonical preview geometry. */
+.rtg-halloween-run-screen .halloween-opponent-preview-field.rtg-prematch-shell{
+  box-sizing:border-box;
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  height:auto!important;
+  padding:0!important;
+  overflow:visible!important;
+  background:transparent!important;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-match-squad-field-shell{
+  width:100%!important;
+  max-width:100%!important;
+  min-height:0!important;
+  padding:0!important;
+  margin:0!important;
+  overflow:visible!important;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-squad-pitch-main.pitch{
+  width:100%!important;
+  max-width:100%!important;
+  min-height:0!important;
+  height:auto!important;
+  margin:0!important;
+  /* Keep canonical pitch rows and real card aspect ratio from rtg-theme-base. */
+  padding:18px 7px!important;
+  gap:14px!important;
+  overflow:visible!important;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-squad-pitch-main .pitch-row{
+  width:100%!important;
+  min-width:0!important;
+  justify-content:center!important;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-squad-card-slot{
+  min-width:0!important;
+  max-width:84px!important;
+  overflow:visible!important;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-squad-card-slot--readonly
+  > .player-card.halloween-event-card{
+  /* The original component already supplies portrait, FW/OVR, name and HW. */
+  cursor:pointer;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field
+  .rtg-squad-card-slot--readonly > .player-card.halloween-event-card:focus-visible{
+  outline:3px solid #ffd21f!important;
+  outline-offset:3px!important;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-note{
+  margin:10px 0 0;
+  color:#eebd9d;
+  font-size:.62rem;
+  line-height:1.3;
+  text-align:center;
+}
+@media(max-width:430px){
+  .rtg-halloween-run-screen .halloween-opponent-preview{padding:10px 7px 12px;}
+  .rtg-halloween-run-screen .halloween-opponent-preview-head{padding:0 3px;}
+  .rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-squad-pitch-main.pitch{
+    padding:15px 5px!important;
+    gap:13px!important;
+  }
+}
