@@ -1,16 +1,18 @@
 /* iOS Home Screen PWA: global status-bar clearance.
  *
- * Safari / normal browser tabs are not affected. Installed iOS PWAs always
- * receive a usable top inset; screen.height - innerHeight was an unreliable
+ * Safari / normal browser tabs are not affected. Installed iOS PWAs receive a small visual gutter; screen.height - innerHeight was an unreliable
  * heuristic and kept the previous guard disabled on the affected device.
  *
- * Apply the clearance to the document rather than screen-specific panels.
+ * The native status bar already owns its own area on current iOS.
+ * The 54px + env(safe-area-inset-top) rule created a second giant blank strip.
+ * Keep a small scroll-safe gutter, and do not double count local inset padding.
+ * Apply the gutter to the document rather than screen-specific panels.
  * That covers RTG, Halloween (which sets padding:0!important), Squadra,
  * Negozio, matches and all other screens without altering their backgrounds.
  */
 @media screen and (max-width: 780px) {
   html.ios-pwa-safe-top {
-    --ios-pwa-top-clearance: max(54px, env(safe-area-inset-top, 0px));
+    --ios-pwa-top-clearance: 12px;
     scroll-padding-top: var(--ios-pwa-top-clearance);
   }
 
@@ -54,6 +56,19 @@
     padding-top: 10px;
   }
 
+  /* A standalone iOS viewport already starts BELOW the native status bar.
+     Do not add the same safe area again inside individual game sections. */
+  html.ios-pwa-safe-top #clean-home,
+  html.ios-pwa-safe-top .season-select-screen {
+    padding-top: 12px;
+  }
+  html.ios-pwa-safe-top .rtg-prematch-shell.rtg-prematch-revolution {
+    padding-top: 8px;
+  }
+  html.ios-pwa-safe-top .squad-topbar:not(.rtg-squad-topbar) {
+    padding-top: 10px;
+  }
+
   /* Development's mobile header uses position:relative (game.css).
      A nonzero top offsets it visually WITHOUT moving the wallet in flow:
      the global sticky top previously made header and wallet overlap. */
@@ -78,6 +93,6 @@
 
 @media screen and (max-width: 780px) and (orientation: landscape) {
   html.ios-pwa-safe-top {
-    --ios-pwa-top-clearance: max(16px, env(safe-area-inset-top, 0px));
+    --ios-pwa-top-clearance: 8px;
   }
 }
