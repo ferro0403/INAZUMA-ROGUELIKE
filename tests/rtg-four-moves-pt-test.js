@@ -50,6 +50,34 @@ vm.runInNewContext(runtimeCode,context);
   assert.equal(runtime.movesFor('ie1_s2','1').find(m=>m.name==="The Earth")?.power,110);
   // Orion recruits inherit their four source moves from Ares; IE3 inherits IE2/IE1.
   assert.deepEqual(Array.from(runtime.movesFor('orion','4400'),m=>m.name),Array.from(runtime.movesFor('ie2','4400'),m=>m.name));
+  // Characterization: S1/S2 source JSONs provide distinct techniques for every player.
+  // Never add the primary technique twice when regenerating the compressed catalog.
+  const fullCatalog = JSON.parse(require('node:zlib').inflateSync(Buffer.from(
+    runtimeCode.match(/const PACKED = "([A-Za-z0-9+/=]+)";/)[1], 'base64'
+  )));
+  for (const season of ["ie1", "ie1_s2"]) {
+    const source = fullCatalog.s[season];
+    for (const [id, indices] of Object.entries(source)) {
+      const names = indices.map(index => fullCatalog.d[index][0]);
+      assert.equal(new Set(names).size, names.length, season + " " + id + " must not repeat techniques");
+    }
+  }
+  const correctedExamples = {
+    ie1: {
+      9: ["Cyclone", "Shooting Star", "Rolling Kick", "Revolution V"],
+      14: ["Spectacle Crash", "Divine Arrows", "Optimal Trajectory", "Future Eye"],
+      28: ["Death Zone", "Wrath Shot", "Emperor Penguin No. 2", "Killer Slide"]
+    },
+    ie1_s2: {
+      176: ["Gigant Wall", "Tsunami Wall", "Colosseum Guard", "Sumo Stomp"],
+      1059: ["Black Hole", "Wormhole", "Drill Smasher", "Earthquake"]
+    }
+  };
+  for (const [season, entries] of Object.entries(correctedExamples)) {
+    for (const [id, expected] of Object.entries(entries)) {
+      assert.deepEqual(Array.from(runtime.movesFor(season, id), m => m.name), expected, season + " " + id + " original order");
+    }
+  }
   // Player details are opt-in: all classic / historical views still use a single move.
   vm.runInNewContext(fs.readFileSync('js/moves/move-presentation.js','utf8'),context);
   context.MatchMoveRuntime={moveForPlayer:()=>({name:'God Hand',type:'save',element:'Mountain',power:65})};
