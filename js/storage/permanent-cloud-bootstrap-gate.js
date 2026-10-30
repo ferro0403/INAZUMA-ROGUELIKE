@@ -16,4 +16,4 @@ if (global.DevelopmentIndexedDbStorage?.ensureReady) {
   }
 }
 
-await import("../firebase-cloud-save.js?v=20261027-rtg-cloud-fielddiag-2");
+await import("../firebase-cloud-save.js?v=20261027-rtg-cloud-fielddiag-2-device-upload-retry-v1");
