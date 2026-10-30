@@ -476,7 +476,7 @@
       return '<section class="halloween-opponent-preview halloween-native-match" aria-label="Formazione Occult Halloween">'+
         '<header class="halloween-opponent-preview-head"><div><span class="eyebrow">SCOPRI GLI AVVERSARI</span><h2>FORMAZIONE OCCULT HALLOWEEN</h2></div>'+
         '<div class="halloween-opponent-preview-stats"><span>'+escape(formation.formationId)+'</span><strong>OVR '+escape(opponentOverall())+'</strong></div></header>'+
-        '<div class="halloween-opponent-preview-field rtg-prematch-shell">'+pitch+'</div>'+
+        '<div class="halloween-opponent-preview-field rtg-prematch-shell development-squad-card-scope">'+pitch+'</div>'+
         '<p class="halloween-opponent-preview-note">11 titolari · Stesse carte e posizioni del preview partita</p></section>';
     }
     function squadSection() {
