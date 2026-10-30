@@ -43,7 +43,7 @@ test("Svincolati modal keeps the exact data-rtg-start-node action with clearer C
   assert(run.includes("PREPARA PARTITA"));
   assert(run.includes("data-rtg-start-node"));
   assert(!run.includes("rtg-node-modal-secondary"));
-  assert(css.includes("rtg-secondary-facts"));
+  assert(css.includes("rtg-secondary-summary"));
   assert(index.includes("rtg-run-view.js?v=20261030-secondary-redesign-v2"));
 });
 
