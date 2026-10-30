@@ -857,3 +857,16 @@
   cursor:pointer;box-shadow:2px 3px 0 #0f0d12;
 }
 .halloween-dev-quick-content button:disabled{opacity:.55;cursor:wait}
+
+/* Native match: show proof of the EFFECT ACTUALLY persisted in the match
+   snapshot. Never read the selected coach from the editable squad here. */
+.halloween-native-match > .halloween-coach-match-status{
+  position:relative;z-index:2;
+  width:min(calc(100% - 28px),650px);margin:10px auto 4px;padding:9px 12px;
+  border:2px solid #f9942e;border-radius:3px;background:#25151e;
+  box-shadow:3px 4px 0 #0e0b10;color:#ffe5c2;
+  font-size:12px;line-height:1.4;font-weight:850;letter-spacing:.02em;
+}
+.halloween-native-match > .halloween-coach-match-status strong{
+  color:#fff7dc;font-weight:1000;
+}
