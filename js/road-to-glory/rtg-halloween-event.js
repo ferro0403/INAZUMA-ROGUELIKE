@@ -321,6 +321,28 @@
     function eventOverallDiscount(squad=localSquad){
       return global.RoadToGloryCoachPowerRuntime?.overallDiscountFor?.(squad,activeEventSquad())||null;
     }
+    function upgradeEventCoachRarity(player,targetRarity,cardId){
+      if(!asId(cardId).startsWith(EVENT_ID+"::"))return null;
+      // Unlike the ordinary Season resolver, event cards have no progression
+      // database. Work solely on the temporary snapshot; use the same
+      // canonical stat-growth oracle and rarity thresholds as normal RTG.
+      const progression=global.InazumaProgression;
+      const threshold=progression?.RARITY_THRESHOLDS?.find?.(
+        row=>row.category===targetRarity)?.min;
+      const current=Number(player?.overall??player?.finalOverall);
+      const next=Math.min(99,Math.max(current+1,Number(threshold)));
+      if(!Number.isFinite(current)||!Number.isInteger(threshold)||
+         !Number.isFinite(next)||next<=current)return null;
+      const before=player.stats||player.baseStats;
+      const stats=progression?.growPlayerStatsToTargetOverall?.({
+        role:player.position||player.normalizedRole,
+        originalStats:before,currentStats:before,
+        currentOverall:current,targetOverall:next
+      });
+      if(!stats||typeof stats!=="object")return null;
+      return {...player,...stats,stats,overall:next,finalOverall:next,
+        category:targetRarity,finalRarity:targetRarity,potential:next};
+    }
     function resolvedPowerRoster(squad){
       // Coach validation needs the resolved 15 cards, not raw saved ID strings.
       // Never modify canonical lineup, bench or player development here.
@@ -841,6 +863,30 @@
           coachPowerCommitted=true;
         },
         openPlayerDetails:key=>openNativeDetail(key),
+        previewChoice:(key,selection)=>{
+          const p=resolveCard(key);
+          if(!p)return null;
+          if(localSquad.coachId==="1974"&&asId(key).startsWith(EVENT_ID+"::")){
+            const rarityRules=global.RoadToGloryCoachPowerRuntime;
+            const nextRarity=rarityRules?.nextRarity?.(rarityRules.rarityOf(p));
+            const upgraded=nextRarity&&selection?.cardIds?.includes(key)
+              ?upgradeEventCoachRarity(p,nextRarity,key):null;
+            if(!upgraded)return null;
+            const label={attack:"Tiro",control:"Controllo",speed:"Velocità",
+              stamina:"Resistenza",grit:"Grinta",defense:"Difesa",
+              physical:"Fisico",save:"Parata"};
+            const stats=Object.keys(label).map(k=>({
+              label:label[k],before:Number(p.stats?.[k]||0),
+              after:Number(upgraded.stats?.[k]||0)
+            })).filter(v=>v.after>v.before);
+            return {original:p,player:upgraded,stats};
+          }
+          return global.RoadToGloryCoachSquadPreview?.projected?.({
+            player:p,cardId:key,squad:{...localSquad,coachPowerSelection:selection},
+            state:activeEventSquad(),seasonId:"ie1",
+            playerResolver:global.RoadToGloryPlayerResolver,freeAgentsDb:data.freeAgents
+          })||null;
+        },
         previewSquadOverall:selection=>{
           const line=resolvedUser()?.lineup;
           return {before:ovr(line),after:ovr(line,
@@ -1196,28 +1242,8 @@
          created.ptModeVersion!==1)throw fail("halloween-coach-power-not-applied");
       created=coachRules?.applyToMatch?.(created,localSquad,state,{
         upgradeRarity:(player,targetRarity,cardId)=>{
-          if(asId(cardId).startsWith(EVENT_ID+"::")){
-            // The normal Season rarity updater cannot evolve event-only cards:
-            // resolveBaseAtLevel20 intentionally returns the original event
-            // asset. Apply the same InazumaProgression stat-growth oracle
-            // directly to a TEMPORARY match player, never to owned data.
-            const progression=global.InazumaProgression;
-            const threshold=progression?.RARITY_THRESHOLDS?.find?.(
-              row=>row.category===targetRarity)?.min;
-            const current=Number(player?.overall??player?.finalOverall);
-            const next=Math.min(99,Math.max(current+1,Number(threshold)));
-            if(!Number.isFinite(current)||!Number.isInteger(threshold)||
-               !Number.isFinite(next)||next<=current)return null;
-            const before=player.stats||player.baseStats;
-            const stats=progression?.growPlayerStatsToTargetOverall?.({
-              role:player.position||player.normalizedRole,
-              originalStats:before,currentStats:before,
-              currentOverall:current,targetOverall:next
-            });
-            if(!stats||typeof stats!=="object")return null;
-            return {...player,...stats,stats,overall:next,finalOverall:next,
-              category:targetRarity,finalRarity:targetRarity,potential:next};
-          }
+          if(asId(cardId).startsWith(EVENT_ID+"::"))
+            return upgradeEventCoachRarity(player,targetRarity,cardId);
           return global.RoadToGloryCoachRarityPower?.upgrade?.({
             player,targetRarity,cardId,playerResolver:global.RoadToGloryPlayerResolver,
             freeAgentsDb:data.freeAgents,seasonId:"ie1",squad:localSquad
