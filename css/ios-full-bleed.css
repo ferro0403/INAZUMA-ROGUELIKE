@@ -1,0 +1,28 @@
+/* iPhone safe-area / full-bleed background.
+ * The viewport and standalone PWA meta tags already exist in index.html.
+ * Keep the stadium art on the document canvas too: iOS exposes portions of
+ * html/body around the standalone safe areas and on overscroll.
+ * This applies only to Clean Home on small screens. Other game surfaces,
+ * gameplay screens, modals and persistence remain untouched.
+ */
+@supports selector(body:has(#clean-home)) {
+  @media (max-width: 780px) {
+    html:has(#clean-home) {
+      background-color: #d9e9f5;
+      color-scheme: light;
+    }
+
+    body:has(#clean-home) {
+      min-height: 100svh;
+      min-height: 100dvh;
+      background: #d9e9f5 url("../assets/home/inazuma-stadium-mobile-light.jpeg") center top / cover no-repeat;
+    }
+
+    #clean-home {
+      min-height: 100svh;
+      min-height: 100dvh;
+      /* One painted stadium background, owned by body (including safe areas). */
+      background: transparent;
+    }
+  }
+}
