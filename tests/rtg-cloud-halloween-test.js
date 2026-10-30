@@ -1010,7 +1010,26 @@ async function main() {
     if(coachId==="4401")assert.equal(canonical.coachPowerSelection.targets.length,2);
     assert.equal(errors.filter(x=>x.kind==="error").length,0,
       "Coach selection must not raise an error in Halloween UI");
+    // Complete the user's actual flow: CONFIRM -> RUN -> PREPARA PARTITA.
+    await uiApp.controls["data-rtg-tab"].find(el=>el.dataset.rtgTab==="run").fire();
+    const kickoff=uiApp.controls["data-halloween-start"]?.[0];
+    assert.ok(kickoff,"Configured coach must leave the Halloween run playable");
+    await kickoff.fire();
+    const liveMatch=records["local:halloween2026:match"];
+    assert.ok(liveMatch,"Configured coach must survive the real UI kickoff");
+    assert.equal(liveMatch.coachPowerEffect?.coachId,coachId,
+      "UI-configured coach must really apply to the persisted match snapshot");
+    if(coachId==="208")
+      for(const id of eventIds)assert.equal(
+        liveMatch.ptCurrentByPlayerId["user:"+id],250,
+        "Hillman's +100 PT must be present after UI configuration AND match start");
+    else
+      for(const player of liveMatch.userSquad.lineup.filter(p=>eventIds.includes(p.cardId)))
+        assert.ok(player.halloweenMoves.every(move=>
+          move.element===liveMatch.coachPowerEffect.targets.find(t=>t.cardId===player.cardId).element),
+          "Yi must transform all moves after the real UI configuration");
     controller.dispose();
+    delete records["local:halloween2026:match"];
   }
   // A legacy saved event slot may contain a free agent never earned in runs.
   // Opening repairs it IN MEMORY, and the next canonical squad save removes
