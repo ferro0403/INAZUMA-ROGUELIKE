@@ -104,7 +104,7 @@ const seasons=[
   assert(controller.includes("terminalRewardSummary(current,next,match)"));
   assert(controller.includes("showMatchResult(snapshot,reward)"));
   const index=fs.readFileSync("index.html","utf8");
-  for(const [file,version] of [["rtg-album-view","20261021-canonical-ui-2"],["rtg-album-controller","20261028-halloween-layout-2"]])
+  for(const [file,version] of [["rtg-album-view","20261030-coach-event-art-v3"],["rtg-album-controller","20261028-halloween-layout-2"]])
     assert(index.includes(`${file}.js?v=${version}`),`${file} mobile cache key must track the current implementation`);
   assert(index.includes("rtg-route-view.js?v=20261024-replay-farming-v1"),"Coach link removal must invalidate the route view on mobile");
   assert(index.includes("rtg-gacha.js?v=20261012-four-audit-fixes-1"));
