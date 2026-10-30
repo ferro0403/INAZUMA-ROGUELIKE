@@ -52,7 +52,12 @@
       "publishing-manifest": "conferma finale del backup"
     };
     const label = stages[cloudState.errorStage];
-    return label ? `<span>Fase dell’errore: ${label}.</span>` : "";
+    if (!label) return "";
+    const position = cloudState.errorStage === "staging-hall"
+      && Number.isSafeInteger(cloudState.errorHallPosition) && cloudState.errorHallPosition > 0
+      && Number.isSafeInteger(cloudState.errorHallTotal) && cloudState.errorHallTotal >= cloudState.errorHallPosition
+      ? ` · Squadra ${cloudState.errorHallPosition} di ${cloudState.errorHallTotal}` : "";
+    return `<span>Fase dell’errore: ${label}${position}.</span>`;
   }
   function cloudSaveMarkup() {
     const status = cloudState.status;

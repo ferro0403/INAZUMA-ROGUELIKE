@@ -89,8 +89,29 @@ async function stageBundle(uid, id, prepared, db, revision, commitId, manifest, 
   // publishes cloudCommitId, so an interrupted large Hall upload is harmless.
   for (const [stage, problemSector, writes] of groups) {
     onStage(stage, problemSector);
-    try { for (const chunk of globalThis.InazumaCloudSyncProtocol.chunks(writes, 400)) { const batch = writeBatch(db); chunk.forEach((write) => write(batch)); await batch.commit(); } }
-    catch (error) { if (!error.problemSector) error.problemSector = problemSector; throw error; }
+    try {
+      // Firestore enforces a 10 MiB limit per write request IN ADDITION to the
+      // per-document limit checked by core.preflight(). Hall records can be
+      // large: one per batch keeps every request within its own document cap.
+      // Previously 400 Hall records could exceed the request cap even when
+      // every individual record was valid.
+      const batchWidth = stage === "staging-hall" ? 1 : 400;
+      let processed = 0;
+      for (const chunk of globalThis.InazumaCloudSyncProtocol.chunks(writes, batchWidth)) {
+        const batch = writeBatch(db);
+        try {
+          chunk.forEach((write) => write(batch));
+          await batch.commit();
+        } catch (error) {
+          if (stage === "staging-hall") {
+            error.hallUploadPosition = processed + 1;
+            error.hallUploadTotal = writes.length;
+          }
+          throw error;
+        }
+        processed += chunk.length;
+      }
+    } catch (error) { if (!error.problemSector) error.problemSector = problemSector; throw error; }
   }
 }
 async function commitBundle(uid, id, prepared, db, expectedManifest, commitId, onStage = () => {}) {
@@ -342,7 +363,15 @@ async function resolveConflictUseLocal() {
     const db = globalThis.InazumaAccount.getFirestoreInstance(), commitId = newCloudCommitId();
     const committed = await commitBundle(uid, id, prepared, db, old, commitId, (stage) => { uploadStage = stage; });
     if (!current(token, uid)) return; cached.raw = committed; cached.data = core.validateManifest(committed, uid); const metadata = metadataFrom(uid, id, cached.data, prepared, readMetadata(uid, id) || {}); try { writeMetadata(uid, metadata); } catch (error) { throw Object.assign(error, { code: "metadata-repair-needed", serverCommitted: true }); } if (localSaveSerial === prepared.sourceSerial) dirtySectors.clear(); if (guard()?.getState?.().status === "terminal-recovery") clearTerminalRecovery(uid); publish({ status: "synced", revision: nextRevision, localRevision: nextRevision, cloudRevision: nextRevision, pendingSectors: [...dirtySectors], lastSyncedAt: metadata.lastSyncedAt, error: null }, token);
-  } catch (error) { const failure = classifyCloudWriteFailure(error); if (failure.error === "invalid-argument") failure.errorStage = uploadStage; publish({ ...failure, errorOrigin: "explicit-local-conflict", attemptedRevision, pendingSectors: [...dirtySectors] }, token); } finally { conflictInFlight = null; if (dirtySectors.size && state.status === "synced") scheduleSync(token); } })(); return conflictInFlight;
+  } catch (error) { const failure = classifyCloudWriteFailure(error); if (failure.error === "invalid-argument") {
+      failure.errorStage = uploadStage;
+      if (uploadStage === "staging-hall" && Number.isSafeInteger(error?.hallUploadPosition)
+        && error.hallUploadPosition > 0 && Number.isSafeInteger(error?.hallUploadTotal)
+        && error.hallUploadTotal >= error.hallUploadPosition) {
+        failure.errorHallPosition = error.hallUploadPosition;
+        failure.errorHallTotal = error.hallUploadTotal;
+      }
+    } publish({ ...failure, errorOrigin: "explicit-local-conflict", attemptedRevision, pendingSectors: [...dirtySectors] }, token); } finally { conflictInFlight = null; if (dirtySectors.size && state.status === "synced") scheduleSync(token); } })(); return conflictInFlight;
 }
 async function resolveConflictUseCloud() { if (conflictInFlight) return conflictInFlight; if (state.status !== "conflict-confirm-cloud") return null; const token = generation; publish({ status: "conflict-resolving-cloud", error: null }, token); conflictInFlight = restoreCloudSave({ explicitConflict: true }); try { return await conflictInFlight; } finally { conflictInFlight = null; } }
 function updateFromCloud() { return state.status === "cloud-update-available" ? restoreCloudSave() : null; }
