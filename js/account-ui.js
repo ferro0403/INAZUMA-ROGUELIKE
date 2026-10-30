@@ -41,6 +41,19 @@
         ${register ? '<button class="account-text-action" type="button" data-account-tab="login">HAI GIÀ UN ACCOUNT? ACCEDI</button>' : '<button class="account-text-action" type="button" data-account-reset>PASSWORD DIMENTICATA?</button><button class="account-text-action" type="button" data-account-tab="register">NON HAI UN ACCOUNT? REGISTRATI</button>'}
       </form>`;
   }
+  // Closed vocabulary: never display a Firestore message or user save content.
+  function safeUploadFailureLocation() {
+    if (cloudState.status !== "sync-error" || cloudState.error !== "invalid-argument") return "";
+    const stages = {
+      "local-snapshot-validation": "controllo dei dati sul dispositivo",
+      "staging-manifest": "preparazione del backup cloud",
+      "staging-sectors": "caricamento dei progressi",
+      "staging-hall": "caricamento dell’Albo d’Oro",
+      "publishing-manifest": "conferma finale del backup"
+    };
+    const label = stages[cloudState.errorStage];
+    return label ? `<span>Fase dell’errore: ${label}.</span>` : "";
+  }
   function cloudSaveMarkup() {
     const status = cloudState.status;
     if (status === "checking" || status === "idle") return '<section class="account-cloud-save" data-cloud-save-status><strong>CONTROLLO PROGRESSI ACCOUNT...</strong></section>';
@@ -49,7 +62,7 @@
     if (status === "associated" || status === "synced") return '<section class="account-cloud-save" data-cloud-save-status><strong>PROGRESSI ACCOUNT SINCRONIZZATI</strong><span>Il progresso di questo dispositivo è aggiornato sul tuo account.</span><button type="button" class="btn account-secondary" data-cloud-save-check>CONTROLLA AGGIORNAMENTI</button></section>';
     if (status === "sync-pending") return '<section class="account-cloud-save" data-cloud-save-status><strong>MODIFICHE IN ATTESA...</strong><span>Il progresso è già salvato su questo dispositivo.</span></section>';
     if (status === "syncing") return '<section class="account-cloud-save" data-cloud-save-status><strong>SINCRONIZZAZIONE...</strong></section>';
-    if (["sync-error", "metadata-repair-needed"].includes(status)) return `<section class="account-cloud-save account-cloud-save-error" data-cloud-save-status><strong>${status === "metadata-repair-needed" ? "METADATI CLOUD DA RIPARARE" : "SINCRONIZZAZIONE NON RIUSCITA"}</strong><span>Il progresso locale è al sicuro su questo dispositivo.</span><span>Errore: ${escapeHtml(cloudState.error || "sync-failed")}${cloudState.errorDetail ? " · Campo: " + escapeHtml(cloudState.errorDetail) : ""}</span><button type="button" class="btn account-secondary" data-cloud-save-sync-retry>RIPROVA</button></section>`;
+    if (["sync-error", "metadata-repair-needed"].includes(status)) return `<section class="account-cloud-save account-cloud-save-error" data-cloud-save-status><strong>${status === "metadata-repair-needed" ? "METADATI CLOUD DA RIPARARE" : "SINCRONIZZAZIONE NON RIUSCITA"}</strong><span>Il progresso locale è al sicuro su questo dispositivo.</span><span>Errore: ${escapeHtml(cloudState.error || "sync-failed")}${cloudState.errorDetail ? " · Campo: " + escapeHtml(cloudState.errorDetail) : ""}</span>${safeUploadFailureLocation()}<button type="button" class="btn account-secondary" data-cloud-save-sync-retry>RIPROVA</button></section>`;
     if (status === "sync-conflict") return '<section class="account-cloud-save account-cloud-save-error" data-cloud-save-status><strong>SINCRONIZZAZIONE BLOCCATA</strong><span>Il progresso locale è al sicuro. Aggiorna la pagina o controlla la versione cloud.</span><button type="button" class="btn account-secondary" data-cloud-save-check>CONTROLLA AGGIORNAMENTI</button></section>';
     if (status === "cloud-update-available") return '<section class="account-cloud-save" data-cloud-save-status><strong>AGGIORNAMENTO CLOUD DISPONIBILE</strong><span>Un altro dispositivo ha salvato progressi più recenti.</span><button type="button" class="btn account-secondary" data-cloud-save-update>AGGIORNA QUESTO DISPOSITIVO</button></section>';
     if (status === "cloud-available") return '<section class="account-cloud-save" data-cloud-save-status><strong>PROGRESSI ACCOUNT CLOUD DISPONIBILI</strong><span>Puoi scaricare su questo dispositivo il progresso collegato al tuo account.</span><button type="button" class="btn account-secondary" data-cloud-save-restore>RIPRISTINA PROGRESSI ACCOUNT</button></section>';
