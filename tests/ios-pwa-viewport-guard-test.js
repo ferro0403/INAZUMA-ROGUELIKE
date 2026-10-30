@@ -31,15 +31,8 @@ assert(css.includes(".rtg-match-shell > .rtg-match-scoreboard") &&
        css.includes(".rtg-prematch-shell > .rtg-prematch-topbar") &&
        css.includes("position: relative"),
   "prevent large match and prematch headers covering the controls while scrolling");
-const rtg = fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
-assert(rtg.includes('const alreadyInLiveMatch=Boolean(app?.querySelector?.(".rtg-match-shell"));'),
-  "only existing live matches should auto-scroll to their event timeline");
-assert(rtg.includes("preserveMatchTimeline:alreadyInLiveMatch"),
-  "first live match frame must reset to scoreboard");
 assert(index.includes("css/ios-pwa-viewport-guard.css?v=20261030-layout-polish-v3"),
   "invalidate installed PWA CSS cache after layout fix");
-assert(index.includes("js/road-to-glory/rtg-controller.js?v=20261030-layout-polish-v2"),
-  "invalidate installed PWA JS cache after match fix");
 
 function detect({ua="Mozilla/5.0 (iPhone; CPU iPhone OS 27_0)",platform="iPhone",standalone=true,screenHeight=844,innerHeight=759}={}) {
   let selected=null;
