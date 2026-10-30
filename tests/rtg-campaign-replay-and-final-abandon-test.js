@@ -109,7 +109,7 @@ for(const sid of C.SEASON_IDS)test(sid+" final: abandonment consumes a life and 
   defeatedTeamIds:teams.slice(0,-1),firstClearMatchIds:["first"],lives:2,furthestNodeIndex:allNodes.length-1,
   seasonTransitionRewardedIds:[]};
  const firstLoss=P.recordMainLoss(base,{nodeId:base.currentNodeId});
- assert.equal(firstLoss.currentNodeId,base.currentNodeId,"with two lives, final remains available");
+ assert.equal(firstLoss.currentNodeId,expected,"first loss already returns to the last earned checkpoint");
  assert.equal(firstLoss.lives,1);
  assert.equal(firstLoss.tokens,1200);
  const exhausted=P.recordMainLoss(firstLoss,{nodeId:base.currentNodeId});
