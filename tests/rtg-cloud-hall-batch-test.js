@@ -56,7 +56,8 @@ function hallTeams(n) {
 
   const backend2 = createAuthenticatedFirestoreBackend();
   const original2 = await client(backend2);
-  const phone2 = await client(backend2, input());
+  const secondLocal = input(); secondLocal.shared.tokens = 23;
+  const phone2 = await client(backend2, secondLocal);
   try {
     await phone2.c.HallOfFameStorage._saveArchive({ schemaVersion: 2, teams: hallTeams(3), index: [] });
     const cloudBefore = structuredClone(backend2.documents.get(backend2.manifestPath));
