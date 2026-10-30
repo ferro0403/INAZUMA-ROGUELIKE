@@ -1,0 +1,39 @@
+/* Legacy iOS Home Screen PWA viewport guard.
+ *
+ * Old Home Screen icons can preserve their install-time black-translucent
+ * status-bar viewport even after the meta tag was removed from index.html.
+ * The inline, read-only geometry detector adds the html class ONLY when
+ * iOS standalone exposes the full screen under the system status bar.
+ *
+ * Shift the DOCUMENT (not an individual screen) so every RTG view,
+ * Halloween, shop and match starts below the clock. Do not alter visual
+ * backgrounds, rewards, gameplay, modals, IndexedDB or cloud persistence.
+ */
+@media screen and (max-width: 780px) {
+  html.ios-pwa-viewport-overlap {
+    --ios-pwa-top-clearance: max(64px, env(safe-area-inset-top, 0px));
+  }
+
+  html.ios-pwa-viewport-overlap body {
+    padding-top: var(--ios-pwa-top-clearance);
+  }
+
+  /* A sticky heading must stop BELOW the native status bar, not at y=0. */
+  html.ios-pwa-viewport-overlap .topbar,
+  html.ios-pwa-viewport-overlap .squad-topbar {
+    top: var(--ios-pwa-top-clearance);
+    padding-top: 12px;
+  }
+
+  /* The standard squad has its OWN inner scroller and a fixed 100dvh shell.
+     Shrink that shell by exactly the space given to the document. */
+  html.ios-pwa-viewport-overlap .squad-screen:not(.rtg-squad-shell) {
+    height: calc(100dvh - var(--ios-pwa-top-clearance));
+    min-height: calc(100dvh - var(--ios-pwa-top-clearance));
+  }
+
+  /* RTG's section tabs are also sticky beneath the RTG topbar. */
+  html.ios-pwa-viewport-overlap .rtg-tabs--main-style {
+    top: calc(64px + var(--ios-pwa-top-clearance));
+  }
+}
