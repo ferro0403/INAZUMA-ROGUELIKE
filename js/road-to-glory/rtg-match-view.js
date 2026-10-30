@@ -408,8 +408,12 @@
       </section>`;
     }
 
-    function formationPitchMarkup(squad = {}, side = "user", mode = "prematch", latest = null) {
-      if (squadPitchMarkup) return squadPitchMarkup(squad, { side, mode, latest });
+    function formationPitchMarkup(squad = {}, side = "user", mode = "prematch", latest = null, options = {}) {
+      // The standalone Halloween opponent preview must use the identical
+      // matchFormationCardMarkup cards as the native match, not the squad
+      // manager's simplified matchPitchMarkup override.
+      if (squadPitchMarkup && options.nativeMatchCards !== true)
+        return squadPitchMarkup(squad, { side, mode, latest });
       const rows = formationRows(squad?.formationId, squad?.lineup || []);
       const visualSide = side === "opponent" ? "boss" : "user";
       const playerAttr = mode === "prematch" ? "data-rtg-prematch-player" : "data-rtg-field-player";
