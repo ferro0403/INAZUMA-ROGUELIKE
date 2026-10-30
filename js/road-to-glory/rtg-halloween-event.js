@@ -505,7 +505,7 @@
         "1225":"PRESTITO ATTIVO","4761":"POSIZIONI SCAMBIATE"})[asId(effect.coachId)]||"EFFETTO APPLICATO";
       const label='<div class="halloween-coach-match-status" role="status" aria-label="Potere allenatore applicato">'+
         '<strong>'+escape(coach?.name||"Allenatore")+'</strong> · '+escape(detail)+'</div>';
-      return html.replace(/(<main\\b[^>]*>)/,(_match,opening)=>opening+label);
+      return html.replace(/(<main\b[^>]*>)/,(_match,opening)=>opening+label);
     }
     function nativeMatchMarkup(){
       const v=deps.matchView;if(!v||!match)return pendingSection();
