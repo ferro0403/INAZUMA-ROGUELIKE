@@ -34,7 +34,7 @@ for (const sid of C.SEASON_IDS) {
   const cfg = C.season(sid);
   const nodes = C.buildSeasonNodes(sid);
   const checkpoints = Array.from(cfg.checkpointMainIndexes);
-  const expected = cfg.mainTeams.map((_, i) => i)
+  const expected = Array.from(cfg.mainTeams).map((_, i) => i)
     .filter(i => (i + 1) % 3 === 0 && i < cfg.mainTeams.length - 1);
   test(sid + ": checkpoint every three MAIN victories, not every replay or secondary win", () => {
     assert.deepEqual(checkpoints, expected);
@@ -143,7 +143,7 @@ for (const sid of C.SEASON_IDS) {
     const checkpointIndex = list.findIndex(n => n.id === "main:" + cfg.mainTeams[2]);
     const resumeNode = list[checkpointIndex + 1].id;
     const futureMain = "main:" + cfg.mainTeams[4];
-    const previouslyClearSecondary = list.find(n => n.type === "secondary" && list.indexOf(n) > checkpointIndex);
+    const previouslyClearSecondary = list.find(n => n.type === "secondary" && list.indexOf(n) > checkpointIndex + 1);
     const s = {...fresh(sid),currentNodeId:resumeNode,lives:2,checkpointMainIndex:2,
       defeatedTeamIds:cfg.mainTeams.slice(0,5),
       attemptsByNode:{[previouslyClearSecondary.id]:{clears:1,lastResult:"victory"}}};
