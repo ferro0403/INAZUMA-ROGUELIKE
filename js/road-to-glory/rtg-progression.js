@@ -89,6 +89,8 @@
     const achieved=(season.checkpointMainIndexes||[]).filter(i=>
       Number.isInteger(i)&&i>=0&&wins.has(season.mainTeams[i]));
     const checkpointIndex=achieved.length?Math.max(...achieved):-1;
+    // Numeric checkpoint metadata may be stale in older saves: the wins are authoritative.
+    state.checkpointMainIndex=checkpointIndex;
     if(checkpointIndex<0)return `main:${season.mainTeams[0]}`;
     const checkpointTeam = season.mainTeams[checkpointIndex];
     const checkpointNodeIndex = indexForNodeId(`main:${checkpointTeam}`, state);
@@ -100,13 +102,12 @@
     const state = cloneState(inputState);
     const maxLives = cfg(state).livesPerCheckpoint;
     const currentLives = Math.max(0, Number(state.lives) || 0);
-    if (currentLives > 1) {
-      state.lives = currentLives - 1;
-      return state;
-    }
-    state.lives = maxLives;
-    state.currentNodeId = rollbackNodeId(state);
-    if (nodeId && !state.lastFailedMainNodeId) state.lastFailedMainNodeId = String(nodeId);
+    // Every defeat returns to the last earned checkpoint; lives remain a separate
+    // two-attempt resource and refill only when exhausted or a new checkpoint is won.
+    state.lives = currentLives > 1 ? currentLives - 1 : maxLives;
+    if (state.seasonComplete !== true) state.currentNodeId = rollbackNodeId(state);
+    if (String(nodeId || "").startsWith("main:") && !state.lastFailedMainNodeId)
+      state.lastFailedMainNodeId = String(nodeId);
     return state;
   }
 
@@ -137,6 +138,9 @@
     }
     attempts[id] = entry;
     state.attemptsByNode = attempts;
+    // Secondary losses used to do nothing, leaving the run stranded at the
+    // failed node without consuming a life or returning to the checkpoint.
+    if(normalizedResult === "loss") return recordMainLoss(state,{nodeId:id});
     return state;
   }
 
