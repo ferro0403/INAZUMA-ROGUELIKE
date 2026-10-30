@@ -1,0 +1,160 @@
+/* RTG release UI polish. Presentation only: no game state, RNG or persistence changes. */
+/* Compact second Home page, without changing the campaign/shortcut actions. */
+#clean-home .home-rtg-hub{gap:11px!important;}
+#clean-home .home-rtg-hero--compact{
+  gap:13px!important;padding:17px 16px 16px!important;
+  background:repeating-linear-gradient(122deg,transparent 0 29px,#ffffff0a 29px 31px),
+    linear-gradient(120deg,#111216 0 87%,#ffd21f 87%)!important;
+}
+#clean-home .home-rtg-hero--compact::after{
+  font-size:6.3rem!important;top:26px!important;right:0!important;opacity:.75;
+}
+#clean-home .home-rtg-hero-heading{
+  display:flex;align-items:center;gap:8px;position:relative;z-index:1;
+  font-size:.65rem;font-weight:1000;letter-spacing:.13em;color:#f5f5f5;
+}
+#clean-home .home-rtg-flash{color:#ffd21f;font-size:1.15rem;}
+#clean-home .home-rtg-hero-tag{
+  margin-left:auto;white-space:nowrap;border:1px solid #ffdb4c;color:#ffdb4c;
+  padding:4px 6px;font-size:.53rem;letter-spacing:.06em;
+}
+#clean-home .home-rtg-hero--compact .home-rtg-title h1{
+  max-width:none;margin:2px 0 6px;font-size:clamp(1.85rem,8vw,2.75rem);
+  line-height:.95;font-weight:1000;letter-spacing:-.065em;
+}
+#clean-home .home-rtg-hero--compact .home-rtg-title h1 em{font-style:italic;color:#ffd21f;}
+#clean-home .home-rtg-hero--compact .home-rtg-title p{
+  max-width:none;font-size:.74rem;line-height:1.35;color:#e7e7e7;
+}
+#clean-home .home-rtg-primary--compact{
+  min-height:62px!important;width:100%;position:relative;z-index:1;
+  display:grid!important;grid-template-columns:36px minmax(0,1fr) 20px;
+  gap:10px;align-items:center;padding:9px 13px!important;
+  color:#111216!important;background:#ffd21f!important;
+  border:3px solid #111216!important;box-shadow:5px 5px 0 #07080b!important;
+  border-radius:2px!important;text-align:left!important;
+}
+#clean-home .home-rtg-primary-icon{font-size:1.15rem;display:grid;place-items:center;}
+#clean-home .home-rtg-primary-copy{display:flex;flex-direction:column;min-width:0;gap:2px;}
+#clean-home .home-rtg-primary-copy strong{font-size:clamp(.91rem,3.6vw,1.17rem);line-height:1.08;letter-spacing:-.02em;color:#111216;}
+#clean-home .home-rtg-primary-copy small{font-size:.58rem;line-height:1.3;font-weight:850;color:#3b3322;}
+#clean-home .home-rtg-primary-arrow{font-size:2rem;line-height:1;text-align:right;}
+#clean-home .home-rtg-shortcuts--compact{
+  grid-template-columns:minmax(0,1fr)!important;gap:8px!important;
+}
+#clean-home .home-rtg-shortcuts--compact .home-rtg-shortcut{
+  grid-column:auto!important;width:100%!important;max-width:none!important;
+  min-height:64px!important;padding:9px 12px!important;
+  grid-template-columns:37px minmax(0,1fr) 18px;column-gap:10px;
+  border-width:2px!important;box-shadow:4px 4px 0 #121217!important;
+  background:linear-gradient(110deg,#ffd21f 0 84%,#ffe680 84%)!important;
+}
+#clean-home .home-rtg-shortcuts--compact .home-rtg-shortcut>span{
+  width:34px;height:36px;background:transparent;font-size:1.15rem;
+}
+#clean-home .home-rtg-shortcuts--compact .home-rtg-shortcut>strong{
+  font-size:.86rem;line-height:1.1;letter-spacing:.01em;
+}
+#clean-home .home-rtg-shortcuts--compact .home-rtg-shortcut>small{
+  font-size:.6rem;line-height:1.15;color:#4a4334;
+}
+#clean-home .home-rtg-shortcuts--compact .home-rtg-shortcut>b{font-size:1.5rem;line-height:1;}
+@media(min-width:650px){
+  #clean-home .home-rtg-shortcuts--compact{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  #clean-home .home-rtg-shortcuts--compact .home-rtg-shortcut:last-child{grid-column:1/-1!important;}
+}
+
+/* Svincolati: readable, purposeful match launch modal. */
+.rtg-node-modal--secondary{padding:19px 17px 20px!important;}
+.rtg-node-modal--secondary .rtg-secondary-heading{
+  display:grid;grid-template-columns:66px minmax(0,1fr);gap:12px;align-items:center;
+  border-bottom:3px solid #16171c;padding-bottom:17px;
+}
+.rtg-node-modal--secondary .rtg-secondary-symbol{
+  display:grid;place-items:center;width:62px;height:70px;
+  background:#183f60;border:3px solid #13161d;box-shadow:5px 5px 0 #14161d;
+  color:#ffd21f;font-size:2.4rem;font-weight:1000;
+}
+.rtg-node-modal--secondary .rtg-secondary-heading .eyebrow{
+  margin:0 0 4px;color:#866420;font-weight:1000;letter-spacing:.1em;font-size:.65rem;
+}
+.rtg-node-modal--secondary .rtg-secondary-heading h2{
+  margin:0;color:#111216;line-height:1.05;font-size:clamp(1.14rem,4.5vw,1.6rem);
+  overflow-wrap:break-word;
+}
+.rtg-node-modal--secondary .rtg-secondary-heading .muted{margin:6px 0 0;font-size:.76rem;line-height:1.35;}
+.rtg-node-modal--secondary .rtg-secondary-facts{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:8px;margin:15px 0 4px;
+}
+.rtg-node-modal--secondary .rtg-secondary-facts>span{
+  display:flex;flex-direction:column;gap:5px;min-width:0;
+  padding:10px 9px;border:2px solid #16171d;background:#f0eee9;
+}
+.rtg-node-modal--secondary .rtg-secondary-facts small{font-size:.59rem;font-weight:1000;letter-spacing:.1em;color:#554c44;}
+.rtg-node-modal--secondary .rtg-secondary-facts strong{font-size:.79rem;line-height:1.2;color:#13141a;overflow-wrap:anywhere;}
+.rtg-node-modal--secondary .rtg-secondary-reward{background:#ffedaf!important;}
+.rtg-node-modal--secondary .rtg-secondary-reward em{font-size:.56rem;font-style:normal;}
+.rtg-node-modal--secondary .rtg-secondary-start{
+  width:100%;min-height:63px;margin-top:14px!important;
+  display:grid;grid-template-columns:32px 1fr 22px;align-items:center;gap:7px;
+  padding:10px 13px;background:#ffd21f!important;color:#111216!important;
+  font-weight:1000;font-size:clamp(.87rem,4vw,1.15rem);
+  box-shadow:5px 6px 0 #111216;
+}
+.rtg-node-modal--secondary .rtg-secondary-start>b{font-size:1.8rem;}
+
+/* Halloween event: the SAME rendered tactical XI used by the native match. */
+.rtg-halloween-run-screen .halloween-opponent-preview{
+  margin:18px 0 8px;padding:13px 12px 16px;min-width:0;
+  border:3px solid #ff8d20;background:linear-gradient(155deg,#21111a,#120d15);
+  box-shadow:6px 7px 0 #09070d;color:#fff0d2;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-head{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;min-width:0;margin-bottom:12px;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-head>div:first-child{min-width:0;}
+.rtg-halloween-run-screen .halloween-opponent-preview-head .eyebrow{
+  display:block;margin:0 0 4px;color:#ffb864;font-size:.61rem;font-weight:1000;letter-spacing:.11em;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-head h2{
+  margin:0;color:#fff5e7;font-size:clamp(.9rem,3.8vw,1.3rem);
+  line-height:1.1;overflow-wrap:anywhere;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-stats{
+  display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0;
+  font-size:.62rem;font-weight:900;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-stats span{
+  border:1px solid #e77a32;padding:3px 7px;color:#ffc995;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-stats strong{
+  padding:4px 7px;background:#fff1dc;color:#17101a;border:2px solid #111;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field{
+  overflow:hidden;min-width:0;border:2px solid #e06a25;
+  background:repeating-linear-gradient(to bottom,#326e43 0 73px,#367749 73px 146px);
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-match-squad-field-shell{
+  margin:0!important;padding:0!important;max-width:100%!important;
+  width:100%!important;background:transparent!important;border:0!important;
+  box-shadow:none!important;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-squad-pitch-main{
+  width:100%!important;max-width:100%!important;margin:0!important;
+  border:0!important;box-shadow:none!important;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .rtg-prematch-single-pitch{
+  width:100%;max-width:100%;min-width:0;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-field .squad-player-card{
+  min-width:0;max-width:100%;height:auto;
+}
+.rtg-halloween-run-screen .halloween-opponent-preview-note{
+  margin:10px 0 0;color:#eebd9d;font-size:.62rem;line-height:1.3;text-align:center;
+}
+@media(max-width:430px){
+  .rtg-halloween-run-screen .halloween-opponent-preview{padding:10px 7px 12px;}
+  .rtg-halloween-run-screen .halloween-opponent-preview-head{padding:0 3px;}
+}
