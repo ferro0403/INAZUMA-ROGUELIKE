@@ -355,7 +355,7 @@
     // Only the Squadra player detail gets the saved, currently valid power
     // projection. Album, collection, prizes and match details remain independent.
     function squadCoachDetailPreview(cardId,player){
-      if(view!=="squad"||match||!localSquad?.coachPowerSelection||
+      if(view!=="squad"||!localSquad?.coachPowerSelection||
          ![...(localSquad.lineup||[]),...(localSquad.bench||[])].includes(cardId))
         return null;
       const rules=global.RoadToGloryCoachPowerRuntime;
