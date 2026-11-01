@@ -668,6 +668,9 @@
       const player=deps.playerResolver.resolveVersion?.(cardRef,deps.campaign?.activeSeasonId||"ie1",deps.freeAgentsDb)?.player||deps.rawPlayer(cardRef);
       const profileId=deps.id(parsed.profileId||parsed.playerId);
       const profile=(deps.seasonDb?.profiles||[]).find(entry=>deps.id(entry?.profileId||entry?.id)===profileId);
+      // Match the exact owned profile, not another version's canonical teams.
+      if(deps.seasonDb?.requiresProfileAwareRuntime && parsed.profileId && profile && parsed.legacySeasonId===deps.activeSeasonId())
+        return [profile.teamId,...(profile.teamIds||[])].filter(Boolean).map(deps.id);
       const canonicalId=deps.id(profile?.playerId||parsed.canonicalPlayerId||parsed.playerId).split("@")[0];
       const canonical=(deps.seasonDb?.players||[]).find(entry=>deps.id(entry?.playerId||entry?.id)===canonicalId);
       return [player?.teamId,...(player?.teamIds||[]),profile?.teamId,...(profile?.teamIds||[]),canonical?.teamId,...(canonical?.teamIds||[])].filter(Boolean).map(deps.id);
@@ -692,7 +695,7 @@
           (Number.isFinite(movePower)?Math.max(0,Math.min(2,(movePower-50)/30)):0);
         const season=deps.activeSeasonId();
         const parsed=deps.cardIdentity?.parse?.(playerId,season)||{};
-        const recruit=recruitSet.has(playerId)&&(season==="ie1"||String(parsed.legacySeasonId||"")===season);
+        const recruit=recruitSet.has(playerId)&&String(parsed.legacySeasonId||"")===season;
         const recent=recruit&&seasonTeamIdsForPlayer(playerId).some(team=>recentTeams.has(team));
         return{playerId,role,overall:Number(player.overall||0),contribution,recruit,recent,
           isRtg:parsed.sourceKind==="season"};
