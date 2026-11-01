@@ -124,6 +124,11 @@
     const player = resolved?.player || playerResolver?.resolveAtLevel20?.(cardId, activeSeasonId, null, freeAgentsDb);
     const profileId=id(parsed.profileId||parsed.playerId);
     const seasonProfile=(seasonDb?.profiles||[]).find((entry)=>id(entry?.profileId||entry?.id)===profileId);
+    // For profile-aware Seasons, the acquired card belongs to its exact team
+    // profile, not to every team of the underlying canonical player.
+    if (seasonDb?.requiresProfileAwareRuntime && parsed.profileId && seasonProfile && parsed.legacySeasonId===activeSeasonId) {
+      return [seasonProfile.teamId,...(seasonProfile.teamIds||[])].filter(Boolean).map(id);
+    }
     const canonicalId=id(seasonProfile?.playerId||parsed.canonicalPlayerId||parsed.playerId).split("@")[0];
     const seasonPlayer = (seasonDb?.players || []).find((entry) => id(entry?.playerId || entry?.id) === canonicalId);
     return [
@@ -154,13 +159,15 @@
     const recruits = activeRoster.map(id).filter((cardId) => recruitSet.has(cardId));
     const recentTeams = recentDefeatedTeamIds(teamId, state, constraint.recentWindow);
     const recentTeamSet = new Set(recentTeams);
-    const recentRecruits = recruits.filter((cardId) => teamIdsForCard(cardId, seasonId, playerResolver, freeAgentsDb, seasonDb).some((team) => recentTeamSet.has(team)));
     const reasons = [...(validation.reasons || [])];
     if (power != null && power > Number(constraint.cap)) reasons.push("team-power-cap");
     const activeSeason=id(state?.activeSeasonId||"ie1");
-    const seasonRecruits=recruits.filter(cardId=>cards().parse(cardId).legacySeasonId===activeSeason);
-    const eligibleRecruits=activeSeason==="ie1"?recruits:seasonRecruits;
-    const eligibleRecent=recentRecruits.filter(cardId=>activeSeason==="ie1"||cards().parse(cardId).legacySeasonId===activeSeason);
+    // Keep old S1 raw-ID saves valid without admitting acquired cards from
+    // other Seasons or Halloween to the Season 1 requirements.
+    const legacyS1Recruits=new Set((state?.gachaAcquiredPlayerIds||[]).map(id));
+    const eligibleRecruits=recruits.filter(cardId=>cards().parse(cardId).legacySeasonId===activeSeason ||
+      (activeSeason==="ie1" && cards().parse(cardId).legacySeasonId==null && legacyS1Recruits.has(cardId)));
+    const eligibleRecent=eligibleRecruits.filter(cardId=>teamIdsForCard(cardId, seasonId, playerResolver, freeAgentsDb, seasonDb).some(team=>recentTeamSet.has(team)));
     if (eligibleRecruits.length < Number(constraint.minRecruit || 0)) reasons.push(activeSeason==="ie1"?"min-s1-recruits":"min-season-recruits");
     if (eligibleRecent.length < Number(constraint.recentCount || 0)) reasons.push(activeSeason==="ie1"?"recent-s1-recruits":"recent-season-recruits");
     return {
