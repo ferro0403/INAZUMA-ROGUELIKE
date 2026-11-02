@@ -12,12 +12,15 @@
       .map(key=>[key,Number(RAW_PLAYER[key])*10])
   ));
   function player() {
-    return {...RAW_PLAYER,...STATS,playerId:PLAYER_ID,cardId:CARD_ID,
+    // Match/coach effects must work with independent, mutable player snapshots.
+    const stats={...STATS};
+    const moves=MOVES.map(move=>({...move}));
+    return {...RAW_PLAYER,...stats,playerId:PLAYER_ID,cardId:CARD_ID,
       legacySeasonId:EVENT_ID,resolvedSeasonId:EVENT_ID,
       teamId:"occult-2",teamName:"Occult Halloween",
-      level:20,stats:STATS,baseStats:STATS,normalizedRole:"FW",
+      level:20,stats,baseStats:{...stats},normalizedRole:"FW",
       finalOverall:97,category:"Leggenda",finalRarity:"Leggenda",
-      activeMove:MOVES[0],halloweenMoves:MOVES,halloweenVampire:false};
+      activeMove:moves[0],halloweenMoves:moves,halloweenVampire:false};
   }
   function owns(account) {
     return Array.isArray(account?.gachaAcquiredCards)&&
