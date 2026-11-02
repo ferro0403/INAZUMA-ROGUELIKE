@@ -124,6 +124,17 @@
 }
 
 
+/* Only the coaches cover: zoom past the large orange upper band in
+   the source artwork. Never crop or alter the event/season covers. */
+.album-collections-screen .rtg-coach-album-collection .album-collection-cover {
+  background: #171216;
+}
+.album-collections-screen .rtg-coach-album-collection .album-collection-cover img {
+  object-fit: cover;
+  transform: scale(1.52);
+  transform-origin: 50% 78%;
+}
+
 .album-collections-screen .album-collection-cover.is-fallback::before {
   position: absolute;
   inset: 0;
