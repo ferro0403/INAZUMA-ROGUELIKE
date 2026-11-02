@@ -189,6 +189,7 @@
       const seasonIds=squadFilterSeasonIds();
       const records=new Map();
       for(const seasonId of seasonIds){
+        if(seasonId===HALLOWEEN_FILTER_ID)continue; // Occult is added from its event catalog below.
         if(seasonFilter!=="all"&&seasonId!==seasonFilter)continue;
         const database=global.SeasonRegistry?.database?.(seasonId);
         for(const team of database?.teams||[]){
