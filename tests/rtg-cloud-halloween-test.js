@@ -109,6 +109,7 @@ vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches-view.js","utf8"
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-encounter-runtime.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8"),context);
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-halloween-completion-reward.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-cloud-snapshot.js","utf8"),context);
 const squadView={
@@ -1194,6 +1195,54 @@ async function main() {
     "Album entitlement repair must not mutate the shared account");
   entitlementController.dispose();
   albumUnlockedIds.add(lockedPid);
+  // Full old-account completion path: initially secret, then one canonical grant
+  // and one native-style notification, then cloud-safe replay with no duplicates.
+  const required=Array.from(assets.players.keys());
+  const oldComplete=clone(records["shared:account"]);
+  oldComplete.gachaAcquiredCards=required.map(pid=>clone(
+    context.RoadToGloryCardIdentity.record({playerId:pid,legacySeasonId:"halloween2026"})
+  ));
+  oldComplete.coachOwnedIds=[...new Set([...(oldComplete.coachOwnedIds||[]),"halloween-coach-54"])];
+  oldComplete.halloween={
+    pumpkins:0,ownedIds:required,pullCount:18,completedIds:[],luckyWins:0
+  };
+  records["shared:account"]=oldComplete;
+  delete records["local:halloween2026:match"];
+  const completionApp=createApp();
+  let celebrationHtml="",celebrationCount=0;
+  const completionView={
+    ...nativeRunView,
+    albumTeamsMarkup({teams}){
+      return '<main class="album-screen album-teams-screen">'+
+        teams.map(team=>'<button data-rtg-album-team="'+team.teamId+'">'+team.teamName+'</button>').join("")+'</main>';
+    },
+    pullResultMarkup(_reward,bonus){
+      return '<div class="rtg-pull-result"><span class="player-card halloween-event-card">'+
+        bonus.name+'</span><button data-rtg-pull-continue>CONTINUA</button></div>';
+    }
+  };
+  const completion=E.create({app:completionApp,storage,runView:completionView,
+    toast:()=>{},openModal:html=>{celebrationHtml=html;celebrationCount++;}});
+  await completion.open("album");
+  await completionApp.controls["data-rtg-album-team"][0].fire();
+  assert.doesNotMatch(completionApp.innerHTML,/halloween2026::custom_0003/,
+    "Secret player must not appear in the locked Halloween Album");
+  await completion.open("match");
+  assert.match(celebrationHtml,/PREMIO PER IL COMPLETAMENTO/);
+  assert.match(celebrationHtml,/halloween-event-card/);
+  assert.equal(celebrationCount,1,"Completion modal appears after grant");
+  assert.equal(records["shared:account"].gachaAcquiredCards.filter(c=>
+    c.cardId==="halloween2026::custom_0003").length,1,
+    "Veteran account receives exactly one secret card");
+  assert.equal(records["shared:account"].halloween.ownedIds.length,18,
+    "Never append secret to the cloud-bound 18-player ledger");
+  await completion.open("album");
+  await completionApp.controls["data-rtg-album-team"][0].fire();
+  assert.match(completionApp.innerHTML,/halloween2026::custom_0003/,
+    "Unlocked secret player belongs in Occult Halloween roster");
+  await completion.open("match");
+  assert.equal(celebrationCount,1,"Reload does not duplicate presentation or card");
+  completion.dispose();
   console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 win-only prizes and zero-loss/draw prizes, unique 200-pumpkin pulls, cloud compatibility PASS");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
