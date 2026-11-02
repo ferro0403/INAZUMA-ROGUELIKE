@@ -6,7 +6,7 @@ const vm=require("node:vm");
 const targets=JSON.parse(fs.readFileSync("data/RTG_move_power_targets_169.json","utf8")).powerByName;
 const context={RoadToGloryCardIdentity:{
   record:({playerId,legacySeasonId})=>({
-    playerId,legacySeasonId,cardId:legacySeasonId+"::"+playerId,sourceKind:"season"
+    playerId,legacySeasonId,cardId:legacySeasonId+"::"+playerId,profileId:undefined,sourceKind:"season"
   })
 }};
 let open=true;
@@ -44,6 +44,7 @@ assert.equal(api.eligible(account,originalMap),true,"Existing completed account 
 assert.equal(api.grant(account,originalMap),true);
 assert.equal(api.owns(account),true);
 assert.equal(account.gachaAcquiredCards.length,19);
+assert.equal(Object.hasOwn(account.gachaAcquiredCards[18],"profileId"),false,"Canonical card must not persist undefined metadata");
 assert.equal(account.halloween.ownedIds.length,18,"Cloud's strict Halloween count unchanged");
 assert.equal(api.grant(account,originalMap),false,"Retry must not duplicate");
 assert.equal(account.gachaAcquiredCards.length,19);
