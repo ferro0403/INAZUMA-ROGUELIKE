@@ -212,8 +212,8 @@
 @media(max-width:640px){.rtg-halloween-run-screen .rtg-run-content{padding-bottom:100px}.rtg-halloween-run-screen .rtg-map.rtg-halloween-map{min-height:480px}.halloween-squad-mode .rtg-squad-content{padding-bottom:90px}}
 
 .rtg-halloween-run-screen.halloween-screen{padding:0!important;width:100%!important}
-.halloween-squad-mode [data-rtg-squad-player^="halloween2026::"]:not([data-rtg-squad-player="halloween2026::custom_0001"]):not([data-rtg-squad-player="halloween2026::custom_0002"]) .player-portrait,
-.halloween-album-mode [data-rtg-album-player-entry^="halloween2026::"]:not([data-rtg-album-player-entry="halloween2026::custom_0001"]):not([data-rtg-album-player-entry="halloween2026::custom_0002"]) .player-portrait{
+.halloween-squad-mode [data-rtg-squad-player^="halloween2026::"]:not([data-rtg-squad-player="halloween2026::custom_0001"]):not([data-rtg-squad-player="halloween2026::custom_0002"]):not([data-rtg-squad-player="halloween2026::custom_0003"]) .player-portrait,
+.halloween-album-mode [data-rtg-album-player-entry^="halloween2026::"]:not([data-rtg-album-player-entry="halloween2026::custom_0001"]):not([data-rtg-album-player-entry="halloween2026::custom_0002"]):not([data-rtg-album-player-entry="halloween2026::custom_0003"]) .player-portrait{
  filter:sepia(.12) saturate(.65) hue-rotate(295deg) brightness(.68) contrast(1.32) drop-shadow(0 0 14px #ff304b90)
 }
 
@@ -606,13 +606,15 @@
 }
 
 /* Halloween custom fullbody sizing: native reference proportions.
-   The two user-supplied fullbody PNGs have tall, fully drawn canvases.
+   The user-supplied fullbody artworks have tall, fully drawn canvases.
    Display them like the smaller Nathan Jones reference (fully visible,
    grounded near the bottom of the hero), without changing other cards. */
 .player-detail-layout.halloween-event-detail .player-detail-visual
   img.player-fullbody--fullbody[src$="halloween-nathan-fullbody.png"],
 .player-detail-layout.halloween-event-detail .player-detail-visual
-  img.player-fullbody--fullbody[src$="halloween-samford-fullbody.png"]{
+  img.player-fullbody--fullbody[src$="halloween-samford-fullbody.png"],
+.player-detail-layout.halloween-event-detail .player-detail-visual
+  img.player-fullbody--fullbody[src$="halloween-shawn-fullbody.webp"]{
   position:absolute!important;
   left:55%!important;
   right:auto!important;
@@ -972,3 +974,18 @@
     gap:13px!important;
   }
 }
+
+/* Secret completion award reuses the same Halloween native player card. */
+.rtg-halloween-completion-modal .halloween-completion-reward{
+  color:#ffe9d3;background:radial-gradient(circle at 50% 0,#672c15,#160e19 70%);
+  border:2px solid #ff922e;border-radius:10px;padding:14px;box-shadow:0 0 35px #ff6d1733
+}
+.rtg-halloween-completion-modal .halloween-completion-heading{text-align:center;margin:5px auto 15px;max-width:520px}
+.rtg-halloween-completion-modal .halloween-completion-heading span{font-size:.75rem;font-weight:900;color:#ffb34d;letter-spacing:.15em}
+.rtg-halloween-completion-modal .halloween-completion-heading h2{
+  color:#ffc06a;text-shadow:0 2px 12px #a8381a;
+  font-size:clamp(1.2rem,4vw,1.85rem);line-height:1.15;margin:12px 0
+}
+.rtg-halloween-completion-modal .halloween-completion-heading p{color:#ffe9d3;font-size:.91rem;margin:0 0 10px}
+.rtg-halloween-completion-modal .rtg-pull-result{margin:auto;max-width:700px}
+.rtg-halloween-completion-modal .rtg-pull-balance{display:none!important}
