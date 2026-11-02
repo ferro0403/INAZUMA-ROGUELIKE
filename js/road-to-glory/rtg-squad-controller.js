@@ -105,16 +105,18 @@
       return ["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"];
     }
 
-    const SQUAD_FILTER_SEASON_LABELS=Object.freeze({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion"});
+    const HALLOWEEN_FILTER_ID="halloween2026";
+    const SQUAD_FILTER_SEASON_LABELS=Object.freeze({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion",halloween2026:"Halloween"});
     function squadFilterSeasonIds(){
-      return Array.from(deps.config?.SEASON_IDS||[]).map(deps.id).filter(Boolean);
+      // Halloween is an owned-card source, NOT an additional playable RTG season.
+      return [...new Set([...Array.from(deps.config?.SEASON_IDS||[]).map(deps.id).filter(Boolean),HALLOWEEN_FILTER_ID])];
     }
     function squadFilterSeasonLabel(seasonId){
       const sid=deps.id(seasonId);
       return SQUAD_FILTER_SEASON_LABELS[sid]||global.SeasonRegistry?.get?.(sid)?.name||sid.toUpperCase();
     }
     function squadFilterSeasonShortLabel(seasonId){
-      return ({ie1:"S1",ie1_s2:"S2",ie1_s3:"S3",ie2:"AR",orion:"OR"})[deps.id(seasonId)]||squadFilterSeasonLabel(seasonId);
+      return ({ie1:"S1",ie1_s2:"S2",ie1_s3:"S3",ie2:"AR",orion:"OR",halloween2026:"HW"})[deps.id(seasonId)]||squadFilterSeasonLabel(seasonId);
     }
     function squadFilterSeasonOptions(){
       return [{value:"all",label:"Tutte"},...squadFilterSeasonIds().map(seasonId=>({value:seasonId,label:squadFilterSeasonLabel(seasonId)}))];
@@ -126,6 +128,7 @@
       const previous=registry?.activeId?.();
       squadFilterDataPromise=(async()=>{
         for(const seasonId of squadFilterSeasonIds()){
+          if(seasonId===HALLOWEEN_FILTER_ID)continue; // Event assets do not belong to SeasonRegistry.
           if(registry?.database?.(seasonId))continue;
           if(typeof registry?.loadDatabase!=="function")continue;
           await registry.loadDatabase(seasonId);
@@ -140,7 +143,8 @@
       return squadFilterDataPromise;
     }
     function squadFilterDataReady(){
-      return squadFilterSeasonIds().every(seasonId=>!!global.SeasonRegistry?.database?.(seasonId));
+      return squadFilterSeasonIds().every(seasonId=>
+        seasonId===HALLOWEEN_FILTER_ID||!!global.SeasonRegistry?.database?.(seasonId));
     }
     function waitForSquadFilterData(reopen){
       if(squadFilterDataReady())return false;
@@ -160,6 +164,12 @@
       const identity=deps.cardMeta(cardId)||{};
       const seasonId=deps.id(identity.legacySeasonId);
       if(!squadFilterSeasonIds().includes(seasonId))return{seasonId:"",teamIds:[],teamNames:new Map()};
+      // All 18 Halloween event cards and the secret completion reward belong
+      // exclusively to Occult Halloween. No seasonal DB, migration or fetch.
+      if(seasonId===HALLOWEEN_FILTER_ID)return{
+        seasonId,teamIds:["occult-2"],
+        teamNames:new Map([["occult-2","Occult Halloween"]])
+      };
       const roleVariant=deps.squadDraft?.activeRoleVariantByCardId?.[cardId]||null;
       const player=deps.resolved(cardId,roleVariant);
       const raw=deps.rawPlayer(cardId);
@@ -193,6 +203,13 @@
             baseLabel:deps.id(team?.teamName||team?.name||humanizeTeamId(teamId)),
           });
         }
+      }
+      if((seasonFilter==="all"||seasonFilter===HALLOWEEN_FILTER_ID)){
+        const value=HALLOWEEN_FILTER_ID+"::occult-2";
+        records.set(value,{
+          value,seasonId:HALLOWEEN_FILTER_ID,teamId:"occult-2",
+          baseLabel:"Occult Halloween"
+        });
       }
       const rows=Array.from(records.values());
       const labelCounts=new Map();
