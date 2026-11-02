@@ -78,7 +78,7 @@ const htmlShell=fs.readFileSync("index.html","utf8");
 assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261102-secret-shawn-reward-v1/,
   "iOS cache must not serve the older pre-fix Halloween controller");
 const albumViewSource=fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8");
-assert.ok(htmlShell.includes("js/road-to-glory/rtg-album-view.js?v=20261030-coach-event-art-v3"),
+assert.ok(htmlShell.includes("js/road-to-glory/rtg-album-view.js?v=20261102-event-progress-v1"),
   "Safari must fetch the latest album covers");
 ctx.RoadToGloryCoaches={catalog:()=>[{id:"208",name:"Hillman"}],
   owned:()=>new Set(["208"])};
@@ -156,8 +156,10 @@ assert.ok(coachesCss.includes("color:#24181a!important"),
   "Dark ink must contrast against the light parchment coach preview");
 assert.ok(coachesCss.includes(".rtg-coach-album-collection .album-collection-title{color:#fffdf6!important"),
   "Coach artwork must have a readable white title");
-assert.match(coachesCss,/\.album-collections-screen \.rtg-coach-album-collection \.album-collection-cover img\s*\{\s*object-fit:contain!important;/,
-  "Coach album cover must show the full image, without default object-fit:cover cropping");
+assert.match(coachesCss,/\.album-collections-screen \.rtg-coach-album-collection \.album-collection-cover img\s*\{\s*object-fit:cover!important;/,
+  "Coach album cover must zoom past the source image orange band");
+assert.match(coachesCss,/transform:scale\(1\.52\)/,
+  "Coach album cover uses a dedicated zoom, without touching other collection covers");
 assert.ok(halloweenCss.includes(".rtg-halloween-album-collection .album-collection-title{color:#fffdf6!important"),
   "Event title must be white over the artwork");
 
