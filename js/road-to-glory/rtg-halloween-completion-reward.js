@@ -44,7 +44,7 @@
     if(!meta||meta.cardId!==CARD_ID)throw Object.assign(
       new Error("halloween-completion-card-identity-invalid"),
       {code:"halloween-completion-card-identity-invalid"});
-    account.gachaAcquiredCards.push({...meta});
+    account.gachaAcquiredCards.push(JSON.parse(JSON.stringify(meta)));
     return true;
   }
   global.RoadToGloryHalloweenCompletion=Object.freeze({
