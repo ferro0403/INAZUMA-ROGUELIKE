@@ -24,7 +24,7 @@
       account.gachaAcquiredCards.some(card=>card?.cardId===CARD_ID);
   }
   function eligible(account,originalPlayers) {
-    if (!(originalPlayers instanceof Map)||originalPlayers.size!==18) return false;
+    if (!originalPlayers||typeof originalPlayers.keys!=="function"||originalPlayers.size!==18) return false;
     if(!Array.isArray(account?.halloween?.ownedIds)||
       !Array.isArray(account?.coachOwnedIds)||
       !Array.isArray(account?.gachaAcquiredCards)||
