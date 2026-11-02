@@ -18,6 +18,7 @@
     return {...RAW_PLAYER,...stats,playerId:PLAYER_ID,cardId:CARD_ID,
       legacySeasonId:EVENT_ID,resolvedSeasonId:EVENT_ID,
       teamId:"occult-2",teamName:"Occult Halloween",
+      teamLogoUrl:"https://dxi4wb638ujep.cloudfront.net/1/k/r/k/rk_nafgart8.webp",
       level:20,stats,baseStats:{...stats},normalizedRole:"FW",
       finalOverall:97,category:"Leggenda",finalRarity:"Leggenda",
       activeMove:moves[0],halloweenMoves:moves,halloweenVampire:false};
