@@ -24,7 +24,7 @@ test("Mobile RTG home: compact CTA and existing navigation contracts",()=>{
   assert(!index.includes("rtg-release-polish-20261030.css"),"No illegal finishing stylesheets");
   assert(index.includes("css/game.css?v=20261030-rtg-home-owner-v4"));
   assert(index.includes("css/rtg-theme.css?v=20261030-secondary-briefing-owner-v4"));
-  assert(index.includes("css/rtg-halloween-event.css?v=20261102-shawn-fullbody-v2"));
+  assert(index.includes("css/rtg-halloween-event.css?v=20261102-shawn-portrait-exempt-v3"));
   assert(index.includes("home-view.js?v=20260923-rtg-direct-paint-p1-compact-v1"),
     "Mobile home HTML must be cache-busted");
 });
@@ -40,7 +40,7 @@ test("Evolved Halloween player filters read owned rarity first, not source chara
   const effective=upgraded.finalRarity||upgraded.category||sourceRarity;
   assert.equal(effective,"Mondiale");
   assert.notEqual(effective,sourceRarity);
-  assert(index.includes("rtg-squad-controller.js?v=20261025-rtg-priority-v1-evolved-rarity-v1"));
+  assert(index.includes("rtg-squad-controller.js?v=20261102-halloween-normal-filters-v1"));
 });
 
 test("Svincolati modal keeps the exact data-rtg-start-node action with clearer CTA",()=>{
