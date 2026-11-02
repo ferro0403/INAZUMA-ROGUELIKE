@@ -255,7 +255,7 @@
     }
     function returnToEventHome() {
       let awarded=false;
-      void perform(async()=>{
+      return perform(async()=>{
         awarded=await grantCompletionReward();
         view="match";
       }).then(()=>{if(awarded)showCompletionReward();});
@@ -1062,7 +1062,7 @@
       app.querySelectorAll?.("[data-halloween-tab],[data-rtg-tab]")?.forEach(el=>el.addEventListener("click",()=>{
         const target=el.dataset.halloweenTab || el.dataset.rtgTab;
         if(target==="squad"){view="squad";render();}
-        else if(target==="run"||target==="match")returnToEventHome();
+        else if(target==="run"||target==="match")return returnToEventHome();
       }));
       // Read-only opponent XI: use the album's real card detail, including
       // locked Halloween players. Never send a preview tap to startMatch.
