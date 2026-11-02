@@ -101,8 +101,10 @@ assert.ok(eventTile.includes("https://static.wikia.nocookie.net/inazuma-eleven/i
 assert.ok(eventTile.includes('<span class="album-collection-title">GIOCATORI EVENTO</span>'));
 assert.doesNotMatch(eventTile,/🎃|Occult Halloween/,
   "No Halloween pumpkin emoji or Occult Halloween caption on the album tile");
-assert.ok(eventTile.includes('rtg-halloween-album-count"><strong>18</strong>'),
-  "Keep the player count without the removed subtitle");
+assert.ok(eventTile.includes('0 / 18 giocatori sbloccati') && eventTile.includes('<strong>0%</strong>'),
+  "Event Album must show accurate progress without revealing the secret bonus");
+assert.match(eventTile,/album-collection-progress-bar/,
+  "Event Album must use the same progress bar as coaches");
 const eventSource=fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8");
 assert.match(eventSource,/function tacticalLineupModel\(model\)/,
   "Halloween must explicitly project the saved XI by tactical slot index");
