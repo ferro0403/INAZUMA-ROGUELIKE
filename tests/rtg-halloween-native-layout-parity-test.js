@@ -183,7 +183,7 @@ assert.match(eventSource,/data-halloween-prize-color/,
 assert.ok(halloweenCss.includes('[data-halloween-prize-color="orange"] .rtg-vending-prize-v9'));
 assert.ok(halloweenCss.includes('[data-halloween-prize-color="black"] .rtg-vending-prize-v9'));
 
-assert.match(htmlShell,/rtg-coaches\.css\?v=20261030-coach-album-fit-v5/,
+assert.match(htmlShell,/rtg-coaches\.css\?v=20261102-coach-cover-zoom-v1/,
   "iPhone must fetch the updated staff contrast rules");
 assert.match(coachesCss,/\.rtg-coach-squad-slot\.rtg-coach-halloween \.rtg-coach-squad-selected strong\s*\{\s*color:#24151a!important/,
   "Hekyll's name must be dark on the parchment background");
