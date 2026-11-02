@@ -18,8 +18,9 @@ const view=context.RoadToGloryAlbumView.create({
 });
 const eighteen=Array.from({length:18},(_,i)=>String(i+1));
 const acquired=ids=>ids.map(cardId=>({cardId}));
-const render=(ownedIds=[],cardIds=[])=>view.albumCollectionMarkup({
-  state:{activeSeasonId:"ie1",halloween:{ownedIds},gachaAcquiredCards:acquired(cardIds)},
+const render=(ownedIds=[],cardIds=ownedIds.map(id=>"halloween2026::"+id))=>view.albumCollectionMarkup({
+  state:{activeSeasonId:"ie1",gachaAcquiredCards:acquired(cardIds)},
+  // RTG campaign snapshots do not include the separate halloween.ownedIds projection.
   collections:[{seasonId:"ie1",total:30,unlocked:2}]
 });
 const halloween=html=>(html.split('data-rtg-album-halloween')[1]||"").split("</button>")[0];
@@ -41,7 +42,7 @@ const afterUnlock=halloween(render(eighteen,[...eighteen.map(id=>"halloween2026:
 assert.match(afterUnlock,/19 \/ 19 giocatori sbloccati/);
 assert.match(afterUnlock,/100%/);
 assert.match(afterUnlock,/width:100%/);
-const withDuplicate=halloween(render([...eighteen,"1"],[bonus,bonus]));
+const withDuplicate=halloween(render(eighteen,[...eighteen.map(id=>"halloween2026::"+id),bonus,bonus]));
 assert.match(withDuplicate,/19 \/ 19/,"No double-counting saved cards or event IDs");
 const coachCard=render().split('data-rtg-album-coaches-open')[1].split("</button>")[0];
 assert.match(coachCard,/1 \/ 11 allenatori sbloccati/);
