@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-11-03T16:43:44.290Z",
+  "createdAt": "2026-11-03T19:06:36.635Z",
   "fixedTime": "2026-11-03T12:00:00.000Z",
   "viewport": {
     "width": 412,
@@ -164,7 +164,7 @@
       "ok": true,
       "failedStep": null,
       "errors": [],
-      "failedImages": 1
+      "failedImages": 4
     },
     {
       "name": "22-rtg-prepartita",
@@ -215,6 +215,230 @@
       "failedImages": 1
     },
     {
+      "name": "40-album-collezione",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 5
+    },
+    {
+      "name": "41-album-rosa",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 5
+    },
+    {
+      "name": "42-album-scheda",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 5
+    },
+    {
+      "name": "43-run-elimina",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "44-run-modulo",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "45-run-editor-5v5",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "46-run-premio-oggetto",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "47-run-inventario-pieno",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "48-run-usa-oggetto",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "49-run-partita-5v5",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "50-run-risultato-5v5",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "51-rtg-scheda-giocatore",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "52-rtg-cambio-giocatore",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "53-rtg-prepartita-squadre",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "54-rtg-partita-duello",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "55-run-boss-vinto",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "56-run-dopo-boss-vinto",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "57-run-boss-perso",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "58-run-game-over",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "59-run-evento-casuale",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "60-run-partita-speciale",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "61-run-speciale-risultato",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "62-rtg-intervallo",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "63-rtg-rigori",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 5
+    },
+    {
+      "name": "64-rtg-vittoria",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 7
+    },
+    {
+      "name": "65-rtg-sconfitta",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 7
+    },
+    {
+      "name": "66-account",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "67-halloween-partita",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
       "name": "30-halloween-home",
       "account": "sbloccato",
       "ok": true,
@@ -236,7 +460,7 @@
       "ok": true,
       "failedStep": null,
       "errors": [],
-      "failedImages": 3
+      "failedImages": 2
     },
     {
       "name": "33-halloween-squadra",
@@ -272,10 +496,11 @@
     }
   ],
   "blockedHosts": {
-    "www.akibagamers.it": 12,
-    "i0.wp.com": 27,
-    "i.namu.wiki": 5,
-    "inazuma-eleven-legends.vercel.app": 10,
+    "www.akibagamers.it": 31,
+    "i0.wp.com": 55,
+    "i.namu.wiki": 19,
+    "inazuma-eleven-legends.vercel.app": 38,
+    "opengameart.org": 1,
     "static.vecteezy.com": 8
   },
   "validBaseline": false
