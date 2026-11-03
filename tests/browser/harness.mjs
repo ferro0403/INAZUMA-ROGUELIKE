@@ -2,6 +2,7 @@
 // Ogni prova riceve una pagina pulita: niente salvataggi, ora fissa, casualita' con seme fisso.
 import { createRequire } from "node:module";
 import { startStaticServer } from "../../scripts/screenshots/static-server.mjs";
+import { collectCssUsage, flushCssUsage } from "../../scripts/css/css-usage-collector.mjs";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
@@ -10,10 +11,20 @@ export const VIEWPORT = { width: 412, height: 915 };
 export const FIXED_TIME = new Date("2026-11-03T12:00:00Z");
 const STEP_TIMEOUT = 15000;
 
-const seededRandom = (seed) => `(() => {
-  let s = ${seed | 0};
-  Math.random = () => { s |= 0; s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+// Casualita' con seme fisso: Math.random per la run, e un generatore separato (stesso seme, altra sequenza)
+// per crypto.randomUUID / crypto.getRandomValues, usati dal RTG (seme campagna) e dall'evento Halloween.
+// Il generatore separato non consuma numeri di Math.random: le mappe gia' fissate restano uguali.
+export const seededRandom = (seed) => `(() => {
+  const make = (start) => { let s = start | 0; return () => { s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+  Math.random = make(${seed | 0});
+  const cryptoRandom = make(${(seed ^ 0x5bd1e995) | 0});
+  const hex = () => Math.floor(cryptoRandom() * 16).toString(16);
+  try {
+    crypto.randomUUID = () => "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => c === "x" ? hex() : (8 + Math.floor(cryptoRandom() * 4)).toString(16));
+    crypto.getRandomValues = (array) => { const max = 2 ** (8 * array.BYTES_PER_ELEMENT);
+      for (let i = 0; i < array.length; i += 1) array[i] = Math.floor(cryptoRandom() * max); return array; };
+  } catch {}
 })();`;
 
 // Errori attesi in locale: Firebase (account cloud) non e' configurato per i test.
@@ -40,6 +51,7 @@ export async function startHarness() {
       return new Game(page, context, errors);
     },
     async close() {
+      flushCssUsage("browser-tests");
       await browser.close();
       server.close();
     },
@@ -60,14 +72,17 @@ export class Game {
   async click(selector) {
     const loc = this.page.locator(selector).locator("visible=true").first();
     await loc.waitFor({ state: "visible", timeout: STEP_TIMEOUT });
+    await collectCssUsage(this.page);
     await loc.click({ timeout: STEP_TIMEOUT });
     await this.page.waitForTimeout(400);
+    await collectCssUsage(this.page);
   }
   async clickText(text) {
     const loc = this.page.getByText(text, { exact: false }).locator("visible=true").first();
     await loc.waitFor({ state: "visible", timeout: STEP_TIMEOUT });
     await loc.click({ timeout: STEP_TIMEOUT });
     await this.page.waitForTimeout(400);
+    await collectCssUsage(this.page);
   }
   async visible(selector, timeout = STEP_TIMEOUT) {
     await this.page.locator(selector).locator("visible=true").first().waitFor({ state: "visible", timeout });
@@ -136,12 +151,41 @@ export class Game {
   }
   // Attraversa la mappa della run classica fino a rendere raggiungibile il boss.
   // Preferisce i nodi 5v5, poi oggetti, pull, scambi, eventi; rinuncia a scambi e offerte.
-  async walkToBoss({ maxSteps = 60 } = {}) {
+  async walkToBoss(options = {}) {
+    return this.walkTo({ ...options, target: ".map-node.boss-node.reachable" });
+  }
+  // Come walkToBoss, ma si ferma appena e' raggiungibile un nodo di tipo nodeType (es. "special_match").
+  async walkToNode(nodeType, options = {}) {
+    return this.walkTo({ ...options, target: `.map-node.reachable[data-node-type=${nodeType}]`, nodeType });
+  }
+  // Nodi della zona da cui si puo' ancora arrivare a un nodo di tipo nodeType (dalla mappa salvata dal gioco).
+  async nodesLeadingTo(nodeType) {
+    return this.page.evaluate((type) => {
+      const seasons = Object.keys(localStorage).map((k) => k.match(/Run_v2:([a-z0-9_]+)$/)?.[1])
+        .filter((id) => id && !/_(head|backup)$/.test(id));
+      const runs = seasons.map((id) => { try { return globalThis.RunState.load(id); } catch { return null; } });
+      const zone = runs.find((r) => r?.currentZone?.nodes?.some((n) => n.type === type))?.currentZone;
+      if (!zone) return [];
+      const next = new Map();
+      for (const [a, b] of zone.edges || []) next.set(a, [...(next.get(a) || []), b]);
+      const memo = new Map();
+      const reaches = (id) => {
+        if (memo.has(id)) return memo.get(id);
+        memo.set(id, false);
+        const node = zone.nodes.find((n) => n.id === id);
+        const ok = node?.type === type || (next.get(id) || []).some(reaches);
+        memo.set(id, ok);
+        return ok;
+      };
+      return zone.nodes.filter((n) => reaches(n.id)).map((n) => n.id);
+    }, nodeType);
+  }
+  async walkTo({ target, nodeType = null, maxSteps = 60 } = {}) {
     const advance = ["#open-hidden-event", "#continue-match-result", "#skip-trade", "#skip-offer",
       "#finish-item-reward", "#continue-run", "[data-claim-item]", "#skip-item"];
     const visited = [];
     for (let i = 0; i < maxSteps; i += 1) {
-      if (await this.isVisible(".map-node.boss-node.reachable")) return visited;
+      if (await this.isVisible(target)) return visited;
       let acted = false;
       for (const selector of advance) {
         if (await this.isVisible(`${selector}:not([disabled])`)) {
@@ -156,8 +200,12 @@ export class Game {
         continue;
       }
       let entered = false;
+      // Verso un nodo preciso: solo i nodi da cui quel nodo e' ancora raggiungibile.
+      const allowed = nodeType ? await this.nodesLeadingTo(nodeType) : null;
+      const only = allowed ? allowed.map((id) => `[data-node-id="${id}"]`).join(", ") : "";
       for (const type of ["five_v_five", "item", "pull_free_agents", "trade", "random"]) {
-        const node = `.map-node.reachable[data-node-type=${type}]`;
+        const base = `.map-node.reachable[data-node-type=${type}]`;
+        const node = allowed ? (allowed.length ? `${base}:is(${only})` : `${base}.__nessuno`) : base;
         if (await this.isVisible(node)) {
           await this.click(node);
           visited.push(type);
@@ -167,7 +215,7 @@ export class Game {
       }
       if (!entered) throw new Error(`Percorso bloccato dopo: ${visited.join(" > ")}`);
     }
-    throw new Error("Boss non raggiunto");
+    throw new Error(`Nodo non raggiunto: ${target}`);
   }
   // Gioca una partita RTG gia' iniziata fino al risultato, scegliendo sempre la prima mossa.
   // La partita scorre a tempo reale: puo' durare alcuni minuti.
@@ -181,6 +229,7 @@ export class Game {
       for (const s of actions) {
         const button = enabled(s);
         if (await button.isVisible().catch(() => false)) {
+          await collectCssUsage(this.page);
           await button.click({ timeout: 5000 }).catch(() => {});
           // Aspetta che il pulsante sparisca, per non cliccarlo due volte.
           await this.page.locator(`${s}:not([disabled])`).locator("visible=true").first()
@@ -247,6 +296,7 @@ export class Game {
     });
   }
   async close() {
+    await collectCssUsage(this.page);
     await this.context.close();
   }
 }

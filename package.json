@@ -7,7 +7,8 @@
     "test:soak": "node scripts/run-all-tests.mjs --soak --jobs=2",
     "test:browser": "node tests/browser/run-browser-tests.mjs",
     "test:ci": "node scripts/run-all-tests.mjs --json=test-results/results.json",
-    "screenshots": "node scripts/screenshots/capture.mjs"
+    "screenshots": "node scripts/screenshots/capture.mjs",
+    "css:usage": "node scripts/css/measure-css-usage.mjs"
   },
   "engines": { "node": ">=22" }
 }
