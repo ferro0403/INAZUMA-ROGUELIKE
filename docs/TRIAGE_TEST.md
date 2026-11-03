@@ -1,5 +1,10 @@
 # Triage dei test (Passo 0)
 
+> **Aggiornamento 3 novembre 2026 (dopo l'ok dell'utente).** Corretti 4 test del gruppo 4 e 4 test Aurico del
+> gruppo 3, modificando solo file in `tests/`. Due test del gruppo 4 si sono rivelati obsoleti, non rotti
+> dall'ambiente (spostati nel gruppo 3, non toccati). I 3 test lenti girano ora con `npm run test:soak`.
+> Situazione attuale in fondo al file.
+
 Misurato il 3 novembre 2026 su `main` al commit `3e9d71f`, Node 22, con `npm test`
 (4 test in parallelo, timeout 180 s per test).
 
@@ -119,12 +124,41 @@ dedicata, elencando per ciascuno quale prova nel browser lo sostituisce.
 **Proposta:** sistemare l'helper (caricare `PlayerIdentity`, servire i file di `data/` dal disco). Probabilmente
 basta toccare 2 file di supporto e tornano verdi tutti e 6.
 
+## Esito delle correzioni (3 novembre 2026)
+
+| Test | Cosa e' stato fatto | Esito |
+|---|---|---|
+| development-runtime-test.js | caricato `js/recruitment/player-identity.js` prima di `recruitment-pool.js` | verde |
+| ie1-s3-dark-angels-save-balance-test.js | idem | verde |
+| ie1-s3-runtime-fixes-test.js | idem | verde |
+| transactional-entry-stale-recovery-test.js | il test sostituiva l'oggetto `FiveVFive` dopo che il gioco ne aveva gia' preso un riferimento; ora ne aggiorna i campi (`Object.assign`) | verde |
+| development-account-v3-test.js | aggiunta la rarita' `Aurico` (capienza 1, uso 0) ai valori attesi | verde |
+| development-management-v3-test.js | idem | verde |
+| development-v3-migration-test.js | aggiunto `Aurico: 0` ai progetti del salvataggio di partenza | verde |
+| development-v3-materializer-test.js | `Leggenda` ora 95-98 (era 95-99) e nuova fascia `Aurico` 99 | verde |
+| final-recovery-write-gap-test.js | **non toccato**: la causa non e' l'ambiente. Il gioco ora calcola apposta l'anteprima del boss su una copia usa e getta (`match-controller.js`, commento "A pre-match preview is deliberately disposable") e non la salva nella run; il test controlla ancora il comportamento vecchio. | obsoleto (gruppo 3) |
+| five-cycle-final-hardening-test.js | **non toccato**: oggi il pulsante "Salva formazione 5v5" e' disattivato se la formazione e' incompleta (`five-v-five-view.js`), il test prova ancora a salvarne una incompleta. | obsoleto (gruppo 3) |
+| dynamic-progression-legacy-parity-test.js | **non toccato**, in attesa della decisione dell'utente. I giocatori in meno sono **4**, non 3: Darren Gouger, Electra Faraday, Gideon Poe (Brainwashing) e Trice Topper (Kirkwood). Sono stati tolti dalla rosa IE1 nel commit `c54483d` del 13 settembre ("correct IE1 player identities") e restano solo in `legacyPlayerCompatibility.removedPlayers` per i vecchi salvataggi. Il test conta 1373 invece di 1376 perche' l'80% di 1717 giocatori (prima 1721) fa 1373. | in attesa |
+
 ## Lenti / timeout
 
 | Test | Esito |
 |---|---|
 | 500-run-soak-fuzz-gate.js | passa, ~60 s |
 | rtg-svincolati-real-db-five-seasons-test.js | passa, ~265 s |
-| 500-complete-run-stateful-soak.js | oltre 500 s; esito senza limite: vedi `docs/STATO_LAVORI.md` |
+| 500-complete-run-stateful-soak.js | **non finisce nemmeno in 28 minuti** (interrotto a 1.700 s). Da capire se e' bloccato o solo lentissimo. |
 
-**Proposta:** spostarli in `npm run test:soak` (da lanciare prima dei rilasci), fuori dal `npm test` di tutti i giorni.
+Fatto: i tre test girano solo con `npm run test:soak` (timeout 30 minuti ciascuno), non con `npm test`.
+
+## Situazione attuale (fine Passo 0, 3 novembre 2026)
+
+`npm test` (466 test, esclusi i 3 lunghi): **426 verdi, 40 rossi, 0 timeout**, in circa 2 minuti.
+Nessun test che era verde e' diventato rosso; 8 sono tornati verdi.
+
+I 40 rossi rimasti, tutti con causa nota:
+- 36 del gruppo 2 (cercano testo nel codice): rimandati, "se ne parla dopo";
+- `dynamic-progression-legacy-parity-test.js`: in attesa della decisione dell'utente;
+- `final-recovery-write-gap-test.js`, `five-cycle-final-hardening-test.js`: obsoleti (comportamento cambiato apposta);
+- `initial-formation-draft-production-path-test.js`: obsoleto (confronta con un commit in cui il file non esiste).
+
+`npm run test:browser`: 12/12 casi verdi in circa 6 minuti, due esecuzioni di fila con lo stesso esito.

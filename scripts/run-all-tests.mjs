@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Esegue tutti i test Node in tests/*.js (uno per processo) e riporta i falliti.
-// Uso: node scripts/run-all-tests.mjs [--timeout=180] [--jobs=4] [--json=percorso] [filtro...]
+// Uso: node scripts/run-all-tests.mjs [--soak] [--timeout=180] [--jobs=4] [--json=percorso] [filtro...]
+// Senza --soak esegue tutto tranne i test lunghi (SOAK); con --soak esegue solo quelli.
 // Un test e' "lento" se passa ma impiega piu' di SLOW_MS; "timeout" se supera il limite.
 import { spawn } from "node:child_process";
 import { readdirSync, writeFileSync, mkdirSync } from "node:fs";
@@ -12,7 +13,14 @@ const opt = (name, fallback) => {
   const hit = args.find((a) => a.startsWith(`--${name}=`));
   return hit ? hit.split("=").slice(1).join("=") : fallback;
 };
-const TIMEOUT_MS = Number(opt("timeout", "180")) * 1000;
+// Test lunghi (minuti): girano solo con `npm run test:soak`, prima dei rilasci.
+const SOAK = new Set([
+  "500-complete-run-stateful-soak.js",
+  "500-run-soak-fuzz-gate.js",
+  "rtg-svincolati-real-db-five-seasons-test.js",
+]);
+const SOAK_MODE = args.includes("--soak");
+const TIMEOUT_MS = Number(opt("timeout", SOAK_MODE ? "1800" : "180")) * 1000;
 const JOBS = Number(opt("jobs", String(Math.max(1, Math.min(4, cpus().length)))));
 const JSON_OUT = opt("json", "");
 const SLOW_MS = 20000;
@@ -21,6 +29,7 @@ const filters = args.filter((a) => !a.startsWith("--"));
 const all = readdirSync("tests")
   .filter((f) => f.endsWith(".js"))
   .sort()
+  .filter((f) => SOAK.has(f) === SOAK_MODE)
   .filter((f) => filters.length === 0 || filters.some((p) => f.includes(p)));
 
 const results = [];

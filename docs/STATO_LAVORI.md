@@ -5,74 +5,92 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
 
 ## Dove siamo
 
-**Passo 0 — Rete di sicurezza: in corso, in attesa dell'utente** (branch `chore/safety-net`).
+**Passo 0 — Rete di sicurezza: CHIUSO il 3 novembre 2026** (branch `chore/safety-net`, PR in bozza
+ferro0403/INAZUMA-ROGUELIKE#540). **In attesa dell'ok dell'utente per il Passo 1 (CSS).**
 
-### Fatto
+## Comandi
+
+| Comando | Cosa fa | Durata |
+|---|---|---|
+| `npm test` | tutti i test Node in `tests/*.js` tranne i 3 lunghi, 4 alla volta, timeout 180 s ciascuno | ~4 min |
+| `npm run test:soak` | solo i 3 test lunghi (timeout 30 min ciascuno) | da 5 a 30+ min |
+| `npm run test:browser` | le 11 prove nel browser (Playwright), vedi sotto | ~6,5 min |
+| `npm run screenshots` | 33 screenshot 412x915 in `test-results/screenshots/current/` | ~4 min |
+| `node scripts/screenshots/compare.mjs tests/visual-baseline test-results/screenshots/current` | confronto con la baseline, immagini "diff" in `test-results/screenshots/diff/` | ~1 min |
+
+Filtri: `npm test -- halloween`, `npm run test:browser -- boss`, `npm run screenshots -- --only=halloween`.
+
+## Fatto nel Passo 0
 
 - `CLAUDE.md` nella radice (Parte C delle istruzioni, invariata).
-- `package.json` con:
-  - `npm test` → `scripts/run-all-tests.mjs`: esegue tutti i `tests/*.js`, uno per processo, 4 in parallelo,
-    timeout 180 s ciascuno; distingue `ok` / `SLOW` (passa ma > 20 s) / `FAIL` / `TIME` (timeout).
-    Opzioni: `--timeout=SEC`, `--jobs=N`, `--json=file`, e un filtro sul nome (`npm test -- halloween`).
-  - `npm run screenshots` → `scripts/screenshots/capture.mjs`.
-- Triage dei 50 test rossi con causa: `docs/TRIAGE_TEST.md`.
-- Script screenshot (Playwright, 412x915) con 33 schermate in `scripts/screenshots/scenes.mjs`: home e club,
-  run classica (nome squadra → moduli → draft → squadra → mappa → boss → inventario → 5v5 → primo nodo),
-  RTG (campagne, mappe S1 e Ares/Orion, prepartita, squadra, distributore, allenatori, dettaglio coach),
-  evento Halloween (home, prepartita, distributore, squadra, card giocatore, allenatori, pagina intera).
-  - Ora fissata (3 nov 2026 12:00 UTC) e casualita' con seme fisso: due esecuzioni danno le stesse foto.
-  - Per RTG ed evento crea un "account di prova" solo nel browser di test (tutti gli svincolati sbloccati,
-    usando le funzioni del gioco). Nessun dato reale viene toccato.
-  - Se le immagini esterne non si caricano, il report lo dice e lo script esce con errore: quelle foto non
-    valgono come baseline.
-- `scripts/screenshots/compare.mjs`: confronto prima/dopo pixel per pixel con immagini "diff".
+- `package.json` (nessuna dipendenza, nessuno script `build`): `npm test`, `test:soak`, `test:browser`, `screenshots`.
+- Triage dei test con causa: `docs/TRIAGE_TEST.md`.
+- Corretti, toccando solo file in `tests/`: 4 test del gruppo 4 (ordine di caricamento, finto gioco) e 4 test
+  della rarita' Aurico (gruppo 3).
+- **Baseline screenshot** in `tests/visual-baseline/` (33 PNG + `report.json`), con immagini del gioco caricate.
+  Verificata ripetibile: due catture dello stesso codice danno 0 differenze.
+- **Nucleo di 11 prove nel browser** in `tests/browser/` (12 casi, perche' il boss ha vittoria e sconfitta):
 
-### Bloccato
+  | # | Prova |
+  |---|---|
+  | 01 | il gioco si avvia senza errori JavaScript e mostra la home |
+  | 02 | run: nome squadra → modulo → draft completo → squadra con 11 titolari → mappa con il boss |
+  | 03 | run: nodo 5v5 giocato, ritorno alla mappa, nodo segnato come fatto |
+  | 04 | run: si attraversa la mappa e si vince il boss → offerta del giocatore premio |
+  | 04b | run: si perde il boss → si torna alla mappa con una vita in meno |
+  | 05 | ogni season (5) si avvia fino alla mappa, con boss diversi |
+  | 06 | RTG: con 15+ svincolati si prepara e si gioca una partita intera (duelli, intervallo, rigori) |
+  | 07 | RTG: scheda di un giocatore della squadra e scheda di un allenatore |
+  | 08 | potere coach: allenatore Halloween dal distributore, assegnato, potere su un titolare Halloween → l'overall dei requisiti scende come da anteprima |
+  | 09 | evento Halloween: squadra valida, card giocatore, distributore, allenatore dell'evento |
+  | 10 | salvataggi: run ripresa dopo il ricaricamento (stessa mappa); salvataggio vecchio senza `seasonId` letto come Season 1 con 2 vite |
+  | 11 | negozio → acquisto Progetto Buono (monete 1000 → 750); Centro di sviluppo → evoluzione (progetti 1 → 0); album: dopo il draft 0 → 11 giocatori sbloccati |
 
-- **Baseline screenshot NON salvata.** L'ambiente cloud blocca `dxi4wb638ujep.cloudfront.net` (quasi tutte le
-  immagini del gioco) e `www.gstatic.com` (Firebase), oltre ad altri host minori (wikia, wp.com, magnific,
-  vecteezy, depositphotos, namu.wiki, akibagamers, blogger, vercel.app). Le foto escono con ritratti vuoti.
-  Serve che l'utente aggiunga almeno `dxi4wb638ujep.cloudfront.net` ai domini consentiti dell'ambiente.
+  Come funzionano: browser pulito per ogni prova, ora fissata al 3 nov 2026 12:00 UTC, casualita' con seme fisso
+  (la mappa della run e' sempre la stessa; il seme 8 serve a perdere il boss). Per dare monete, zucche e
+  svincolati usano gli strumenti di test gia' presenti nel gioco (`?dev=1`) o le sue stesse funzioni, mai
+  scritture a mano nei salvataggi (tranne la prova 10, che scrive apposta un salvataggio vecchio).
 
-### Da fare per chiudere il Passo 0
+## Problemi aperti e cose scoperte
 
-1. Sbloccato il dominio: `npm run screenshots -- --out=tests/visual-baseline` e controllare il report.
-2. Concordare con l'utente il nucleo di ~10 prove nel browser (proposta sotto) e scriverle.
-3. Sistemare i 6 test del gruppo 4 (solo file di supporto ai test).
-4. Decidere con l'utente cosa fare dei gruppi 2 e 3 (vedi `docs/TRIAGE_TEST.md`).
-
-## Proposta: nucleo di prove nel browser (da approvare)
-
-1. Il gioco si avvia senza errori JavaScript e mostra la home.
-2. Run classica: nome squadra → modulo → draft completo → squadra valida → mappa.
-3. Run classica: si entra in un nodo 5v5, si simula la partita, si torna alla mappa.
-4. Run classica: si gioca il boss (vittoria e sconfitta portano alle schermate giuste).
-5. Ogni season (`ie1`, `ie1_s2`, `ie1_s3`, `ie2`, `orion`) si carica e la mappa della run si apre.
-6. RTG: con 15+ svincolati si apre la mappa, si prepara e si gioca una partita.
-7. RTG: si apre la card di un giocatore e il dettaglio di un coach.
-8. RTG: un potere coach configurabile si attiva nel prepartita e cambia il valore mostrato.
-9. Evento Halloween: si apre, la squadra e' valida, card giocatore e coach evento si vedono, il distributore si apre.
-10. Salvataggi: una run e un account salvati con il formato attuale (e uno vecchio, senza `seasonId`) si riaprono
-    dopo un ricaricamento della pagina.
+- **Bug noto (non corretto, Passo 0 non tocca il gioco):** all'intervallo RTG il pulsante "Conferma e riparti"
+  ha due gestori del clic (`js/road-to-glory/rtg-match-view.js:1166` e `js/road-to-glory/rtg-controller.js:915`).
+  L'intervallo viene confermato due volte: la seconda lancia "RTG halftime unavailable" (errore non gestito).
+  Per il giocatore probabilmente non cambia nulla. La prova 06 lo dichiara come "errore noto".
+- Gli strumenti di test del Centro di sviluppo (`?dev=1`, "+100/+500/+1500 monete") danno l'errore
+  "Development IndexedDB richiede il percorso asincrono". Quelli del negozio funzionano. Solo strumento di test.
+- `500-complete-run-stateful-soak.js` non termina nemmeno in 28 minuti: da capire se e' bloccato.
+- `dynamic-progression-legacy-parity-test.js`: in attesa di decisione dell'utente (4 giocatori tolti da IE1 il
+  13 settembre). **Non toccarlo finche' l'utente non risponde.**
+- `final-recovery-write-gap-test.js` e `five-cycle-final-hardening-test.js`: obsoleti (gruppo 3), non toccati.
+- Gruppo 2 (36 test che cercano testo nel codice): rimandato, "se ne parla dopo".
+- La baseline ha ancora alcune immagini mancanti: l'ambiente blocca 5 siti esterni minori usati dal gioco
+  (`www.akibagamers.it`, `i0.wp.com`, `i.namu.wiki`, `inazuma-eleven-legends.vercel.app`, `static.vecteezy.com`:
+  banner season, alcune immagini allenatori, sfondo Halloween). Il confronto prima/dopo funziona lo stesso (mancano
+  in entrambe le foto), ma un cambiamento in quelle immagini non si vedrebbe. Se l'utente li consente, rifare la
+  baseline con `npm run screenshots -- --out=tests/visual-baseline`.
+- Evento Halloween: nel codice finisce il 6 nov 2026 22:59:59 UTC. Le prove usano la data fissa del 3 novembre,
+  quindi continuano a vedere l'evento anche dopo. Fino al 7 novembre nessuna proposta di merge di modifiche visibili.
 
 ## Decisioni prese
 
-- Branch `chore/safety-net`; nessuna modifica a file del gioco nel Passo 0 (solo script, test, documenti).
-- I test lenti restano dentro `npm test` per ora; proposta di spostarli in `npm run test:soak`.
+- Branch `chore/safety-net`; nessun file del gioco modificato nel Passo 0.
+- Test lenti in `npm run test:soak` (ok utente).
+- Gruppo 3: aggiornati solo i valori Aurico (ok utente).
+- Prova 11 aggiunta su richiesta dell'utente.
 
 ## Numeri di partenza (main `3e9d71f`, 3 nov 2026)
 
-- Test: 469 file; 419 verdi, 48 rossi, 2 timeout a 180 s.
+- Test Node: 469 file; all'inizio 419 verdi, 48 rossi, 2 timeout. Dopo il Passo 0: vedi `docs/TRIAGE_TEST.md`.
 - CSS: 50 file; `game.css` 8.823 righe; `!important` = 8.852 occorrenze su 5.404 righe.
-  Attenzione: nell'audit i numeri per file (2.297 in `rtg-theme-core.css`, ecc.) sono *righe*, il totale 8.852
-  sono *occorrenze*. Per file, in occorrenze: rtg-theme-core 2.506, rtg-theme-base 1.020, road-to-glory 976,
-  rtg-theme 867, rtg-coaches 725, rtg-halloween-event 611. Nel Passo 1 si usera' sempre lo stesso metodo.
+  Nell'audit i numeri per file sono *righe*, il totale 8.852 sono *occorrenze*. Per file, in occorrenze:
+  rtg-theme-core 2.506, rtg-theme-base 1.020, road-to-glory 976, rtg-theme 867, rtg-coaches 725,
+  rtg-halloween-event 611. Nel Passo 1 si usera' sempre lo stesso metodo (occorrenze).
 - JS: 1.059 righe oltre 200 caratteri, 291 oltre 400.
 - Id di season scritti tra virgolette nei file JS: 325 occorrenze in 50 file (stima con grep).
 
-## Problemi aperti
+## Prossimo passo (dopo l'ok dell'utente)
 
-- `500-complete-run-stateful-soak.js`: oltre 500 s; esito della prova senza limite da annotare qui.
-- `dynamic-progression-legacy-parity-test.js`: 3 giocatori in meno nei dati di addestramento — voluto?
-- Evento Halloween: fine nel codice il 6 nov 2026 22:59:59 UTC (verificato il 3 nov). Fino al 7 nov nessuna
-  proposta di merge di modifiche visibili.
+Passo 1 — CSS: misurare il CSS morto con Playwright (riusare `scripts/screenshots/scenes.mjs` e le prove del
+browser per visitare gli stati), poi dividere per componente, senza toccare i file dell'evento Halloween
+fino al 7 novembre.
