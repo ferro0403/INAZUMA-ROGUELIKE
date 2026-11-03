@@ -73,11 +73,6 @@
 
 /* Do not let the obsolete 11v11 action classes leak geometry into the
    shared five-match buttons. */
-.boss-match-screen .boss-match-controls .five-match-action-cta .boss-match-action-icon,
-.boss-match-screen .boss-match-controls .five-match-action-cta .boss-match-action-copy,
-.boss-match-screen .boss-match-controls .five-match-action-cta .boss-match-action-mark {
-  all: unset;
-}
 
 @media (max-width: 780px) {
   .boss-match-screen .boss-match-controls {

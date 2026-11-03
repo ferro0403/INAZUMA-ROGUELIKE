@@ -983,7 +983,6 @@
 .rtg-modal .rtg-vending-title p { color:#ddd; }
 .rtg-live-team-tabs button { min-height:48px; }
 .rtg-squad-shell .squad-management-panel { gap:12px; }
-.rtg-squad-shell .squad-bench-grid { padding:6px 0; }
 @media(min-width:701px) {
   .rtg-squad-section-head { margin:-14px -14px 12px!important; }
 }
@@ -1653,10 +1652,6 @@
   border-color:#23713f!important;
   color:#23713f!important;
 }
-.rtg-duel-card--clean .rtg-duel-player-element.is-neutral {
-  background:#d7d9dd!important;
-  border-color:#777b82!important;
-}
 
 /* Stable action card: copy on the left, probability locked to bottom-right. */
 .rtg-duel-card--clean .rtg-duel-choice-card {
@@ -1947,7 +1942,6 @@
 .rtg-duel-versus-board--result .rtg-duel-player-element.is-wind { background:#e8f6fb!important; border-color:#197ca9!important; color:#197ca9!important; }
 .rtg-duel-versus-board--result .rtg-duel-player-element.is-mountain { background:#f3e6d6!important; border-color:#76502f!important; color:#76502f!important; }
 .rtg-duel-versus-board--result .rtg-duel-player-element.is-forest { background:#e6f5e9!important; border-color:#23713f!important; color:#23713f!important; }
-.rtg-duel-versus-board--result .rtg-duel-player-element.is-neutral { background:#d7d9dd!important; border-color:#777b82!important; }
 
 .rtg-duel-versus-board--result .rtg-duel-panel-tag,
 .rtg-duel-versus-board--result .rtg-duel-result-action {

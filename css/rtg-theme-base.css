@@ -36,9 +36,6 @@
 .rtg-main-topbar .status-pill { border:1px solid #5c5340; border-radius:6px; padding:7px 10px; background:#272724; color:#f2dfaf; font-size:12px; }
 .rtg-main-topbar .status-pill.lives { color:#f4eee2; }
 .rtg-squad-back,.rtg-home-button { flex-shrink:0; width:auto!important; min-width:42px; height:42px!important; border-radius:8px!important; box-shadow:none!important; font-size:13px!important; }
-.rtg-squad-topbar .squad-topbar-stats { margin-left:auto; border:0; color:#f7edda; background:transparent; }
-.rtg-squad-topbar .squad-topbar-stats span { border:1px solid #544d3c; background:#242423; border-radius:7px; padding:7px 12px; }
-.rtg-squad-topbar .squad-topbar-stats small { color:#cdbb8c; }
 .rtg-bottom-nav.bottom-nav { width:min(480px,calc(100% - 24px)); bottom:calc(10px + env(safe-area-inset-bottom)); left:50%; right:auto; transform:translateX(-50%); border:1px solid #383832!important; border-radius:12px!important; background:#20211f!important; padding:5px!important; box-shadow:0 5px 22px #11121635!important; min-height:58px; }
 .rtg-bottom-nav.bottom-nav button { color:#c2bcae!important; background:transparent!important; border:0!important; box-shadow:none!important; border-radius:8px!important; min-height:48px; }
 .rtg-bottom-nav.bottom-nav button.active { color:#f2d88c!important; background:#39372d!important; }
@@ -190,7 +187,7 @@
 .rtg-choice-probability { display:flex!important; align-items:baseline; gap:6px; padding:0!important; background:none!important; border:0!important; }.rtg-choice-probability small { color:#877751!important; font-size:8px!important; }.rtg-choice-probability strong { color:#4a472b!important; font-size:20px!important; }.rtg-choice-delta { font-size:9px!important; }
 .rtg-duel-choice-card.is-selected { border:2px solid #a58739!important; background:#f1e3bb!important; }.rtg-choice-confirm { color:#66521d!important; font-size:8px!important; background:none!important; padding:4px 0 0!important; border-top:1px solid #c8b477!important; }
 .rtg-duel-active-move,.rtg-duel-result-move,.rtg-duel-resolving-action { border:1px solid #d4c4a1!important; border-radius:5px!important; padding:6px!important; background:#e5dcc6!important; color:#52472d!important; box-shadow:none!important; }.rtg-duel-active-move strong,.rtg-duel-result-move strong { color:#3d3825!important; font-size:11px!important; }.rtg-duel-active-move em,.rtg-duel-result-move em { color:#8c773d!important; font-size:8px!important; }
-.rtg-duel-result-banner { background:#eee4c9!important; border:0!important; border-left:3px solid #b39545!important; border-radius:6px!important; padding:12px!important; margin:0 0 12px!important; box-shadow:none!important; }.rtg-duel-result-banner.is-user-loss { border-left-color:#9a6449!important; }.rtg-duel-result-banner strong { font-size:16px!important; color:#302e20!important; }.rtg-duel-result-status { color:#806937!important; font-size:9px!important; }.rtg-duel-result-status em { display:none!important; }
+.rtg-duel-result-banner { background:#eee4c9!important; border:0!important; border-left:3px solid #b39545!important; border-radius:6px!important; padding:12px!important; margin:0 0 12px!important; box-shadow:none!important; }.rtg-duel-result-banner strong { font-size:16px!important; color:#302e20!important; }.rtg-duel-result-status { color:#806937!important; font-size:9px!important; }.rtg-duel-result-status em { display:none!important; }
 .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-winner { outline:2px solid #bd9c42!important; outline-offset:-2px!important; background:#f3e8c8!important; box-shadow:inset 0 0 20px #dabb6333!important; transform:none!important; animation:none!important; }
 .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser { opacity:1!important; filter:none!important; background:#e6e2d7!important; outline:0!important; box-shadow:none!important; transform:none!important; }
 .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-render { opacity:.38!important; filter:grayscale(1) brightness(.75)!important; transform:none!important; animation:none!important; }
@@ -269,7 +266,6 @@
 .rtg-main-topbar .brand,.rtg-squad-topbar h1,.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-title h1 { color:#111216!important; }
 .rtg-main-topbar .eyebrow,.rtg-squad-topbar .eyebrow,.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-title small { color:#64645e!important; }
 .rtg-main-topbar .status-pill,.rtg-squad-topbar .squad-topbar-stats span { background:#fff!important; color:#111216!important; border:2px solid #111216; border-radius:3px; }
-.rtg-squad-topbar .squad-topbar-stats small { color:#64645e!important; }
 .rtg-duel-choice-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
 .rtg-duel-choice-card,.rtg-choice-copy,.rtg-choice-probability { min-width:0!important; max-width:100%; }
 .rtg-choice-copy strong,.rtg-choice-copy em { overflow-wrap:anywhere; white-space:normal!important; }
@@ -287,7 +283,6 @@
 .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser { background:#f0f1f2!important; }
 .rtg-duel-result-vs::before,.rtg-duel-result-vs::after { display:none!important; }
 .rtg-duel-result-banner { background:#fff5bc!important; border-left-color:#ffd21f!important; }
-.rtg-duel-result-banner.is-user-loss { background:#f9e9e8!important; border-left-color:#b3443d!important; }
 .rtg-duel-result-banner strong { display:block; white-space:normal; overflow-wrap:anywhere; line-height:1.25; }
 .rtg-duel-choice-card.is-selected { border-color:#111216!important; background:#fff7ce!important; }
 .rtg-modal .rtg-pull-result .rtg-pull-player-card { width:66px!important; max-width:66px!important; }
