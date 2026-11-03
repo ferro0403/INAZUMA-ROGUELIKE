@@ -11,6 +11,8 @@ import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { startStaticServer } from "./static-server.mjs";
 import { scenes } from "./scenes.mjs";
+import { collectCssUsage, flushCssUsage } from "../css/css-usage-collector.mjs";
+import { Game, seededRandom } from "../../tests/browser/harness.mjs";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
@@ -28,25 +30,22 @@ const VIEWPORT = { width: 412, height: 915 };
 const STEP_TIMEOUT = 15000;
 
 // Math.random con seme fisso: la mappa e il draft escono sempre uguali.
-const SEEDED_RANDOM = `(() => {
-  let s = 0x2f6b1a3d;
-  Math.random = () => { s |= 0; s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-})();`;
-// Niente animazioni: le foto non dipendono dal momento esatto dello scatto.
-const NO_ANIMATIONS = `*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;
-transition-duration:0s!important;transition-delay:0s!important;caret-color:transparent!important}`;
 
-async function unlockAllFreeAgents(page) {
-  return page.evaluate(async () => {
+// Niente animazioni e niente messaggi a comparsa (toast): le foto non dipendono dal momento dello scatto.
+const NO_ANIMATIONS = `*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;
+transition-duration:0s!important;transition-delay:0s!important;caret-color:transparent!important}
+#toast-root{visibility:hidden!important}`;
+
+async function unlockAllFreeAgents(page, maxOverall = Infinity) {
+  return page.evaluate(async (max) => {
     const db = await (await fetch("data/FREE_AGENTS_compact.json")).json();
-    const ids = db.players.map((p) => String(p.playerId));
+    const ids = db.players.filter((p) => Number(p.finalOverall ?? 0) <= max).map((p) => String(p.playerId));
     globalThis.AlbumProgress.configureFreeAgentIds?.(ids);
     return globalThis.AlbumProgress.unlockAlbumPlayers(globalThis.AlbumProgress.DEFAULT_COLLECTION_ID, ids, {
       firstSource: "screenshot-fixture",
       firstUnlockedAt: "2026-01-01T00:00:00.000Z",
     });
-  });
+  }, maxOverall);
 }
 
 async function waitForHome(page) {
@@ -81,6 +80,16 @@ async function runStep(page, step) {
     }
   } else if (step.scroll) {
     await page.locator(step.scroll).first().scrollIntoViewIfNeeded({ timeout: STEP_TIMEOUT });
+  } else if (step.game) {
+    // Azione composta del banco di prova (es. attraversare la mappa fino al boss, giocare una partita).
+    await new Game(page, page.context(), [])[step.game](...(step.args || []));
+  } else if (step.devClick) {
+    // Pulsanti degli strumenti di test (?dev=1), a volte coperti da altri elementi: clic via JavaScript.
+    await page.waitForFunction((sel) => document.querySelector(sel), step.devClick, { timeout: STEP_TIMEOUT });
+    await page.evaluate((sel) => document.querySelector(sel).click(), step.devClick);
+    await page.waitForTimeout(1200);
+  } else if (step.waitFor) {
+    await page.locator(step.waitFor).first().waitFor({ state: "visible", timeout: 30000 });
   } else if (step.wait) {
     await page.waitForTimeout(step.wait);
   }
@@ -100,7 +109,7 @@ for (const scene of selected) {
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, locale: "it-IT", timezoneId: "Europe/Rome" });
   const page = await context.newPage();
   await page.clock.setFixedTime(FIXED_TIME);
-  await page.addInitScript(SEEDED_RANDOM);
+  await page.addInitScript(seededRandom(scene.seed ?? 0x2f6b1a3d));
   const errors = [];
   const failedImages = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -113,10 +122,10 @@ for (const scene of selected) {
 
   const entry = { name: scene.name, account: scene.account, ok: true, failedStep: null, errors, failedImages: 0 };
   try {
-    await page.goto(url, { waitUntil: "domcontentloaded" });
+    await page.goto(scene.dev ? `${url}?dev=1` : url, { waitUntil: "domcontentloaded" });
     await waitForHome(page);
-    if (scene.account === "sbloccato") {
-      await unlockAllFreeAgents(page);
+    if (scene.account === "sbloccato" || scene.account === "rtg") {
+      await unlockAllFreeAgents(page, scene.account === "rtg" ? 74 : Infinity);
       await page.reload({ waitUntil: "domcontentloaded" });
       await waitForHome(page);
     }
@@ -124,6 +133,7 @@ for (const scene of selected) {
     for (const step of scene.steps) {
       try {
         await runStep(page, step);
+        await collectCssUsage(page);
       } catch (e) {
         entry.ok = false;
         entry.failedStep = { step, error: e.message.split("\n")[0] };
@@ -131,7 +141,21 @@ for (const scene of selected) {
       }
     }
     await page.waitForTimeout(800);
-    await page.screenshot({ path: join(OUT, `${scene.name}.png`), fullPage: !!scene.fullPage });
+    // Prima della foto: aspetta che la rete si calmi e che tutte le immagini abbiano finito di caricare
+    // (anche quelle che falliscono). Senza questa attesa uno stemma poteva comparire o no a caso.
+    await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => {});
+    await page.waitForFunction(() => [...document.images].every((img) => img.complete), null, { timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(200);
+    await collectCssUsage(page);
+    // Foto "stabile": si scatta finche' due scatti consecutivi sono identici (immagini caricate in ritardo).
+    let shot = await page.screenshot({ fullPage: !!scene.fullPage });
+    for (let i = 0; i < 8; i += 1) {
+      await page.waitForTimeout(600);
+      const again = await page.screenshot({ fullPage: !!scene.fullPage });
+      if (again.equals(shot)) break;
+      shot = again;
+    }
+    writeFileSync(join(OUT, `${scene.name}.png`), shot);
   } catch (e) {
     entry.ok = false;
     entry.failedStep = entry.failedStep || { step: "avvio", error: e.message.split("\n")[0] };
@@ -146,6 +170,7 @@ for (const scene of selected) {
 
 await browser.close();
 server.close();
+flushCssUsage("screenshots");
 
 report.blockedHosts = Object.fromEntries(blockedHosts);
 report.validBaseline = blockedHosts.size === 0 && report.scenes.every((s) => s.ok);

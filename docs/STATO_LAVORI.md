@@ -5,8 +5,40 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
 
 ## Dove siamo
 
-**Passo 0 — Rete di sicurezza: CHIUSO il 3 novembre 2026** (branch `chore/safety-net`, PR in bozza
-ferro0403/INAZUMA-ROGUELIKE#540). **In attesa dell'ok dell'utente per il Passo 1 (CSS).**
+- **Passo 0 — Rete di sicurezza: chiuso il 3 novembre 2026** (branch `chore/safety-net`, PR in bozza
+  ferro0403/INAZUMA-ROGUELIKE#540).
+- **Passo 1 — CSS: in corso** (ok dell'utente il 3 novembre). Le PR del Passo 1 partono da `chore/safety-net`
+  (ne usano gli script): vanno unite dopo la #540, nell'ordine.
+  - **1a `refactor/css-1-misura`**: strumento di misura del CSS morto (`npm run css:usage`), rapporto
+    `docs/CSS_MORTO.md`, 15 schermate in piu' negli screenshot, foto scattate solo a immagini caricate.
+    Nessun file del gioco modificato.
+  - 1b (prossima): togliere i 7 file CSS mai caricati.
+  - 1c: togliere le regole "morte certe" (fuori dai file Halloween fino al 7 novembre).
+  - poi: rivedere le "non viste", unire i file patch nei proprietari, token, meno `!important`.
+
+## Scoperte del Passo 1
+
+- **7 file CSS non vengono mai caricati** (`rtg-foundation`, `rtg-shell`, `rtg-match`, `rtg-prematch`,
+  `rtg-vending`, `rtg-economy`, `rtg-squad`: 1.656 righe, 1.441 `!important`). Sono i "proprietari" previsti da
+  `docs/RTG_CSS_ARCHITECTURE.md`: la vecchia migrazione ci ha scritto dentro, ma non li ha mai collegati a
+  `index.html`. Ecco perche' si e' fermata: chi modifica quei file non vede nessun effetto nel gioco.
+  Gli script `scripts/rtg-cleanup-*.mjs`, `rtg-final-residual-css.mjs`, `rtg-migrate-shell-shared-css.mjs` e i
+  workflow `rtg-css-migrate.yml` / `rtg-squad-migrate.yml` erano migrazioni "una tantum" legate a branch vecchi.
+- **Misura del CSS caricato** (`docs/CSS_MORTO.md`): 9.587 regole; 63% usate nelle schermate visitate,
+  5% morte certe (classi che non esistono nel codice), 32% non viste (da controllare caso per caso).
+- **Difetto reale in `css/rtg-run.css` riga 129**: un pezzo di commento rimasto a meta' (`power remains XI-only. */`)
+  rende invalida la regola `.rtg-requirements { padding: 12px }`, che il browser ignora. Non corretto: farlo
+  cambierebbe l'aspetto dei requisiti RTG (decide l'utente).
+- Foto instabili trovate e corrette nello script: immagini caricate in ritardo (ora si scatta quando due foto
+  consecutive sono identiche), seme della campagna RTG da `crypto.randomUUID` (ora con seme fisso anche
+  `crypto`), messaggi a comparsa (nascosti nelle foto). **La baseline va rigenerata** (non ancora fatto).
+- Copertura della misura (3 nov): 61 schermate + 11 prove nel browser. Visti: partite 5v5/boss/speciale in corso
+  e finite, boss vinto e perso, game over, evento casuale, intervallo, rigori, vittoria e sconfitta RTG, partita
+  Halloween, pop-up principali. **Non visti** (servono progressi lunghi): vittoria finale (boss 10), celebrazione
+  e riepilogo finale, Albo d'Oro con squadre, fine season RTG / campagna completata, sviluppo/negozio/album RTG,
+  evoluzioni gia' fatte (storico), equipaggiare un oggetto, risultato di uno scambio, panchina/sostituzioni 11v11,
+  pull leggendario, ricompensa IE3 secondaria, layout desktop.
+- **In attesa dell'ok dell'utente prima di cancellare CSS** (richiesta del 3 novembre).
 
 ## Comandi
 
@@ -15,7 +47,8 @@ ferro0403/INAZUMA-ROGUELIKE#540). **In attesa dell'ok dell'utente per il Passo 1
 | `npm test` | tutti i test Node in `tests/*.js` tranne i 3 lunghi, 4 alla volta, timeout 180 s ciascuno | ~4 min |
 | `npm run test:soak` | solo i 3 test lunghi (timeout 30 min ciascuno) | da 5 a 30+ min |
 | `npm run test:browser` | le 11 prove nel browser (Playwright), vedi sotto | ~6,5 min |
-| `npm run screenshots` | 33 screenshot 412x915 in `test-results/screenshots/current/` | ~4 min |
+| `npm run screenshots` | 48 screenshot 412x915 in `test-results/screenshots/current/` | ~6 min |
+| `npm run css:usage` | misura il CSS morto e riscrive `docs/CSS_MORTO.md` | ~15 min |
 | `node scripts/screenshots/compare.mjs tests/visual-baseline test-results/screenshots/current` | confronto con la baseline, immagini "diff" in `test-results/screenshots/diff/` | ~1 min |
 
 Filtri: `npm test -- halloween`, `npm run test:browser -- boss`, `npm run screenshots -- --only=halloween`.
