@@ -12,6 +12,8 @@ import { join } from "node:path";
 import { startStaticServer } from "./static-server.mjs";
 import { scenes } from "./scenes.mjs";
 import { collectCssUsage, flushCssUsage } from "../css/css-usage-collector.mjs";
+import { pageStyleSnapshot } from "../css/style-snapshot.mjs";
+import { pageRuleEffect } from "../css/rule-effect.mjs";
 import { Game, seededRandom } from "../../tests/browser/harness.mjs";
 
 const require = createRequire(import.meta.url);
@@ -25,6 +27,14 @@ const opt = (name, fallback) => {
 const OUT = opt("out", "test-results/screenshots/current");
 const ONLY = opt("only", "");
 const ALLOW_INCOMPLETE = args.includes("--allow-incomplete");
+// --styles=file.json: salva anche l'impronta dello stile calcolato di ogni schermata (vedi compare-styles.mjs).
+const STYLES_OUT = opt("styles", "");
+const styleSnapshots = {};
+// --styles-detail=file.json: come --styles ma con tutte le proprieta' (lento e grande: usare con --only).
+const STYLES_DETAIL = opt("styles-detail", "");
+// --rule-effect=file.json: in ogni schermata disattiva una regola alla volta e registra quali cambiano lo stile.
+const RULE_EFFECT = opt("rule-effect", "");
+const ruleEffect = { known: new Set(), removed: new Set(), evaluated: new Set(), skipped: {} };
 const FIXED_TIME = new Date(opt("time", "2026-11-03T12:00:00Z"));
 const VIEWPORT = { width: 412, height: 915 };
 const STEP_TIMEOUT = 15000;
@@ -129,7 +139,8 @@ for (const scene of selected) {
       await page.reload({ waitUntil: "domcontentloaded" });
       await waitForHome(page);
     }
-    await page.addStyleTag({ content: NO_ANIMATIONS });
+    const testStyle = await page.addStyleTag({ content: NO_ANIMATIONS });
+    await testStyle.evaluate((el) => { el.dataset.testOnly = "1"; });
     for (const step of scene.steps) {
       try {
         await runStep(page, step);
@@ -156,6 +167,15 @@ for (const scene of selected) {
       shot = again;
     }
     writeFileSync(join(OUT, `${scene.name}.png`), shot);
+    if (STYLES_OUT) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot);
+    if (STYLES_DETAIL) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot, true);
+    if (RULE_EFFECT) {
+      const r = await page.evaluate(pageRuleEffect, { known: [...ruleEffect.known], removed: [...ruleEffect.removed] });
+      ruleEffect.known = new Set(r.known);
+      ruleEffect.removed = new Set(r.removed);
+      r.evaluated.forEach((k) => ruleEffect.evaluated.add(k));
+      for (const [k, why] of r.skipped) ruleEffect.skipped[k] ||= why;
+    }
   } catch (e) {
     entry.ok = false;
     entry.failedStep = entry.failedStep || { step: "avvio", error: e.message.split("\n")[0] };
@@ -171,6 +191,11 @@ for (const scene of selected) {
 await browser.close();
 server.close();
 flushCssUsage("screenshots");
+if (STYLES_OUT || STYLES_DETAIL) writeFileSync(STYLES_OUT || STYLES_DETAIL, JSON.stringify(styleSnapshots));
+if (RULE_EFFECT) {
+  writeFileSync(RULE_EFFECT, JSON.stringify({ necessarie: [...ruleEffect.known], battute: [...ruleEffect.removed],
+    valutate: [...ruleEffect.evaluated], saltate: ruleEffect.skipped }));
+}
 
 report.blockedHosts = Object.fromEntries(blockedHosts);
 report.validBaseline = blockedHosts.size === 0 && report.scenes.every((s) => s.ok);
