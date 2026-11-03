@@ -9,8 +9,9 @@
 //    disattivata per i controlli successivi; se cambia entra in K.
 // Alla fine R contiene regole che, tolte tutte insieme, non cambiano lo stile in nessuna schermata visitata.
 // La verifica finale si fa comunque togliendole dal file e confrontando stile calcolato e screenshot.
+// recheckOnly: solo i passi 2-3 (si ricontrollano le candidate, ad es. a un'altra larghezza di schermo).
 
-export function pageRuleEffect({ known, removed }) {
+export function pageRuleEffect({ known, removed, recheckOnly = false }) {
   const K = new Set(known);
   const R = new Set(removed);
   const STATE = /:(hover|focus|focus-visible|focus-within|active|visited|link|target)(?![\w-])/;
@@ -25,9 +26,9 @@ export function pageRuleEffect({ known, removed }) {
   };
   const serialize = (el, pseudo) => {
     const style = getComputedStyle(el, pseudo || null);
-    let out = "";
-    for (let i = 0; i < style.length; i += 1) out += `${style[i]}:${style.getPropertyValue(style[i])};`;
-    return out;
+    const out = [];
+    for (let i = 0; i < style.length; i += 1) out.push(`${style[i]}:${style.getPropertyValue(style[i])}`);
+    return out.sort().join(";"); // ordinate: l'ordine delle variabili CSS non e' stabile
   };
   // 1. Elenco delle regole, con chiave stabile (file | media | selettore | n-esima occorrenza).
   const rules = [];
@@ -85,8 +86,9 @@ export function pageRuleEffect({ known, removed }) {
     if (same(off, on)) e.rule.style.cssText = "";
     else { R.delete(e.key); K.add(e.key); }
   }
-  // 4. Prova le regole non ancora classificate.
+  // 4. Prova le regole non ancora classificate (non nel ricontrollo a un'altra larghezza di schermo).
   for (const e of rules) {
+    if (recheckOnly) break;
     if (K.has(e.key) || R.has(e.key)) continue;
     if (!e.mediaOk) { skipped.push([e.key, "media non attiva su questo schermo"]); continue; }
     if (STATE.test(e.rule.selectorText)) { skipped.push([e.key, "stato (hover/focus...)"]); continue; }

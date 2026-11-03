@@ -24,7 +24,9 @@ export function pageStyleSnapshot(detail = false) {
   const serialize = (style) => {
     const out = [];
     for (let i = 0; i < style.length; i += 1) out.push(`${style[i]}:${style.getPropertyValue(style[i])}`);
-    return out.join(";");
+    // Ordinate: il browser elenca le variabili CSS in un ordine che cambia da un'esecuzione all'altra.
+    // Senza l'indirizzo del server di prova (la porta cambia a ogni esecuzione).
+    return out.sort().join(";").split(location.origin).join("");
   };
   const result = {};
   for (const el of document.querySelectorAll("body, body *")) {

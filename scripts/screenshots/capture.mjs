@@ -7,13 +7,14 @@
 // Se le immagini esterne (CloudFront ecc.) non si caricano, il report lo dice e lo script
 // esce con codice 2: quelle foto NON valgono come baseline.
 import { createRequire } from "node:module";
-import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { startStaticServer } from "./static-server.mjs";
 import { scenes } from "./scenes.mjs";
 import { collectCssUsage, flushCssUsage } from "../css/css-usage-collector.mjs";
 import { pageStyleSnapshot } from "../css/style-snapshot.mjs";
 import { pageRuleEffect } from "../css/rule-effect.mjs";
+import { pageImportantEffect } from "../css/important-effect.mjs";
 import { Game, seededRandom } from "../../tests/browser/harness.mjs";
 
 const require = createRequire(import.meta.url);
@@ -35,8 +36,27 @@ const STYLES_DETAIL = opt("styles-detail", "");
 // --rule-effect=file.json: in ogni schermata disattiva una regola alla volta e registra quali cambiano lo stile.
 const RULE_EFFECT = opt("rule-effect", "");
 const ruleEffect = { known: new Set(), removed: new Set(), evaluated: new Set(), skipped: {} };
+// --rule-effect-from=file.json: riparte da una misura precedente e ricontrolla solo le regole battute.
+const RULE_EFFECT_FROM = opt("rule-effect-from", "");
+// --important-effect=file.json (e --important-effect-from=file.json): come --rule-effect, ma per i `!important`.
+const IMPORTANT_EFFECT = opt("important-effect", "");
+const IMPORTANT_EFFECT_FROM = opt("important-effect-from", "");
+const importantEffect = { known: new Set(), demoted: new Set(), evaluated: new Set(), skipped: {} };
+if (IMPORTANT_EFFECT_FROM) {
+  const prev = JSON.parse(readFileSync(IMPORTANT_EFFECT_FROM, "utf8"));
+  importantEffect.known = new Set(prev.necessari);
+  importantEffect.demoted = new Set(prev.inutili);
+  importantEffect.skipped = prev.saltati || {};
+}
+if (RULE_EFFECT_FROM) {
+  const prev = JSON.parse(readFileSync(RULE_EFFECT_FROM, "utf8"));
+  ruleEffect.known = new Set(prev.necessarie);
+  ruleEffect.removed = new Set(prev.battute);
+  ruleEffect.skipped = prev.saltate || {};
+}
 const FIXED_TIME = new Date(opt("time", "2026-11-03T12:00:00Z"));
-const VIEWPORT = { width: 412, height: 915 };
+// --viewport=LxA per provare altre larghezze (es. 1280x800). Le foto di riferimento sono a 412x915.
+const VIEWPORT = (() => { const [w, h] = opt("viewport", "412x915").split("x").map(Number); return { width: w, height: h }; })();
 const STEP_TIMEOUT = 15000;
 
 // Math.random con seme fisso: la mappa e il draft escono sempre uguali.
@@ -169,8 +189,16 @@ for (const scene of selected) {
     writeFileSync(join(OUT, `${scene.name}.png`), shot);
     if (STYLES_OUT) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot);
     if (STYLES_DETAIL) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot, true);
+    if (IMPORTANT_EFFECT) {
+      const r = await page.evaluate(pageImportantEffect, { known: [...importantEffect.known],
+        demoted: [...importantEffect.demoted], recheckOnly: Boolean(IMPORTANT_EFFECT_FROM) });
+      importantEffect.known = new Set(r.known);
+      importantEffect.demoted = new Set(r.demoted);
+      r.evaluated.forEach((k) => importantEffect.evaluated.add(k));
+      for (const [k, why] of r.skipped) importantEffect.skipped[k] ||= why;
+    }
     if (RULE_EFFECT) {
-      const r = await page.evaluate(pageRuleEffect, { known: [...ruleEffect.known], removed: [...ruleEffect.removed] });
+      const r = await page.evaluate(pageRuleEffect, { known: [...ruleEffect.known], removed: [...ruleEffect.removed], recheckOnly: Boolean(RULE_EFFECT_FROM) });
       ruleEffect.known = new Set(r.known);
       ruleEffect.removed = new Set(r.removed);
       r.evaluated.forEach((k) => ruleEffect.evaluated.add(k));
@@ -192,6 +220,10 @@ await browser.close();
 server.close();
 flushCssUsage("screenshots");
 if (STYLES_OUT || STYLES_DETAIL) writeFileSync(STYLES_OUT || STYLES_DETAIL, JSON.stringify(styleSnapshots));
+if (IMPORTANT_EFFECT) {
+  writeFileSync(IMPORTANT_EFFECT, JSON.stringify({ necessari: [...importantEffect.known], inutili: [...importantEffect.demoted],
+    valutati: [...importantEffect.evaluated], saltati: importantEffect.skipped }));
+}
 if (RULE_EFFECT) {
   writeFileSync(RULE_EFFECT, JSON.stringify({ necessarie: [...ruleEffect.known], battute: [...ruleEffect.removed],
     valutate: [...ruleEffect.evaluated], saltate: ruleEffect.skipped }));
