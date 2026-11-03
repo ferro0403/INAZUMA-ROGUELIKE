@@ -7,14 +7,16 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
 
 - **Passo 0 — Rete di sicurezza: chiuso il 3 novembre 2026** (branch `chore/safety-net`, PR in bozza
   ferro0403/INAZUMA-ROGUELIKE#540).
-- **Passo 1 — CSS: in corso** (ok dell'utente il 3 novembre). Le PR del Passo 1 partono da `chore/safety-net`
-  (ne usano gli script): vanno unite dopo la #540, nell'ordine.
-  - **1a `refactor/css-1-misura`**: strumento di misura del CSS morto (`npm run css:usage`), rapporto
-    `docs/CSS_MORTO.md`, 15 schermate in piu' negli screenshot, foto scattate solo a immagini caricate.
-    Nessun file del gioco modificato.
-  - 1b (prossima): togliere i 7 file CSS mai caricati.
-  - 1c: togliere le regole "morte certe" (fuori dai file Halloween fino al 7 novembre).
-  - poi: rivedere le "non viste", unire i file patch nei proprietari, token, meno `!important`.
+- **Passo 1 — CSS: in corso** (ok dell'utente il 3 novembre). PR in bozza, da unire in ordine dopo la #540:
+  - **1a** ferro0403/INAZUMA-ROGUELIKE#541 `refactor/css-1-misura`: misura del CSS morto (`npm run css:usage`),
+    61 schermate, baseline stabile. Nessun file del gioco modificato.
+  - **1b** ferro0403/INAZUMA-ROGUELIKE#542 `refactor/css-2-file-mai-caricati`: tolti i 7 file mai caricati
+    (1.656 righe, 1.441 `!important`). Screenshot 0/61 diversi, test invariati, prove 12/12.
+  - **1c** `refactor/css-3-regole-morte`: tolte 390 regole morte certe (522 righe, 9 `!important`), esclusi i file
+    Halloween/coach fino al 7 novembre. Screenshot 0/61 diversi, test invariati, prove 12/12.
+  - Prossimi: 87 regole morte certe nei file Halloween/coach (dopo il 7 novembre); rivedere le "non viste";
+    unire i file patch nei proprietari; token; meno `!important`.
+  - `!important`: 8.852 all'inizio → 7.402 dopo 1c.
 
 ## Scoperte del Passo 1
 
@@ -38,7 +40,7 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
   e riepilogo finale, Albo d'Oro con squadre, fine season RTG / campagna completata, sviluppo/negozio/album RTG,
   evoluzioni gia' fatte (storico), equipaggiare un oggetto, risultato di uno scambio, panchina/sostituzioni 11v11,
   pull leggendario, ricompensa IE3 secondaria, layout desktop.
-- **In attesa dell'ok dell'utente prima di cancellare CSS** (richiesta del 3 novembre).
+- Cancellazioni 1b e 1c approvate dall'utente il 3 novembre ("fai tutti e 2").
 
 ## Comandi
 
