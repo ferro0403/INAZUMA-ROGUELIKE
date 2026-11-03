@@ -7,7 +7,7 @@ const free = JSON.parse(fs.readFileSync("data/FREE_AGENTS_compact.json", "utf8")
 const context = { console };
 context.globalThis = context;
 vm.createContext(context);
-for (const file of ["js/profiled-season.js", "js/recruitment-pool.js", "js/formation-layout.js"]) {
+for (const file of ["js/profiled-season.js", "js/recruitment/player-identity.js", "js/recruitment-pool.js", "js/formation-layout.js"]) {
   vm.runInContext(fs.readFileSync(file, "utf8"), context, { filename: file });
 }
 context.ProfiledSeasonRuntime.register("ie1_s3", season);

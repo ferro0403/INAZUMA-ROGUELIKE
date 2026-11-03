@@ -1,0 +1,13 @@
+{
+  "name": "inazuma-roguelike",
+  "private": true,
+  "description": "Gioco statico nel browser. Questo file serve solo per gli script di sviluppo e test: il gioco non ha build.",
+  "scripts": {
+    "test": "node scripts/run-all-tests.mjs",
+    "test:soak": "node scripts/run-all-tests.mjs --soak --jobs=2",
+    "test:browser": "node tests/browser/run-browser-tests.mjs",
+    "test:ci": "node scripts/run-all-tests.mjs --json=test-results/results.json",
+    "screenshots": "node scripts/screenshots/capture.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
