@@ -86,42 +86,30 @@ Classi di stati notevoli viste a schermo (300): `album-detail-badge`, `album-pla
 
 | | Regole | `!important` |
 |---|---|---|
-| usata | 6170 (64%) | 5295 |
-| morta-certa | 477 (5%) | 62 |
-| non-vista | 2939 (31%) | 2049 |
+| usata | 6170 (67%) | 5295 |
+| morta-certa | 87 (1%) | 53 |
+| non-vista | 2939 (32%) | 2049 |
 | scartata | 1 (0%) | 1 |
-| **totale** | 9587 | 7407 |
+| **totale** | 9197 | 7398 |
 
 ## File CSS mai caricati
 
-Non compaiono in `index.html`, in nessun `@import` e in nessun file JS: il browser non li scarica mai.
-
-| File | Righe | `!important` |
-|---|---|---|
-| css/rtg-economy.css | 32 | 265 |
-| css/rtg-foundation.css | 91 | 6 |
-| css/rtg-match.css | 933 | 562 |
-| css/rtg-prematch.css | 102 | 57 |
-| css/rtg-shell.css | 166 | 148 |
-| css/rtg-squad.css | 280 | 245 |
-| css/rtg-vending.css | 52 | 158 |
-| **totale** | 1656 | 1441 |
+Nessuno.
 
 ## Per file
 
 | File | Regole | usata | morta-certa | non-vista | scartata | `!important` | `!imp.` morti certi | `!imp.` non visti |
 |---|---|---|---|---|---|---|---|---|
-| css/game.css | 4212 | 2628 | 360 | 1224 | 0 | 80 | 1 | 9 |
+| css/game.css | 3852 | 2628 | 0 | 1224 | 0 | 79 | 0 | 9 |
 | css/road-to-glory.css | 1548 | 845 | 0 | 703 | 0 | 976 | 0 | 358 |
 | css/rtg-halloween-event.css | 435 | 250 | 86 | 99 | 0 | 611 | 50 | 110 |
-| css/rtg-theme-core.css | 759 | 602 | 3 | 154 | 0 | 2505 | 4 | 431 |
+| css/rtg-theme-core.css | 756 | 602 | 0 | 154 | 0 | 2501 | 0 | 431 |
 | css/rtg-coaches.css | 351 | 205 | 1 | 145 | 0 | 725 | 3 | 337 |
-| css/rtg-theme.css | 294 | 172 | 1 | 121 | 0 | 864 | 0 | 485 |
+| css/rtg-theme.css | 293 | 172 | 0 | 121 | 0 | 864 | 0 | 485 |
 | css/rtg-run.css | 203 | 123 | 0 | 79 | 1 | 174 | 0 | 29 |
 | css/inventory-redesign.css | 103 | 38 | 0 | 65 | 0 | 0 | 0 | 0 |
-| css/rtg-theme-base.css | 407 | 354 | 6 | 47 | 0 | 1020 | 4 | 75 |
+| css/rtg-theme-base.css | 401 | 354 | 0 | 47 | 0 | 1016 | 0 | 75 |
 | css/five-match-picker-tuning.css | 33 | 0 | 0 | 33 | 0 | 18 | 0 | 18 |
-| css/boss-match-prematch-restyle.css | 69 | 39 | 19 | 11 | 0 | 1 | 0 | 0 |
 | css/rtg-match-pt.css | 34 | 6 | 0 | 28 | 0 | 0 | 0 | 0 |
 | css/shop-ui-polish.css | 106 | 78 | 0 | 28 | 0 | 0 | 0 | 0 |
 | css/ie3-secondary-reward-ui.css | 26 | 0 | 0 | 26 | 0 | 6 | 0 | 6 |
@@ -133,8 +121,9 @@ Non compaiono in `index.html`, in nessun `@import` e in nessun file JS: il brows
 | css/five-match-reference-polish.css | 39 | 23 | 0 | 16 | 0 | 0 | 0 | 0 |
 | css/player-detail-reference-final.css | 106 | 92 | 0 | 14 | 0 | 0 | 0 | 0 |
 | css/album-roster.css | 74 | 63 | 0 | 11 | 0 | 0 | 0 | 0 |
-| css/boss-match-action-parity-fit.css | 27 | 17 | 1 | 9 | 0 | 0 | 0 | 0 |
+| css/boss-match-prematch-restyle.css | 50 | 39 | 0 | 11 | 0 | 1 | 0 | 0 |
 | css/aurico-rarity.css | 10 | 1 | 0 | 9 | 0 | 0 | 0 | 0 |
+| css/boss-match-action-parity-fit.css | 26 | 17 | 0 | 9 | 0 | 0 | 0 | 0 |
 | css/move-presentation.css | 42 | 38 | 0 | 4 | 0 | 0 | 0 | 0 |
 | css/player-detail-team-name-fit.css | 10 | 7 | 0 | 3 | 0 | 11 | 0 | 3 |
 | css/player-detail-element-badges-global.css | 7 | 5 | 0 | 2 | 0 | 3 | 0 | 0 |
