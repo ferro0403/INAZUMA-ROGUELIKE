@@ -33,6 +33,13 @@ The migration must converge on these responsibilities. This is an ownership map,
 
 During migration the historical files may remain loaded to preserve visual parity, but new presentation rules must go to the target owner and migrated selectors must be removed from their old owner in the same change.
 
+> **Stato reale al 3 novembre 2026.** I file proprietari `rtg-foundation.css`, `rtg-shell.css`, `rtg-squad.css`,
+> `rtg-match.css`, `rtg-prematch.css`, `rtg-vending.css` e `rtg-economy.css` erano stati creati dalla migrazione ma
+> **non erano mai caricati** dal gioco (ne' da `index.html`, ne' da `@import`, ne' da JS): sono stati rimossi
+> (misura in `docs/CSS_MORTO.md`). Gli unici proprietari RTG attivi oggi sono `rtg-run.css` (importato da
+> `rtg-theme.css`) e i file storici. Un nuovo proprietario va creato solo insieme al suo collegamento in
+> `index.html`; `tests/rtg-production-integration-test.js` fallisce se un file in `css/` non e' caricato.
+
 ## Mandatory rules
 
 1. **One selector, one owner.** A component selector must not be redefined in a later RTG file merely to win the cascade.
