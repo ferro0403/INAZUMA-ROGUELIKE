@@ -49,9 +49,15 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
     riprende dopo un'interruzione. Verifica: stile identico a 412/768/1280 px, foto 0/78, npm test invariato, 12/12.
     Nota: il container si spegne se la sessione resta senza un comando seguito; le misure lunghe vanno lanciate
     come comando in background seguito dalla sessione.
-  - Prossimi: pulizia dei file Halloween/coach (1i, l'utente ha dato l'ok anche prima del
-    7 novembre, in PR separata); rivedere le "non viste"; meno `!important`.
-  - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f.
+  - **1i** `refactor/css-9-halloween-coach` (ok dell'utente anche prima del 7 novembre, PR separata): in
+    `rtg-halloween-event.css` e `rtg-coaches.css` tolte 87 regole morte certe, 54 regole battute (55, una rimessa
+    perche' cercata da un test), 320 `!important` inutili (389, 69 rimessi perche' cercati dai test) e 129 valori
+    passati ai token `--ir-*`. Misure fatte con tutti gli altri file bloccati (`--frozen`). Verifica: stile identico
+    a 412/768/1280 px (una differenza a 1280 nella schermata 70 non si ripete rifacendo la misura: misura instabile,
+    non CSS), foto 0/78, npm test invariato (426/40), prove 12/12. `!important` totali: 4.804 -> 4.371.
+  - Prossimi: rivedere le regole "non viste"; meno `!important` (i tetti dei test architettura si possono
+    abbassare); dividere per componente.
+  - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f → 4.371 dopo 1i.
 
 ## Scoperte del Passo 1
 
