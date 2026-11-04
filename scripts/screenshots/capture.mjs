@@ -7,7 +7,7 @@
 // Se le immagini esterne (CloudFront ecc.) non si caricano, il report lo dice e lo script
 // esce con codice 2: quelle foto NON valgono come baseline.
 import { createRequire } from "node:module";
-import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { startStaticServer } from "./static-server.mjs";
 import { scenes } from "./scenes.mjs";
@@ -54,6 +54,17 @@ if (RULE_EFFECT_FROM) {
   ruleEffect.removed = new Set(prev.battute);
   ruleEffect.skipped = prev.saltate || {};
 }
+// Ripresa dopo un'interruzione: se il file di uscita esiste gia' (parziale), riparte da li' e salta le scene fatte.
+const RULE_EFFECT_PARTIAL = RULE_EFFECT && existsSync(RULE_EFFECT) ? JSON.parse(readFileSync(RULE_EFFECT, "utf8")) : null;
+const ruleEffectDone = new Set(RULE_EFFECT_PARTIAL?.scene_fatte || []);
+if (RULE_EFFECT_PARTIAL) {
+  ruleEffect.known = new Set(RULE_EFFECT_PARTIAL.necessarie);
+  ruleEffect.removed = new Set(RULE_EFFECT_PARTIAL.battute);
+  ruleEffect.evaluated = new Set(RULE_EFFECT_PARTIAL.valutate);
+  ruleEffect.skipped = RULE_EFFECT_PARTIAL.saltate || {};
+}
+const saveRuleEffect = () => writeFileSync(RULE_EFFECT, JSON.stringify({ necessarie: [...ruleEffect.known],
+  battute: [...ruleEffect.removed], valutate: [...ruleEffect.evaluated], saltate: ruleEffect.skipped, scene_fatte: [...ruleEffectDone] }));
 const FIXED_TIME = new Date(opt("time", "2026-11-03T12:00:00Z"));
 // --viewport=LxA per provare altre larghezze (es. 1280x800). Le foto di riferimento sono a 412x915.
 const VIEWPORT = (() => { const [w, h] = opt("viewport", "412x915").split("x").map(Number); return { width: w, height: h }; })();
@@ -136,6 +147,7 @@ const blockedHosts = new Map();
 const selected = scenes.filter((s) => !ONLY || s.name.includes(ONLY));
 
 for (const scene of selected) {
+  if (ruleEffectDone.has(scene.name)) continue;
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, locale: "it-IT", timezoneId: "Europe/Rome" });
   const page = await context.newPage();
   await page.clock.setFixedTime(FIXED_TIME);
@@ -203,6 +215,8 @@ for (const scene of selected) {
       ruleEffect.removed = new Set(r.removed);
       r.evaluated.forEach((k) => ruleEffect.evaluated.add(k));
       for (const [k, why] of r.skipped) ruleEffect.skipped[k] ||= why;
+      ruleEffectDone.add(scene.name);
+      saveRuleEffect();
     }
   } catch (e) {
     entry.ok = false;
@@ -225,8 +239,7 @@ if (IMPORTANT_EFFECT) {
     valutati: [...importantEffect.evaluated], saltati: importantEffect.skipped }));
 }
 if (RULE_EFFECT) {
-  writeFileSync(RULE_EFFECT, JSON.stringify({ necessarie: [...ruleEffect.known], battute: [...ruleEffect.removed],
-    valutate: [...ruleEffect.evaluated], saltate: ruleEffect.skipped }));
+  saveRuleEffect();
 }
 
 report.blockedHosts = Object.fromEntries(blockedHosts);
