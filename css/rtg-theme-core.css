@@ -870,12 +870,12 @@
   border-radius:8px!important;
 }
 .rtg-match-scoreboard.rtg-match-topbar {
-  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-columns:minmax(0,1fr) auto!important;
 }
 .rtg-match-shell.rtg-match-revolution .rtg-match-scoreboard .rtg-abandon-button {
   grid-column:2;
   grid-row:1;
-  width:auto;
+  width:auto!important;
   height:34px!important;
   min-height:34px!important;
   min-width:0;
@@ -3386,7 +3386,7 @@
   border-bottom:5px solid #ffd21f!important;
   background:
     linear-gradient(115deg,rgba(255,210,31,.09) 0 18%,transparent 18% 72%,rgba(255,210,31,.06) 72% 100%),
-    #111216;
+    #111216!important;
   overflow:hidden;
 }
 .rtg-match-revolution .rtg-match-scoreboard::after{
