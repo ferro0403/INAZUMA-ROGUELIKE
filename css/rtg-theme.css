@@ -2,23 +2,23 @@
 @import url("./rtg-run.css?v=20261030-secondary-briefing-owner-v4");
 
 /* RTG token HUD: compact Ramen Sticker currency and separate resource cards. */
-.rtg-token-icon{display:inline-block;width:22px;height:22px;min-width:22px!important;max-width:22px!important;min-height:22px!important;max-height:22px!important;object-fit:contain;object-position:center;vertical-align:-5px!important;flex:0 0 22px!important;margin:0 4px 0 0!important;}
-.rtg-main-topbar .status-strip{display:flex;flex-direction:row;align-items:center;justify-content:flex-end;gap:10px!important;flex-wrap:nowrap;}
-.rtg-main-topbar .status-pill{position:relative;display:inline-flex!important;align-items:center;justify-content:center;gap:5px;min-height:42px!important;padding:7px 11px!important;white-space:nowrap;background:#fffdf6!important;color:#111216;border:2px solid #111216!important;box-shadow:3px 4px 0 #111216!important;}
+.rtg-token-icon{display:inline-block!important;width:22px!important;height:22px!important;min-width:22px!important;max-width:22px!important;min-height:22px!important;max-height:22px!important;object-fit:contain!important;object-position:center!important;vertical-align:-5px!important;flex:0 0 22px!important;margin:0 4px 0 0!important;}
+.rtg-main-topbar .status-strip{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;flex-wrap:nowrap!important;}
+.rtg-main-topbar .status-pill{position:relative!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;min-height:42px!important;padding:7px 11px!important;white-space:nowrap!important;background:#fffdf6!important;color:#111216!important;border:2px solid #111216!important;box-shadow:3px 4px 0 #111216!important;}
 .rtg-main-topbar .rtg-token-pill{min-width:82px!important;}
-.rtg-main-topbar .status-pill.lives{display:inline-block!important;min-width:88px!important;padding:10px 11px!important;color:#111216;font-size:.86rem!important;font-weight:800;line-height:1.15;text-align:center;letter-spacing:0;}
+.rtg-main-topbar .status-pill.lives{display:inline-block!important;min-width:88px!important;padding:10px 11px!important;color:#111216!important;font-size:.86rem!important;font-weight:800!important;line-height:1.15!important;text-align:center!important;letter-spacing:0!important;}
 .rtg-main-topbar .status-pill.lives::before,.rtg-main-topbar .status-pill.lives::after{content:none!important;display:none!important;}
 .rtg-main-topbar .status-pill.lives::first-letter{color:#e23b3b!important;font-size:1.28em!important;}
-.rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:20px;height:20px;min-width:20px!important;max-width:20px!important;min-height:20px!important;max-height:20px!important;flex-basis:20px!important;vertical-align:-4px!important;}
-.rtg-vending-button span,.rtg-vending-wallet-chip strong,.rtg-vending-pull{align-items:center;}
+.rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:20px!important;height:20px!important;min-width:20px!important;max-width:20px!important;min-height:20px!important;max-height:20px!important;flex-basis:20px!important;vertical-align:-4px!important;}
+.rtg-vending-button span,.rtg-vending-wallet-chip strong,.rtg-vending-pull{align-items:center!important;}
 
 /* Development currency artwork is intentionally much larger than the compact HUD token.
    This wins over the global .rtg-token-icon !important rule and keeps the sticker centered
    in the selected-player requirement, confirmation cost, and development wallet. */
 .rtg-development-screen .rtg-development-token-icon{
-  width:74px;height:74px;min-width:74px;min-height:74px;
-  display:inline-flex!important;align-items:center;justify-content:center;
-  padding:0;margin:0;overflow:visible!important;
+  width:74px!important;height:74px!important;min-width:74px!important;min-height:74px!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  padding:0!important;margin:0!important;overflow:visible!important;
 }
 .rtg-development-screen .development-requirement .rtg-development-token-icon{
   align-self:center!important;justify-self:center!important;
@@ -26,51 +26,51 @@
 
 /* Squad replacement picker. One canonical OVR control, matching the RTG filter language. */
 .rtg-picker-ovr-sort{
-  grid-column:1/-1;
-  display:grid;
+  grid-column:1/-1!important;
+  display:grid!important;
   grid-template-columns:minmax(0,1fr) 42px!important;
-  align-items:stretch;
-  width:100%;
+  align-items:stretch!important;
+  width:100%!important;
   min-height:38px!important;
-  padding:0;
-  overflow:hidden;
-  border:2px solid #111216;
-  border-radius:2px;
-  background:#fff;
-  color:#111216;
-  box-shadow:2px 3px 0 rgba(17,18,22,.18);
+  padding:0!important;
+  overflow:hidden!important;
+  border:2px solid #111216!important;
+  border-radius:2px!important;
+  background:#fff!important;
+  color:#111216!important;
+  box-shadow:2px 3px 0 rgba(17,18,22,.18)!important;
   font:950 .76rem/1 system-ui,sans-serif!important;
-  letter-spacing:.06em;
-  cursor:pointer;
-  appearance:none;
+  letter-spacing:.06em!important;
+  cursor:pointer!important;
+  appearance:none!important;
 }
-.rtg-picker-ovr-sort>span{display:grid;place-items:center;min-width:0;padding:8px 10px;}
-.rtg-picker-ovr-sort>[data-rtg-picker-sort-arrow]{display:grid;place-items:center;min-width:42px!important;border-left:2px solid #111216;background:#ffd21f;font:1000 1.05rem/1 system-ui,sans-serif!important;}
+.rtg-picker-ovr-sort>span{display:grid!important;place-items:center!important;min-width:0!important;padding:8px 10px!important;}
+.rtg-picker-ovr-sort>[data-rtg-picker-sort-arrow]{display:grid!important;place-items:center!important;min-width:42px!important;border-left:2px solid #111216!important;background:#ffd21f!important;font:1000 1.05rem/1 system-ui,sans-serif!important;}
 .rtg-picker-ovr-sort:active{transform:translate(1px,1px)!important;box-shadow:1px 2px 0 rgba(17,18,22,.24)!important;}
 .rtg-picker-ovr-sort:focus-visible{outline:3px solid #ffd21f!important;outline-offset:2px!important;}
 
 /* Catalog controls only layout. Card appearance is the canonical squad card. */
 .rtg-modal .rtg-player-catalog .rtg-catalog-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-flow:row!important;gap:12px 8px!important;align-items:start!important;justify-content:center!important;width:100%!important;padding:14px 0 4px!important;}
-.rtg-picker-season-team-filters,.rtg-catalog-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px!important;min-width:0;}
-.rtg-picker-season-team-filters{grid-column:1/-1;}
+.rtg-picker-season-team-filters,.rtg-catalog-filter-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;min-width:0!important;}
+.rtg-picker-season-team-filters{grid-column:1/-1!important;}
 .rtg-catalog-filter-grid{margin:0 0 10px!important;}
-.rtg-picker-season-team-filters .rtg-picker-rarity-filter,.rtg-catalog-filter-grid .rtg-picker-rarity-filter{grid-column:auto;grid-template-columns:1fr;gap:5px;margin-top:0;}
-.rtg-picker-season-team-filters .rtg-picker-rarity-filter select,.rtg-catalog-filter-grid .rtg-picker-rarity-filter select{min-width:0;text-overflow:ellipsis;}
+.rtg-picker-season-team-filters .rtg-picker-rarity-filter,.rtg-catalog-filter-grid .rtg-picker-rarity-filter{grid-column:auto!important;grid-template-columns:1fr!important;gap:5px!important;margin-top:0!important;}
+.rtg-picker-season-team-filters .rtg-picker-rarity-filter select,.rtg-catalog-filter-grid .rtg-picker-rarity-filter select{min-width:0!important;text-overflow:ellipsis!important;}
 @media(max-width:430px){
-  .rtg-picker-season-team-filters,.rtg-catalog-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px!important;}
-  .rtg-picker-season-team-filters .rtg-picker-rarity-filter>span,.rtg-catalog-filter-grid .rtg-picker-rarity-filter>span{font-size:.56rem;}
-  .rtg-picker-season-team-filters .rtg-picker-rarity-filter select,.rtg-catalog-filter-grid .rtg-picker-rarity-filter select{min-height:34px;padding-left:8px;padding-right:26px;font-size:.64rem;}
+  .rtg-picker-season-team-filters,.rtg-catalog-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;}
+  .rtg-picker-season-team-filters .rtg-picker-rarity-filter>span,.rtg-catalog-filter-grid .rtg-picker-rarity-filter>span{font-size:.56rem!important;}
+  .rtg-picker-season-team-filters .rtg-picker-rarity-filter select,.rtg-catalog-filter-grid .rtg-picker-rarity-filter select{min-height:34px!important;padding-left:8px!important;padding-right:26px!important;font-size:.64rem!important;}
 }
 
 /* Duel action cards: give long move labels their own full-width row. */
-.rtg-duel-card--clean .rtg-duel-choice-card{min-width:0;min-height:108px!important;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:minmax(42px,auto) auto!important;grid-template-areas:"copy copy" "probability probability";align-content:space-between;align-items:start;gap:10px 8px!important;padding:12px!important;}
-.rtg-duel-card--clean .rtg-choice-icon{display:none;}
-.rtg-duel-card--clean .rtg-choice-copy{grid-area:copy!important;align-self:start!important;display:grid;gap:4px!important;min-width:0;width:100%;padding:0!important;overflow:visible;text-align:left;}
-.rtg-duel-card--clean .rtg-choice-copy strong{display:-webkit-box;min-width:0;width:100%;margin:0;overflow:hidden;color:#111216;font-size:clamp(12px,3.3vw,15px)!important;font-weight:1000;line-height:1.08;letter-spacing:-.01em;overflow-wrap:break-word!important;word-break:normal;white-space:normal;hyphens:none;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
-.rtg-duel-card--clean .rtg-choice-copy em{display:block;min-width:0;max-width:100%;margin:0;overflow:hidden;color:#5f6167;font-size:9px!important;font-style:normal;font-weight:850;line-height:1.15;text-align:left;text-overflow:ellipsis;white-space:nowrap!important;}
-.rtg-duel-card--clean .rtg-choice-probability{grid-area:probability!important;align-self:end;justify-self:stretch!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px;min-width:0!important;width:100%;padding:0;margin:0;}
-.rtg-duel-card--clean .rtg-choice-probability strong{flex:0 1 auto;min-width:0;margin:0;font-size:clamp(18px,5vw,22px)!important;line-height:.95!important;white-space:nowrap;}
-.rtg-duel-card--clean .rtg-choice-delta{flex:0 0 auto;margin:0;padding:3px 6px!important;font-size:8px;white-space:nowrap;}
+.rtg-duel-card--clean .rtg-duel-choice-card{min-width:0!important;min-height:108px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:minmax(42px,auto) auto!important;grid-template-areas:"copy copy" "probability probability"!important;align-content:space-between!important;align-items:start!important;gap:10px 8px!important;padding:12px!important;}
+.rtg-duel-card--clean .rtg-choice-icon{display:none!important;}
+.rtg-duel-card--clean .rtg-choice-copy{grid-area:copy!important;align-self:start!important;display:grid!important;gap:4px!important;min-width:0!important;width:100%!important;padding:0!important;overflow:visible!important;text-align:left!important;}
+.rtg-duel-card--clean .rtg-choice-copy strong{display:-webkit-box!important;min-width:0!important;width:100%!important;margin:0!important;overflow:hidden!important;color:#111216!important;font-size:clamp(12px,3.3vw,15px)!important;font-weight:1000!important;line-height:1.08!important;letter-spacing:-.01em!important;overflow-wrap:break-word!important;word-break:normal!important;white-space:normal!important;hyphens:none!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;}
+.rtg-duel-card--clean .rtg-choice-copy em{display:block!important;min-width:0!important;max-width:100%!important;margin:0!important;overflow:hidden!important;color:#5f6167!important;font-size:9px!important;font-style:normal!important;font-weight:850!important;line-height:1.15!important;text-align:left!important;text-overflow:ellipsis!important;white-space:nowrap!important;}
+.rtg-duel-card--clean .rtg-choice-probability{grid-area:probability!important;align-self:end!important;justify-self:stretch!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;min-width:0!important;width:100%!important;padding:0!important;margin:0!important;}
+.rtg-duel-card--clean .rtg-choice-probability strong{flex:0 1 auto!important;min-width:0!important;margin:0!important;font-size:clamp(18px,5vw,22px)!important;line-height:.95!important;white-space:nowrap!important;}
+.rtg-duel-card--clean .rtg-choice-delta{flex:0 0 auto!important;margin:0!important;padding:3px 6px!important;font-size:8px!important;white-space:nowrap!important;}
 
 /* Automatic secondary encounters may win/lose their internal duel, but by rule they never transfer the ball.
    The engine already restores possession; prevent the ticker from claiming a fake recovery/turnover. */
@@ -86,14 +86,14 @@
 
 @media(max-width:430px){
   .rtg-main-topbar .status-strip{gap:7px!important;}
-  .rtg-main-topbar .status-pill{min-height:38px!important;padding:6px 8px!important;font-size:.72rem;box-shadow:2px 3px 0 #111216!important;}
+  .rtg-main-topbar .status-pill{min-height:38px!important;padding:6px 8px!important;font-size:.72rem!important;box-shadow:2px 3px 0 #111216!important;}
   .rtg-main-topbar .rtg-token-pill{min-width:72px!important;}
   .rtg-main-topbar .status-pill.lives{min-width:78px!important;padding:9px 8px!important;font-size:.72rem!important;}
-  .rtg-token-icon{width:19px;height:19px;min-width:19px!important;max-width:19px!important;min-height:19px!important;max-height:19px!important;flex-basis:19px!important;margin-right:3px!important;vertical-align:-4px!important;}
-  .rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:18px;height:18px;min-width:18px!important;max-width:18px!important;min-height:18px!important;max-height:18px!important;flex-basis:18px!important;}
+  .rtg-token-icon{width:19px!important;height:19px!important;min-width:19px!important;max-width:19px!important;min-height:19px!important;max-height:19px!important;flex-basis:19px!important;margin-right:3px!important;vertical-align:-4px!important;}
+  .rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;min-height:18px!important;max-height:18px!important;flex-basis:18px!important;}
   .rtg-picker-ovr-sort{min-height:36px!important;grid-template-columns:minmax(0,1fr) 38px!important;font-size:.7rem!important;}
   .rtg-picker-ovr-sort>[data-rtg-picker-sort-arrow]{min-width:38px!important;font-size:1rem!important;}
-  .rtg-duel-card--clean .rtg-choice-copy strong{font-size:12px!important;line-height:1.08;}
+  .rtg-duel-card--clean .rtg-choice-copy strong{font-size:12px!important;line-height:1.08!important;}
   .rtg-duel-card--clean .rtg-choice-copy em{font-size:8px!important;}
 }
 
@@ -107,13 +107,13 @@
 
 /* RTG route artwork — verified JPEG across the whole Season 1 route. */
 .rtg-map .rtg-map-block .route-map.rtg-route-stage {
-  background-color:#082c52;
+  background-color:#082c52!important;
   background-image:url("../assets/rtg/rtg-season1-route-map.jpg?v=5")!important;
   background-position:50% 48%!important;
   background-size:cover!important;
   background-repeat:no-repeat!important;
-  background-blend-mode:normal;
-  filter:none;
+  background-blend-mode:normal!important;
+  filter:none!important;
 }
 
 /* Season 2 must override the global Season 1 artwork rule above.
@@ -130,20 +130,20 @@
 
 /* Route fitted to the illustrated island map. */
 .rtg-route-stage .rtg-map-lines .rtg-route-line-shadow{
-  fill:none;
-  stroke:#111216;
-  stroke-width:2.45;
-  stroke-linecap:round;
-  stroke-linejoin:round;
-  opacity:.72;
+  fill:none!important;
+  stroke:#111216!important;
+  stroke-width:2.45!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  opacity:.72!important;
 }
 .rtg-route-stage .rtg-map-lines .rtg-route-line{
-  fill:none;
-  stroke:#ffd21f;
-  stroke-width:1.5;
-  stroke-linecap:round;
-  stroke-linejoin:round;
-  opacity:.94;
+  fill:none!important;
+  stroke:#ffd21f!important;
+  stroke-width:1.5!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  opacity:.94!important;
 }
 
 /* RTG screens reuse the exact Home stadium background. */
@@ -633,7 +633,7 @@ position:absolute;
 /* Wallet is a separate HUD chip, not part of the machine cabinet. */
 .rtg-vending-wallet-chip{
   margin-top:31px!important;
-  min-width:178px;
+  min-width:178px!important;
   border-radius:8px!important;
   box-shadow:0 8px 15px rgba(17,18,22,.17)!important;
 }
@@ -662,15 +662,15 @@ position:absolute;
 
 /* Pull result continues the gacha loop instead of dropping back to the route. */
 .rtg-pull-continue{
-  display:block;
+  display:block!important;
   width:calc(100% - 36px)!important;
   min-height:46px!important;
   margin:0 18px 18px!important;
-  border:2px solid #111216;
-  border-radius:8px;
-  background:#ffd21f;
-  color:#111216;
-  box-shadow:3px 4px 0 #111216;
+  border:2px solid #111216!important;
+  border-radius:8px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+  box-shadow:3px 4px 0 #111216!important;
   font-weight:1000!important;
   letter-spacing:.08em!important;
 }
@@ -830,97 +830,97 @@ position:absolute;
 
 /* RTG development wallet: purpose-built 2-cell banner instead of the generic development wallet grid. */
 .rtg-development-screen .rtg-development-wallet{
-  display:grid;
+  display:grid!important;
   grid-template-columns:minmax(0,1.6fr) minmax(108px,.75fr)!important;
-  gap:0;
-  width:100%;
+  gap:0!important;
+  width:100%!important;
   margin:16px 0 18px!important;
-  padding:0;
-  overflow:hidden;
-  border:3px solid #111216;
-  border-radius:0;
-  background:#fffdf6;
-  box-shadow:5px 6px 0 #111216;
+  padding:0!important;
+  overflow:hidden!important;
+  border:3px solid #111216!important;
+  border-radius:0!important;
+  background:#fffdf6!important;
+  box-shadow:5px 6px 0 #111216!important;
 }
 .rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell{
-  min-width:0;
+  min-width:0!important;
   min-height:116px!important;
-  margin:0;
+  margin:0!important;
   padding:14px 16px!important;
   border:0!important;
-  background:#fffdf6;
-  color:#111216;
-  transform:none;
+  background:#fffdf6!important;
+  color:#111216!important;
+  transform:none!important;
 }
 .rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell--tokens{
-  display:grid;
-  grid-template-columns:82px minmax(0,1fr);
-  align-items:center;
-  gap:14px;
+  display:grid!important;
+  grid-template-columns:82px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:14px!important;
   border-right:3px solid #111216!important;
 }
 .rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell--projects{
-  display:grid;
-  place-items:center;
-  text-align:center;
+  display:grid!important;
+  place-items:center!important;
+  text-align:center!important;
 }
 .rtg-development-screen .rtg-development-wallet-copy{
-  display:grid;
-  align-content:center;
+  display:grid!important;
+  align-content:center!important;
   justify-items:start!important;
-  min-width:0;
+  min-width:0!important;
   gap:5px!important;
-  padding:0;
-  margin:0;
-  border:0;
-  background:transparent;
-  color:#111216;
-  transform:none;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:#111216!important;
+  transform:none!important;
 }
 .rtg-development-screen .rtg-development-wallet-cell--projects .rtg-development-wallet-copy{
   justify-items:center!important;
 }
 .rtg-development-screen .rtg-development-wallet-copy small{
-  display:block;
-  color:#111216;
+  display:block!important;
+  color:#111216!important;
   font:900 12px/1.05 system-ui,sans-serif!important;
-  letter-spacing:.06em;
-  white-space:normal;
+  letter-spacing:.06em!important;
+  white-space:normal!important;
 }
 .rtg-development-screen .rtg-development-wallet-copy strong{
-  display:block;
-  max-width:100%;
-  color:#9b6b00;
+  display:block!important;
+  max-width:100%!important;
+  color:#9b6b00!important;
   font:1000 clamp(24px,4.8vw,38px)/.92 system-ui,sans-serif!important;
-  letter-spacing:-.035em;
-  white-space:nowrap;
+  letter-spacing:-.035em!important;
+  white-space:nowrap!important;
 }
 .rtg-development-screen .rtg-development-wallet .rtg-development-token-icon{
-  width:74px;
-  height:74px;
-  min-width:74px;
-  min-height:74px;
+  width:74px!important;
+  height:74px!important;
+  min-width:74px!important;
+  min-height:74px!important;
   display:grid!important;
-  place-items:center;
-  align-self:center;
-  justify-self:center;
-  padding:0;
-  margin:0;
-  border:2px solid #111216;
-  background:#f7f1df;
+  place-items:center!important;
+  align-self:center!important;
+  justify-self:center!important;
+  padding:0!important;
+  margin:0!important;
+  border:2px solid #111216!important;
+  background:#f7f1df!important;
   overflow:hidden!important;
 }
 .rtg-development-screen .rtg-development-wallet .rtg-development-token-icon>.rtg-token-icon{
-  width:66px;
-  height:66px;
+  width:66px!important;
+  height:66px!important;
   min-width:66px!important;
   max-width:66px!important;
   min-height:66px!important;
   max-height:66px!important;
   flex:0 0 66px!important;
   margin:0!important;
-  object-fit:contain;
-  object-position:center;
+  object-fit:contain!important;
+  object-position:center!important;
   vertical-align:middle!important;
 }
 
@@ -972,20 +972,20 @@ position:absolute;
     padding:10px 11px!important;
   }
   .rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell--tokens{
-    grid-template-columns:66px minmax(0,1fr);
-    gap:10px;
+    grid-template-columns:66px minmax(0,1fr)!important;
+    gap:10px!important;
   }
   .rtg-development-screen .rtg-development-wallet .rtg-development-token-icon{
-    width:62px;height:62px;min-width:62px;min-height:62px;
+    width:62px!important;height:62px!important;min-width:62px!important;min-height:62px!important;
   }
   .rtg-development-screen .rtg-development-wallet .rtg-development-token-icon>.rtg-token-icon{
-    width:56px;height:56px;min-width:56px!important;max-width:56px!important;
+    width:56px!important;height:56px!important;min-width:56px!important;max-width:56px!important;
     min-height:56px!important;max-height:56px!important;flex-basis:56px!important;
   }
   .rtg-development-screen .rtg-development-wallet-copy{gap:4px!important;}
   .rtg-development-screen .rtg-development-wallet-copy small{
     font-size:10px!important;
-    line-height:1.05;
+    line-height:1.05!important;
   }
   .rtg-development-screen .rtg-development-wallet-copy strong{
     font-size:clamp(21px,6.2vw,29px)!important;
@@ -1080,13 +1080,13 @@ position:absolute;
 .rtg-shop-screen .rtg-economy-crosslink>[data-rtg-open-development],
 .rtg-development-screen .development-projects>[data-rtg-open-shop]{
   min-height:48px;
-  padding:10px 18px;
-  border:3px solid #111216;
-  border-radius:0;
-  background:#ffd21f;
-  background-image:none;
-  color:#111216;
-  box-shadow:4px 4px 0 #111216;
+  padding:10px 18px!important;
+  border:3px solid #111216!important;
+  border-radius:0!important;
+  background:#ffd21f!important;
+  background-image:none!important;
+  color:#111216!important;
+  box-shadow:4px 4px 0 #111216!important;
   font-weight:1000;
   line-height:1;
 }
@@ -1094,9 +1094,9 @@ position:absolute;
   margin:26px 0 8px;
 }
 :is(.rtg-album-collections-screen,.rtg-album-teams-screen,.rtg-album-roster-screen) .section-root-button{
-  display:grid;
-  place-items:center;
-  padding:0;
+  display:grid!important;
+  place-items:center!important;
+  padding:0!important;
 }
 :is(.rtg-album-collections-screen,.rtg-album-teams-screen,.rtg-album-roster-screen) .section-root-button>span{
   display:grid;
@@ -1151,73 +1151,73 @@ position:absolute;
    still force 82-88px card widths and horizontal scrolling on narrow phones.
    Only the quick bench is affected; the full picker grid stays untouched. */
 .modal.rtg-squad-picker-modal .rtg-picker-quick-bench{
-  width:100%;
-  max-width:100%;
-  min-width:0;
-  box-sizing:border-box;
-  padding:9px 8px 10px;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  padding:9px 8px 10px!important;
 }
 .modal.rtg-squad-picker-modal .rtg-picker-quick-head{
-  min-width:0;
-  gap:6px;
-  margin-bottom:7px;
+  min-width:0!important;
+  gap:6px!important;
+  margin-bottom:7px!important;
 }
 .modal.rtg-squad-picker-modal .rtg-picker-quick-strip{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  grid-auto-flow:row;
-  align-items:start;
-  justify-items:stretch;
-  gap:6px;
-  box-sizing:border-box;
-  width:100%;
-  max-width:100%;
-  min-width:0;
-  margin:0;
-  padding:2px 3px 12px;
-  overflow:visible;
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-auto-flow:row!important;
+  align-items:start!important;
+  justify-items:stretch!important;
+  gap:6px!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:2px 3px 12px!important;
+  overflow:visible!important;
 }
 .modal.rtg-squad-picker-modal .rtg-picker-quick-strip > [data-rtg-picker-player]{
-  flex:none;
-  box-sizing:border-box;
-  width:100%;
-  max-width:100%;
-  min-width:0;
-  min-height:0;
-  margin:0;
-  justify-self:stretch;
+  flex:none!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  justify-self:stretch!important;
 }
 .modal.rtg-squad-picker-modal .rtg-picker-quick-strip .player-portrait-wrap{
-  width:100%;
-  height:auto;
-  min-height:0;
-  aspect-ratio:1.05;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  aspect-ratio:1.05!important;
   padding:5px 3px 2px!important;
   overflow:hidden!important;
 }
 .modal.rtg-squad-picker-modal .rtg-picker-quick-strip .player-info{
-  min-height:22px;
-  padding:3px 2px 4px;
+  min-height:22px!important;
+  padding:3px 2px 4px!important;
 }
 .modal.rtg-squad-picker-modal .rtg-picker-quick-strip .player-title strong{
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
-  white-space:normal;
-  overflow:hidden;
-  overflow-wrap:anywhere;
-  height:18px;
-  max-height:18px;
-  font-size:8px;
-  line-height:1.1;
-  text-align:center;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  overflow-wrap:anywhere!important;
+  height:18px!important;
+  max-height:18px!important;
+  font-size:8px!important;
+  line-height:1.1!important;
+  text-align:center!important;
 }
 .modal.rtg-squad-picker-modal .rtg-picker-quick-strip :is(.player-role,.player-overall){
-  min-width:16px;
-  height:15px;
-  padding:1px 2px;
-  font-size:8px;
-  line-height:12px;
+  min-width:16px!important;
+  height:15px!important;
+  padding:1px 2px!important;
+  font-size:8px!important;
+  line-height:12px!important;
 }
 .modal.rtg-squad-picker-modal .rtg-picker-quick-strip .rtg-legacy-badge{
   right:-2px!important;
@@ -1230,7 +1230,7 @@ position:absolute;
 }
 @media(max-width:430px){
   .modal.rtg-squad-picker-modal .rtg-picker-quick-head strong{
-    display:none; /* The title and modal already explain the free role selection. */
+    display:none!important; /* The title and modal already explain the free role selection. */
   }
 }
 @media(max-width:365px){
@@ -1259,7 +1259,7 @@ position:absolute;
   background:linear-gradient(110deg,#fffdf8,var(--unlock-soft))!important;
 }
 .rtg-pull-result .rtg-pull-series{white-space:normal;line-height:1.5;font-size:.55rem;letter-spacing:.07em;}
-.rtg-pull-result .rtg-pull-reveal-label{margin:20px 16px 0;}
+.rtg-pull-result .rtg-pull-reveal-label{margin:20px 16px 0!important;}
 .rtg-pull-result .rtg-pull-reveal-label span{border-radius:5px;letter-spacing:.11em;box-shadow:3px 3px 0 var(--unlock-accent);}
 .rtg-pull-result .rtg-pull-result-body{padding:24px 18px 26px!important;gap:18px!important;}
 .rtg-pull-result .rtg-pull-card-stage{isolation:isolate;min-height:166px;}
@@ -1277,7 +1277,7 @@ position:absolute;
 .rtg-pull-result .rtg-pull-role{min-height:28px;min-width:28px;padding:4px;border-width:1px;border-radius:5px;box-shadow:none;font-size:.64rem;}
 .rtg-pull-result .rtg-pull-meta{margin-top:12px;gap:5px;}
 .rtg-pull-result .rtg-pull-meta span{border-width:1px;box-shadow:none;padding:4px 6px;font-size:.6rem;}
-.rtg-pull-result .rtg-pull-balance{margin:0 16px 14px!important;padding:12px 14px!important;border-width:1px!important;border-left:4px solid var(--unlock-accent)!important;border-radius:8px;box-shadow:none!important;background:#fffdf8!important;}
+.rtg-pull-result .rtg-pull-balance{margin:0 16px 14px!important;padding:12px 14px!important;border-width:1px!important;border-left:4px solid var(--unlock-accent)!important;border-radius:8px!important;box-shadow:none!important;background:#fffdf8!important;}
 .rtg-pull-result .rtg-pull-balance>span{font-size:.62rem;letter-spacing:.09em;}
 .rtg-pull-result .rtg-pull-balance>strong{font-size:1.25rem;}
 .rtg-pull-result .rtg-pull-continue{width:calc(100% - 32px)!important;margin:0 16px 20px!important;min-height:48px!important;}
@@ -1288,7 +1288,7 @@ position:absolute;
 }
 
 .rtg-modal .rtg-role-filter-group{min-width:0;width:100%;display:grid;gap:6px;margin:0 0 11px;}
-.rtg-modal .rtg-picker-toolbar .rtg-role-filter-group{grid-column:1/-1;margin:0;}
+.rtg-modal .rtg-picker-toolbar .rtg-role-filter-group{grid-column:1/-1!important;margin:0!important;}
 .rtg-modal .rtg-role-filter-heading{color:#5f574c;font-size:.62rem;font-weight:1000;letter-spacing:.1em;}
 .rtg-modal .rtg-role-filter-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;min-width:0;}
 .rtg-modal .rtg-role-filter-button{min-width:0;min-height:36px;padding:5px 2px;border:2px solid #111216;border-radius:2px;background:#fff;color:#111216;box-shadow:2px 3px 0 #11121624;font:950 .72rem/1 system-ui,sans-serif;letter-spacing:.015em;cursor:pointer;}

@@ -16,7 +16,7 @@
 }
 
 :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating {
-  position: absolute;
+  position: absolute !important;
   z-index: 28;
   top: 62px;
   left: 14px;
@@ -117,7 +117,7 @@
    in the contextual picker and removal is intentionally not exposed here. */
 :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .role-filter-bar,
 :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating #clear-five-slot {
-  display: none;
+  display: none !important;
 }
 
 :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-list {
