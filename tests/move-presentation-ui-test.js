@@ -60,6 +60,6 @@ assert((app.match(/resolvePlayerVisual:/g)||[]).length>=2,"visual resolver is wi
 assert(app.includes("function matchEventPlayerSource(playerId)"));
 assert((app.match(/resolveMatchEventPlayer:/g)||[]).length>=2,"full player source resolver is wired to match presentation and controller");
 const index=fs.readFileSync("index.html","utf8");
-assert(index.includes("css/match-simulation-modern.css?v=20260914-match-redesign-1"));
+assert(index.includes("css/match-simulation-modern.css?v=20261104-css-tokens-1"));
 assert(index.includes("js/moves/move-presentation.js?v=20260914-season-visual-fix-1"));
 console.log("move presentation UI: category-dominant move cards, element text colors, redesigned match timeline and portraits OK");

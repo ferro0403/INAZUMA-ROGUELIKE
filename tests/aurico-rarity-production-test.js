@@ -135,6 +135,6 @@ const developmentController = fs.readFileSync(path.join(root, "js/development/de
 assert.match(developmentController, /player\.category === "Aurico"[\s\S]*development-max/);
 
 const index = fs.readFileSync(path.join(root, "index.html"), "utf8");
-assert.match(index, /css\/aurico-rarity\.css\?v=20260923-rtg-vending-depth-v19/);
+assert.match(index, /css\/aurico-rarity\.css\?v=20261104-css-tokens-1/);
 
 console.log("aurico rarity production contract: 99 mapping, Development costs/capacity, training stat cap 100, legacy counters, UI class/assets and ivory-card/black-accent coverage OK");
