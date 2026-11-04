@@ -71,11 +71,10 @@ The architecture test uses a **frozen baseline**, not a claim of completed migra
 - Every known legacy selector in `road-to-glory.css` has an individually
   frozen occurrence ceiling derived from `ab75a258`. Debt must decrease or
   remain unchanged; duplicating an owned selector in the legacy file fails.
-- Existing `!important` declaration ceilings are **751** in
-  `road-to-glory.css`, **780** in `rtg-theme.css` and **83** in
+- Existing `!important` declaration ceilings are **577** in
+  `road-to-glory.css`, **514** in `rtg-theme.css` and **62** in
   `rtg-version-banners.css` (lowered on 4 November 2026 from 976/867/84 after removing
-  overridden rules), so added priority debt fails the test.
-
+  overridden rules and useless `!important`), so added priority debt fails the test.
 These are **temporary allowances for known active files**, not a waiver of
 the target architecture. Remove them only when the real CSS migration and
 desktop/mobile visual parity checks are complete. The negative regression

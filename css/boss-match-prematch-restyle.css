@@ -35,7 +35,7 @@
 .boss-match-screen .boss-match-reward-note span { flex: 0 0 auto; color: var(--boss-pre-ink); font-size: .67rem; font-weight: 1000; letter-spacing: .06em; text-transform: uppercase; }
 .boss-match-screen .boss-match-reward-note span::after { content: " →"; }
 .boss-match-screen .boss-match-reward-note strong { color: var(--boss-pre-ink); font-size: .78rem; line-height: 1.15; text-transform: uppercase; }
-.boss-match-screen [hidden] { display: none !important; }
+.boss-match-screen [hidden] { display: none; }
 .boss-match-screen .boss-match-controls { position: relative; display: grid; grid-template-columns: 1fr; gap: 10px; padding: 12px; overflow: hidden; border: 3px solid var(--boss-pre-ink); border-radius: 1px; background: linear-gradient(145deg,#17191b,#090a0c 72%); box-shadow: 7px 8px 0 rgba(17,18,22,.28); }
 .boss-match-screen .boss-match-controls::before { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(255,210,31,.82); pointer-events: none; }
 .boss-match-screen .boss-match-test-tools { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 9px; border: 1px dashed #8b877e; color: #d8d2c7; }
