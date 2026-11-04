@@ -1,3 +1,4 @@
+const { withLiteralTokens } = require("./helpers/css-tokens");
 "use strict";
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
@@ -150,8 +151,8 @@ for (const [playerId, expectedPath] of [
 }
 assert.match(eventSource,/frontFullbodyUrl:raw\.frontFullbodyUrl \|\| EVENT_FULLBODY_URLS/,
   "Halloween player resolver must prefer the player-specific fullbody URL");
-const halloweenCss=fs.readFileSync("css/rtg-halloween-event.css","utf8");
-const coachesCss=fs.readFileSync("css/rtg-coaches.css","utf8");
+const halloweenCss=withLiteralTokens(fs.readFileSync("css/rtg-halloween-event.css","utf8"));
+const coachesCss=withLiteralTokens(fs.readFileSync("css/rtg-coaches.css","utf8"));
 assert.ok(coachesCss.includes("#modal-root .rtg-coach-player-preview p"),
   "Halloween coach preview requires a direct readable text-color override");
 assert.ok(coachesCss.includes("color:#24181a!important"),
@@ -165,7 +166,7 @@ assert.match(coachesCss,/transform:scale\(1\.52\)/,
 assert.ok(halloweenCss.includes(".rtg-halloween-album-collection .album-collection-title{color:#fffdf6!important"),
   "Event title must be white over the artwork");
 
-assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261102-shawn-portrait-exempt-v3"));
+assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261104-css-halloween-coach-1"));
 assert.doesNotMatch(eventSource,/coachMatchStatus\(|halloween-coach-match-status/,
   "Never insert coach banners above native Halloween matches");
 assert.doesNotMatch(halloweenCss,/halloween-coach-match-status/,
@@ -183,7 +184,7 @@ assert.match(eventSource,/data-halloween-prize-color/,
 assert.ok(halloweenCss.includes('[data-halloween-prize-color="orange"] .rtg-vending-prize-v9'));
 assert.ok(halloweenCss.includes('[data-halloween-prize-color="black"] .rtg-vending-prize-v9'));
 
-assert.match(htmlShell,/rtg-coaches\.css\?v=20261102-coach-cover-zoom-v1/,
+assert.match(htmlShell,/rtg-coaches\.css\?v=20261104-css-halloween-coach-1/,
   "iPhone must fetch the updated staff contrast rules");
 assert.match(coachesCss,/\.rtg-coach-squad-slot\.rtg-coach-halloween \.rtg-coach-squad-selected strong\s*\{\s*color:#24151a!important/,
   "Hekyll's name must be dark on the parchment background");

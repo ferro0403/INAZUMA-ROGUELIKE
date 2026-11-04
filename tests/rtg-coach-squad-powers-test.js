@@ -1,3 +1,4 @@
+const { withLiteralTokens } = require("./helpers/css-tokens");
 const assert=require("node:assert/strict");
 const test=require("node:test");
 const fs=require("node:fs"),vm=require("node:vm");
@@ -262,7 +263,7 @@ test("Yi only permits the other three elements and keeps his Squad badge hidden"
   const view=read("js/road-to-glory/rtg-squad-view-base.js");
   assert.doesNotMatch(view,/rtg-coach-card-buff/);
   assert.match(read("js/road-to-glory/rtg-coach-powers-preview.js"),/forest:"Albero"/);
-  const css=read("css/rtg-coaches.css");
+  const css=withLiteralTokens(read("css/rtg-coaches.css"));
   assert.match(css,/\.player-detail-modal \.rtg-coach-move-select/);
   assert.match(css,/\.player-detail-modal \.rtg-coach-moves-confirm/);
   assert.match(css,/border-radius:2px!important/);
@@ -384,13 +385,13 @@ test("All Squad powers hide yellow card footer; selector matches slim RTG card b
   assert.match(view,/trailingMarkup: \x60\$\{legacyBadge/);
   assert.doesNotMatch(view,/rtg-coach-card-buff/);
   assert.match(view,/coachPreview:preview/); // projected PT, rarity and element remain available in detail
-  const styles=read("css/rtg-coaches.css");
+  const styles=withLiteralTokens(read("css/rtg-coaches.css"));
   assert.doesNotMatch(styles,/\.rtg-coach-card-buff\s*\{/);
   assert.match(styles,/border:2px solid var\(--rarity-border,#646464\)!important/);
   assert.doesNotMatch(styles,/border-left-width:4px!important/);
   assert.match(styles,/outline:2px solid #ffd21f/);
   const html=read("index.html");
-  assert.match(html,/rtg-coaches\.css\?v=20261102-coach-cover-zoom-v1/);
+  assert.match(html,/rtg-coaches\.css\?v=20261104-css-halloween-coach-1/);
   assert.match(html,/rtg-squad-view\.js\?v=20261023-halftime-scroll-v2/);
 });
 
