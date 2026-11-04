@@ -544,11 +544,6 @@
   visibility:visible!important;
   transform:none!important;
 }
-.rtg-coach-placeholder--backup.is-visible{
-  display:grid!important;
-  position:relative!important;
-  z-index:4!important;
-}
 .rtg-coach-detail img.rtg-coach-fullbody--portrait-fallback{
   /* If Inazugle's true full-body fails, don't stretch a face-only PNG
      across the whole hero as in the reported iPhone screenshot. */
