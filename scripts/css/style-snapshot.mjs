@@ -3,7 +3,9 @@
 // elemento ha esattamente lo stesso stile. Usata da capture.mjs con --styles=<file> e da compare-styles.mjs.
 
 // Gira dentro la pagina. detail: se true, al posto dell'hash restituisce le proprieta' (per capire cosa cambia).
-export function pageStyleSnapshot(detail = false) {
+// ignore: prefisso di variabili CSS da non contare (es. "--ir-" per confrontare prima/dopo l'aggiunta dei token).
+export function pageStyleSnapshot(options = false) {
+  const { detail = false, ignore = "" } = typeof options === "object" && options ? options : { detail: options };
   const fnv = (text) => {
     let h = 0x811c9dc5;
     for (let i = 0; i < text.length; i += 1) {
@@ -23,7 +25,10 @@ export function pageStyleSnapshot(detail = false) {
   };
   const serialize = (style) => {
     const out = [];
-    for (let i = 0; i < style.length; i += 1) out.push(`${style[i]}:${style.getPropertyValue(style[i])}`);
+    for (let i = 0; i < style.length; i += 1) {
+      if (ignore && style[i].startsWith(ignore)) continue;
+      out.push(`${style[i]}:${style.getPropertyValue(style[i])}`);
+    }
     // Ordinate: il browser elenca le variabili CSS in un ordine che cambia da un'esecuzione all'altra.
     // Senza l'indirizzo del server di prova (la porta cambia a ogni esecuzione).
     return out.sort().join(";").split(location.origin).join("");

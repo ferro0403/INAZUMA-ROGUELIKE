@@ -79,7 +79,7 @@
   border: 0;
   background: transparent;
   box-shadow: none;
-  filter: drop-shadow(2px 3px 0 rgba(17,18,22,.12));
+  filter: drop-shadow(2px 3px 0 var(--ir-ink-a12));
 }
 
 .player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-art .item-icon img {

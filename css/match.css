@@ -17,8 +17,8 @@
   gap: 7px;
   min-width: 0;
   padding: 5px 3px 7px;
-  border-bottom: 3px solid #ffd21f;
-  color: #111216;
+  border-bottom: 3px solid var(--ir-yellow);
+  color: var(--ir-ink);
   font-size: clamp(.72rem, 3.1vw, .88rem);
   font-weight: 950;
   line-height: 1.05;
@@ -38,7 +38,7 @@
 
 .five-simulation-score .boss-match-score {
   min-width: 92px;
-  color: #111216;
+  color: var(--ir-ink);
   letter-spacing: -.045em;
 }
 
@@ -72,9 +72,9 @@
   padding: 0;
   gap: 0;
   overflow: hidden;
-  border: 3px solid #111216;
-  background: #fffaf0;
-  box-shadow: 5px 5px 0 rgba(17, 18, 22, .18);
+  border: 3px solid var(--ir-ink);
+  background: var(--ir-paper-cream);
+  box-shadow: 5px 5px 0 var(--ir-ink-a18);
 }
 
 .five-match-screen .five-match-vs .five-match-team {
@@ -90,13 +90,13 @@
   padding: 12px 10px 10px;
   border: 0;
   border-radius: 0;
-  background: #ffd21f;
+  background: var(--ir-yellow);
   box-shadow: none;
   text-align: center;
 }
 
 .five-match-screen .five-match-vs .five-match-team:last-child {
-  background: #fffaf0;
+  background: var(--ir-paper-cream);
 }
 
 .five-match-screen .five-match-vs .five-match-team small { display: none; }
@@ -105,7 +105,7 @@
   align-self: center;
   max-width: 100%;
   overflow: hidden;
-  color: #111216;
+  color: var(--ir-ink);
   font-size: clamp(.9rem, 3.1vw, 1.35rem);
   font-weight: 1000;
   letter-spacing: -.025em;
@@ -121,9 +121,9 @@
   height: 80px;
   flex: none;
   overflow: hidden;
-  border: 1px solid rgba(17, 18, 22, .14);
+  border: 1px solid var(--ir-ink-a14);
   background: rgba(255, 255, 255, .38);
-  filter: drop-shadow(3px 4px 0 rgba(17, 18, 22, .18));
+  filter: drop-shadow(3px 4px 0 var(--ir-ink-a18));
 }
 
 .five-match-screen .five-match-vs .five-match-emblem {
@@ -143,8 +143,8 @@
   place-items: center;
   overflow: hidden;
   background: transparent;
-  color: #ffd21f;
-  box-shadow: 5px 5px 0 rgba(17, 18, 22, .2);
+  color: var(--ir-yellow);
+  box-shadow: 5px 5px 0 var(--ir-ink-a20);
   font-size: clamp(1.5rem, 5vw, 2.25rem);
   font-style: italic;
   font-weight: 1000;
@@ -156,7 +156,7 @@
   position: absolute;
   z-index: -1;
   inset: -8px 7px;
-  background: #111216;
+  background: var(--ir-ink);
   transform: skew(-8deg);
 }
 
@@ -167,7 +167,7 @@
   grid-template-columns: 92px minmax(0, 1fr) 34px;
   min-height: 88px;
   padding-right: 14px;
-  border: 3px solid #111216;
+  border: 3px solid var(--ir-ink);
   border-radius: 0;
   box-shadow: 5px 6px 0 rgba(255, 255, 255, .15);
 }
@@ -253,7 +253,7 @@
 }
 
 @media (max-width: 780px) {
-  .five-match-screen .five-match-vs { grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr); min-height: 126px; box-shadow: 3px 3px 0 rgba(17, 18, 22, .18); }
+  .five-match-screen .five-match-vs { grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr); min-height: 126px; box-shadow: 3px 3px 0 var(--ir-ink-a18); }
   .five-match-screen .five-match-vs .five-match-team { grid-template-rows: minmax(2.2em, auto) 68px; min-height: 120px; padding: 9px 6px 8px; }
   .five-match-screen .five-match-vs .five-match-logo { width: 58px; height: 66px; }
   .five-match-screen .five-match-vs .five-match-team strong { font-size: clamp(.78rem, 3.7vw, 1rem); }
@@ -313,7 +313,7 @@
   min-height: 88px;
   margin-right: 16px;
   border-right: 0;
-  background: #111216;
+  background: var(--ir-ink);
   clip-path: polygon(0 0, 74% 0, 100% 50%, 74% 100%, 0 100%);
 }
 
@@ -340,7 +340,7 @@
   grid-template-columns: 104px minmax(0, 1fr) 34px;
   min-height: 94px;
   padding-right: 14px;
-  background: linear-gradient(108deg, #fffdf7 0%, #fffdf7 67%, #eee8dc 100%);
+  background: linear-gradient(108deg, var(--ir-paper-warm) 0%, var(--ir-paper-warm) 67%, #eee8dc 100%);
 }
 
 :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary::after {
@@ -362,8 +362,8 @@
   min-height: 88px;
   margin-right: 16px;
   border-right: 0;
-  background: #111216;
-  color: #fffdf7;
+  background: var(--ir-ink);
+  color: var(--ir-paper-warm);
   clip-path: polygon(0 0, 74% 0, 100% 50%, 74% 100%, 0 100%);
 }
 
@@ -473,9 +473,9 @@
   grid-template-columns: minmax(0, 1fr) 90px minmax(0, 1fr);
   min-height: 102px;
   overflow: hidden;
-  border: 3px solid #111216;
-  background: linear-gradient(90deg, #ffd21f 0 50%, #fffaf0 50% 100%);
-  box-shadow: 5px 5px 0 rgba(17, 18, 22, .18);
+  border: 3px solid var(--ir-ink);
+  background: linear-gradient(90deg, var(--ir-yellow) 0 50%, var(--ir-paper-cream) 50% 100%);
+  box-shadow: 5px 5px 0 var(--ir-ink-a18);
 }
 
 .five-match-screen .five-match-versus-side {
@@ -497,7 +497,7 @@
   top: 16px;
   z-index: 3;
   max-width: calc(100% - 22px);
-  color: #111216;
+  color: var(--ir-ink);
   font-size: clamp(1rem, 4.3vw, 1.25rem);
   font-weight: 1000;
   letter-spacing: -.045em;
@@ -541,7 +541,7 @@
   max-height: 100%;
   object-fit: contain;
   object-position: center;
-  filter: drop-shadow(3px 4px 0 rgba(17, 18, 22, .16));
+  filter: drop-shadow(3px 4px 0 var(--ir-ink-a16));
 }
 
 .five-match-screen .five-match-versus-center {
@@ -552,7 +552,7 @@
   align-self: stretch;
   margin-inline: -8px;
   overflow: visible;
-  color: #ffd21f;
+  color: var(--ir-yellow);
   font-style: italic;
   font-weight: 1000;
   font-size: clamp(2rem, 7vw, 2.55rem);
@@ -589,7 +589,7 @@
   .five-match-screen .five-match-versus-card {
     grid-template-columns: minmax(0, 1fr) 86px minmax(0, 1fr);
     min-height: 100px;
-    box-shadow: 3px 4px 0 rgba(17, 18, 22, .18);
+    box-shadow: var(--ir-shadow-soft-3-4-a18);
   }
 
   .five-match-screen .five-match-versus-side {
@@ -666,7 +666,7 @@
   display: block;
   width: 31%;
   height: 5px;
-  background: var(--rarity-border, #929ba8);
+  background: var(--rarity-border, var(--ir-grey-blue));
   clip-path: polygon(0 0, 100% 0, 84% 100%, 0 100%);
   pointer-events: none;
 }
@@ -681,13 +681,13 @@
   left: 0;
   width: 5px;
   border-radius: 8px 0 0 8px;
-  background: var(--rarity-border, #929ba8);
+  background: var(--rarity-border, var(--ir-grey-blue));
   pointer-events: none;
 }
 
 /* Selection remains a separate yellow state; rarity colour stays on the inner accent. */
 .five-match-screen .five-match-card.is-active {
-  border-color: #ffd21f;
+  border-color: var(--ir-yellow);
 }
 
 @media (max-width: 780px) {
@@ -733,11 +733,11 @@
   grid-template-rows: auto minmax(0, 1fr);
   gap: 11px;
   overflow: visible;
-  border: 3px solid #111216;
+  border: 3px solid var(--ir-ink);
   border-radius: 0;
-  background: #fffdf6;
-  color: #111216;
-  box-shadow: 8px 9px 0 rgba(17, 18, 22, .22);
+  background: var(--ir-paper);
+  color: var(--ir-ink);
+  box-shadow: 8px 9px 0 var(--ir-ink-a22);
 }
 
 :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating.is-open {
@@ -754,7 +754,7 @@
   height: 0;
   border-top: 16px solid transparent;
   border-bottom: 16px solid transparent;
-  border-left: 19px solid #111216;
+  border-left: 19px solid var(--ir-ink);
 }
 
 :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::before {
@@ -767,13 +767,13 @@
   height: 0;
   border-top: 12px solid transparent;
   border-bottom: 12px solid transparent;
-  border-left: 14px solid #fffdf6;
+  border-left: 14px solid var(--ir-paper);
 }
 
 :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact {
   margin: 0;
   padding: 0 52px 10px 0;
-  border-bottom: 2px solid #111216;
+  border-bottom: 2px solid var(--ir-ink);
 }
 
 :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact .eyebrow {
@@ -782,7 +782,7 @@
 
 :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact h3 {
   margin: 2px 0 2px;
-  color: #111216;
+  color: var(--ir-ink);
   font-size: clamp(1rem, 4vw, 1.28rem);
   line-height: 1;
   text-transform: uppercase;
@@ -803,11 +803,11 @@
   display: grid;
   place-items: center;
   padding: 0;
-  border: 3px solid #111216;
+  border: 3px solid var(--ir-ink);
   border-radius: 50%;
-  background: #ffd21f;
-  color: #111216;
-  box-shadow: 3px 4px 0 rgba(17, 18, 22, .18);
+  background: var(--ir-yellow);
+  color: var(--ir-ink);
+  box-shadow: var(--ir-shadow-soft-3-4-a18);
   font-size: 1.75rem;
   font-weight: 950;
   line-height: 1;
@@ -815,7 +815,7 @@
 
 .five-floating-picker-close:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 2px 0 rgba(17, 18, 22, .18);
+  box-shadow: 1px 2px 0 var(--ir-ink-a18);
 }
 
 /* The slot already determines compatibility: these legacy controls are redundant
@@ -839,7 +839,7 @@
 }
 
 :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card.current-starter {
-  border-color: #111216;
+  border-color: var(--ir-ink);
   background: #fff3b5;
 }
 
@@ -849,8 +849,8 @@
 }
 
 :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-state {
-  background: #111216;
-  color: #fffdf6;
+  background: var(--ir-ink);
+  color: var(--ir-paper);
 }
 
 @media (max-width: 780px) {
@@ -861,7 +861,7 @@
     max-height: min(440px, calc(100% - 72px));
     padding: 12px;
     border-width: 2px;
-    box-shadow: 5px 6px 0 rgba(17, 18, 22, .2);
+    box-shadow: var(--ir-shadow-soft-5-6-a20);
   }
 
   :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::after {
@@ -967,9 +967,9 @@
 }
 
 .five-match-screen .five-selector.five-selector-floating .five-roster-card {
-  --five-roster-bg: var(--rarity-bg, #fff);
+  --five-roster-bg: var(--rarity-bg, var(--ir-white));
   --five-roster-border: var(--rarity-border, #747474);
-  --five-roster-text: var(--rarity-text, #111216);
+  --five-roster-text: var(--rarity-text, var(--ir-ink));
   width: 100%;
   min-height: 74px;
   height: 74px;
@@ -1004,29 +1004,29 @@
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-base {
   --five-roster-bg: #f4f4ef;
   --five-roster-border: #8d9499;
-  --five-roster-text: #111216;
+  --five-roster-text: var(--ir-ink);
 }
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-uncommon,
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-pregiato {
   --five-roster-bg: #e4f6e8;
   --five-roster-border: #46b96f;
-  --five-roster-text: #111216;
+  --five-roster-text: var(--ir-ink);
 }
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-rare,
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-prestigio {
   --five-roster-bg: #e6f0ff;
   --five-roster-border: #4d8fd8;
-  --five-roster-text: #111216;
+  --five-roster-text: var(--ir-ink);
 }
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-epic {
   --five-roster-bg: #f0e7ff;
   --five-roster-border: #8b61d4;
-  --five-roster-text: #111216;
+  --five-roster-text: var(--ir-ink);
 }
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-legendary {
   --five-roster-bg: #fff0c8;
   --five-roster-border: #d99a16;
-  --five-roster-text: #111216;
+  --five-roster-text: var(--ir-ink);
 }
 
 .five-match-screen .five-selector.five-selector-floating .five-roster-portrait {
@@ -1058,12 +1058,12 @@
 
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter {
   background: #fff3b5 !important;
-  border-color: #111216 !important;
-  color: #111216 !important;
+  border-color: var(--ir-ink) !important;
+  color: var(--ir-ink) !important;
 }
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-copy strong,
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-copy small {
-  color: #111216 !important;
+  color: var(--ir-ink) !important;
 }
 
 @media (max-width: 780px) {
@@ -1152,17 +1152,17 @@
 /* ===== (unito da boss-match-prematch-restyle.css il 4 nov 2026) ===== */
 /* Boss / special 11v11 preparation, phase 1. Every rule is scoped to this screen. */
 .boss-match-screen {
-  --boss-pre-ink: #111216;
-  --boss-pre-paper: #fffdf7;
+  --boss-pre-ink: var(--ir-ink);
+  --boss-pre-paper: var(--ir-paper-warm);
   --boss-pre-cream: #f1eadc;
-  --boss-pre-yellow: #ffd21f;
-  --boss-pre-gold: #8b6814;
+  --boss-pre-yellow: var(--ir-yellow);
+  --boss-pre-gold: var(--ir-gold-dark);
 }
 .boss-match-screen .boss-match-content { gap: 12px; }
 .boss-match-screen .boss-match-hero {
   display: grid; grid-template-columns: minmax(0, 1fr); gap: 9px; padding: 12px;
   overflow: hidden; border: 3px solid var(--boss-pre-ink); border-radius: 2px;
-  background: var(--boss-pre-paper); color: var(--boss-pre-ink); box-shadow: 6px 7px 0 rgba(17,18,22,.2);
+  background: var(--boss-pre-paper); color: var(--boss-pre-ink); box-shadow: 6px 7px 0 var(--ir-ink-a20);
 }
 .boss-match-screen .boss-match-hero-band { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 3px solid var(--boss-pre-ink); }
 .boss-match-screen .boss-match-heading { display: block; }
@@ -1173,7 +1173,7 @@
 .boss-match-screen .boss-match-vs { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 7px; }
 .boss-match-screen .boss-match-team { display: grid; grid-template-columns: 48px minmax(0,1fr); grid-template-areas: "logo name" "logo meta"; align-items: center; gap: 0 8px; min-width: 0; padding: 4px; }
 .boss-match-screen .boss-match-team--boss { grid-template-columns: minmax(0,1fr) 48px; grid-template-areas: "name logo" "meta logo"; text-align: right; }
-.boss-match-screen .boss-match-logo { grid-area: logo; display: grid; place-items: center; width: 46px; height: 46px; padding: 3px; overflow: hidden; border: 2px solid var(--boss-pre-ink); border-radius: 50%; background: #fff; }
+.boss-match-screen .boss-match-logo { grid-area: logo; display: grid; place-items: center; width: 46px; height: 46px; padding: 3px; overflow: hidden; border: 2px solid var(--boss-pre-ink); border-radius: 50%; background: var(--ir-white); }
 .boss-match-screen .boss-match-logo img,
 .boss-match-screen .boss-match-logo .team-emblem,
 .boss-match-screen .boss-match-logo .boss-match-emblem { width: 100%; height: 100%; object-fit: contain; }
@@ -1188,7 +1188,7 @@
 .boss-match-screen .boss-match-reward-note span::after { content: " →"; }
 .boss-match-screen .boss-match-reward-note strong { color: var(--boss-pre-ink); font-size: .78rem; line-height: 1.15; text-transform: uppercase; }
 .boss-match-screen [hidden] { display: none; }
-.boss-match-screen .boss-match-controls { position: relative; display: grid; grid-template-columns: 1fr; gap: 10px; padding: 12px; overflow: hidden; border: 3px solid var(--boss-pre-ink); border-radius: 1px; background: linear-gradient(145deg,#17191b,#090a0c 72%); box-shadow: 7px 8px 0 rgba(17,18,22,.28); }
+.boss-match-screen .boss-match-controls { position: relative; display: grid; grid-template-columns: 1fr; gap: 10px; padding: 12px; overflow: hidden; border: 3px solid var(--boss-pre-ink); border-radius: 1px; background: linear-gradient(145deg,#17191b,#090a0c 72%); box-shadow: 7px 8px 0 var(--ir-ink-a28); }
 .boss-match-screen .boss-match-controls::before { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(255,210,31,.82); pointer-events: none; }
 .boss-match-screen .boss-match-test-tools { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 9px; border: 1px dashed #8b877e; color: #d8d2c7; }
 .boss-match-screen .boss-match-test-tools > span { font-size: .65rem; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
@@ -1263,7 +1263,7 @@
 .boss-match-screen .boss-match-controls .five-match-actions-heading i {
   width: 92px;
   height: 7px;
-  background: repeating-linear-gradient(120deg, #ffd21f 0 9px, transparent 10px 14px);
+  background: repeating-linear-gradient(120deg, var(--ir-yellow) 0 9px, transparent 10px 14px);
   transform: skewX(-10deg);
 }
 
@@ -1282,9 +1282,9 @@
   width: 100%;
   padding-left: 0;
   overflow: hidden;
-  border: 3px solid #111216;
+  border: 3px solid var(--ir-ink);
   border-radius: 2px;
-  color: #111216;
+  color: var(--ir-ink);
   text-align: left;
   text-transform: none;
   box-shadow: 5px 6px 0 rgba(255,255,255,.15);
@@ -1306,7 +1306,7 @@
   .boss-match-screen .boss-match-controls {
     padding: 9px;
     gap: 8px;
-    box-shadow: 4px 5px 0 rgba(17,18,22,.28);
+    box-shadow: 4px 5px 0 var(--ir-ink-a28);
   }
 
   .boss-match-screen .boss-match-controls .five-match-actions-heading i {

@@ -1,10 +1,11 @@
 "use strict";
+const { withLiteralTokens } = require("./helpers/css-tokens");
 
 const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const assert = require("assert");
 const fs = require("fs");
 
-const css = cssSection('five-match-rounded-rarity');
+const css = withLiteralTokens(cssSection('five-match-rounded-rarity'));
 const index = fs.readFileSync("index.html", "utf8");
 
 assert.match(css, /\.five-match-screen \.five-match-card,[\s\S]*overflow: hidden;[\s\S]*border-left: 1px solid rgba\(17, 18, 22, \.88\);/, "half card must clip rarity artwork to its rounded silhouette and stop using the thick coloured physical border");

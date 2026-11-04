@@ -1,4 +1,5 @@
 "use strict";
+const { withLiteralTokens } = require("./helpers/css-tokens");
 
 const assert = require("assert");
 const fs = require("fs");
@@ -115,7 +116,7 @@ assert.equal(global.SEASON1_CONFIG.categoryRanks.Aurico, 8);
 assert.ok(global.SEASON1_CONFIG.legendaryCategories.includes("Aurico"));
 assert.equal(global.PlayerView.rarityClass("Aurico"), "rarity-aurico");
 
-const css = fs.readFileSync(path.join(root, "css/aurico-rarity.css"), "utf8");
+const css = withLiteralTokens(fs.readFileSync(path.join(root, "css/aurico-rarity.css"), "utf8"));
 assert.match(css, /\.rarity-aurico\s*\{/);
 assert.match(css, /--rarity-bg:\s*#fffdf6/);
 assert.match(css, /--rarity-surface:\s*#f1eee5/);

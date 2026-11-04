@@ -1,4 +1,5 @@
 "use strict";
+const { withLiteralTokens } = require("./helpers/css-tokens");
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8"),c);
@@ -66,7 +67,7 @@ assert.match(suspense,/Ultra Moon/i);
 assert.match(suspense,/rtg-duel-visual--compare/);
 assert.doesNotMatch(suspense,/rtg-duel-panel-tag/);
 assert.doesNotMatch(suspense,/VINTA|PERSA|AZIONE RIUSCITA|AZIONE PERSA/i);
-const css=fs.readFileSync("css/road-to-glory.css","utf8");
+const css=withLiteralTokens(fs.readFileSync("css/road-to-glory.css","utf8"));
 assert.match(css,/--rtg-match-paper:\s*#fffdf6/i);
 assert.match(css,/\.rtg-match-polish-v2 \.rtg-match-ticker/);
 assert.match(css,/\.rtg-duel-versus-board/);

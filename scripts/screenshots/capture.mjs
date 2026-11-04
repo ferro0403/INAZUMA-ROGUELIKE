@@ -33,6 +33,8 @@ const STYLES_OUT = opt("styles", "");
 const styleSnapshots = {};
 // --styles-detail=file.json: come --styles ma con tutte le proprieta' (lento e grande: usare con --only).
 const STYLES_DETAIL = opt("styles-detail", "");
+// --styles-ignore=--ir-: le variabili CSS con questo prefisso non entrano nell'impronta (token appena aggiunti).
+const STYLES_IGNORE = opt("styles-ignore", "");
 // --rule-effect=file.json: in ogni schermata disattiva una regola alla volta e registra quali cambiano lo stile.
 const RULE_EFFECT = opt("rule-effect", "");
 const ruleEffect = { known: new Set(), removed: new Set(), evaluated: new Set(), skipped: {} };
@@ -216,8 +218,8 @@ for (const scene of selected) {
       shot = again;
     }
     writeFileSync(join(OUT, `${scene.name}.png`), shot);
-    if (STYLES_OUT) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot);
-    if (STYLES_DETAIL) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot, true);
+    if (STYLES_OUT) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot, { ignore: STYLES_IGNORE });
+    if (STYLES_DETAIL) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot, { detail: true, ignore: STYLES_IGNORE });
     if (IMPORTANT_EFFECT) {
       const r = await page.evaluate(pageImportantEffect, { known: [...importantEffect.known],
         demoted: [...importantEffect.demoted], recheckOnly: Boolean(IMPORTANT_EFFECT_FROM), frozen: FROZEN });
