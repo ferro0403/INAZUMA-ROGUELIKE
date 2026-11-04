@@ -41,7 +41,11 @@ const RULE_EFFECT_FROM = opt("rule-effect-from", "");
 // --important-effect=file.json (e --important-effect-from=file.json): come --rule-effect, ma per i `!important`.
 const IMPORTANT_EFFECT = opt("important-effect", "");
 const IMPORTANT_EFFECT_FROM = opt("important-effect-from", "");
-const importantEffect = { known: new Set(), demoted: new Set(), evaluated: new Set(), skipped: {} };
+// --frozen=a.css,b.css: file che le misure non devono considerare modificabili.
+const FROZEN = opt("frozen", "").split(",").filter(Boolean);
+// --important-keep=file.json: elenco di chiavi "file|media|selettore|n::proprieta'" da non togliere mai.
+const IMPORTANT_KEEP = opt("important-keep", "") ? JSON.parse(readFileSync(opt("important-keep", ""), "utf8")) : [];
+const importantEffect = { known: new Set(IMPORTANT_KEEP), demoted: new Set(), evaluated: new Set(), skipped: {} };
 if (IMPORTANT_EFFECT_FROM) {
   const prev = JSON.parse(readFileSync(IMPORTANT_EFFECT_FROM, "utf8"));
   importantEffect.known = new Set(prev.necessari);
@@ -216,7 +220,7 @@ for (const scene of selected) {
     if (STYLES_DETAIL) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot, true);
     if (IMPORTANT_EFFECT) {
       const r = await page.evaluate(pageImportantEffect, { known: [...importantEffect.known],
-        demoted: [...importantEffect.demoted], recheckOnly: Boolean(IMPORTANT_EFFECT_FROM) });
+        demoted: [...importantEffect.demoted], recheckOnly: Boolean(IMPORTANT_EFFECT_FROM), frozen: FROZEN });
       importantEffect.known = new Set(r.known);
       importantEffect.demoted = new Set(r.demoted);
       r.evaluated.forEach((k) => importantEffect.evaluated.add(k));
@@ -225,7 +229,7 @@ for (const scene of selected) {
       saveImportantEffect();
     }
     if (RULE_EFFECT) {
-      const r = await page.evaluate(pageRuleEffect, { known: [...ruleEffect.known], removed: [...ruleEffect.removed], recheckOnly: Boolean(RULE_EFFECT_FROM) });
+      const r = await page.evaluate(pageRuleEffect, { known: [...ruleEffect.known], removed: [...ruleEffect.removed], recheckOnly: Boolean(RULE_EFFECT_FROM), frozen: FROZEN });
       ruleEffect.known = new Set(r.known);
       ruleEffect.removed = new Set(r.removed);
       r.evaluated.forEach((k) => ruleEffect.evaluated.add(k));
