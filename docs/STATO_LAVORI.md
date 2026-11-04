@@ -33,8 +33,24 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
     31 !important dei test rimessi dopo la misura invece che prima) e rimessi 3 !important del tabellone RTG
     trovati per bisezione con la verifica dello stile. Verifica finale: stile identico a 412/768/1280 px,
     foto 0/78, npm test invariato, prove 12/12. `!important`: 6.464 -> 4.804.
-  - Prossimi: 87 regole morte certe nei file Halloween/coach (dopo il 7 novembre); rivedere le "non viste";
-    unire i file patch nei proprietari; token; meno `!important`.
+  - **1g** `refactor/css-7-file-patch`: i 21 file CSS "patch" uniti al loro proprietario nello stesso ordine
+    di caricamento (43 -> 26 file). `game.css` (+3 patch e il blocco `<style>` di `index.html`), nuovi
+    proprietari `match.css` (11 file), `player-detail.css` (4), `shop.css` (2); `trade-result-card-fix.css`
+    diviso in `trade-result.css` e `rtg-halftime-penalty.css` (stessa posizione). Ogni parte unita ha
+    un'intestazione "(unito da X.css il 4 nov 2026)"; i test che leggevano i vecchi file usano
+    `tests/helpers/css-sections.js`. Script: `scripts/css/merge-patch-files.mjs`. Verifica: stile identico a
+    412/768/1280 px, foto 0/78, npm test invariato (426/40), prove 12/12.
+  - **1h** `refactor/css-8-token`: 2.676 colori e ombre ripetuti (37 colori usati 10+ volte, 21 ombre usate 5+
+    volte) sostituiti con 58 variabili `--ir-*` definite una volta in testa a `game.css` (`--ir-ink` #111216,
+    `--ir-yellow` #ffd21f, `--ir-paper` #fffdf6, `--ir-shadow-ink-4-5`...). Script `scripts/css/color-tokens.mjs`
+    (`--report` per contare, `--apply` per sostituire; tocca solo i valori, mai selettori/stringhe/url).
+    I test che cercano un colore nel CSS usano `tests/helpers/css-tokens.js`; 6 test con la chiave `?v=` aggiornati.
+    `capture.mjs --styles-ignore=--ir-` confronta lo stile senza contare le nuove variabili, e la misura `--styles`
+    riprende dopo un'interruzione. Verifica: stile identico a 412/768/1280 px, foto 0/78, npm test invariato, 12/12.
+    Nota: il container si spegne se la sessione resta senza un comando seguito; le misure lunghe vanno lanciate
+    come comando in background seguito dalla sessione.
+  - Prossimi: pulizia dei file Halloween/coach (1i, l'utente ha dato l'ok anche prima del
+    7 novembre, in PR separata); rivedere le "non viste"; meno `!important`.
   - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f.
 
 ## Scoperte del Passo 1
