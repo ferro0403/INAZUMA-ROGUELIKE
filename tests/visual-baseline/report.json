@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-11-03T21:16:04.002Z",
+  "createdAt": "2026-11-04T05:33:04.561Z",
   "fixedTime": "2026-11-03T12:00:00.000Z",
   "viewport": {
     "width": 412,
@@ -564,7 +564,7 @@
       "ok": true,
       "failedStep": null,
       "errors": [],
-      "failedImages": 6
+      "failedImages": 3
     },
     {
       "name": "86-rtg-premio-distributore",
@@ -572,7 +572,7 @@
       "ok": true,
       "failedStep": null,
       "errors": [],
-      "failedImages": 11
+      "failedImages": 8
     },
     {
       "name": "30-halloween-home",
@@ -596,7 +596,7 @@
       "ok": true,
       "failedStep": null,
       "errors": [],
-      "failedImages": 3
+      "failedImages": 2
     },
     {
       "name": "33-halloween-squadra",
@@ -632,13 +632,13 @@
     }
   ],
   "blockedHosts": {
-    "i0.wp.com": 69,
-    "www.akibagamers.it": 44,
-    "inazuma-eleven-legends.vercel.app": 45,
-    "i.namu.wiki": 29,
+    "i0.wp.com": 68,
+    "www.akibagamers.it": 43,
+    "inazuma-eleven-legends.vercel.app": 43,
+    "i.namu.wiki": 28,
     "opengameart.org": 1,
-    "static.vecteezy.com": 9,
-    "easycdn.es": 2
+    "static.vecteezy.com": 8,
+    "easycdn.es": 1
   },
   "validBaseline": false
 }
