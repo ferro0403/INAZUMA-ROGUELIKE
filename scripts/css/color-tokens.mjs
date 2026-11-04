@@ -81,6 +81,7 @@ function plan(text) {
   const { list, masked } = declarations(text);
   const edits = [];
   for (const d of list) {
+    if (d.prop.startsWith("--ir-")) continue; // definizione di un token
     const raw = text.slice(d.valueStart, d.valueEnd);
     const imp = raw.match(/\s*!\s*important\s*$/i);
     const value = imp ? raw.slice(0, imp.index) : raw;
@@ -149,13 +150,20 @@ async function apply() {
     writeFileSync(`css/${f}`, out);
   }
   await browser.close();
-  // Definizioni in testa al file dei token (caricato per primo).
-  const defs = [];
-  for (const [literal, name] of Object.entries(TOKENS.colors)) if (used.has(name)) defs.push(`  --ir-${name}: ${literal};`);
-  for (const [value, name] of Object.entries(TOKENS.shadows)) if (used.has(name)) defs.push(`  --ir-${name}: ${value.replace(/,(?=\S)/g, ",")};`);
+  // Definizioni in testa al file dei token (caricato per primo): il blocco si ricostruisce con i token usati
+  // in TUTTI i file, cosi' lo script si puo' rilanciare su altri file (--skip diverso) senza duplicarlo.
   const head = "/* Token condivisi: colori e ombre ripetuti in piu' file (scripts/css/color-tokens.mjs). */\n";
   const tokenText = readFileSync(`css/${TOKEN_FILE}`, "utf8");
-  writeFileSync(`css/${TOKEN_FILE}`, `${head}:root {\n${defs.join("\n")}\n}\n\n${tokenText}`);
+  const rest = tokenText.startsWith(head) ? tokenText.slice(tokenText.indexOf("}\n", head.length) + 2).replace(/^\n/, "") : tokenText;
+  const usedAll = new Set();
+  for (const f of readdirSync("css").filter((x) => x.endsWith(".css"))) {
+    const text = f === TOKEN_FILE ? rest : readFileSync(`css/${f}`, "utf8");
+    for (const m of text.matchAll(/var\(--ir-([\w-]+)\)/g)) usedAll.add(m[1]);
+  }
+  const defs = [];
+  for (const [literal, name] of Object.entries(TOKENS.colors)) if (usedAll.has(name)) defs.push(`  --ir-${name}: ${literal};`);
+  for (const [value, name] of Object.entries(TOKENS.shadows)) if (usedAll.has(name)) defs.push(`  --ir-${name}: ${value};`);
+  writeFileSync(`css/${TOKEN_FILE}`, `${head}:root {\n${defs.join("\n")}\n}\n\n${rest}`);
   console.log(`${total} valori sostituiti con ${used.size} token; ${invalid} lasciati (dichiarazione non valida per il browser)`);
 }
 
