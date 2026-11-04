@@ -8,7 +8,7 @@
 }
 .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected {
   grid-template-rows:minmax(48px,auto) auto!important;
-  grid-template-areas:"copy copy" "probability probability";
+  grid-template-areas:"copy copy" "probability probability"!important;
   align-content:space-between;
   min-height:104px!important;
   row-gap:5px!important;

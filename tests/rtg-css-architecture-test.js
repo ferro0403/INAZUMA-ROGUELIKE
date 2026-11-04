@@ -61,7 +61,7 @@ if (fs.existsSync(legacyRoadPath)) {
 const debtFiles = ['road-to-glory.css','rtg-theme.css','rtg-version-banners.css'].filter(name => fs.existsSync(path.join(CSS_DIR, name)));
 const countImportant = source => (source.match(/!important\b/g) || []).length;
 const importantDebt = Object.fromEntries(debtFiles.map(name => [name, countImportant(fs.readFileSync(path.join(CSS_DIR, name), 'utf8'))]));
-const baselineCeilings = {"road-to-glory.css":751,"rtg-theme.css":780,"rtg-version-banners.css":83}; // Tetti abbassati il 4 nov 2026 dopo la rimozione delle regole battute: il debito puo' solo scendere.
+const baselineCeilings = {"road-to-glory.css":577,"rtg-theme.css":513,"rtg-version-banners.css":62}; // Tetti abbassati il 4 nov 2026 dopo la rimozione delle regole battute e dei !important inutili: il debito puo' solo scendere.
 for (const [name,count] of Object.entries(importantDebt)) assert.ok(count <= baselineCeilings[name], `${name} !important debt grew to ${count}`);
 console.log('RTG CSS architecture guard: PASS');
 console.log(JSON.stringify({rtgCssFiles,importantDebt},null,2));

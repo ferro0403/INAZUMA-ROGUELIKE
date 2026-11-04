@@ -66,7 +66,7 @@
 .rtg-duel-card--clean .rtg-duel-choice-card{min-width:0;min-height:108px!important;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:minmax(42px,auto) auto!important;grid-template-areas:"copy copy" "probability probability";align-content:space-between;align-items:start;gap:10px 8px!important;padding:12px!important;}
 .rtg-duel-card--clean .rtg-choice-icon{display:none;}
 .rtg-duel-card--clean .rtg-choice-copy{grid-area:copy!important;align-self:start!important;display:grid;gap:4px!important;min-width:0;width:100%;padding:0!important;overflow:visible;text-align:left;}
-.rtg-duel-card--clean .rtg-choice-copy strong{display:-webkit-box;min-width:0;width:100%;margin:0;overflow:hidden;color:#111216;font-size:clamp(12px,3.3vw,15px)!important;font-weight:1000;line-height:1.08;letter-spacing:-.01em;overflow-wrap:break-word!important;word-break:normal;white-space:normal;hyphens:none;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
+.rtg-duel-card--clean .rtg-choice-copy strong{display:-webkit-box;min-width:0;width:100%;margin:0;overflow:hidden;color:#111216;font-size:clamp(12px,3.3vw,15px)!important;font-weight:1000;line-height:1.08;letter-spacing:-.01em;overflow-wrap:break-word!important;word-break:normal!important;white-space:normal!important;hyphens:none;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
 .rtg-duel-card--clean .rtg-choice-copy em{display:block;min-width:0;max-width:100%;margin:0;overflow:hidden;color:#5f6167;font-size:9px!important;font-style:normal;font-weight:850;line-height:1.15;text-align:left;text-overflow:ellipsis;white-space:nowrap!important;}
 .rtg-duel-card--clean .rtg-choice-probability{grid-area:probability!important;align-self:end;justify-self:stretch!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px;min-width:0!important;width:100%;padding:0;margin:0;}
 .rtg-duel-card--clean .rtg-choice-probability strong{flex:0 1 auto;min-width:0;margin:0;font-size:clamp(18px,5vw,22px)!important;line-height:.95!important;white-space:nowrap;}
@@ -1081,9 +1081,9 @@ position:absolute;
 .rtg-development-screen .development-projects>[data-rtg-open-shop]{
   min-height:48px;
   padding:10px 18px;
-  border:3px solid #111216;
-  border-radius:0;
-  background:#ffd21f;
+  border:3px solid #111216!important;
+  border-radius:0!important;
+  background:#ffd21f!important;
   background-image:none;
   color:#111216;
   box-shadow:4px 4px 0 #111216;
@@ -1164,7 +1164,7 @@ position:absolute;
 }
 .modal.rtg-squad-picker-modal .rtg-picker-quick-strip{
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
   grid-auto-flow:row;
   align-items:start;
   justify-items:stretch;
@@ -1175,14 +1175,14 @@ position:absolute;
   min-width:0;
   margin:0;
   padding:2px 3px 12px;
-  overflow:visible;
+  overflow:visible!important;
 }
 .modal.rtg-squad-picker-modal .rtg-picker-quick-strip > [data-rtg-picker-player]{
   flex:none;
   box-sizing:border-box;
-  width:100%;
-  max-width:100%;
-  min-width:0;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
   min-height:0;
   margin:0;
   justify-self:stretch;

@@ -452,7 +452,7 @@
 
 .rtg-match-event-feed {
   background:#fff!important;
-  border:3px solid #111216;
+  border:3px solid #111216!important;
   border-radius:2px!important;
   box-shadow:5px 6px 0 #111216!important;
   margin:18px auto!important;
@@ -731,8 +731,8 @@
   font-size:10px;
   line-height:1.2;
   font-weight:950;
-  white-space:normal;
-  overflow:visible;
+  white-space:normal!important;
+  overflow:visible!important;
   text-overflow:clip;
   max-width:100%;
   width:auto;
@@ -864,7 +864,7 @@
   justify-content:flex-start;
 }
 .rtg-duel-choice-head > span {
-  display:none;
+  display:none!important;
 }
 .rtg-duel-versus-board .rtg-duel-portrait-panel {
   border-radius:8px!important;
@@ -919,10 +919,10 @@
 
 /* RTG duel compact cards: remove the orphaned fixed grid row left after hiding the panel heading. */
 .rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-portrait-panel {
-  grid-template-rows:auto;
+  grid-template-rows:auto!important;
   align-self:start!important;
-  height:auto;
-  min-height:0;
+  height:auto!important;
+  min-height:0!important;
 }
 
 
@@ -2613,7 +2613,7 @@
   align-self:stretch;
   height:100%;
   display:grid!important;
-  grid-template-rows:minmax(0,1fr) 32px;
+  grid-template-rows:minmax(0,1fr) 32px!important;
   align-items:stretch;
   gap:8px!important;
 }
@@ -2627,7 +2627,7 @@
   height:32px;
   min-height:32px;
   margin:0;
-  align-self:end;
+  align-self:end!important;
 }
 
 

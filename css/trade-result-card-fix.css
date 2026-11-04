@@ -15,7 +15,7 @@
 .rtg-halftime-revolution .rtg-halftime-selection{display:none}
 
 /* RTG penalties */
-.rtg-penalty-panel .rtg-penalty-head .muted,.rtg-penalty-panel .rtg-penalty-choice-copy{display:none}
+.rtg-penalty-panel .rtg-penalty-head .muted,.rtg-penalty-panel .rtg-penalty-choice-copy{display:none!important}
 .rtg-penalty-head{align-items:end;padding-bottom:13px!important;border-bottom:4px solid #111!important}
 .rtg-penalty-head h2{margin:2px 0 0!important;font-size:clamp(2.3rem,8vw,3.7rem);line-height:.9;font-style:italic}
 .rtg-penalty-score{min-width:120px!important;padding:12px 15px!important;font-size:1.9rem!important;text-align:center;box-shadow:6px 6px 0 #111!important}
