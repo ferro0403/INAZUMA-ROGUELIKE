@@ -1,4 +1,5 @@
 'use strict';
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const assert = require('assert');
 const fs = require('fs');
 const vm = require('vm');
@@ -41,7 +42,7 @@ const app = fs.readFileSync('js/app.js', 'utf8');
 const banner = app.slice(app.indexOf('<div class="five-match-vs">'), app.indexOf('</section>', app.indexOf('<div class="five-match-vs">')));
 assert(!banner.includes('⚡') && !banner.includes('⚽'), '5v5 banner must not contain hardcoded crest emoji');
 assert(banner.includes('userEmblemMarkup') && banner.includes('opponentEmblemMarkup'));
-const css = fs.readFileSync('css/five-match-reference-polish.css', 'utf8');
+const css = cssSection('five-match-reference-polish');
 assert(!/five-match-team strong[^}]*text-overflow:\s*ellipsis/s.test(css));
 assert(css.includes('object-fit: contain'));
 for (const asset of ['default-lightning.svg', 'free-agents.svg', 'neutral-team.svg']) assert(fs.existsSync(`assets/emblems/${asset}`));

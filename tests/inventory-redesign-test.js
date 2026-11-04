@@ -1,10 +1,11 @@
 'use strict';
 
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const assert = require('assert');
 const fs = require('fs');
 
 const app = fs.readFileSync('js/inventory/inventory-controller.js', 'utf8');
-const css = fs.readFileSync('css/inventory-redesign.css', 'utf8');
+const css = cssSection('inventory-redesign');
 const html = fs.readFileSync('index.html', 'utf8');
 const render = app.slice(app.indexOf('function renderInventory'), app.indexOf('function inventoryItemEffect'));
 const cards = app.slice(app.indexOf('function inventoryItemCard'), app.indexOf('function inventoryItemDetailMarkup'));
@@ -48,6 +49,6 @@ assert.match(css, /\.inventory-unavailable \{[^}]*overflow-wrap: anywhere;/, 'co
 assert.doesNotMatch(css, /inventory-success-(?:modal|feedback|mark)/, 'obsolete black success panel styles are removed');
 assert.match(css, /\.inventory-equipped-list \{ grid-template-columns: 1fr;/, 'equipped entries use compact rows');
 assert.match(css, /body:has\(\.inventory-v2-screen\)[\s\S]*inazuma-stadium-desktop-light/, 'page roots continue the stadium background through overscroll');
-assert.match(html, /inventory-redesign\.css/, 'inventory stylesheet is loaded');
+assert.ok(stylesheetLoaded(html, 'inventory-redesign'), 'inventory stylesheet is loaded');
 
 console.log('inventory-redesign-test: ok');

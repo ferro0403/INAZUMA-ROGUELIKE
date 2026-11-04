@@ -1,15 +1,16 @@
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const css = fs.readFileSync(path.join(root, 'css/boss-match-action-parity-fit.css'), 'utf8');
+const css = cssSection('boss-match-action-parity-fit');
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-assert(/href=["']css\/boss-match-action-parity-fit\.css(?:\?[^"']*)?["']/.test(index), '11v11 parity stylesheet must be loaded');
+assert(stylesheetLoaded(index, 'boss-match-action-parity-fit'), '11v11 parity stylesheet must be loaded');
 assert(css.includes('.boss-match-screen .boss-match-controls .five-match-action-cta'), 'Boss actions must use the five-match CTA structure');
 assert(css.includes('display: grid;'), 'Shared boss CTA must explicitly restore the 5v5 grid structure');
 assert(css.includes('.boss-match-line[data-row-count="5"]'), 'Five-player rows need dedicated fit rules');

@@ -1,9 +1,10 @@
 "use strict";
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 // The 1162 FW portrait is now a role-specific profiled-season asset. A global
 // CSS src/alt override would incorrectly affect the separate 1166 card.
 const fs=require("fs"),assert=require("assert");
 const db=JSON.parse(fs.readFileSync("data/IE1_S2_season_compact.json","utf8"));
-const css=fs.readFileSync("css/match-ui-cleanup.css","utf8");
+const css=cssSection('match-ui-cleanup');
 const shawn1162=db.profiles.find(p=>p.profileId==="1162@alpine_ie2");
 const shawn1166=db.profiles.find(p=>p.profileId==="1166@raimon_inazuma_eleven_2");
 assert(shawn1162&&shawn1166,"Both independent IE2 Shawn cards must remain present");
