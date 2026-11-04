@@ -10,8 +10,16 @@
   display: none !important;
 }
 
+.player-detail-layout {
+  border: 1px solid var(--pd-ink);
+}
 
 /* Keep every hero decorative layer physically inside the hero. */
+.player-detail-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
 
 
 
@@ -20,6 +28,19 @@
 /* The previous rule sized the image almost exclusively by height and left width
    unconstrained, so wide fullbody canvases were clipped at the 47% column edge.
    Fit the real fullbody inside the reserved visual zone instead. */
+.player-fullbody--fullbody {
+  left: 50%;
+  right: auto;
+  bottom: 0;
+  z-index: 2;
+  width: 100%;
+  height: 96%;
+  max-width: 100%;
+  max-height: 96%;
+  transform: translateX(-50%);
+  object-fit: contain;
+  object-position: center bottom;
+}
 
 /* Stats/equipment form a clean new stacking context below the clipped hero. */
 .player-detail-content {

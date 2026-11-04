@@ -81,6 +81,10 @@ export function pageImportantEffect({ known, demoted, recheckOnly = false }) {
     if (K.has(e.key) || D.has(e.key)) continue;
     if (!e.mediaOk) { skipped.push([e.key, "media non attiva su questo schermo"]); continue; }
     if (STATE.test(e.rule.selectorText)) { skipped.push([e.key, "stato (hover/focus...)"]); continue; }
+    if (/::?(placeholder|selection|marker|first-line|first-letter|backdrop|-webkit-|-moz-)/i.test(e.rule.selectorText)) {
+      skipped.push([e.key, "pseudo-elemento non controllabile"]);
+      continue;
+    }
     const els = targetsOf(e);
     if (els === null) { skipped.push([e.key, "selettore non testabile"]); continue; }
     if (!els.length) continue;

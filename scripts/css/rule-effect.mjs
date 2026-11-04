@@ -15,6 +15,7 @@ export function pageRuleEffect({ known, removed, recheckOnly = false }) {
   const K = new Set(known);
   const R = new Set(removed);
   const STATE = /:(hover|focus|focus-visible|focus-within|active|visited|link|target)(?![\w-])/;
+  const OTHER_PSEUDO = /::?(placeholder|selection|marker|first-line|first-letter|backdrop|-webkit-|-moz-)/i;
   const PSEUDO_EL = /::?(before|after|placeholder|selection|marker|first-line|first-letter|backdrop|-webkit-[a-z-]+|-moz-[a-z-]+)/g;
   const skipped = [];
   const evaluated = new Set();
@@ -93,6 +94,9 @@ export function pageRuleEffect({ known, removed, recheckOnly = false }) {
     if (!e.mediaOk) { skipped.push([e.key, "media non attiva su questo schermo"]); continue; }
     if (STATE.test(e.rule.selectorText)) { skipped.push([e.key, "stato (hover/focus...)"]); continue; }
     if ([...e.rule.style].some((p) => p.startsWith("--"))) { skipped.push([e.key, "definisce variabili CSS"]); continue; }
+    // Solo ::before e ::after si possono controllare; ::placeholder, ::selection, ::-webkit-... no (4 nov 2026:
+    // una regola ::placeholder era stata giudicata inutile per errore). Si tengono.
+    if (OTHER_PSEUDO.test(e.rule.selectorText)) { skipped.push([e.key, "pseudo-elemento non controllabile"]); continue; }
     const targets = targetsOf(e);
     if (targets === null) { skipped.push([e.key, "selettore non testabile"]); continue; }
     if (!targets.length) continue;

@@ -321,6 +321,7 @@
 .rtg-next-heading>div { flex:1; min-width:100px; }.rtg-next-heading .eyebrow { font-size:9px; margin:0 0 3px; }.rtg-next-heading h2 { margin:0; font-size:19px; color:#111216; }
 .rtg-requirements-disclosure { display:contents; }
 .rtg-requirements-disclosure summary { display:flex; align-items:center; gap:5px; cursor:pointer; min-height:44px; padding:6px; font-size:10px; font-weight:800; list-style:none; color:#111216; }
+.rtg-requirements-disclosure summary::-webkit-details-marker { display:none; }
 .rtg-requirements-disclosure summary>span { display:grid; place-items:center; width:24px; height:24px; background:#ffd21f; border:2px solid #111216; font-size:16px; font-weight:950; }
 .rtg-requirements-disclosure summary:focus-visible { outline:3px solid #111216; outline-offset:2px; }
 .rtg-requirements-drawer { flex-basis:100%; width:100%; padding-top:10px; border-top:2px solid #111216; }

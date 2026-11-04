@@ -380,6 +380,17 @@
 }
 
 /* Live-match pass: hard white / black / gold, complete history, stronger match HUD. */
+.rtg-prematch-matchup::before {
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:10px;
+  background:#ffd21f;
+  border-bottom:3px solid #111216;
+  z-index:2;
+}
 
 .rtg-match-shell.rtg-match-revolution {
   background:#fff!important;
@@ -417,6 +428,14 @@
 .rtg-match-scoreboard .rtg-match-clock { color:#fff!important; }
 .rtg-match-scoreboard .rtg-match-period span { color:#ffd21f!important; }
 
+.rtg-live-commandbar {
+  background:#fff!important;
+  border:3px solid #111216!important;
+  border-radius:2px!important;
+  box-shadow:5px 6px 0 #111216!important;
+  overflow:hidden!important;
+  padding:0!important;
+}
 .rtg-live-command::before {
   content:"";
   position:absolute;
@@ -846,6 +865,9 @@
 }
 .rtg-duel-choice-head > span {
   display:none!important;
+}
+.rtg-duel-versus-board .rtg-duel-portrait-panel {
+  border-radius:8px!important;
 }
 .rtg-match-scoreboard.rtg-match-topbar {
   grid-template-columns:minmax(0,1fr) auto!important;

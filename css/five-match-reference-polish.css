@@ -156,6 +156,15 @@
 /* Secondary action: clean ivory body + tactical board icon + pitch watermark. */
 
 
+.five-match-screen .five-match-controls .five-match-tactics-icon {
+  width: 54px;
+  height: 60px;
+  border: 0;
+  color: transparent;
+  font-size: 0;
+  transform: rotate(-4deg);
+  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 62 68'%3E%3Cpath d='M16 8h30l4 6h6v47H6V14h6Z' fill='%23111216' stroke='%23fffdf7' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M23 8V3h16v5M12 34h38M31 15v39' fill='none' stroke='%23fffdf7' stroke-width='2.3'/%3E%3Ccircle cx='21' cy='25' r='3' fill='%23ffd21f'/%3E%3Ccircle cx='42' cy='44' r='3' fill='%23ffd21f'/%3E%3Ccircle cx='40' cy='22' r='2.5' fill='%23fffdf7'/%3E%3Cpath d='m16 49 11-9 9 7 10-15M17 21l9 6 7-7 11 6' fill='none' stroke='%23fffdf7' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
 
 
 /* Mobile fidelity pass. */

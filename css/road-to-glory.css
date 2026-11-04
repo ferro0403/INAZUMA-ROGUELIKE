@@ -2896,6 +2896,13 @@
   box-shadow:3px 3px 0 var(--rtg-ink);
 }
 .rtg-prematch-top-vs strong {max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem;line-height:1;text-align:left;}
+.rtg-prematch-matchup {
+  position:relative;
+  display:grid;grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr);align-items:stretch;
+  border:3px solid var(--rtg-ink);background:var(--rtg-paper);
+  box-shadow:5px 6px 0 rgba(17,18,22,.18);
+  overflow:hidden;
+}
 .rtg-matchup-team {min-width:0;display:grid;align-content:center;gap:3px;padding:11px 10px;}
 .rtg-matchup-team span {display:flex;gap:6px;align-items:center;color:var(--rtg-muted);font-size:.61rem;}
 .rtg-prematch-tactical {
@@ -3635,6 +3642,10 @@
 
 
 /* RTG duel readability pass — keep the current structure, improve hierarchy and rarity recognition. */
+.rtg-prematch-revolution .rtg-prematch-matchup{
+  width:calc(100% + 16px);
+  margin-left:-8px;
+}
 
 .rtg-duel-portrait-panel{
   --duel-rarity-bg:#e7e9ec;
@@ -3794,6 +3805,18 @@
 .rtg-duel-resolving-action.move-category--save,
 .rtg-duel-result-move.move-category--save{--category-accent:#e47a00;--category-soft:#fff0d7}
 
+.rtg-match-revolution .rtg-match-scoreboard{
+  width:100%;
+  min-height:102px;
+  display:grid!important;
+  grid-template-columns:90px minmax(0,1fr) 92px;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px!important;
+  border-bottom:4px solid #111216!important;
+  background:linear-gradient(100deg,#fffdf6 0 18%,#111216 18% 82%,#fffdf6 82% 100%)!important;
+  box-shadow:0 7px 0 rgba(17,18,22,.16)!important;
+}
 .rtg-match-scoreboard .rtg-match-period small{
   padding:2px 5px;
   margin-bottom:2px;
