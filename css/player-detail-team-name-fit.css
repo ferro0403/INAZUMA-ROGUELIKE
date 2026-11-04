@@ -15,9 +15,9 @@
 }
 .player-detail-modal .player-detail-team strong {
   display: block !important;
-  flex: 0 1 auto;
+  flex: 0 1 auto !important;
   min-width: 0 !important;
-  max-width: 100%;
+  max-width: 100% !important;
   overflow: hidden !important;
   white-space: nowrap !important;
   text-overflow: ellipsis !important;

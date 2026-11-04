@@ -4,12 +4,12 @@
   min-height:100px!important;
   padding:8px!important;
   gap:4px 6px!important;
-  grid-template-rows:minmax(42px,auto) auto;
+  grid-template-rows:minmax(42px,auto) auto!important;
 }
 .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected {
   grid-template-rows:minmax(48px,auto) auto!important;
   grid-template-areas:"copy copy" "probability probability"!important;
-  align-content:space-between;
+  align-content:space-between!important;
   min-height:104px!important;
   row-gap:5px!important;
   padding:8px!important;
@@ -39,13 +39,13 @@
   white-space:nowrap!important;
 }
 .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-copy {
-  min-width:0;
+  min-width:0!important;
   gap:3px!important;
-  overflow:visible;
+  overflow:visible!important;
 }
 .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-copy strong {
   overflow-wrap:anywhere!important;
-  white-space:normal;
+  white-space:normal!important;
 }
 .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-probability strong {
   font-size:clamp(16px,4.5vw,19px)!important;
@@ -102,8 +102,8 @@
 /* One-line forecast: PT 243 / 243 → 193. No status leaks during resolution. */
 .rtg-duel-player-meta .rtg-duel-pt-inline {
   max-width:100%;
-  padding:3px 5px;
-  gap:4px;
+  padding:3px 5px!important;
+  gap:4px!important;
 }
 .rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current {
   display:inline-flex;
@@ -151,9 +151,9 @@
 /* The portrait cards are half-width on phones: keep the full PT balance
    and forecast INSIDE one badge, arranged in two tight rows when needed. */
 .rtg-duel-portrait-panel .rtg-duel-player-meta .rtg-duel-pt-inline {
-  box-sizing:border-box;
-  min-width:0;
-  max-width:100%;
+  box-sizing:border-box!important;
+  min-width:0!important;
+  max-width:100%!important;
 }
 @media(max-width:480px){
   .rtg-duel-portrait-panel .rtg-duel-player-meta .rtg-duel-pt-inline.is-projected {
@@ -198,13 +198,13 @@
   color:#584b24!important;
   background:#fff7d6!important;
   border:1px solid #bcaa71!important;
-  border-radius:999px;
+  border-radius:999px!important;
   padding:3px 5px!important;
   font-size:7px!important;
   line-height:1.1!important;
-  letter-spacing:0;
+  letter-spacing:0!important;
   font-weight:900!important;
-  white-space:nowrap;
+  white-space:nowrap!important;
 }
 /* Use the actual element artwork (including a distinct Void symbol),
    but keep its badge small enough for half-width phone cards. */
