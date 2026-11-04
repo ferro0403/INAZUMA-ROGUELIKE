@@ -43,24 +43,6 @@
   border-bottom:3px solid #111216!important;
   box-shadow:0 5px 0 rgba(17,18,22,.08)!important;
 }
-.rtg-main-topbar .brand,
-.rtg-squad-topbar h1 { color:#111216!important; }
-.rtg-main-topbar .eyebrow,
-.rtg-squad-topbar .eyebrow { color:#61615d!important; }
-.rtg-main-topbar .status-pill,
-.rtg-squad-topbar .squad-topbar-stats span {
-  background:#fffdf6!important;
-  color:#111216!important;
-  border:2px solid #111216!important;
-  box-shadow:2px 2px 0 #111216!important;
-}
-.rtg-squad-back,
-.rtg-home-button {
-  background:#ffd21f!important;
-  color:#111216!important;
-  border:2px solid #111216!important;
-  box-shadow:3px 4px 0 #111216!important;
-}
 
 /* Squad: keep the approved compact cards, make the screen itself more energetic. */
 .rtg-squad-shell .squad-content { position:relative; }
@@ -122,7 +104,6 @@
   box-shadow:3px 4px 0 #111216!important;
 
 }
-.rtg-squad-next h2 { color:#111216!important; }
 .rtg-squad-savebar {
   margin-top:4px;
   padding:10px!important;
@@ -140,7 +121,6 @@
   border:3px solid #111216!important;
   box-shadow:5px 6px 0 #111216!important;
 }
-.rtg-bottom-nav.bottom-nav button { color:#111216!important; }
 .rtg-bottom-nav.bottom-nav button.active {
   background:#ffd21f!important;
   color:#111216!important;
@@ -168,12 +148,6 @@
 .rtg-prematch-tabs button.active {
   background:#111216!important;
   color:#ffd21f!important;
-}
-.rtg-prematch-start {
-  border:3px solid #111216!important;
-  background:#ffd21f!important;
-  color:#111216!important;
-  box-shadow:5px 6px 0 #111216!important;
 }
 
 /* RTG collection: the cards are the exact compact game cards already used by the squad.
@@ -406,37 +380,6 @@
 }
 
 /* Live-match pass: hard white / black / gold, complete history, stronger match HUD. */
-.rtg-prematch-matchup {
-  position:relative!important;
-  overflow:hidden!important;
-  padding-top:24px!important;
-
-  background:radial-gradient(ellipse at 50% 35%,#fff3b5,transparent 66%),linear-gradient(110deg,#fff 0 49%,#f3f1ea 49% 50%,#fff 50%);
-  min-height:190px;
-  padding:26px 10px 18px;}
-.rtg-prematch-matchup::before {
-  content:"";
-  position:absolute;
-  top:0;
-  left:0;
-  right:0;
-  height:10px;
-  background:#ffd21f;
-  border-bottom:3px solid #111216;
-  z-index:2;
-}
-.rtg-prematch-matchup::after {
-  content:"";
-  position:absolute;
-  top:10px;
-  right:-26px;
-  width:120px;
-  height:20px;
-  background:#111216;
-  transform:skewX(-35deg);
-  opacity:.96;
-  z-index:1;
-}
 
 .rtg-match-shell.rtg-match-revolution {
   background:#fff!important;
@@ -464,19 +407,6 @@
   height:4px!important;
   background:#ffd21f!important;
 }
-.rtg-match-scoreboard .rtg-score-capsule {
-  background:#ffd21f!important;
-  color:#111216!important;
-  border:3px solid #fff!important;
-  border-radius:6px!important;
-  box-shadow:3px 4px 0 #000!important;
-  font-weight:950!important;
-}
-.rtg-match-scoreboard .rtg-score-team b {
-  color:#fff!important;
-  font-size:12px!important;
-  font-weight:900!important;
-}
 .rtg-match-scoreboard .rtg-match-period small {
   display:inline-block!important;
   padding:3px 6px!important;
@@ -486,29 +416,7 @@
 }
 .rtg-match-scoreboard .rtg-match-clock { color:#fff!important; }
 .rtg-match-scoreboard .rtg-match-period span { color:#ffd21f!important; }
-.rtg-match-scoreboard .rtg-abandon-button {
-  background:#fff!important;
-  border:3px solid #ffd21f!important;
-  color:#111216!important;
-  box-shadow:2px 3px 0 #000!important;
-}
 
-.rtg-live-commandbar {
-  background:#fff!important;
-  border:3px solid #111216!important;
-  border-radius:2px!important;
-  box-shadow:5px 6px 0 #111216!important;
-  overflow:hidden!important;
-  padding:0!important;
-}
-.rtg-live-command {
-  min-height:64px!important;
-  padding:12px 8px!important;
-  border-right:2px solid #111216!important;
-  background:#fff!important;
-  position:relative!important;
-}
-.rtg-live-command:last-child { border-right:0!important; }
 .rtg-live-command::before {
   content:"";
   position:absolute;
@@ -520,7 +428,6 @@
 }
 .rtg-live-commandbar.is-opponent-possession .rtg-live-command--possession::before { background:#d4473f!important; }
 .rtg-live-commandbar.is-user-possession .rtg-live-command--possession::before { background:#2b8ed6!important; }
-.rtg-live-command small { color:#55575c!important; font-size:9px!important; font-weight:950!important; letter-spacing:.08em!important; }
 .rtg-live-command strong { white-space:normal; text-overflow:clip; color:#111216!important; font-size:12px!important; font-weight:950!important;
   overflow-wrap:anywhere;}
 
@@ -675,14 +582,8 @@
 }
 
 @media (max-width:430px) {
-  .rtg-prematch-matchup { padding-top:20px!important; }
   .rtg-match-event-feed { margin:16px 12px!important; padding:10px!important; box-shadow:4px 5px 0 #111216!important; }
-  .rtg-match-ticker-list { max-height:340px!important; }
   .rtg-live-commandbar { margin:12px 12px 0!important; box-shadow:4px 5px 0 #111216!important; }
-  .rtg-live-command { min-height:70px!important; padding:14px 8px 10px!important;
-}
-  .rtg-live-command strong { font-size:14px!important;
-}
   .rtg-live-formation-panel { margin:0 -2px!important; padding:12px!important; box-shadow:4px 5px 0 #111216!important;
 }
   .rtg-match-shell .rtg-duel-result-banner {
@@ -696,45 +597,14 @@
 }
 
 /* Responsive matchup and broadcast scoreboard. Fluid columns own all viewport sizes. */
-.rtg-prematch-matchup {
-  grid-template-columns:minmax(0,1fr) 54px minmax(0,1fr)!important;
-  align-items:center!important;
-  column-gap:8px!important;
-  min-height:216px;
-  padding:26px 10px 18px!important;
-
-  background:radial-gradient(ellipse at 50% 45%,#ffd21f33,transparent 62%),repeating-linear-gradient(125deg,transparent 0 24px,#11121606 24px 26px),#fff!important;
-}
-.rtg-prematch-matchup::before {
-  height:8px!important;
-  border-bottom:2px solid #111216!important;
-}
 .rtg-prematch-matchup::after {
   display:none!important;
-}
-.rtg-prematch-matchup .rtg-matchup-team {
-  display:grid!important;
-  grid-template-rows:68px auto!important;
-  justify-items:center!important;
-  align-items:center!important;
-  gap:8px!important;
-  min-width:0!important;
 }
 .rtg-prematch-matchup .rtg-matchup-emblem {
   width:64px!important;
   height:64px!important;
 
   filter:drop-shadow(2px 3px 0 #11121620);}
-.rtg-prematch-matchup .rtg-matchup-team-copy {
-  min-width:0!important;
-  gap:2px!important;
-}
-.rtg-prematch-matchup .rtg-matchup-team-copy small {
-  color:#66645d!important;
-  font-size:8px!important;
-  font-weight:950!important;
-  letter-spacing:.14em!important;
-}
 .rtg-prematch-matchup .rtg-matchup-team-copy strong {
   color:#111216!important;
   font-size:16px!important;
@@ -747,23 +617,6 @@
   text-align:center;
   font-style:italic;
   text-transform:uppercase;
-}
-.rtg-prematch-matchup .rtg-matchup-team-copy span {
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:4px 7px!important;
-
-  flex-wrap:wrap;}
-.rtg-prematch-matchup .rtg-matchup-team-copy span b {
-  color:#111216!important;
-  font-weight:950!important;
-}
-.rtg-prematch-matchup .rtg-matchup-team-copy span em {
-  color:#55565a!important;
-  font-size:9px!important;
-  font-style:normal!important;
-  font-weight:900!important;
 }
 .rtg-prematch-matchup .rtg-matchup-vs {
   display:grid!important;
@@ -918,7 +771,6 @@
   font-size:11px;
 }
 .rtg-bottom-nav.bottom-nav { isolation:isolate; }
-.rtg-bottom-nav.bottom-nav button { gap:6px; }
 .rtg-bottom-nav.bottom-nav button.active .nav-icon { transform:rotate(-6deg); }
 .rtg-journey-summary::before {
   content:""; position:absolute; inset:0 0 0 65%; pointer-events:none;
@@ -939,8 +791,6 @@
   float:none;
   margin:0;
 }
-.rtg-modal :is(.rtg-catalog-head,.rtg-squad-picker-head),
-.rtg-formation-modal .modal-head { padding-right:48px; }
 .rtg-modal :is(.rtg-catalog-head,.rtg-squad-picker-head) .eyebrow { letter-spacing:.14em; font-size:9px; }
 .rtg-modal .rtg-vending-title { padding-right:44px; border-bottom:4px solid #ffd21f; padding-bottom:12px;
   background:#111216;
@@ -949,8 +799,6 @@
   padding:18px 64px 14px 16px;
 }
 .rtg-modal :is(.rtg-picker-search,.rtg-catalog-search) { display:grid; gap:6px; }
-.rtg-modal :is(.rtg-picker-search,.rtg-catalog-search) input { width:100%; }
-.rtg-modal .rtg-picker-source-filters { flex-wrap:wrap; }
 .rtg-modal .rtg-picker-filter { flex:1; text-align:center; }
 .rtg-modal .rtg-picker-count { border-top:2px solid var(--rtg-ink); margin-top:8px; }
 .rtg-modal .rtg-catalog-grid { min-height:130px; align-content:start; }
@@ -958,14 +806,9 @@
 .rtg-vending-ratebar span { display:flex; align-items:center; justify-content:space-between; gap:6px; }
 .rtg-vending-ratebar span em { font-variant-numeric:tabular-nums; }
 .rtg-match-scoreboard .rtg-score-capsule { font-variant-numeric:tabular-nums; }
-.rtg-match-scoreboard .rtg-match-period small { letter-spacing:.12em; }
-.rtg-match-ticker-list>li p { min-width:0; }
 .rtg-match-event-feed .match-event-kind { letter-spacing:.09em; }
 .rtg-live-team-tabs button,.rtg-prematch-tabs button { min-width:0; overflow-wrap:anywhere; }
 .rtg-live-team-tabs button b,.rtg-prematch-tabs button b { font-variant-numeric:tabular-nums; }
-.rtg-prematch-matchup .rtg-matchup-team-copy span { margin-top:5px; }
-.rtg-prematch-matchup .rtg-matchup-team-copy span em { padding:3px 5px; border:1px solid #d8d8d2; background:#fff; }
-.rtg-prematch-start { min-height:56px; margin-bottom:env(safe-area-inset-bottom); }
 @media (hover:hover) {
   .rtg-modal .rtg-picker-filter:hover { background:var(--rtg-yellow); color:var(--rtg-ink); }
 }
@@ -980,9 +823,6 @@
 .rtg-modal .rtg-squad-picker-head h2 { color:#fff!important; font-style:italic; }
 .rtg-modal :is(.rtg-catalog-head,.rtg-squad-picker-head,.rtg-vending-title) .eyebrow { color:#ffd21f!important; }
 .rtg-modal :is(.rtg-squad-picker-head,.rtg-catalog-head) .muted { color:#ddd!important; }
-.rtg-modal .rtg-vending-title p { color:#ddd; }
-.rtg-live-team-tabs button { min-height:48px; }
-.rtg-squad-shell .squad-management-panel { gap:12px; }
 @media(min-width:701px) {
   .rtg-squad-section-head { margin:-14px -14px 12px!important; }
 }
@@ -1006,9 +846,6 @@
 }
 .rtg-duel-choice-head > span {
   display:none!important;
-}
-.rtg-duel-versus-board .rtg-duel-portrait-panel {
-  border-radius:8px!important;
 }
 .rtg-match-scoreboard.rtg-match-topbar {
   grid-template-columns:minmax(0,1fr) auto!important;
@@ -1059,17 +896,11 @@
 
 
 /* RTG duel compact cards: remove the orphaned fixed grid row left after hiding the panel heading. */
-.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) {
-  align-items:start!important;
-}
 .rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-portrait-panel {
   grid-template-rows:auto!important;
   align-self:start!important;
   height:auto!important;
   min-height:0!important;
-}
-.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-vs-core {
-  align-self:center!important;
 }
 
 
@@ -1161,12 +992,6 @@
   padding:0!important;
   overflow:visible!important;
 }
-.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-portrait-panel {
-  border:3px solid var(--duel-ui-ink)!important;
-  border-top:7px solid var(--duel-rarity-accent,#9aa7b8)!important;
-  border-radius:9px!important;
-  box-shadow:4px 5px 0 var(--duel-ui-ink)!important;
-}
 .rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-player-copy {
   width:calc(100% - 8px)!important;
   margin:0 4px 4px!important;
@@ -1253,21 +1078,6 @@
   font-weight:1000!important;
   letter-spacing:.09em!important;
 }
-.rtg-duel-card--clean .rtg-choice-copy strong {
-  color:var(--duel-ui-ink)!important;
-  font-size:15px!important;
-  font-weight:1000!important;
-}
-.rtg-duel-card--clean .rtg-choice-copy em {
-  color:var(--duel-ui-muted)!important;
-  font-size:10px!important;
-  font-weight:850!important;
-}
-.rtg-duel-card--clean .rtg-choice-probability strong {
-  color:var(--duel-ui-ink)!important;
-  font-size:23px!important;
-  font-weight:1000!important;
-}
 .rtg-duel-card--clean .rtg-choice-delta {
   padding:3px 6px!important;
   border:1px solid #bdb8ae!important;
@@ -1308,25 +1118,9 @@
   .rtg-duel-card--clean .rtg-duel-story--minimal h2 {
     font-size:1.45rem!important;
   }
-  .rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) {
-    grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr)!important;
-    gap:6px!important;
-    margin-bottom:14px!important;
-  }
-  .rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-vs-core span {
-    width:33px!important;
-    height:33px!important;
-    border-radius:6px!important;
-    font-size:12px!important;
-    box-shadow:2px 3px 0 var(--duel-ui-ink)!important;
-  }
   .rtg-duel-card--clean .rtg-duel-choice-head {
     min-height:36px;
     padding:7px 9px!important;
-  }
-  .rtg-duel-card--clean .rtg-duel-choice-card {
-    min-height:78px!important;
-    padding:10px!important;
   }
 }
 
@@ -1380,14 +1174,6 @@
     linear-gradient(150deg,var(--duel-rarity-bg,#dce1e8) 0 70%,#fff 70%)!important;
 }
 
-.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-visual--compare .rtg-duel-render img {
-  width:100%!important;
-  height:100%!important;
-  max-height:none!important;
-  object-fit:contain!important;
-  object-position:center bottom!important;
-  filter:drop-shadow(0 4px 3px rgba(17,18,22,.18))!important;
-}
 
 .rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-visual--compare .rtg-duel-player-copy {
   width:100%!important;
@@ -1401,18 +1187,6 @@
   text-align:left!important;
 }
 
-.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-name {
-  display:block!important;
-  min-width:0;
-  overflow:hidden;
-  color:#111216!important;
-  font-size:11px!important;
-  font-weight:1000!important;
-  line-height:1.05!important;
-  letter-spacing:-.015em!important;
-  text-overflow:ellipsis;
-  white-space:nowrap!important;
-}
 
 .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta {
   min-width:0;
@@ -1422,15 +1196,6 @@
   gap:5px!important;
 }
 
-.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta small {
-  min-width:0;
-  color:#5d5f64!important;
-  font-size:8px!important;
-  font-weight:950!important;
-  line-height:1!important;
-  letter-spacing:.01em!important;
-  white-space:nowrap!important;
-}
 
 .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-element {
   flex:0 0 auto;
@@ -1450,28 +1215,8 @@
   text-transform:uppercase!important;
 }
 
-.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-vs-core span {
-  width:32px!important;
-  height:32px!important;
-  border-radius:3px!important;
-  box-shadow:2px 3px 0 #111216!important;
-  font-size:11px!important;
-}
 
 /* The action keeps useful information, but drops the redundant AZIONE BASE / VITTORIA labels. */
-.rtg-duel-card--clean .rtg-duel-choice-card {
-  position:relative;
-  min-height:84px!important;
-  grid-template-columns:minmax(0,1fr) auto!important;
-  grid-template-rows:1fr auto!important;
-  grid-template-areas:
-    "copy copy"
-    "copy probability"!important;
-  align-items:end!important;
-  gap:5px 10px!important;
-  padding:12px 13px!important;
-  overflow:hidden!important;
-}
 
 .rtg-duel-card--clean .rtg-duel-choice-card::after {
   content:"";
@@ -1495,21 +1240,7 @@
   padding-right:74px!important;
 }
 
-.rtg-duel-card--clean .rtg-choice-copy strong {
-  color:#111216!important;
-  font-size:15px!important;
-  font-weight:1000!important;
-  line-height:1!important;
-  letter-spacing:-.015em!important;
-}
 
-.rtg-duel-card--clean .rtg-choice-copy em {
-  color:#5f6167!important;
-  font-size:10px!important;
-  font-style:normal!important;
-  font-weight:850!important;
-  line-height:1.15!important;
-}
 
 .rtg-duel-card--clean .rtg-choice-probability {
   grid-area:probability!important;
@@ -1526,13 +1257,6 @@
   padding:0!important;
 }
 
-.rtg-duel-card--clean .rtg-choice-probability strong {
-  color:#111216!important;
-  font-size:20px!important;
-  font-weight:1000!important;
-  line-height:.95!important;
-  letter-spacing:-.025em!important;
-}
 
 .rtg-duel-card--clean .rtg-choice-delta {
   flex:0 0 auto;
@@ -1571,67 +1295,12 @@
     grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr)!important;
     gap:6px!important;
   }
-  .rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-portrait-panel {
-    width:clamp(104px,30vw,114px)!important;
-    max-width:114px!important;
-  }
-  .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-name {
-    font-size:10px!important;
-  }
-  .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta small {
-    font-size:7px!important;
-  }
-  .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-element {
-    padding-inline:4px!important;
-    font-size:6.5px!important;
-  }
-  .rtg-duel-card--clean .rtg-duel-choice-card {
-    min-height:80px!important;
-    padding:11px 12px!important;
-  }
-  .rtg-duel-card--clean .rtg-choice-copy {
-    padding-right:68px!important;
-  }
-  .rtg-duel-card--clean .rtg-choice-probability strong {
-    font-size:18px!important;
-  }
 }
 
 
 /* RTG duel compare v4: element badges on own row, stable action layout, cleaner result cards. */
 
 /* Element moves to its own line under role / OVR. */
-.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta {
-  min-width:0;
-  display:grid!important;
-  grid-template-columns:1fr!important;
-  align-items:start!important;
-  justify-items:start!important;
-  gap:4px!important;
-}
-.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta small {
-  width:100%;
-  min-width:0;
-  font-size:8px!important;
-  white-space:nowrap!important;
-}
-.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-element {
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  min-height:18px;
-  padding:2px 6px!important;
-  border:2px solid #111216!important;
-  border-radius:2px!important;
-  color:#111216!important;
-  font-size:7px!important;
-  font-style:normal!important;
-  font-weight:1000!important;
-  letter-spacing:.05em!important;
-  line-height:1!important;
-  text-transform:uppercase!important;
-  box-shadow:1px 2px 0 #111216!important;
-}
 .rtg-duel-card--clean .rtg-duel-player-element.is-fire {
   background:#fff0ec!important;
   border-color:#b82323!important;
@@ -1642,61 +1311,8 @@
   border-color:#197ca9!important;
   color:#197ca9!important;
 }
-.rtg-duel-card--clean .rtg-duel-player-element.is-mountain {
-  background:#f3e6d6!important;
-  border-color:#76502f!important;
-  color:#76502f!important;
-}
-.rtg-duel-card--clean .rtg-duel-player-element.is-forest {
-  background:#e6f5e9!important;
-  border-color:#23713f!important;
-  color:#23713f!important;
-}
 
 /* Stable action card: copy on the left, probability locked to bottom-right. */
-.rtg-duel-card--clean .rtg-duel-choice-card {
-  min-height:92px!important;
-  display:grid!important;
-  grid-template-columns:minmax(0,1fr) auto!important;
-  grid-template-rows:auto auto!important;
-  grid-template-areas:
-    "copy probability"
-    "copy probability"!important;
-  align-items:end!important;
-  column-gap:12px!important;
-  row-gap:0!important;
-  padding:14px 14px 13px!important;
-}
-.rtg-duel-card--clean .rtg-choice-copy {
-  grid-area:copy!important;
-  align-self:end!important;
-  display:grid!important;
-  gap:5px!important;
-  min-width:0!important;
-  padding:0!important;
-  text-align:left!important;
-}
-.rtg-duel-card--clean .rtg-choice-copy strong {
-  display:block!important;
-  margin:0!important;
-  font-size:15px!important;
-  line-height:1!important;
-  text-align:left!important;
-}
-.rtg-duel-card--clean .rtg-choice-copy em {
-  display:block!important;
-  min-width:0!important;
-  margin:0!important;
-  overflow:hidden;
-  color:#5f6167!important;
-  font-size:10px!important;
-  font-style:normal!important;
-  font-weight:850!important;
-  line-height:1.15!important;
-  text-align:left!important;
-  text-overflow:ellipsis;
-  white-space:nowrap!important;
-}
 .rtg-duel-card--clean .rtg-choice-probability {
   grid-area:probability!important;
   align-self:end!important;
@@ -1734,45 +1350,11 @@
   display:none!important;
 }
 
-@media(max-width:430px) {
-  .rtg-duel-card--clean .rtg-duel-choice-card {
-    min-height:90px!important;
-    column-gap:9px!important;
-    padding:12px!important;
-  }
-  .rtg-duel-card--clean .rtg-choice-copy strong {
-    font-size:14px!important;
-  }
-  .rtg-duel-card--clean .rtg-choice-copy em {
-    max-width:150px;
-    font-size:9px!important;
-  }
-  .rtg-duel-card--clean .rtg-choice-probability {
-    gap:4px!important;
-  }
-  .rtg-duel-card--clean .rtg-choice-probability strong {
-    font-size:17px!important;
-  }
-  .rtg-duel-card--clean .rtg-choice-delta {
-    padding:3px 6px!important;
-    font-size:8px!important;
-  }
-}
 
 
 /* RTG duel cards v5: polished compare cards + compact result cards; result banner animations untouched. */
 
 /* Selection cards: stronger game-card shape without growing them back into tall panels. */
-.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-portrait-panel {
-  position:relative!important;
-  width:clamp(118px,32vw,132px)!important;
-  max-width:132px!important;
-  border:3px solid #111216!important;
-  border-top:7px solid var(--duel-rarity-accent,#9aa7b8)!important;
-  border-radius:6px!important;
-  background:#fff!important;
-  box-shadow:5px 6px 0 #111216!important;
-}
 .rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-portrait-panel::after {
   content:"";
   position:absolute;
@@ -1806,25 +1388,6 @@
   border-top:0!important;
   background:
     linear-gradient(105deg,#fff 0 82%,rgba(255,210,31,.13) 82% 100%)!important;
-}
-.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-name {
-  font-size:12px!important;
-  line-height:1.05!important;
-  letter-spacing:-.02em!important;
-}
-.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta {
-  gap:5px!important;
-}
-.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta small {
-  color:#5d5f64!important;
-  font-size:8px!important;
-  font-weight:1000!important;
-}
-.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-element {
-  min-height:19px!important;
-  padding:3px 7px!important;
-  border-radius:3px!important;
-  font-size:7px!important;
 }
 
 /* Result cards: collapse the old fixed 158px row and reuse the compact comparison anatomy.
@@ -1978,10 +1541,6 @@
 }
 
 @media(max-width:430px) {
-  .rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-portrait-panel {
-    width:clamp(114px,32vw,126px)!important;
-    max-width:126px!important;
-  }
   .rtg-duel-versus-board--result {
     grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr)!important;
     gap:7px!important;
@@ -2081,9 +1640,6 @@
   box-shadow:
     5px 6px 0 #111216,
     0 0 0 1px rgba(255,255,255,.9) inset!important;
-}
-.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-portrait-panel::after {
-  display:none!important;
 }
 
 .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-render {
@@ -2313,17 +1869,10 @@
     width:clamp(120px,33vw,134px)!important;
     max-width:134px!important;
   }
-  .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-copy {
-    min-height:72px!important;
-    padding:8px 8px 9px!important;
-  }
   .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-copy::after {
     left:8px;
     right:8px;
     top:32px;
-  }
-  .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-name {
-    font-size:11.5px!important;
   }
   .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta {
     gap:5px!important;
@@ -2416,22 +1965,8 @@
       transparent 74%
     )!important;
 }
-.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-copy {
-  background:
-    linear-gradient(
-      110deg,
-      #fff 0 70%,
-      color-mix(in srgb,var(--duel-rarity-bg-vivid) 34%,#fff) 70% 100%
-    )!important;
-}
 .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-copy::before {
   border-color:color-mix(in srgb,var(--duel-rarity-accent-vivid) 26%,transparent)!important;
-}
-.rtg-duel-card--clean .rtg-duel-portrait-panel {
-  box-shadow:
-    5px 6px 0 #111216,
-    0 0 0 1px rgba(255,255,255,.9) inset,
-    0 0 0 2px color-mix(in srgb,var(--duel-rarity-accent-vivid) 16%,transparent) inset!important;
 }
 
 /* Keep rarity visible in the compact result state too, without touching win/loss animations. */
@@ -2821,22 +2356,12 @@
 .modal.rtg-squad-picker-modal .rtg-picker-count {
   grid-column:1/-1;
 }
-.rtg-picker-quick-strip > [data-rtg-picker-player] {
-  flex:0 0 88px!important;
-  width:88px!important;
-  max-width:88px!important;
-}
 @media(max-width:430px) {
   .modal.rtg-squad-picker-modal .rtg-picker-grid {
     grid-template-columns:repeat(auto-fit,minmax(68px,82px))!important;
     gap:18px 8px!important;
   }
   .modal.rtg-squad-picker-modal .rtg-picker-grid > [data-rtg-picker-player] {
-    max-width:82px!important;
-  }
-  .rtg-picker-quick-strip > [data-rtg-picker-player] {
-    flex-basis:82px!important;
-    width:82px!important;
     max-width:82px!important;
   }
 }
@@ -2851,16 +2376,6 @@
   padding:7px 6px 4px!important;
   overflow:visible!important;
   place-items:end center!important;
-}
-.modal.rtg-squad-picker-modal .rtg-picker-squad-card img.player-portrait,
-.rtg-picker-quick-strip .rtg-picker-squad-card img.player-portrait {
-  width:100%!important;
-  height:100%!important;
-  max-width:100%!important;
-  max-height:100%!important;
-  object-fit:contain!important;
-  object-position:center bottom!important;
-  transform:none!important;
 }
 .modal.rtg-squad-picker-modal .rtg-picker-squad-card .player-portrait-wrap::after,
 .rtg-picker-quick-strip .rtg-picker-squad-card .player-portrait-wrap::after {
@@ -3175,11 +2690,6 @@
   font-size:8px!important;
   line-height:1.1!important;
 }
-.rtg-duel-card--clean .rtg-choice-copy em{
-  font-size:10px!important;
-  line-height:1.2!important;
-  font-weight:900!important;
-}
 
 
 /* Move element identity: dedicated badge under uses/power. */
@@ -3248,13 +2758,6 @@
 
 
 /* RTG context bar v3: vivid yellow possession + proper minute/zone badges. */
-.rtg-duel-card--clean .rtg-duel-contextbar .rtg-duel-possession,
-.rtg-duel-card--clean.is-user-possession .rtg-duel-contextbar .rtg-duel-possession,
-.rtg-duel-card--clean.is-opponent-possession .rtg-duel-contextbar .rtg-duel-possession{
-  background:#ffd21f!important;
-  background-image:none!important;
-  color:#111216!important;
-}
 .rtg-duel-card--clean .rtg-duel-contextbar .rtg-duel-context-meta{
   display:flex!important;
   align-items:center!important;
@@ -3558,9 +3061,6 @@
 .rtg-duel-player-element{
   gap:5px!important;
 }
-.rtg-duel-player-element>span{
-  display:inline-block!important;
-}
 .rtg-duel-result--revolution .rtg-duel-player-element::before{
   content:none!important;
   display:none!important;
@@ -3782,9 +3282,6 @@
   box-shadow:inset 0 4px 0 #d94f58!important;
   background:linear-gradient(145deg,#fff0f1 0 72%,#ffdfe2 72% 100%)!important;
 }
-.rtg-live-commandbar .rtg-live-command:nth-child(2){
-  background:linear-gradient(145deg,#fff 0 72%,#fff4c9 72% 100%)!important;
-}
 .rtg-live-commandbar .rtg-live-command:nth-child(3){
   background:linear-gradient(145deg,#fff 0 72%,#edf0f4 72% 100%)!important;
 }
@@ -3901,30 +3398,12 @@
   gap:12px!important;
   margin-top:13px!important;
 }
-.rtg-match-revolution .rtg-score-capsule{
-  min-width:100px!important;
-  padding:12px 15px!important;
-  border:3px solid #fff!important;
-  border-radius:7px!important;
-  background:#ffd21f!important;
-  color:#111216!important;
-  box-shadow:4px 5px 0 rgba(0,0,0,.55)!important;
-  font-size:clamp(29px,8vw,42px)!important;
-  line-height:1!important;
-}
 .rtg-match-revolution .rtg-score-team{
   display:flex!important;
   flex-direction:column!important;
   align-items:center!important;
   gap:5px!important;
   min-width:0!important;
-}
-.rtg-match-revolution .rtg-score-team b{
-  max-width:100%!important;
-  font-size:clamp(11px,3.3vw,16px)!important;
-  line-height:1.05!important;
-  text-align:center!important;
-  overflow-wrap:anywhere!important;
 }
 .rtg-match-revolution .rtg-score-team--user::after,
 .rtg-match-revolution .rtg-score-team--opponent::after{
@@ -4125,16 +3604,6 @@
   min-width:0!important;
   justify-self:center!important;
 }
-.rtg-halftime-revolution .rtg-halftime-score-emblem .rtg-halftime-team-logo,
-.rtg-halftime-revolution .rtg-halftime-score-emblem img,
-.rtg-halftime-revolution .rtg-halftime-score-emblem svg{
-  display:block!important;
-  width:100%!important;
-  height:100%!important;
-  max-width:44px!important;
-  max-height:44px!important;
-  object-fit:contain!important;
-}
 
 
 /* Halftime score logo containment fix: teamEmblemMarkup carries reusable emblem styles,
@@ -4207,70 +3676,7 @@
 
 
 /* RTG run: stronger next-match hero with opponent crest, no new image assets. */
-.rtg-journey-summary{
-  position:relative!important;
-  overflow:hidden!important;
-  padding:22px 22px 18px!important;
-  border:3px solid #111216!important;
-  background:linear-gradient(118deg,#111216 0 68%,#191b21 68% 100%)!important;
-  box-shadow:6px 7px 0 #ffd21f!important;
-}
-.rtg-journey-summary::before{
-  content:"";
-  position:absolute;
-  width:180px;height:180px;
-  right:-45px;top:-58px;
-  border:24px solid rgba(255,210,31,.06);
-  transform:rotate(18deg);
-  pointer-events:none;
-}
-.rtg-journey-main{
-  position:relative;
-  z-index:1;
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 92px;
-  gap:16px;
-  align-items:center;
-}
-.rtg-journey-copy{min-width:0}
-.rtg-journey-summary .rtg-journey-copy .eyebrow{color:#ffd21f!important}
-.rtg-journey-summary .rtg-journey-copy h1{
-  margin:5px 0 7px!important;
-  color:#fff!important;
-  font-size:clamp(2rem,8vw,3rem)!important;
-  font-style:italic;
-  line-height:.95!important;
-  text-transform:uppercase;
-}
-.rtg-journey-summary .rtg-journey-copy p:not(.eyebrow){margin:0!important;color:#e9e9e9!important}
-.rtg-journey-opponent{
-  width:88px;height:88px;
-  display:grid;place-items:center;
-  justify-self:end;
-  border:3px solid #ffd21f;
-  background:#fffdf7;
-  box-shadow:5px 5px 0 #111216;
-  transform:rotate(2deg);
-}
-.rtg-journey-opponent img{width:72px!important;height:72px!important;object-fit:contain!important}
 .rtg-journey-opponent .boss-logo-fallback{display:grid!important;place-items:center;width:100%;height:100%;color:#111216;font-size:2rem;font-weight:1000}
-.rtg-journey-free-agent{width:62px;height:62px;color:#111216}
-.rtg-journey-free-agent svg{width:100%;height:100%;display:block}
-.rtg-journey-summary>[data-rtg-current-node]{
-  position:relative;z-index:1;
-  width:100%;
-  margin-top:18px!important;
-  min-height:56px;
-  border:3px solid #111216!important;
-  box-shadow:5px 6px 0 #050506!important;
-}
-.rtg-journey-summary .rtg-journey-progress{position:relative;z-index:1;margin-top:18px!important}
-@media(max-width:420px){
-  .rtg-journey-summary{padding:18px 16px 16px!important}
-  .rtg-journey-main{grid-template-columns:minmax(0,1fr) 74px;gap:10px}
-  .rtg-journey-opponent{width:70px;height:70px}
-  .rtg-journey-opponent img{width:58px!important;height:58px!important}
-}
 
 /* RTG main header refresh */
 .rtg-main-topbar{
@@ -4327,7 +3733,6 @@
  .rtg-main-topbar .rtg-home-button{width:46px!important;height:43px!important;min-width:46px!important;font-size:24px!important}
  .rtg-main-topbar .rtg-main-title .brand{font-size:1.12rem!important}
  .rtg-main-topbar .rtg-main-title .eyebrow{font-size:.62rem!important}
- .rtg-main-topbar .status-pill{min-height:40px!important;padding:6px 8px!important;font-size:.78rem!important}
 }
 
 /* RTG squad header + three team presets */
@@ -4345,18 +3750,12 @@
 .rtg-squad-topbar .squad-topbar-copy .eyebrow{color:#ffd21f!important;font-size:.68rem!important;letter-spacing:.16em!important;margin:0 0 2px!important}
 .rtg-squad-topbar .squad-topbar-copy h1{color:#fff!important;font-size:1.55rem!important;line-height:1!important;margin:0!important}
 .rtg-squad-topbar .rtg-squad-team-identity{background:#fff!important;color:#111216!important;border:3px solid #111216!important;box-shadow:4px 4px 0 #050506!important;max-width:210px!important}
-.rtg-squad-slots{margin:0 0 18px;background:#111216;border:3px solid #111216;box-shadow:5px 6px 0 rgba(17,18,22,.18);padding:10px}
-.rtg-squad-slots-label{display:block;color:#ffd21f;font-weight:1000;font-size:.72rem;letter-spacing:.18em;margin:0 0 8px 3px}
-.rtg-squad-slot-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.rtg-squad-slot{min-height:44px;border:2px solid #fff;background:#fff;color:#111216;font:900 .78rem/1 inherit;letter-spacing:.04em;box-shadow:2px 3px 0 #050506}
-.rtg-squad-slot.active{background:#ffd21f;border-color:#ffd21f}
 @media(max-width:420px){
  .rtg-squad-topbar{grid-template-columns:46px minmax(0,1fr) 112px!important;gap:9px!important;padding:12px 10px!important}
  .rtg-squad-topbar .rtg-squad-back{width:44px!important;height:42px!important;min-width:44px!important;font-size:24px!important}
  .rtg-squad-topbar .squad-topbar-copy h1{font-size:1.28rem!important}
  .rtg-squad-topbar .squad-topbar-copy .eyebrow{font-size:.58rem!important}
  .rtg-squad-topbar .rtg-squad-team-identity{max-width:112px!important}
- .rtg-squad-slot{font-size:.68rem!important;padding:6px 3px!important}
 }
 
 /* RTG pre-match matchup v2 — compact broadcast card, existing emblems only. */
@@ -4428,14 +3827,12 @@
   font-size:8px!important;font-style:normal!important;font-weight:1000!important;white-space:nowrap!important;
 }
 .rtg-prematch-shell .rtg-matchup-team-copy span b{background:#111216!important;color:#fff!important}
-.rtg-prematch-shell .rtg-matchup-vs{position:relative!important;z-index:2!important;align-self:center!important}
 .rtg-prematch-shell .rtg-matchup-vs span{
   width:52px!important;height:52px!important;border:3px solid #111216!important;border-radius:50%!important;
   background:#ffd21f!important;color:#111216!important;box-shadow:3px 4px 0 #111216!important;
   font-size:19px!important;font-style:italic!important;font-weight:1000!important;transform:rotate(-5deg)!important;
 }
 @media(max-width:430px){
- .rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-matchup{grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr)!important;padding:21px 7px 15px!important;gap:4px!important}
  .rtg-prematch-shell .rtg-matchup-team{grid-template-rows:66px auto!important;padding-inline:1px!important}
  .rtg-prematch-shell .rtg-matchup-emblem{width:66px!important;height:66px!important;padding:6px!important}
  .rtg-prematch-shell .rtg-matchup-team-emblem{max-width:54px!important;max-height:54px!important}
@@ -4445,25 +3842,15 @@
 }
 
 /* RTG mobile alignment pass: centered pre-match + compact squad preset selector. */
-.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-matchup{
-  grid-template-columns:minmax(0,1fr) 54px minmax(0,1fr)!important;
-  column-gap:10px!important;
-}
 .rtg-prematch-shell .rtg-matchup-team{
   width:100%!important;
   box-sizing:border-box!important;
   justify-self:stretch!important;
   align-self:center!important;
 }
-.rtg-prematch-shell .rtg-matchup-emblem{margin-inline:auto!important}
 .rtg-prematch-shell .rtg-matchup-team-copy{
   margin:0 auto!important;
   align-self:start!important;
-}
-.rtg-prematch-shell .rtg-matchup-vs{
-  width:54px!important;
-  justify-self:center!important;
-  align-self:center!important;
 }
 @media(max-width:430px){
  .rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-matchup{
@@ -4471,7 +3858,6 @@
    column-gap:6px!important;
    padding:24px 10px 16px!important;
  }
- .rtg-prematch-shell .rtg-matchup-vs{width:46px!important}
  .rtg-prematch-shell .rtg-matchup-team-copy strong{min-height:28px!important;display:flex!important;align-items:center!important;justify-content:center!important}
 }
 
@@ -4522,12 +3908,6 @@
 }
 
 /* RTG pre-match precision alignment: true optical centering on mobile. */
-.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-matchup{
-  grid-template-columns:1fr 50px 1fr!important;
-  gap:0!important;
-  padding-left:14px!important;
-  padding-right:14px!important;
-}
 .rtg-prematch-shell .rtg-matchup-team{
   display:flex!important;
   flex-direction:column!important;
@@ -4536,10 +3916,6 @@
   text-align:center!important;
   padding-left:0!important;
   padding-right:0!important;
-}
-.rtg-prematch-shell .rtg-matchup-team--user,
-.rtg-prematch-shell .rtg-matchup-team--opponent{
-  justify-self:stretch!important;
 }
 .rtg-prematch-shell .rtg-matchup-vs{
   position:relative!important;
@@ -4561,14 +3937,6 @@
   flex-direction:column!important;
   align-items:center!important;
   text-align:center!important;
-}
-.rtg-prematch-shell .rtg-matchup-team-copy > *{margin-left:auto!important;margin-right:auto!important}
-@media(max-width:430px){
- .rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-matchup{
-   grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr)!important;
-   padding-left:10px!important;padding-right:10px!important;
- }
- .rtg-prematch-shell .rtg-matchup-vs{width:44px!important}
 }
 
 /* RTG pre-match final centering fix: team axes at exact 25% / 75%, VS at exact 50%. */
@@ -4598,23 +3966,12 @@
   margin:0!important;
   transform:translate(-50%,-50%)!important;
 }
-.rtg-prematch-shell .rtg-matchup-team,
-.rtg-prematch-shell .rtg-matchup-team-copy{
-  align-items:center!important;
-  justify-items:center!important;
-  text-align:center!important;
-}
 .rtg-prematch-shell .rtg-matchup-emblem,
 .rtg-prematch-shell .rtg-matchup-team-copy > *{
   margin-left:auto!important;
   margin-right:auto!important;
 }
 @media(max-width:430px){
- .rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-matchup{
-   grid-template-columns:1fr 1fr!important;
-   padding-left:0!important;
-   padding-right:0!important;
- }
  .rtg-prematch-shell .rtg-matchup-vs{width:44px!important}
 }
 
@@ -4648,8 +4005,7 @@
 .rtg-squad-section-head .rtg-squad-head-stats{display:flex;align-items:center;gap:8px;margin-left:auto}
 .rtg-squad-section-head .rtg-squad-live-overall{display:flex;align-items:center;gap:7px;min-height:34px;padding:5px 10px;background:#fff;color:#111216;border:3px solid #111216;box-shadow:2px 3px 0 #050506;font-weight:1000;line-height:1}
 .rtg-squad-section-head .rtg-squad-live-overall small{font-size:.56rem;letter-spacing:.12em;color:#65656b;font-weight:1000}
-.rtg-squad-section-head .rtg-squad-live-overall strong{font-size:1rem;color:#111216}
-@media(max-width:600px){.rtg-squad-section-head .rtg-squad-head-stats{gap:6px}.rtg-squad-section-head .rtg-squad-live-overall{padding:5px 7px;gap:5px}.rtg-squad-section-head .rtg-squad-live-overall small{font-size:.5rem}}
+@media(max-width:600px){.rtg-squad-section-head .rtg-squad-head-stats{gap:6px}}
 
 /* RTG squad overall: yellow live power badge. */
 .rtg-squad-section-head .rtg-squad-live-overall{background:#ffd21f!important;border-color:#111216!important;color:#111216!important}

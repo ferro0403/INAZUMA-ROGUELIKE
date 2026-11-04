@@ -366,12 +366,6 @@
     inset 0 -3px 0 rgba(255,210,31,.62);
   transform:translateX(2px);
 }
-.five-simulation-modal .match-event-type--goal::after{
-  width:76px;
-  height:15px;
-  opacity:.42;
-  background:repeating-linear-gradient(120deg,var(--sim-yellow) 0 8px,transparent 8px 13px);
-}
 .five-simulation-modal .match-event-type--goal .match-event-avatar{
   border-width:3px;
   box-shadow:

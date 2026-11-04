@@ -91,9 +91,6 @@
   box-sizing: border-box;
 }
 
-.shop-screen .shop-cups > span {
-  min-width: 0;
-}
 
 /* Mobile: retain exactly the same two-row structure instead of squeezing coins. */
 @media (max-width: 430px) {

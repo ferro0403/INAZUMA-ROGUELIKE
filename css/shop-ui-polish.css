@@ -82,13 +82,6 @@
   color: var(--shop-ink);
   border-right: 4px solid var(--shop-ink);
 }
-.shop-screen .shop-coins .development-currency-icon,
-.shop-screen .shop-coins img {
-  width: 52px;
-  height: 52px;
-  object-fit: contain;
-}
-.shop-screen .shop-coins span { display: grid; line-height: 1; }
 .shop-screen .shop-coins small { font-size: 10px; font-weight: 900; letter-spacing: .08em; }
 .shop-screen .shop-coins b { margin-top: 3px; font-size: 28px; font-weight: 1000; }
 .shop-screen .shop-cups {
@@ -432,11 +425,6 @@
   .shop-screen { padding-left: 12px; padding-right: 12px; }
   .shop-screen .shop-header { padding: 14px 13px; gap: 14px; box-shadow: 6px 7px 0 #101116; }
   .shop-screen .shop-back { width: 52px; height: 52px; flex-basis: 52px; font-size: 33px; }
-  .shop-screen .shop-wallet { grid-template-columns: 1.35fr 3.65fr; }
-  .shop-screen .shop-coins { padding: 8px 7px; gap: 5px; }
-  .shop-screen .shop-coins .development-currency-icon, .shop-screen .shop-coins img { width: 42px; height: 42px; }
-  .shop-screen .shop-coins b { font-size: 23px; }
-  .shop-screen .shop-tabs { gap: 3px; padding: 4px; }
   .shop-screen .shop-tabs button { min-height: 44px; }
   .shop-screen .shop-grid { gap: 14px; }
   .shop-screen .shop-product { padding: 11px 10px 11px; box-shadow: 6px 7px 0 #101116; }

@@ -75,9 +75,6 @@
   box-shadow: 7px 8px 0 rgba(17, 18, 22, .28);
 }
 
-.album-collections-screen .album-collection-card::before {
-  content: none;
-}
 
 .album-collections-screen .album-collection-card:hover,
 .album-collections-screen .album-collection-card:focus-visible {

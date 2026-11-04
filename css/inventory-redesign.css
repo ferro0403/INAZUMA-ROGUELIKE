@@ -23,7 +23,6 @@ body:has(.inventory-v2-screen),
 .inventory-v2-screen .inventory-item-card::after { display: none; }
 .inventory-v2-screen .item-card-visual { position: relative; display: grid; place-items: center; align-self: flex-start; flex: 0 0 76px; width: 76px; height: 76px; min-width: 76px; padding: 5px; border: 2px solid #111216; background: #f4f1e8; box-shadow: 3px 3px 0 rgba(17,18,22,.16); }
 .inventory-v2-screen .inventory-item-card .item-icon { width: 64px; height: 64px; border: 0; background: transparent; object-fit: contain; }
-.inventory-v2-screen .item-card-main { min-width: 0; }
 .inventory-v2-screen .item-card-main strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #111216; font-size: .9rem; line-height: 1.12; overflow-wrap: anywhere; }
 .inventory-v2-screen .item-card-main p { margin: 4px 0 0; overflow: hidden; color: #3b3b38; font-size: .72rem; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
 .inventory-v2-screen .item-kind { display: block; margin-bottom: 3px; color: #27814b; font-size: .57rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
@@ -44,7 +43,6 @@ body:has(.inventory-v2-screen),
 .inventory-equipped-item { display: grid; gap: 2px; min-width: 0; }
 .inventory-equipped-item p { margin: 0; color: #3b3b38; font-size: .72rem; }
 .inventory-equipped-row .equipped-player { display: flex; align-items: center; gap: 8px; color: #111216; }
-.inventory-equipped-row .equipped-player-copy { display: grid; min-width: 0; }
 .inventory-equipped-row .equipped-player-copy strong { overflow-wrap: anywhere; font-size: .78rem; }
 .inventory-equipped-row .equipped-player-copy small { color: #4b4b47; font-size: .66rem; }
 .inventory-equipped-row .equipped-player-portrait { flex: 0 0 42px; width: 42px; height: 42px; border: 2px solid #111216; border-radius: 2px; background: #e9e3d7; overflow: hidden; }
@@ -87,7 +85,6 @@ body:has(.inventory-v2-screen),
 .inventory-replacement-player > div { display: grid; gap: 1px; }
 @media (max-width: 700px) {
   body:has(.inventory-v2-screen), #app.app-shell:has(.inventory-v2-screen) { background-image: linear-gradient(rgba(255,253,246,.38),rgba(255,250,232,.5)), url("../assets/home/inazuma-stadium-mobile-light.jpeg"); }
-  .inventory-v2-content { width: calc(100% - 16px); padding-top: 12px; }
   .inventory-v2-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .inventory-v2-screen .inventory-item-card { gap: 6px; min-height: 184px; padding: 8px; }
   .inventory-v2-screen .item-card-visual { flex-basis: 68px; width: 68px; height: 68px; min-width: 68px; padding: 4px; }
@@ -100,8 +97,6 @@ body:has(.inventory-v2-screen),
   .inventory-equipped-row .inventory-remove-button { grid-column: 3; grid-row: 2; }
   .inventory-detail-modal { max-height: calc(100dvh - 20px); padding: 12px; }
   .inventory-equipment-selector-modal { width: calc(100vw - 10px); max-height: calc(100dvh - 10px); padding: 9px; }
-  .inventory-equipment-workspace.squad-screen { grid-template-columns: 1fr; gap: 9px; }
-  .inventory-equipment-sidebar { grid-row: 2; }
   .inventory-equipment-sidebar .inventory-modal-actions { grid-column: 1 / -1; position: static; bottom: auto; margin-top: 8px; padding: 8px 0 0; background: transparent; }
   .inventory-equipment-bench { grid-column: 1; grid-row: 3; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
   .inventory-equipment-field .pitch { min-height: 480px; height: 480px; padding: 14px 8px; }

@@ -1,8 +1,4 @@
 /* 5v5 simulation modal polish: compact team lockups without touching match logic. */
-.five-simulation-score .five-match-result-row {
-  align-items: center;
-  gap: clamp(7px, 2.4vw, 14px);
-}
 
 .five-simulation-score .five-match-result-row > strong {
   position: relative;
@@ -29,10 +25,6 @@
   object-fit: contain;
 }
 
-.five-simulation-score .five-match-result-row > strong:last-child {
-  justify-content: flex-end;
-  text-align: right;
-}
 
 .five-simulation-score .boss-match-score {
   min-width: 92px;
