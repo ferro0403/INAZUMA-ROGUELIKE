@@ -35,7 +35,8 @@ assert(picker.includes("data-rtg-picker-team"), "Replacement picker must expose 
 assert(picker.includes('value="ie1_s2" selected'), "Replacement picker must preserve the selected season");
 
 const controller = fs.readFileSync("js/road-to-glory/rtg-squad-controller.js","utf8");
-assert(controller.includes("SQUAD_FILTER_SEASON_LABELS"), "Squad filters must define all five RTG season labels");
+// Dal Passo 3 le etichette delle 5 Season stanno nel registro unico (rtg-config.js), non copiate qui.
+assert(controller.includes("deps.config?.seasonLabel?.(sid)"), "Squad filters must read the RTG season labels from the registry");
 assert(controller.includes("squadFilterTeamOptions"), "Team options must be derived dynamically from player cards");
 assert(controller.includes("cardMatchesSquadFilters"), "Season/team filters must participate in candidate filtering");
 assert(/seasonFilter=String\(event\.target\?\.value\|\|"all"\);\s*refreshTeamFilterControl\(\)/s.test(controller), "Changing season must refresh and validate the team selector");

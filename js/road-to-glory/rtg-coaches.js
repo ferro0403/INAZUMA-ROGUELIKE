@@ -15,9 +15,10 @@
     {id:"4761",powerName:"Disordine tattico",powerDescription:"Scegli 2 giocatori di movimento avversari e scambi le loro posizioni tattiche nella formazione iniziale.",zukanId:"4763",name:"René Gadé",seasonId:"orion",season:"Orion",team:"Ace Invaders",teamLogoUrl:"https://static.wikia.nocookie.net/inazuma-eleven/images/9/95/Navy_Invader_emblem.png/revision/latest/scale-to-width-down/200?cb=20251118122113",imageUrl:"https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.png",imageFallbackUrls:["https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.webp"],frontFullbodyUrl:"https://dxi4wb638ujep.cloudfront.net/1/k/3/e/3e1faym7pbe_r0_fullbody.webp"},
   ].map(c=>Object.freeze(c)));
   const BY_ID = Object.freeze(Object.fromEntries(CATALOG.map(c=>[c.id,c])));
-  const CAMPAIGN_SEASONS = Object.freeze({"rtg-ie-trilogy":["ie1","ie1_s2","ie1_s3"],"rtg-ares-orion":["ie2","orion"]});
+  // Campagne dal registro unico (rtg-config.js), letto quando serve.
+  const campaignSeasons=()=>global.RoadToGloryConfig?.CAMPAIGN_SEASONS||global.RoadToGloryState?.CAMPAIGN_SEASONS||{};
   const error=(code,message)=>Object.assign(new Error(message),{code});
-  const order=(state)=>CAMPAIGN_SEASONS[state?.campaignId]||[];
+  const order=(state)=>campaignSeasons()[state?.campaignId]||[];
   function seasonCompleted(state,seasonId){
     const seasons=order(state),required=seasons.indexOf(seasonId),current=seasons.indexOf(String(state?.activeSeasonId||""));
     if(required<0||current<0)return false;
@@ -53,5 +54,6 @@
     state.coachPullCount=(Number(state.coachPullCount)||0)+1;
     return {state,coach};
   }
-  global.RoadToGloryCoaches=Object.freeze({COST,CATALOG,BY_ID,CAMPAIGN_SEASONS,catalog,seasonCompleted,owned,eligible,status,draw});
+  global.RoadToGloryCoaches=Object.freeze({COST,CATALOG,BY_ID,
+    get CAMPAIGN_SEASONS(){return campaignSeasons();},catalog,seasonCompleted,owned,eligible,status,draw});
 })(globalThis);
