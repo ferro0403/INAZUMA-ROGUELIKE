@@ -11,7 +11,7 @@
 // La verifica finale si fa comunque togliendole dal file e confrontando stile calcolato e screenshot.
 // recheckOnly: solo i passi 2-3 (si ricontrollano le candidate, ad es. a un'altra larghezza di schermo).
 
-export function pageRuleEffect({ known, removed, recheckOnly = false }) {
+export function pageRuleEffect({ known, removed, recheckOnly = false, frozen = [] }) {
   const K = new Set(known);
   const R = new Set(removed);
   const STATE = /:(hover|focus|focus-visible|focus-within|active|visited|link|target)(?![\w-])/;
@@ -47,6 +47,7 @@ export function pageRuleEffect({ known, removed, recheckOnly = false }) {
       const base = `${fileOf(sheet)}|${media}|${rule.selectorText}`;
       const n = (seenKeys.get(base) || 0) + 1;
       seenKeys.set(base, n);
+      if (frozen.includes(fileOf(sheet))) continue; // file da non toccare: le sue regole restano
       rules.push({ rule, key: `${base}|${n}`, mediaOk, css: rule.style.cssText });
     }
   };

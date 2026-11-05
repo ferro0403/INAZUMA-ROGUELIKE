@@ -6,7 +6,9 @@
 // nelle schermate successive; se in una schermata serve, viene rimesso e segnato come necessario.
 // Chiavi: "file|media|selettore|n::proprieta'" (n = n-esima regola con lo stesso selettore nel file).
 
-export function pageImportantEffect({ known, demoted, recheckOnly = false }) {
+// frozen: file da non toccare (es. esclusi fino a una data). Le loro regole restano come sono: la misura deve
+// tenerne conto, altrimenti potrebbe decidere sapendo "tolto" un !important che in realta' resta.
+export function pageImportantEffect({ known, demoted, recheckOnly = false, frozen = [] }) {
   const K = new Set(known);
   const D = new Set(demoted);
   const STATE = /:(hover|focus|focus-visible|focus-within|active|visited|link|target)(?![\w-])/;
@@ -34,6 +36,7 @@ export function pageImportantEffect({ known, demoted, recheckOnly = false }) {
       const base = `${fileOf(sheet)}|${media}|${rule.selectorText}`;
       const n = (seenKeys.get(base) || 0) + 1;
       seenKeys.set(base, n);
+      if (frozen.includes(fileOf(sheet))) continue;
       for (let i = 0; i < rule.style.length; i += 1) {
         const prop = rule.style[i];
         if (rule.style.getPropertyPriority(prop) !== "important") continue;

@@ -27,9 +27,15 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
     Verifica: stile calcolato identico in tutte le schermate a 412, 768 e 1280 px; foto 0/78 diverse;
     npm test invariato; prove 12/12. `!important`: 7.402 -> 6.464. Tetti dei test architettura abbassati.
     Baseline rifatta: lo script ora sposta il mouse prima della foto (prima alcune foto avevano un "hover").
+  - **1f** `refactor/css-6-important`: tolti 1.660 `!important` inutili (resi normali non cambiano il valore
+    calcolato). Primo tentativo fallito alla verifica (12 schermate RTG diverse): corretti tre difetti degli
+    strumenti (dichiarazione normale successiva nella stessa regola; file esclusi non bloccati durante la misura;
+    31 !important dei test rimessi dopo la misura invece che prima) e rimessi 3 !important del tabellone RTG
+    trovati per bisezione con la verifica dello stile. Verifica finale: stile identico a 412/768/1280 px,
+    foto 0/78, npm test invariato, prove 12/12. `!important`: 6.464 -> 4.804.
   - Prossimi: 87 regole morte certe nei file Halloween/coach (dopo il 7 novembre); rivedere le "non viste";
     unire i file patch nei proprietari; token; meno `!important`.
-  - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e.
+  - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f.
 
 ## Scoperte del Passo 1
 

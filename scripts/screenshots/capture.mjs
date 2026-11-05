@@ -41,13 +41,28 @@ const RULE_EFFECT_FROM = opt("rule-effect-from", "");
 // --important-effect=file.json (e --important-effect-from=file.json): come --rule-effect, ma per i `!important`.
 const IMPORTANT_EFFECT = opt("important-effect", "");
 const IMPORTANT_EFFECT_FROM = opt("important-effect-from", "");
-const importantEffect = { known: new Set(), demoted: new Set(), evaluated: new Set(), skipped: {} };
+// --frozen=a.css,b.css: file che le misure non devono considerare modificabili.
+const FROZEN = opt("frozen", "").split(",").filter(Boolean);
+// --important-keep=file.json: elenco di chiavi "file|media|selettore|n::proprieta'" da non togliere mai.
+const IMPORTANT_KEEP = opt("important-keep", "") ? JSON.parse(readFileSync(opt("important-keep", ""), "utf8")) : [];
+const importantEffect = { known: new Set(IMPORTANT_KEEP), demoted: new Set(), evaluated: new Set(), skipped: {} };
 if (IMPORTANT_EFFECT_FROM) {
   const prev = JSON.parse(readFileSync(IMPORTANT_EFFECT_FROM, "utf8"));
   importantEffect.known = new Set(prev.necessari);
   importantEffect.demoted = new Set(prev.inutili);
   importantEffect.skipped = prev.saltati || {};
 }
+const IMPORTANT_PARTIAL = IMPORTANT_EFFECT && existsSync(IMPORTANT_EFFECT) ? JSON.parse(readFileSync(IMPORTANT_EFFECT, "utf8")) : null;
+const importantDone = new Set(IMPORTANT_PARTIAL?.scene_fatte || []);
+if (IMPORTANT_PARTIAL) {
+  importantEffect.known = new Set(IMPORTANT_PARTIAL.necessari);
+  importantEffect.demoted = new Set(IMPORTANT_PARTIAL.inutili);
+  importantEffect.evaluated = new Set(IMPORTANT_PARTIAL.valutati);
+  importantEffect.skipped = IMPORTANT_PARTIAL.saltati || {};
+}
+const saveImportantEffect = () => writeFileSync(IMPORTANT_EFFECT, JSON.stringify({ necessari: [...importantEffect.known],
+  inutili: [...importantEffect.demoted], valutati: [...importantEffect.evaluated], saltati: importantEffect.skipped,
+  scene_fatte: [...importantDone] }));
 if (RULE_EFFECT_FROM) {
   const prev = JSON.parse(readFileSync(RULE_EFFECT_FROM, "utf8"));
   ruleEffect.known = new Set(prev.necessarie);
@@ -147,7 +162,7 @@ const blockedHosts = new Map();
 const selected = scenes.filter((s) => !ONLY || s.name.includes(ONLY));
 
 for (const scene of selected) {
-  if (ruleEffectDone.has(scene.name)) continue;
+  if (ruleEffectDone.has(scene.name) || importantDone.has(scene.name)) continue;
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, locale: "it-IT", timezoneId: "Europe/Rome" });
   const page = await context.newPage();
   await page.clock.setFixedTime(FIXED_TIME);
@@ -205,14 +220,16 @@ for (const scene of selected) {
     if (STYLES_DETAIL) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot, true);
     if (IMPORTANT_EFFECT) {
       const r = await page.evaluate(pageImportantEffect, { known: [...importantEffect.known],
-        demoted: [...importantEffect.demoted], recheckOnly: Boolean(IMPORTANT_EFFECT_FROM) });
+        demoted: [...importantEffect.demoted], recheckOnly: Boolean(IMPORTANT_EFFECT_FROM), frozen: FROZEN });
       importantEffect.known = new Set(r.known);
       importantEffect.demoted = new Set(r.demoted);
       r.evaluated.forEach((k) => importantEffect.evaluated.add(k));
       for (const [k, why] of r.skipped) importantEffect.skipped[k] ||= why;
+      importantDone.add(scene.name);
+      saveImportantEffect();
     }
     if (RULE_EFFECT) {
-      const r = await page.evaluate(pageRuleEffect, { known: [...ruleEffect.known], removed: [...ruleEffect.removed], recheckOnly: Boolean(RULE_EFFECT_FROM) });
+      const r = await page.evaluate(pageRuleEffect, { known: [...ruleEffect.known], removed: [...ruleEffect.removed], recheckOnly: Boolean(RULE_EFFECT_FROM), frozen: FROZEN });
       ruleEffect.known = new Set(r.known);
       ruleEffect.removed = new Set(r.removed);
       r.evaluated.forEach((k) => ruleEffect.evaluated.add(k));
@@ -237,8 +254,7 @@ server.close();
 flushCssUsage("screenshots");
 if (STYLES_OUT || STYLES_DETAIL) writeFileSync(STYLES_OUT || STYLES_DETAIL, JSON.stringify(styleSnapshots));
 if (IMPORTANT_EFFECT) {
-  writeFileSync(IMPORTANT_EFFECT, JSON.stringify({ necessari: [...importantEffect.known], inutili: [...importantEffect.demoted],
-    valutati: [...importantEffect.evaluated], saltati: importantEffect.skipped }));
+  saveImportantEffect();
 }
 if (RULE_EFFECT) {
   saveRuleEffect();

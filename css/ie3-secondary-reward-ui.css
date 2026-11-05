@@ -1,7 +1,7 @@
 /* IE3 secondary 11v11 reward parity with the standard post-match player offer. */
 
 .ie3-secondary-standard-reward-modal .ie3-secondary-reward-native {
-  display: none !important;
+  display: none;
 }
 
 .ie3-secondary-standard-reward-modal .ie3-secondary-standard-reward {
@@ -70,7 +70,7 @@
   line-height: 1;
   letter-spacing: 0;
   white-space: nowrap;
-  border: 2px solid #111318 !important;
+  border: 2px solid #111318;
   border-radius: 0;
   box-shadow: none;
 }

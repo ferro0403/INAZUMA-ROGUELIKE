@@ -83,6 +83,7 @@ const longhands = await page.evaluate((list) => Object.fromEntries(list.map((p) 
 await browser.close();
 
 let total = 0;
+let protectedCount = 0;
 for (const file of files) {
   const text = readFileSync(file, "utf8");
   const counts = new Map();
@@ -95,11 +96,18 @@ for (const file of files) {
     if (!set) continue;
     const open = text.indexOf("{", r.start);
     const body = text.slice(open + 1, r.end - 1);
-    for (const d of declarations(body)) {
+    const decls = declarations(body);
+    for (const [index, d] of decls.entries()) {
       const m = d.text.match(/\s*!\s*important\s*$/i);
       if (!m) continue;
       const hands = longhands[d.prop] || [d.prop];
       if (!hands.every((h) => set.has(h))) continue;
+      // Protezione (4 nov 2026): se piu' avanti nella stessa regola c'e' una dichiarazione NORMALE che tocca una
+      // delle stesse proprieta', oggi perde contro questo !important e il browser la scarta (quindi la misura non
+      // la vede); togliendo !important vincerebbe lei. Esempio: "background-image:x!important; background:#123".
+      const laterNormal = decls.slice(index + 1).some((e) => !/!\s*important\s*$/i.test(e.text)
+        && (longhands[e.prop] || [e.prop]).some((h) => hands.includes(h)));
+      if (laterNormal) { protectedCount += 1; continue; }
       const absEnd = open + 1 + d.end;
       edits.push([absEnd - m[0].length, absEnd]);
     }
@@ -110,4 +118,4 @@ for (const file of files) {
   total += edits.length;
   if (!DRY) writeFileSync(file, out);
 }
-console.log(`\nTotale: ${total} !important tolti${DRY ? " (prova)" : ""}`);
+console.log(`\nTotale: ${total} !important tolti${DRY ? " (prova)" : ""}; ${protectedCount} lasciati perche' seguiti da una dichiarazione normale sulla stessa proprieta'`);

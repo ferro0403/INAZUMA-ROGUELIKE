@@ -9,30 +9,31 @@
 .rtg-map-block { min-width: 0; padding: 14px; border: 4px solid #101116; background: #fffdf5; box-shadow: 8px 9px 0 rgba(16,17,22,.3); }
 .rtg-route-heading .eyebrow { margin-bottom: 2px; color: #7a5b11; }
 .rtg-route-count { padding: 5px 8px; border: 2px solid #101116; background: #ffd21f; color: #101116; font-size: .7rem; font-weight: 1000; transform: skewX(-8deg); }
+.route-map.rtg-route-stage { min-width: 0; width: 100%; height: 760px; border: 3px solid #101116; border-radius: 0; box-shadow: inset 0 0 80px rgba(0,0,0,.26); }
 .rtg-map-lines line { stroke-width: 1.5; stroke: rgba(255,255,255,.88); stroke-dasharray: 4 5; }
 .rtg-route-node.reachable .node-icon { border-color: #ffd21f; outline: 3px solid #101116; box-shadow: 0 0 0 5px #ffd21f, 5px 7px 0 #101116; }
 .rtg-route-node .node-label { color: #fff; font-size: .72rem; font-weight: 1000; text-shadow: 0 2px 4px #000, 0 0 8px #000; }
 .rtg-node-checkpoint { position: absolute; top: -8px; right: 2px; padding: 3px 5px; border: 2px solid #101116; background: #ffd21f; color: #101116; font-size: .65rem; font-weight: 1000; }
 
 /* Final next-match journey hero migrated from legacy core. */
-.rtg-journey-summary{position:relative!important;overflow:hidden!important;padding:22px 22px 18px!important;border:3px solid #111216!important;background:linear-gradient(118deg,#111216 0 68%,#191b21 68% 100%)!important;box-shadow:6px 7px 0 #ffd21f!important;}
+.rtg-journey-summary{position:relative;overflow:hidden;padding:22px 22px 18px!important;border:3px solid #111216;background:linear-gradient(118deg,#111216 0 68%,#191b21 68% 100%);box-shadow:6px 7px 0 #ffd21f;}
 .rtg-journey-summary::before{content:"";position:absolute;width:180px;height:180px;right:-45px;top:-58px;border:24px solid rgba(255,210,31,.06);transform:rotate(18deg);pointer-events:none;}
 .rtg-journey-main{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:16px;align-items:center;}
 .rtg-journey-copy{min-width:0;}
 .rtg-journey-summary .rtg-journey-copy .eyebrow{color:#ffd21f!important;}
-.rtg-journey-summary .rtg-journey-copy h1{margin:5px 0 7px!important;color:#fff!important;font-size:clamp(2rem,8vw,3rem)!important;font-style:italic;line-height:.95!important;text-transform:uppercase;}
-.rtg-journey-summary .rtg-journey-copy p:not(.eyebrow){margin:0!important;color:#e9e9e9!important;}
+.rtg-journey-summary .rtg-journey-copy h1{margin:5px 0 7px;color:#fff;font-size:clamp(2rem,8vw,3rem);font-style:italic;line-height:.95;text-transform:uppercase;}
+.rtg-journey-summary .rtg-journey-copy p:not(.eyebrow){margin:0;color:#e9e9e9;}
 .rtg-journey-opponent{width:88px;height:88px;display:grid;place-items:center;justify-self:end;border:3px solid #ffd21f;background:#fffdf7;box-shadow:5px 5px 0 #111216;transform:rotate(2deg);}
-.rtg-journey-opponent img{width:72px!important;height:72px!important;object-fit:contain!important;}
+.rtg-journey-opponent img{width:72px!important;height:72px!important;object-fit:contain;}
 .rtg-journey-opponent .boss-logo-fallback{display:grid!important;place-items:center;width:100%;height:100%;color:#111216;font-size:2rem;font-weight:1000;}
 .rtg-journey-free-agent{width:62px;height:62px;color:#111216;}
 .rtg-journey-free-agent svg{width:100%;height:100%;display:block;}
-.rtg-journey-summary>[data-rtg-current-node]{position:relative;z-index:1;width:100%;margin-top:18px!important;min-height:56px;border:3px solid #111216!important;box-shadow:5px 6px 0 #050506!important;}
-.rtg-journey-summary .rtg-journey-progress{position:relative;z-index:1;margin-top:18px!important;}
+.rtg-journey-summary>[data-rtg-current-node]{position:relative;z-index:1;width:100%;margin-top:18px;min-height:56px;border:3px solid #111216!important;box-shadow:5px 6px 0 #050506!important;}
+.rtg-journey-summary .rtg-journey-progress{position:relative;z-index:1;margin-top:18px;}
 
-.rtg-route--season-1 .rtg-map .rtg-map-block .route-map.rtg-route-stage{background-color:#082c52!important;background-image:url("../assets/rtg/rtg-season1-route-map.jpg?v=5")!important;background-position:50% 48%!important;background-size:cover!important;background-repeat:no-repeat!important;background-blend-mode:normal!important;filter:none!important;}
+.rtg-route--season-1 .rtg-map .rtg-map-block .route-map.rtg-route-stage{background-color:#082c52!important;background-image:url("../assets/rtg/rtg-season1-route-map.jpg?v=5");background-position:50% 48%;background-size:cover;background-repeat:no-repeat;background-blend-mode:normal;filter:none;}
 .rtg-run-screen--s2 .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2{height:var(--rtg-route-height,640px)!important;min-height:var(--rtg-route-height,640px)!important;background-color:#082c52!important;background-image:var(--rtg-route-image,url("../assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1"))!important;background-position:var(--rtg-route-bg-position,center)!important;background-size:cover!important;background-repeat:no-repeat!important;background-blend-mode:normal!important;filter:none!important;}
-.rtg-route--ares .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2{height:var(--rtg-route-height,640px)!important;min-height:var(--rtg-route-height,640px)!important;background-color:#082c52!important;background-image:var(--rtg-route-image,none)!important;background-position:var(--rtg-route-bg-position,center)!important;background-size:cover!important;background-repeat:no-repeat!important;background-blend-mode:normal!important;filter:none!important;}
+.rtg-route--ares .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2{height:var(--rtg-route-height,640px);min-height:var(--rtg-route-height,640px)!important;background-color:#082c52;background-image:var(--rtg-route-image,none);background-position:var(--rtg-route-bg-position,center)!important;background-size:cover;background-repeat:no-repeat;background-blend-mode:normal;filter:none;}
 
 @media(max-width:420px){.rtg-journey-summary{padding:18px 16px 16px!important;}.rtg-journey-main{grid-template-columns:minmax(0,1fr) 74px;gap:10px;}.rtg-journey-opponent{width:70px;height:70px;}.rtg-journey-opponent img{width:58px!important;height:58px!important;}}
 
@@ -115,15 +116,15 @@
 }
 
 .rtg-requirements h3{
-  display:none!important;
+  display:none;
 }
 
 .rtg-requirements>.eyebrow{
-  margin-bottom:8px!important;
+  margin-bottom:8px;
 }
 
 .rtg-requirements-list{
-  gap:5px!important;
+  gap:5px;
 }
 
 
@@ -461,7 +462,7 @@
 @media(min-width:760px){.rtg-campaign-select{background-image:linear-gradient(rgba(246,247,243,.88),rgba(246,247,243,.94)),url('../assets/home/inazuma-stadium-desktop-light.jpeg')}.rtg-campaign-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rtg-campaign-card{min-height:480px}}
 
 /* Campaign banners: force the same graphic-card language used by RTG run panels. */
-button.rtg-campaign-card{position:relative!important;display:block!important;overflow:hidden!important;width:100%!important;min-height:330px!important;padding:0!important;border:4px solid #111216!important;border-radius:0!important;background:#111216!important;box-shadow:8px 9px 0 #111216!important;color:#fff!important;text-align:left!important}
+button.rtg-campaign-card{position:relative;display:block;overflow:hidden;width:100%;min-height:330px;padding:0;border:4px solid #111216!important;border-radius:0;background:#111216;box-shadow:8px 9px 0 #111216!important;color:#fff;text-align:left}
 .rtg-campaign-card__image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0}
 button.rtg-campaign-card .rtg-campaign-shade{z-index:1}
 button.rtg-campaign-card .rtg-campaign-copy{z-index:2}
@@ -472,14 +473,14 @@ button.rtg-campaign-card .rtg-campaign-copy{z-index:2}
 @media(max-width:759px){
   .rtg-campaign-select-content{gap:14px;padding:18px 16px 42px!important}
   .rtg-campaign-intro h1{font-size:clamp(2.65rem,13vw,4rem)!important;line-height:.86!important;margin:5px 0 10px!important}
-  button.rtg-campaign-card{min-height:218px!important;max-height:218px!important;border-width:3px!important;box-shadow:6px 7px 0 #111216!important}
+  button.rtg-campaign-card{min-height:218px!important;max-height:218px;border-width:3px!important;box-shadow:6px 7px 0 #111216}
   .rtg-campaign-card__image{object-position:center 38%!important}
-  button.rtg-campaign-card .rtg-campaign-copy{inset:auto 0 0!important;display:grid!important;gap:5px!important;padding:48px 15px 14px!important}
-  .rtg-campaign-copy small{font-size:.58rem!important}
-  .rtg-campaign-copy strong{font-size:clamp(1.45rem,7vw,2rem)!important;line-height:.9!important;max-width:100%!important}
-  .rtg-campaign-copy em{gap:5px!important}
-  .rtg-campaign-copy em b{min-width:34px!important;height:24px!important;font-size:.61rem!important}
-  .rtg-campaign-copy i{margin-top:2px!important;padding:9px 12px!important;font-size:.72rem!important;border-width:2px!important;box-shadow:3px 3px 0 #111216!important}
+  button.rtg-campaign-card .rtg-campaign-copy{inset:auto 0 0;display:grid;gap:5px;padding:48px 15px 14px}
+  .rtg-campaign-copy small{font-size:.58rem}
+  .rtg-campaign-copy strong{font-size:clamp(1.45rem,7vw,2rem)!important;line-height:.9;max-width:100%}
+  .rtg-campaign-copy em{gap:5px}
+  .rtg-campaign-copy em b{min-width:34px;height:24px;font-size:.61rem}
+  .rtg-campaign-copy i{margin-top:2px;padding:9px 12px;font-size:.72rem;border-width:2px;box-shadow:3px 3px 0 #111216!important}
 }
 
 
@@ -487,8 +488,8 @@ button.rtg-campaign-card .rtg-campaign-copy{z-index:2}
 .rtg-campaign-select{
   background:
     radial-gradient(circle at 88% 10%,rgba(255,210,31,.13),transparent 28%),
-    linear-gradient(145deg,rgba(8,23,38,.97),rgba(10,17,28,.98) 58%,rgba(17,18,22,.99))!important;
-  color:#fff!important;
+    linear-gradient(145deg,rgba(8,23,38,.97),rgba(10,17,28,.98) 58%,rgba(17,18,22,.99));
+  color:#fff;
 }
 .rtg-campaign-select::before{
   content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;
@@ -501,43 +502,43 @@ button.rtg-campaign-card .rtg-campaign-copy{z-index:2}
   border-left:6px solid #ffd21f;
   background:linear-gradient(100deg,rgba(255,255,255,.075),rgba(255,255,255,.018));
 }
-.rtg-campaign-intro .eyebrow{margin:0 0 8px!important;color:#ffd21f!important;text-shadow:none!important}
-.rtg-campaign-intro h1{margin:0 0 11px!important;color:#fff!important;text-shadow:3px 3px 0 rgba(0,0,0,.34)!important}
-.rtg-campaign-intro p{color:#dfe7ee!important;font-weight:750!important}
+.rtg-campaign-intro .eyebrow{margin:0 0 8px;color:#ffd21f!important;text-shadow:none}
+.rtg-campaign-intro h1{margin:0 0 11px!important;color:#fff;text-shadow:3px 3px 0 rgba(0,0,0,.34)}
+.rtg-campaign-intro p{color:#dfe7ee;font-weight:750}
 button.rtg-campaign-card{
   border-color:#f7f7f2!important;
   outline:3px solid #111216;
   box-shadow:8px 9px 0 #ffd21f!important;
 }
 button.rtg-campaign-card .rtg-campaign-shade{
-  background:linear-gradient(180deg,rgba(4,9,15,.04) 0%,rgba(4,9,15,.18) 35%,rgba(5,9,15,.96) 100%)!important;
+  background:linear-gradient(180deg,rgba(4,9,15,.04) 0%,rgba(4,9,15,.18) 35%,rgba(5,9,15,.96) 100%);
 }
 .rtg-campaign-copy small{color:#ffd21f!important;text-shadow:0 2px 4px #000}
 .rtg-campaign-copy strong{color:#fff!important;text-shadow:0 3px 5px #000!important}
-.rtg-campaign-copy em b{border-color:#fff!important;background:#101116!important;color:#ffd21f!important;box-shadow:2px 2px 0 #ffd21f!important}
-.rtg-campaign-copy i{border-color:#fff!important;background:#ffd21f!important;color:#101116!important;box-shadow:4px 4px 0 #101116!important}
+.rtg-campaign-copy em b{border-color:#fff;background:#101116;color:#ffd21f;box-shadow:2px 2px 0 #ffd21f}
+.rtg-campaign-copy i{border-color:#fff;background:#ffd21f;color:#101116!important;box-shadow:4px 4px 0 #101116!important}
 @media(max-width:759px){
   .rtg-campaign-select-content{padding-top:20px!important}
   .rtg-campaign-intro{padding:15px 14px 16px!important;margin-bottom:3px}
   .rtg-campaign-intro h1{font-size:clamp(2.45rem,12vw,3.55rem)!important}
-  .rtg-campaign-intro p{font-size:.91rem!important;line-height:1.4!important}
+  .rtg-campaign-intro p{font-size:.91rem;line-height:1.4}
   button.rtg-campaign-card{box-shadow:6px 7px 0 #ffd21f!important}
 }
 
 
 /* Ares map HQ: native background rendering avoids Safari filter raster blur. */
 .rtg-route--ares .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2{
-  position:relative!important;
+  position:relative;
   isolation:isolate;
   overflow:hidden!important;
   background-color:#082c52!important;
   background-image:var(--rtg-route-image,none)!important;
   background-position:var(--rtg-route-bg-position,center)!important;
-  background-size:cover!important;
-  background-repeat:no-repeat!important;
-  background-blend-mode:normal!important;
-  filter:none!important;
-  transform:none!important;
+  background-size:cover;
+  background-repeat:no-repeat;
+  background-blend-mode:normal;
+  filter:none;
+  transform:none;
 }
 .rtg-route--ares .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2::before{
   content:none!important;
