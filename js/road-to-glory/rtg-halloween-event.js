@@ -420,7 +420,7 @@
       const roster=resolvedPowerRoster(localSquad);
       const config=rules?.validConfig?.(localSquad,roster.lineup,"ie1",roster.bench);
       if(!config||!config.cardIds?.includes(cardId))return null;
-      if(coachId==="1974"&&cardId.startsWith(EVENT_ID+"::")){
+      if(global.RoadToGloryCoachPowerTypes?.typeOf?.(coachId)==="rarityUpgrade"&&cardId.startsWith(EVENT_ID+"::")){
         // Event cards have no Season progression source. Reuse the exact
         // temporary upgrade used at Halloween kickoff, only for this preview.
         const nextRarity=rules?.nextRarity?.(rules.rarityOf(player));
@@ -970,7 +970,7 @@
         previewChoice:(key,selection)=>{
           const p=resolveCard(key);
           if(!p)return null;
-          if(localSquad.coachId==="1974"&&asId(key).startsWith(EVENT_ID+"::")){
+          if(global.RoadToGloryCoachPowerTypes?.typeOf?.(localSquad.coachId)==="rarityUpgrade"&&asId(key).startsWith(EVENT_ID+"::")){
             const rarityRules=global.RoadToGloryCoachPowerRuntime;
             const nextRarity=rarityRules?.nextRarity?.(rarityRules.rarityOf(p));
             const upgraded=nextRarity&&selection?.cardIds?.includes(key)
@@ -1368,7 +1368,8 @@
       if(ownedCoach&&!powerConfig)throw fail("halloween-coach-selection-invalid");
       // Hillman, Schiller and Arrows depend on PT initialization. An outdated
       // or unavailable PT runtime must never silently start a legacy match.
-      if(powerConfig&&["208","1329","1974"].includes(powerConfig.coachId)&&
+      const configuredPower=powerConfig&&global.RoadToGloryCoachPowerTypes?.powerFor?.(powerConfig.coachId);
+      if(configuredPower?.phase==="squad"&&configuredPower.requiresPtMode&&
          created.ptModeVersion!==1)throw fail("halloween-coach-power-not-applied");
       created=coachRules?.applyToMatch?.(created,localSquad,state,{
         upgradeRarity:(player,targetRarity,cardId)=>{

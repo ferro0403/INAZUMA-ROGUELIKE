@@ -6,7 +6,8 @@
   const pid=p=>id(p?.cardId||p?.playerId||p?.id);
   const canonical=p=>id(p?.legacyCanonicalPlayerId||p?.playerId||p?.id).split("@")[0];
   function build({opponent,node,teamRecord,freeAgentsDb,resolveForTeam,resolveStandard}={}){
-    if(!opponent||!["36","1225"].includes(id(node?.coachId)))return opponent;
+    const type=global.RoadToGloryCoachPowerTypes?.typeOf?.(node?.coachId)||"";
+    if(!opponent||!["swapOpponentStarter","borrowOpponentReserve"].includes(type))return opponent;
     const used=new Set((opponent.lineup||[]).flatMap(p=>[pid(p),canonical(p)]));
     const candidates=[];
     if(node.type==="main"){

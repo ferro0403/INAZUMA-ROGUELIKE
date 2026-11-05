@@ -967,9 +967,13 @@
               activeRoleVariantByCardId:draft.activeRoleVariantByCardId||{}};
             return {before:deps.squadRuntime.teamPower(base),
               after:deps.squadRuntime.teamPower({...base,
-                coachCapCardId:deps.squadDraft?.coachId==="1777"?selection?.cardIds?.[0]||null:null,
-                coachOverallDiscount:deps.squadDraft?.coachId==="halloween-coach-54"&&selection?.cardIds?.length===1
-                  ?{cardId:selection.cardIds[0],amount:15}:null})};
+                // Anteprima dei poteri sull'overall: tipo e valori dai dati del potere (rtg-coach-power-types.js).
+                ...(()=>{
+                  const power=global.RoadToGloryCoachPowerTypes?.powerFor?.(deps.squadDraft?.coachId),card=selection?.cardIds?.[0];
+                  const single=selection?.cardIds?.length===power?.params?.picks;
+                  return {coachCapCardId:power?.type==="benchCapOverride"?card||null:null,coachCapValue:power?.params?.cap??null,
+                    coachOverallDiscount:power?.type==="requirementsOvrDiscount"&&single?{cardId:card,amount:power.params.amount}:null};
+                })()})};
           },
           previewChoice:(key,selection)=>{
             const card=deps.resolved(key,deps.squadDraft?.activeRoleVariantByCardId?.[key]||null);

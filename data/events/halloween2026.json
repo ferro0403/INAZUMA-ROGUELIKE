@@ -170,12 +170,17 @@
         "type": "requirementsOvrDiscount",
         "name": "Maschera Maledetta",
         "description": "Scegli un tuo titolare della collezione Halloween. Per i soli requisiti OVR della squadra, il suo contributo vale 15 punti in meno. Overall reale, statistiche, mosse e partita non cambiano.",
-        "pickerTitle": "SCEGLI UN TITOLARE HALLOWEEN",
         "params": {
           "amount": 15,
           "picks": 1,
           "target": "ownStarter",
           "cardScope": "event"
+        },
+        "ui": {
+          "title": "MASCHERA MALEDETTA",
+          "note": "Scegli un titolare Halloween sul campo: nei requisiti il suo OVR vale 15 punti in meno. In partita rimane identico.",
+          "pickerTitle": "SCEGLI UN TITOLARE HALLOWEEN",
+          "previewNote": "Il titolare Halloween selezionato conta 15 OVR in meno solo nei requisiti. Valori reali invariati."
         }
       }
     }

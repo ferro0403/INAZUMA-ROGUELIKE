@@ -238,7 +238,7 @@
           return openRtgPlayerDetails(key,"",reopenOptions);
         }:null,
         moveSeasonId:id(detailMeta.legacySeasonId||player.resolvedSeasonId||campaign?.activeSeasonId||"ie1"),
-        rtgKitPreview:true,rtgFourMoves:true,rtgRarity:previewInfo?.coachId==="1974"?detailPlayer.category:
+        rtgKitPreview:true,rtgFourMoves:true,rtgRarity:global.RoadToGloryCoachPowerTypes?.typeOf?.(previewInfo?.coachId)==="rarityUpgrade"?detailPlayer.category:
           (campaign?.developmentByCardId?.[id(detailPlayer.cardId||key)]?.currentRarity||campaign?.developmentByCardId?.[key]?.currentRarity||detailPlayer.category),
         readOnly:true,
         mode:options?.mode||undefined,
@@ -631,7 +631,7 @@
         if(userMeta.teamIdentity)userSquad.teamIdentity=clone(userMeta.teamIdentity);
         const preMatchCoach=global.RoadToGloryCoachPreMatchRuntime?.coachFor?.(current,id(current.activeSeasonId||activeSeasonId()))||"";
         let opponentSquad=node.type==="main"?mainOpponent(node):secondaryOpponent(node,current,attemptNumber);
-        if(["36","1225"].includes(preMatchCoach))opponentSquad=global.RoadToGloryCoachOpponentBench?.build?.({opponent:opponentSquad,node:{...node,coachId:preMatchCoach},teamRecord:teamRecordForId(node.teamId),freeAgentsDb,resolveForTeam:resolvedForTeam,resolveStandard:resolvedStandard})||opponentSquad;
+        if(["swapOpponentStarter","borrowOpponentReserve"].includes(global.RoadToGloryCoachPowerTypes?.typeOf?.(preMatchCoach)))opponentSquad=global.RoadToGloryCoachOpponentBench?.build?.({opponent:opponentSquad,node:{...node,coachId:preMatchCoach},teamRecord:teamRecordForId(node.teamId),freeAgentsDb,resolveForTeam:resolvedForTeam,resolveStandard:resolvedStandard})||opponentSquad;
         const seed=`${current.campaignSeed}:${node.id}:${attemptNumber}`;
         const matchId=`rtg:${node.id}:${attemptNumber}`;
         let match=matchEngine.createMatch({matchId,nodeId:node.id,matchType:node.type,attemptNumber,seed,userSquad,opponentSquad,seasonId:id(current.activeSeasonId||activeSeasonId())});
@@ -920,7 +920,7 @@
         const candidateState=clone(campaign);
         candidateState.squads[activeSeasonId()]={...(candidateState.squads?.[activeSeasonId()]||{}),formationId:candidate.formationId,lineup:ids,bench:benchIds,activeRoleVariantByCardId:{...(candidate.activeRoleVariantByCardId||{})}};
         // The engine checks the frozen 15-player roster; Nerina's loan is not owned.
-        if(match.preMatchCoachEffect?.coachId==="1225")return {eligible:true,reasons:[]};
+        if(global.RoadToGloryCoachPowerTypes?.typeOf?.(match.preMatchCoachEffect?.coachId)==="borrowOpponentReserve")return {eligible:true,reasons:[]};
         if(match.matchType==="secondary"){
           const validation=squadRuntime.validateSquad({state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(candidateState)});
           return {eligible:validation.valid,reasons:validation.reasons||[]};
