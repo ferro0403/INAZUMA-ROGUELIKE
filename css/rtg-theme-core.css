@@ -3685,7 +3685,7 @@
   max-width:72%;
   margin:18px auto 14px;
   padding:10px 22px;
-  border:2px solid var(--ir-ink);
+  border:2px solid var(--ir-ink)!important;
   border-radius:7px;
   box-shadow:var(--ir-shadow-ink-3-4);
   font-size:14px;
