@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-11-03T19:06:36.635Z",
+  "createdAt": "2026-11-03T21:16:04.002Z",
   "fixedTime": "2026-11-03T12:00:00.000Z",
   "viewport": {
     "width": 412,
@@ -439,6 +439,142 @@
       "failedImages": 2
     },
     {
+      "name": "70-run-zona-finale",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "71-run-ricompense-completata",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "72-run-celebrazione",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "73-run-riepilogo-squadra",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "74-run-riepilogo-statistiche",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "75-run-riepilogo-premi",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "76-albo-oro-dettaglio",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "77-run-pull-leggendario",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "78-run-oggetto-equipaggia",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "79-run-oggetto-equipaggiato",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "80-run-ie3-partita-speciale",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "81-sviluppo-evoluzioni",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "82-sviluppo-progetti",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "83-rtg-sviluppo",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "84-rtg-negozio",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "85-rtg-album",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 6
+    },
+    {
+      "name": "86-rtg-premio-distributore",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 11
+    },
+    {
       "name": "30-halloween-home",
       "account": "sbloccato",
       "ok": true,
@@ -460,7 +596,7 @@
       "ok": true,
       "failedStep": null,
       "errors": [],
-      "failedImages": 2
+      "failedImages": 3
     },
     {
       "name": "33-halloween-squadra",
@@ -496,12 +632,13 @@
     }
   ],
   "blockedHosts": {
-    "www.akibagamers.it": 31,
-    "i0.wp.com": 55,
-    "i.namu.wiki": 19,
-    "inazuma-eleven-legends.vercel.app": 38,
+    "i0.wp.com": 69,
+    "www.akibagamers.it": 44,
+    "inazuma-eleven-legends.vercel.app": 45,
+    "i.namu.wiki": 29,
     "opengameart.org": 1,
-    "static.vecteezy.com": 8
+    "static.vecteezy.com": 9,
+    "easycdn.es": 2
   },
   "validBaseline": false
 }

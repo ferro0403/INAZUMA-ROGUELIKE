@@ -7,11 +7,14 @@
 // Se le immagini esterne (CloudFront ecc.) non si caricano, il report lo dice e lo script
 // esce con codice 2: quelle foto NON valgono come baseline.
 import { createRequire } from "node:module";
-import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { startStaticServer } from "./static-server.mjs";
 import { scenes } from "./scenes.mjs";
 import { collectCssUsage, flushCssUsage } from "../css/css-usage-collector.mjs";
+import { pageStyleSnapshot } from "../css/style-snapshot.mjs";
+import { pageRuleEffect } from "../css/rule-effect.mjs";
+import { pageImportantEffect } from "../css/important-effect.mjs";
 import { Game, seededRandom } from "../../tests/browser/harness.mjs";
 
 const require = createRequire(import.meta.url);
@@ -25,8 +28,46 @@ const opt = (name, fallback) => {
 const OUT = opt("out", "test-results/screenshots/current");
 const ONLY = opt("only", "");
 const ALLOW_INCOMPLETE = args.includes("--allow-incomplete");
+// --styles=file.json: salva anche l'impronta dello stile calcolato di ogni schermata (vedi compare-styles.mjs).
+const STYLES_OUT = opt("styles", "");
+const styleSnapshots = {};
+// --styles-detail=file.json: come --styles ma con tutte le proprieta' (lento e grande: usare con --only).
+const STYLES_DETAIL = opt("styles-detail", "");
+// --rule-effect=file.json: in ogni schermata disattiva una regola alla volta e registra quali cambiano lo stile.
+const RULE_EFFECT = opt("rule-effect", "");
+const ruleEffect = { known: new Set(), removed: new Set(), evaluated: new Set(), skipped: {} };
+// --rule-effect-from=file.json: riparte da una misura precedente e ricontrolla solo le regole battute.
+const RULE_EFFECT_FROM = opt("rule-effect-from", "");
+// --important-effect=file.json (e --important-effect-from=file.json): come --rule-effect, ma per i `!important`.
+const IMPORTANT_EFFECT = opt("important-effect", "");
+const IMPORTANT_EFFECT_FROM = opt("important-effect-from", "");
+const importantEffect = { known: new Set(), demoted: new Set(), evaluated: new Set(), skipped: {} };
+if (IMPORTANT_EFFECT_FROM) {
+  const prev = JSON.parse(readFileSync(IMPORTANT_EFFECT_FROM, "utf8"));
+  importantEffect.known = new Set(prev.necessari);
+  importantEffect.demoted = new Set(prev.inutili);
+  importantEffect.skipped = prev.saltati || {};
+}
+if (RULE_EFFECT_FROM) {
+  const prev = JSON.parse(readFileSync(RULE_EFFECT_FROM, "utf8"));
+  ruleEffect.known = new Set(prev.necessarie);
+  ruleEffect.removed = new Set(prev.battute);
+  ruleEffect.skipped = prev.saltate || {};
+}
+// Ripresa dopo un'interruzione: se il file di uscita esiste gia' (parziale), riparte da li' e salta le scene fatte.
+const RULE_EFFECT_PARTIAL = RULE_EFFECT && existsSync(RULE_EFFECT) ? JSON.parse(readFileSync(RULE_EFFECT, "utf8")) : null;
+const ruleEffectDone = new Set(RULE_EFFECT_PARTIAL?.scene_fatte || []);
+if (RULE_EFFECT_PARTIAL) {
+  ruleEffect.known = new Set(RULE_EFFECT_PARTIAL.necessarie);
+  ruleEffect.removed = new Set(RULE_EFFECT_PARTIAL.battute);
+  ruleEffect.evaluated = new Set(RULE_EFFECT_PARTIAL.valutate);
+  ruleEffect.skipped = RULE_EFFECT_PARTIAL.saltate || {};
+}
+const saveRuleEffect = () => writeFileSync(RULE_EFFECT, JSON.stringify({ necessarie: [...ruleEffect.known],
+  battute: [...ruleEffect.removed], valutate: [...ruleEffect.evaluated], saltate: ruleEffect.skipped, scene_fatte: [...ruleEffectDone] }));
 const FIXED_TIME = new Date(opt("time", "2026-11-03T12:00:00Z"));
-const VIEWPORT = { width: 412, height: 915 };
+// --viewport=LxA per provare altre larghezze (es. 1280x800). Le foto di riferimento sono a 412x915.
+const VIEWPORT = (() => { const [w, h] = opt("viewport", "412x915").split("x").map(Number); return { width: w, height: h }; })();
 const STEP_TIMEOUT = 15000;
 
 // Math.random con seme fisso: la mappa e il draft escono sempre uguali.
@@ -106,6 +147,7 @@ const blockedHosts = new Map();
 const selected = scenes.filter((s) => !ONLY || s.name.includes(ONLY));
 
 for (const scene of selected) {
+  if (ruleEffectDone.has(scene.name)) continue;
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, locale: "it-IT", timezoneId: "Europe/Rome" });
   const page = await context.newPage();
   await page.clock.setFixedTime(FIXED_TIME);
@@ -129,7 +171,8 @@ for (const scene of selected) {
       await page.reload({ waitUntil: "domcontentloaded" });
       await waitForHome(page);
     }
-    await page.addStyleTag({ content: NO_ANIMATIONS });
+    const testStyle = await page.addStyleTag({ content: NO_ANIMATIONS });
+    await testStyle.evaluate((el) => { el.dataset.testOnly = "1"; });
     for (const step of scene.steps) {
       try {
         await runStep(page, step);
@@ -156,6 +199,25 @@ for (const scene of selected) {
       shot = again;
     }
     writeFileSync(join(OUT, `${scene.name}.png`), shot);
+    if (STYLES_OUT) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot);
+    if (STYLES_DETAIL) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot, true);
+    if (IMPORTANT_EFFECT) {
+      const r = await page.evaluate(pageImportantEffect, { known: [...importantEffect.known],
+        demoted: [...importantEffect.demoted], recheckOnly: Boolean(IMPORTANT_EFFECT_FROM) });
+      importantEffect.known = new Set(r.known);
+      importantEffect.demoted = new Set(r.demoted);
+      r.evaluated.forEach((k) => importantEffect.evaluated.add(k));
+      for (const [k, why] of r.skipped) importantEffect.skipped[k] ||= why;
+    }
+    if (RULE_EFFECT) {
+      const r = await page.evaluate(pageRuleEffect, { known: [...ruleEffect.known], removed: [...ruleEffect.removed], recheckOnly: Boolean(RULE_EFFECT_FROM) });
+      ruleEffect.known = new Set(r.known);
+      ruleEffect.removed = new Set(r.removed);
+      r.evaluated.forEach((k) => ruleEffect.evaluated.add(k));
+      for (const [k, why] of r.skipped) ruleEffect.skipped[k] ||= why;
+      ruleEffectDone.add(scene.name);
+      saveRuleEffect();
+    }
   } catch (e) {
     entry.ok = false;
     entry.failedStep = entry.failedStep || { step: "avvio", error: e.message.split("\n")[0] };
@@ -171,6 +233,14 @@ for (const scene of selected) {
 await browser.close();
 server.close();
 flushCssUsage("screenshots");
+if (STYLES_OUT || STYLES_DETAIL) writeFileSync(STYLES_OUT || STYLES_DETAIL, JSON.stringify(styleSnapshots));
+if (IMPORTANT_EFFECT) {
+  writeFileSync(IMPORTANT_EFFECT, JSON.stringify({ necessari: [...importantEffect.known], inutili: [...importantEffect.demoted],
+    valutati: [...importantEffect.evaluated], saltati: importantEffect.skipped }));
+}
+if (RULE_EFFECT) {
+  saveRuleEffect();
+}
 
 report.blockedHosts = Object.fromEntries(blockedHosts);
 report.validBaseline = blockedHosts.size === 0 && report.scenes.every((s) => s.ok);

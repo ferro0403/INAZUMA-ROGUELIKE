@@ -14,6 +14,12 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
     (1.656 righe, 1.441 `!important`). Screenshot 0/61 diversi, test invariati, prove 12/12.
   - **1c** `refactor/css-3-regole-morte`: tolte 390 regole morte certe (522 righe, 9 `!important`), esclusi i file
     Halloween/coach fino al 7 novembre. Screenshot 0/61 diversi, test invariati, prove 12/12.
+  - **1d** `refactor/css-4-copertura`: 17 schermate in piu' con gli strumenti ?dev=1 (vittoria finale,
+    celebrazione, riepilogo, Albo d'Oro con campioni, pull leggendario, oggetto equipaggiato, ricompensa IE3,
+    storico evoluzioni, sviluppo/negozio/album RTG, premio distributore RTG): 78 schermate, baseline stabile
+    (0/78 diverse). Regole viste in uso: 72% (prima 67%). Strumenti nuovi: impronta dello stile calcolato
+    (`--styles`, `compare-styles.mjs`) e ricerca delle regole "battute" (`--rule-effect`).
+    Non coperta: fine season RTG (servono reclute "recenti" non ottenibili in modo controllato).
   - Prossimi: 87 regole morte certe nei file Halloween/coach (dopo il 7 novembre); rivedere le "non viste";
     unire i file patch nei proprietari; token; meno `!important`.
   - `!important`: 8.852 all'inizio → 7.402 dopo 1c.

@@ -5,6 +5,9 @@
 // Passi possibili:
 //   { click: "selettore CSS" }   { text: "testo visibile" }   { fill: ["selettore", "valore"] }
 //   { repeat: [n, "selettore"] }  { wait: ms }   { scroll: "selettore" }
+//   { game: "metodo", args: [...] }  azione composta del banco di prova (tests/browser/harness.mjs)
+//   { devClick: "selettore" }  clic via JavaScript (pulsanti degli strumenti ?dev=1)   { waitFor: "selettore" }
+// Opzioni della scena: seed (seme della casualita'), dev: true (apre il gioco con ?dev=1), fullPage: true.
 // Se un passo fallisce la scena viene segnata come "incompleta" nel report, senza fermare le altre.
 
 const newRun = [
@@ -20,6 +23,9 @@ const halloween = [...rtgCampaigns, { click: "[data-rtg-halloween-open]" }];
 const onMap = [...drafted, { click: "#go-map" }];
 const itemClaimed = [...onMap, { click: "[data-node-id=zone_0_l1_n0]" }, { click: "[data-claim-item]" }, { click: "#finish-item-reward" }];
 const fiveMatch = [...onMap, { click: ".map-node.reachable[data-node-type=five_v_five]" }];
+const finalRun = [...onMap, { devClick: "[data-dev-run=final]" }, { devClick: "[data-dev-run=skip]" }, { click: "#development-reward-continue" }];
+const equipFlow = [...onMap, { click: "[data-node-id=zone_0_l1_n0]" }, { click: "[data-reward-candidate=physical_band]" }, { click: "[data-claim-item]" }, { click: "#finish-item-reward" }, { click: "[data-nav=inventory]" }, { click: "[data-equip-item]" }];
+const evolved = [{ click: "#open-shop-home" }, { click: "[data-shop-coins='1000']" }, { click: "[data-shop-cups=ie1][data-amount='5']" }, { click: "[data-buy-project=Buono]" }, { click: ".shop-buy-modal__confirm" }, { click: ".shop-back" }, { click: "#open-development-home" }, { click: "[data-development-card]" }, { click: "#prepare-evolution:not([disabled])" }, { click: "#confirm-evolution" }, { wait: 1000 }, { devClick: "#modal-root [data-close-modal]" }];
 const rtgPrematch = [...rtgS1, { click: "[data-rtg-current-node]" }, { click: "[data-rtg-start-node]:not([disabled])" }];
 
 export const scenes = [
@@ -86,6 +92,25 @@ export const scenes = [
   { name: "65-rtg-sconfitta", account: "rtg", dev: true, steps: [...rtgPrematch, { devClick: "[data-rtg-prematch-start]" }, { devClick: "[data-dev-rtg=loss]" }] },
   { name: "66-account", account: "vuoto", steps: [{ click: "[data-account-trigger]" }] },
   { name: "67-halloween-partita", account: "sbloccato", steps: [...halloween, { click: "[data-halloween-start]" }, { click: "[data-rtg-prematch-start], [data-halloween-start]" }, { waitFor: "[data-rtg-choice]" }] },
+
+  // --- Fine run, Albo d'Oro, pull leggendario (strumenti di test ?dev=1 del gioco)
+  { name: "70-run-zona-finale", account: "vuoto", dev: true, steps: [...onMap, { devClick: "[data-dev-run=final]" }] },
+  { name: "71-run-ricompense-completata", account: "vuoto", dev: true, steps: [...onMap, { devClick: "[data-dev-run=final]" }, { devClick: "[data-dev-run=skip]" }] },
+  { name: "72-run-celebrazione", account: "vuoto", dev: true, steps: [...finalRun] },
+  { name: "73-run-riepilogo-squadra", account: "vuoto", dev: true, steps: [...finalRun, { click: "#final-continue" }] },
+  { name: "74-run-riepilogo-statistiche", account: "vuoto", dev: true, steps: [...finalRun, { click: "#final-continue" }, { click: "[data-final-tab=stats]" }] },
+  { name: "75-run-riepilogo-premi", account: "vuoto", dev: true, steps: [...finalRun, { click: "#final-continue" }, { click: "[data-final-tab=awards]" }] },
+  { name: "76-albo-oro-dettaglio", account: "vuoto", dev: true, steps: [...finalRun, { click: "#final-continue" }, { click: "#open-current-hall" }] },
+  { name: "77-run-pull-leggendario", account: "vuoto", dev: true, steps: [...onMap, { devClick: "[data-dev-open-legendary]" }] },
+  { name: "78-run-oggetto-equipaggia", account: "vuoto", steps: [...equipFlow] },
+  { name: "79-run-oggetto-equipaggiato", account: "vuoto", steps: [...equipFlow, { click: "[data-item-target-player]" }, { click: "[data-confirm-equipment-target]:not([disabled])" }, { click: "[data-inventory-tab=equipped]" }] },
+  { name: "80-run-ie3-partita-speciale", account: "vuoto", dev: true, steps: [{ game: "startClassicRun", args: [2] }, { click: "#go-map" }, { devClick: "[data-dev-run=skip]" }, { game: "walkToNode", args: ["special_match"] }, { click: ".map-node.reachable[data-node-type=special_match]" }, { game: "playOpenMatch" }, { click: "#continue-match-result" }] },
+  { name: "81-sviluppo-evoluzioni", account: "sbloccato", dev: true, steps: [...evolved, { devClick: "[data-development-tab=management]" }] },
+  { name: "82-sviluppo-progetti", account: "sbloccato", dev: true, steps: [...evolved, { devClick: "[data-development-tab=projects]" }] },
+  { name: "83-rtg-sviluppo", account: "sbloccato", steps: [{ click: "[data-rtg-home-open=development]" }] },
+  { name: "84-rtg-negozio", account: "sbloccato", steps: [{ click: "[data-rtg-home-open=shop]" }] },
+  { name: "85-rtg-album", account: "sbloccato", steps: [{ click: "[data-rtg-home-open=album]" }] },
+  { name: "86-rtg-premio-distributore", account: "rtg", dev: true, steps: [...rtgS1, { devClick: "[data-dev-rtg=tokens]" }, { devClick: "[data-dev-rtg=pool]" }, { click: "[data-rtg-open-vending]" }, { click: "[data-rtg-pull]:not([disabled])" }, { waitFor: "[data-rtg-pull-continue]" }] },
 
   // --- Evento Halloween (card giocatore e coach: bug gia' risolto, qui per accorgersi se ricompare)
   { name: "30-halloween-home", account: "sbloccato", steps: halloween },
