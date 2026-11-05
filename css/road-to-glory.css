@@ -1295,8 +1295,8 @@
   border-radius:0;
   background:transparent;
   box-shadow:none;
-  outline:0;
-  transform:translateX(-50%);
+  outline:0!important;
+  transform:translateX(-50%)!important;
   filter:none;
   font-size:0;
   line-height:0;
@@ -1322,8 +1322,8 @@
   border-radius:0;
   background:transparent;
   box-shadow:none;
-  outline:0;
-  transform:none;
+  outline:0!important;
+  transform:none!important;
   filter:none;
   opacity:1;
 }
@@ -1472,7 +1472,7 @@
 .rtg-picker-search input{
   min-height:40px!important;
   border-width:2px;
-  box-shadow:var(--ir-shadow-soft-2-3);
+  box-shadow:var(--ir-shadow-soft-2-3)!important;
   font-size:.78rem!important;
 }
 .rtg-picker-filter{
@@ -2440,7 +2440,7 @@
   min-width:86px!important;
   min-height:118px;
   margin:0 auto;
-  transform:none;
+  transform:none!important;
   animation:none;
 }
 .rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card .player-portrait-wrap{
@@ -3170,7 +3170,7 @@
 .rtg-halftime-selection span {grid-row:1/3;font-size:.46rem;font-weight:1000;writing-mode:vertical-rl;transform:rotate(180deg);}
 .rtg-halftime-selection strong {font-size:.72rem;}
 .rtg-halftime-selection em {font-size:.52rem;font-style:normal;color:#625d54;}
-.rtg-halftime-revolution .rtg-half-confirm {width:100%;min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;padding:9px 12px;border:3px solid var(--ir-ink);background:var(--ir-yellow);color:var(--ir-ink);box-shadow:var(--ir-shadow-ink-4-5);}
+.rtg-halftime-revolution .rtg-half-confirm {width:100%;min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;padding:9px 12px;border:3px solid var(--ir-ink)!important;background:var(--ir-yellow);color:var(--ir-ink);box-shadow:var(--ir-shadow-ink-4-5);}
 .rtg-halftime-revolution .rtg-half-confirm span {font-size:.5rem;letter-spacing:.08em;}
 .rtg-halftime-revolution .rtg-half-confirm b {font-size:.82rem;}
 
@@ -3326,7 +3326,7 @@
 .rtg-final-score small {margin-inline:8px;color:var(--ir-yellow);font-size:1rem;font-weight:1000;}
 .rtg-final-verdict {display:grid;place-items:center;padding:0 14px 14px;}
 .rtg-final-verdict span {padding:6px 13px;border:2px solid var(--ir-ink);background:var(--ir-yellow);font-size:.7rem;font-weight:1000;letter-spacing:.06em;transform:skewX(-4deg);}
-.rtg-final-continue {width:calc(100% - 28px);min-height:58px;display:flex;align-items:center;justify-content:space-between;margin:0 14px 16px;border:3px solid var(--ir-ink);border-radius:1px;background:var(--ir-yellow);color:var(--ir-ink);box-shadow:var(--ir-shadow-ink-4-5);font-weight:1000;}
+.rtg-final-continue {width:calc(100% - 28px);min-height:58px;display:flex;align-items:center;justify-content:space-between;margin:0 14px 16px;border:3px solid var(--ir-ink)!important;border-radius:1px;background:var(--ir-yellow);color:var(--ir-ink);box-shadow:var(--ir-shadow-ink-4-5);font-weight:1000;}
 .rtg-final-continue b {font-size:1.55rem;}
 
 @media (max-width:430px) {
@@ -3868,8 +3868,8 @@
 .rtg-match-scoreboard .rtg-abandon-button{
   min-height:54px;
   padding:7px 8px!important;
-  border:3px solid #b6444a;
-  background:var(--ir-paper);
+  border:3px solid #b6444a!important;
+  background:var(--ir-paper)!important;
   font-size:.66rem;
   font-weight:1000;
   text-transform:uppercase;
@@ -3966,9 +3966,9 @@
   min-height:66px;
   margin:10px 9px;
   padding:8px 7px!important;
-  border:3px solid #b6444a;
-  background:var(--ir-paper);
-  box-shadow:4px 5px 0 rgba(182,68,74,.22);
+  border:3px solid #b6444a!important;
+  background:var(--ir-paper)!important;
+  box-shadow:4px 5px 0 rgba(182,68,74,.22)!important;
   font-size:.68rem;
 }
 @media(max-width:430px){
@@ -4334,7 +4334,7 @@
 }
 .rtg-half-confirm{
   min-height:64px!important;
-  border:3px solid var(--ir-ink);
+  border:3px solid var(--ir-ink)!important;
   box-shadow:var(--ir-shadow-ink-5-6);
 }
 
@@ -4346,11 +4346,11 @@
   padding:7px 7px!important;
   gap:5px!important;
   overflow:hidden;
-  border:3px solid var(--ir-ink);
+  border:3px solid var(--ir-ink)!important;
   border-radius:0;
-  background:#b9474c;
+  background:#b9474c!important;
   color:var(--ir-white);
-  box-shadow:var(--ir-shadow-ink-4-5);
+  box-shadow:var(--ir-shadow-ink-4-5)!important;
   clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)!important;
 }
 .rtg-match-scoreboard .rtg-abandon-button::after{
