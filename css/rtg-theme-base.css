@@ -14,7 +14,7 @@
 :is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal,.rtg-formation-modal) .btn {
   min-height:44px; border:1px solid #bdb4a2!important; border-radius:8px!important;
   background:#ffffff!important; color:#252522!important; box-shadow:none!important;
-  font-weight:800; letter-spacing:.02em; text-transform:none; transform:none;
+  font-weight:800; letter-spacing:.02em; text-transform:none; transform:none!important;
 }
 :is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .btn-yellow {
   background:var(--ir-yellow)!important; border-color:#c5a148!important; color:#201e18!important;
@@ -51,13 +51,13 @@
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-pitch-main::before { border-color:#c9cfb633!important; opacity:.65; pointer-events:none; }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-pitch-main::after { border-color:#c9cfb633!important; pointer-events:none; }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-pitch-main .pitch-row {
-  display:grid; grid-template-columns:repeat(var(--row-count),minmax(0,84px))!important;
-  justify-content:center; align-items:start; gap:8px!important; width:100%; padding:0; margin:0; position:relative; z-index:1;
+  display:grid!important; grid-template-columns:repeat(var(--row-count),minmax(0,84px))!important;
+  justify-content:center; align-items:start!important; gap:8px!important; width:100%; padding:0; margin:0; position:relative; z-index:1;
 }
 .rtg-squad-card-slot { min-width:0; width:100%; max-width:84px; display:flex!important; flex-direction:column; align-items:stretch; gap:4px!important; }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card {
   position:relative; width:100%; min-width:0; max-width:84px!important; height:auto!important; min-height:0;
-  margin:0; padding:0; border-radius:3px; overflow:hidden!important; transform:none;
+  margin:0; padding:0; border-radius:3px; overflow:hidden!important; transform:none!important;
   box-sizing:border-box; box-shadow:0 2px 4px #0003!important;
 }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card .player-portrait-wrap {
@@ -71,7 +71,7 @@
   font-size:9px!important; line-height:1.16; white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; height:21px; text-align:center; text-overflow:ellipsis;
 }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card :is(.player-role,.player-overall) { font-size:10px!important; line-height:16px!important; min-width:20px!important; height:18px!important; padding:1px 3px!important; top:0!important; z-index:3; }
-.rtg-squad-card-slot .rtg-squad-change-trigger { position:static; inset:auto; width:100%; height:32px; min-height:32px; border:1px solid #c7bd9f!important; border-radius:5px!important; background:#eee7d5; color:#413c2c!important; display:flex; align-items:center; justify-content:center; gap:3px; font-size:8px; box-shadow:none!important; transform:none; }
+.rtg-squad-card-slot .rtg-squad-change-trigger { position:static; inset:auto; width:100%; height:32px; min-height:32px; border:1px solid #c7bd9f!important; border-radius:5px!important; background:#eee7d5; color:#413c2c!important; display:flex; align-items:center; justify-content:center; gap:3px; font-size:8px; box-shadow:none!important; transform:none!important; }
 .rtg-squad-change-trigger span:first-child { font-size:13px; }
 .rtg-squad-shell .squad-management-panel { display:flex; flex-direction:column; gap:14px!important; padding:0; background:transparent; border:0; box-shadow:none; }
 .rtg-squad-shell .squad-bench-list { display:grid; grid-template-columns:repeat(4,minmax(0,84px))!important; gap:8px; justify-content:center; padding:0; }
@@ -97,12 +97,12 @@
 .rtg-map-block .route-map.rtg-route-stage { height:var(--rtg-route-height); min-height:0!important; border:0; background:radial-gradient(ellipse at center,#e4dcc5 0,transparent 68%),var(--ir-paper-warm)!important; filter:none; box-shadow:none; overflow:visible!important; margin:0; }
 .rtg-map-lines line { stroke:#b0a485!important; stroke-width:1!important; stroke-dasharray:2 2!important; }
 .rtg-route-node { width:120px; background:transparent; border:0; box-shadow:none; overflow:visible; }
-.rtg-route-node .node-icon { width:64px!important; height:64px!important; border-radius:16px!important; background:var(--ir-paper-light); border:1px solid #b8aa89!important; box-shadow:0 3px 0 #c4b99b; color:#9e8544!important; transform:none; }
+.rtg-route-node .node-icon { width:64px!important; height:64px!important; border-radius:16px!important; background:var(--ir-paper-light); border:1px solid #b8aa89!important; box-shadow:0 3px 0 #c4b99b!important; color:#9e8544!important; transform:none; }
 .rtg-route-node .node-icon img { width:76%; height:76%; object-fit:contain; filter:none; }
 .rtg-route-node--secondary .node-icon { width:42px!important; height:42px!important; border-radius:50%!important; font-size:20px; }
 .rtg-route-node .node-label { font-size:11px; color:#343329; background:var(--ir-paper-warm)!important; border:0!important; border-radius:4px; box-shadow:none!important; padding:4px 5px!important; text-shadow:none!important; margin-top:7px; font-weight:800; white-space:normal; }
 .rtg-node-status { display:block; color:#7b725d; font-size:8px; font-weight:700; letter-spacing:.08em; margin-top:2px; }
-.rtg-route-node.reachable .node-icon { border:2px solid #a48635!important; background:#f5e4ad; box-shadow:0 0 0 5px #dfc16c33,0 4px 0 #b49a56; animation:none; }
+.rtg-route-node.reachable .node-icon { border:2px solid #a48635!important; background:#f5e4ad; box-shadow:0 0 0 5px #dfc16c33,0 4px 0 #b49a56!important; animation:none; }
 .rtg-route-node.completed .node-icon { background:#ece8d9!important; border-color:#9d9c7e!important; }
 .rtg-node-checkpoint { background:#22251f!important; color:#ecd08a; border:1px solid var(--ir-yellow)!important; border-radius:5px!important; width:21px; height:21px; font-size:13px!important; }
 /* Modals, requirements and compact pickers. */
@@ -114,7 +114,7 @@
 .rtg-modal .rtg-picker-search input { background:var(--ir-paper-warm); color:#292820; border:2px solid var(--ir-ink); border-radius:2px; min-height:48px; font-size:16px; }
 .rtg-modal .rtg-picker-role-badge { display:none; }
 .rtg-modal .rtg-picker-filter { border:2px solid var(--ir-ink); background:var(--ir-white); color:var(--ir-ink); border-radius:2px; min-height:44px; padding:6px 9px; font-size:11px; }
-.rtg-modal .rtg-picker-filter.active { background:var(--ir-ink); color:var(--ir-yellow); border-color:#262820; }
+.rtg-modal .rtg-picker-filter.active { background:var(--ir-ink)!important; color:var(--ir-yellow)!important; border-color:#262820; }
 .modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card,.rtg-modal .rtg-catalog-grid .rtg-squad-player-card,.rtg-modal .rtg-picker-quick-strip .rtg-squad-player-card { width:66px!important; max-width:66px!important; min-width:0!important; min-height:0!important; }
 .modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card .player-portrait-wrap { height:48px!important; padding:4px 3px 0!important; }
 .rtg-modal .rtg-picker-quick-bench { border:1px solid #d6c69b; border-radius:8px; background:#eee5cc; box-shadow:none; }
@@ -134,7 +134,7 @@
 .rtg-match-scoreboard.rtg-match-topbar { position:relative; display:grid; grid-template-columns:70px minmax(0,1fr) 50px!important; gap:8px!important; min-height:84px!important; padding:12px 18px!important; background:#1f211d!important; border:0!important; border-bottom:3px solid var(--ir-yellow)!important; box-shadow:none!important; }
 .rtg-match-scoreboard .rtg-match-period { background:none; padding:0; border:0; box-shadow:none; }
 .rtg-score-capsule { min-width:70px!important; padding:8px 12px!important; font-size:26px; background:#33372b!important; color:#f0d080!important; border:1px solid #5d624c!important; border-radius:7px; box-shadow:none; transform:none!important; }
-.rtg-match-scoreboard .rtg-abandon-button { min-height:36px!important; height:36px; width:36px!important; margin:0!important; padding:0!important; align-self:center; background:#37332b; border:1px solid #6b5a43; color:#d8c9aa; }.rtg-abandon-button span { background:none!important; color:inherit; border:0; font-size:20px; }
+.rtg-match-scoreboard .rtg-abandon-button { min-height:36px!important; height:36px; width:36px!important; margin:0!important; padding:0!important; align-self:center; background:#37332b!important; border:1px solid #6b5a43!important; color:#d8c9aa; }.rtg-abandon-button span { background:none!important; color:inherit; border:0; font-size:20px; }
 .rtg-live-commandbar { max-width:724px; margin:14px auto 0!important; padding:10px 0!important; border:1px solid #d8cdb4!important; border-radius:9px!important; background:var(--ir-paper-warm)!important; box-shadow:none!important; gap:0!important; grid-template-columns:1fr 1fr 1fr!important; }
 .rtg-match-overlay { background:#171a16b8!important; backdrop-filter:blur(5px); padding:16px!important; }
 .rtg-match-overlay:empty { display:none!important; }
@@ -283,7 +283,7 @@
   border:2px solid var(--ir-ink)!important; border-radius:2px!important; background:var(--ir-paper-warm)!important;
   color:var(--ir-ink)!important; box-shadow:var(--ir-shadow-ink-3-4)!important; font-weight:900;
 }
-:is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-modal) .btn-yellow { background:var(--ir-yellow)!important; border-color:var(--ir-ink); box-shadow:var(--ir-shadow-ink-3-4); }
+:is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-modal) .btn-yellow { background:var(--ir-yellow)!important; border-color:var(--ir-ink)!important; box-shadow:var(--ir-shadow-ink-3-4)!important; }
 :is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-modal) .btn:active { translate:2px 2px; box-shadow:var(--ir-shadow-ink-1-2)!important; }
 .rtg-squad-card-slot .rtg-squad-change-trigger { border:1px solid var(--ir-ink)!important; border-radius:2px!important; background:var(--ir-paper-warm); color:var(--ir-ink)!important; box-shadow:var(--ir-shadow-ink-2)!important; }
 .rtg-squad-shell .squad-field-panel,.rtg-squad-shell .squad-bench-panel,.rtg-prematch-tactical,.rtg-prematch-matchup,.rtg-run-command { border:2px solid var(--ir-ink)!important; border-radius:2px!important; box-shadow:var(--ir-shadow-ink-4-5)!important; }
