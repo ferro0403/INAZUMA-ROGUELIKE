@@ -9,6 +9,7 @@
 .rtg-map-block { min-width: 0; padding: 14px; border: 4px solid var(--ir-ink-deep); background: var(--ir-paper-light); box-shadow: 8px 9px 0 rgba(16,17,22,.3); }
 .rtg-route-heading .eyebrow { margin-bottom: 2px; color: #7a5b11; }
 .rtg-route-count { padding: 5px 8px; border: 2px solid var(--ir-ink-deep); background: var(--ir-yellow); color: var(--ir-ink-deep); font-size: .7rem; font-weight: 1000; transform: skewX(-8deg); }
+.route-map.rtg-route-stage { min-width: 0; width: 100%; height: 760px; border: 3px solid var(--ir-ink-deep); border-radius: 0; box-shadow: inset 0 0 80px rgba(0,0,0,.26); }
 .rtg-map-lines line { stroke-width: 1.5; stroke: rgba(255,255,255,.88); stroke-dasharray: 4 5; }
 .rtg-route-node.reachable .node-icon { border-color: var(--ir-yellow); outline: 3px solid var(--ir-ink-deep); box-shadow: 0 0 0 5px var(--ir-yellow), 5px 7px 0 var(--ir-ink-deep); }
 .rtg-route-node .node-label { color: var(--ir-white); font-size: .72rem; font-weight: 1000; text-shadow: 0 2px 4px var(--ir-black), 0 0 8px var(--ir-black); }
