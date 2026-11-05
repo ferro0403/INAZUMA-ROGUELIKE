@@ -85,6 +85,48 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
   - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f → 4.371 dopo 1i.
     Dopo le correzioni del 5 nov (regole e `!important` rimessi): **4.504** nella PR finale; file CSS 50 → 27.
 
+## Passo 3 — Eventi come dati (proposta del 5 nov 2026, in attesa dell'ok)
+
+Analisi e proposta complete in `docs/PASSO_3_EVENTI.md`. **Nessun file del gioco modificato.**
+Decisione utente (5 nov): niente in `main` finche' il Passo 3 non e' finito e verificato; tutte le PR partono da
+`release/passo-1-css` e puntano a quel ramo; l'utente unisce tutto alla fine.
+
+In breve:
+- Halloween tocca 25 file JS/CSS; i suoi dati (id, squadra, prezzo, premi, date, allenatore, potere, sigla HW, 20
+  indirizzi di immagini) sono scritti nel codice. 116 correzioni in 12 giorni: soprattutto integrazione con le
+  schermate RTG (~36), dati di immagini/identita' (~27) e logica dei poteri (~25); il CSS ~9-17.
+- I poteri "che si rompono con una season nuova" dipendono da elenchi scritti nel codice (`CAMPAIGN_SEASONS`,
+  `powerReady`, `if(coachId===...)`), non dal CSS.
+- L'evento dipende dalle season scritte a mano (`"ie1"` 23 volte, elenco delle 5 season, etichette copiate in 4 file):
+  serve una **fetta** del Passo 2 (registro unico delle season, 1 PR), non tutto.
+- Da decidere con l'utente: data di inizio dell'evento (oggi non esiste); dove salvare gli eventi nuovi
+  (`shared.events.<id>`: **aggiunta al formato di salvataggio**, Halloween resta in `shared.halloween`); tema
+  Halloween strada A o B; 5 host di immagini bloccati per la PR 3.5.
+
+### PR previste, in ordine (base e destinazione: `release/passo-1-css`)
+
+| # | PR | Tempo stimato (lavoro + verifiche) |
+|---|---|---|
+| 1 | 3.0 Registro unico delle season (fetta del Passo 2) | 1,5-2 h |
+| 2 | 3.1 Manifest Halloween + caricatore + test dei dati e di parita' | 2-3 h |
+| 3 | 3.2 Registro dei tipi di potere + Hekyll dal manifest | 2-3 h |
+| 4 | 3.3 Modulo evento generico (via i valori scritti nei 25 file) | 6-8 h |
+| 5 | 3.4 CSS tema generico `--event-*` + carta/scheda Halloween sulle variabili | 3-4 h |
+| 6 | 3.5 Immagini Halloween in locale (WebP) | 1-2 h (+ sblocco host o immagini dall'utente) |
+| 7 | 3.6 Evento finto + prova nel browser + copertura | 2-3 h |
+
+**Totale: 7 PR, circa 18-25 ore di sessione** (3-5 sessioni di lavoro). Le verifiche (stile e foto su 88 schermate a 2
+larghezze ~45 min, `npm test` ~5-10 min, prove browser ~7 min) pesano piu' del codice. Per contenere i costi:
+verifica completa solo dopo 3.1, 3.3, 3.4 e 3.6; nelle altre solo test mirati.
+
+**Limite del piano**: non vedo quanto resta del limite d'uso, quindi la stima e' relativa. Il Passo 3 costa circa
+**quanto il Passo 1** (tutte le PR #541-#558 con le correzioni), soprattutto per le verifiche nel browser; la PR 3.3 da
+sola vale circa un terzo. Se il limite si avvicina, l'ordine sopra permette di fermarsi dopo ogni PR con il gioco
+funzionante.
+
+Verifiche "a evento finito" (dopo il 6 nov alle 23:59 italiane): evento chiuso, carte/allenatore/potere/scheda ancora
+corretti in squadra e album, su 3.1-3.4.
+
 ## Come unire le PR #540–#558 (aggiornato il 5 nov 2026)
 
 **Consigliato: unire solo la PR finale (`release/passo-1-css` -> `main`).** E' l'unico branch che contiene
