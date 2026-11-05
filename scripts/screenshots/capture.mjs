@@ -151,6 +151,11 @@ async function runStep(page, step) {
   } else if (step.game) {
     // Azione composta del banco di prova (es. attraversare la mappa fino al boss, giocare una partita).
     await new Game(page, page.context(), [])[step.game](...(step.args || []));
+  } else if (step.removeClass) {
+    // Toglie una classe a un elemento: simula un percorso del gioco che non la aggiunge.
+    const [sel, cls] = step.removeClass;
+    await page.evaluate(([s, c]) => document.querySelector(s)?.classList.remove(c), [sel, cls]);
+    await page.waitForTimeout(300);
   } else if (step.devClick) {
     // Pulsanti degli strumenti di test (?dev=1), a volte coperti da altri elementi: clic via JavaScript.
     await page.waitForFunction((sel) => document.querySelector(sel), step.devClick, { timeout: STEP_TIMEOUT });

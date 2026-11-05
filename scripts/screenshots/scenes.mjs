@@ -6,6 +6,7 @@
 //   { click: "selettore CSS" }   { text: "testo visibile" }   { fill: ["selettore", "valore"] }
 //   { repeat: [n, "selettore"] }  { wait: ms }   { scroll: "selettore" }
 //   { game: "metodo", args: [...] }  azione composta del banco di prova (tests/browser/harness.mjs)
+//   { removeClass: ["selettore", "classe"] }  toglie una classe (per simulare un percorso che non la aggiunge)
 //   { devClick: "selettore" }  clic via JavaScript (pulsanti degli strumenti ?dev=1)   { waitFor: "selettore" }
 // Opzioni della scena: seed (seme della casualita'), dev: true (apre il gioco con ?dev=1), fullPage: true.
 // Se un passo fallisce la scena viene segnata come "incompleta" nel report, senza fermare le altre.
@@ -118,6 +119,8 @@ export const scenes = [
   { name: "88-rtg-riepilogo-partita", account: "rtg", flowingClock: true, steps: [...rtgPrematch, { click: "[data-rtg-prematch-start]" }, { game: "playRtgMatch" }, { waitFor: "[data-rtg-result-continue]" }] },
   { name: "89-halloween-potere-allenatore", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-coach-power-configure]" }, { waitFor: ".rtg-coach-field-picker" }] },
   { name: "90-halloween-potere-scelto", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-coach-power-configure]" }, { click: ".rtg-coach-field-picker [data-rtg-squad-player^='halloween2026::']" }, { waitFor: ".rtg-coach-power-projection" }] },
+  // Scheda Halloween aperta da un percorso che non aggiunge #modal-root.halloween-detail-native (es. Shawn dalla squadra)
+  { name: "92-halloween-scheda-senza-evento", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-player-detail^='halloween2026::']" }, { removeClass: ["#modal-root", "halloween-detail-native"] }] },
   { name: "91-halloween-scheda-da-squadra", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-player-detail^='halloween2026::']" }] },
 
   // --- Evento Halloween (card giocatore e coach: bug gia' risolto, qui per accorgersi se ricompare)
