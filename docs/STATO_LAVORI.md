@@ -83,6 +83,7 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
   - Prossimo: Passo 3 (eventi come dati) dopo il 7 novembre; prima del codice proporre formato del file evento,
     test di controllo e evento finto, e aspettare l'ok.
   - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f → 4.371 dopo 1i.
+    Dopo le correzioni del 5 nov (regole e `!important` rimessi): **4.504** nella PR finale; file CSS 50 → 27.
 
 ## Come unire le PR #540–#558 (aggiornato il 5 nov 2026)
 
