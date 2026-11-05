@@ -28,6 +28,8 @@ const finalRun = [...onMap, { devClick: "[data-dev-run=final]" }, { devClick: "[
 const equipFlow = [...onMap, { click: "[data-node-id=zone_0_l1_n0]" }, { click: "[data-reward-candidate=physical_band]" }, { click: "[data-claim-item]" }, { click: "#finish-item-reward" }, { click: "[data-nav=inventory]" }, { click: "[data-equip-item]" }];
 const evolved = [{ click: "#open-shop-home" }, { click: "[data-shop-coins='1000']" }, { click: "[data-shop-cups=ie1][data-amount='5']" }, { click: "[data-buy-project=Buono]" }, { click: ".shop-buy-modal__confirm" }, { click: ".shop-back" }, { click: "#open-development-home" }, { click: "[data-development-card]" }, { click: "#prepare-evolution:not([disabled])" }, { click: "#confirm-evolution" }, { wait: 1000 }, { devClick: "#modal-root [data-close-modal]" }];
 const halloweenCoach = [...halloween, { devClick: "[data-halloween-dev-pumpkins]" }, { wait: 500 }, { game: "spinHalloweenUntilCoach" }, { game: "prepareHalloweenCoachSquad" }];
+const seasonEnd = [{ devClick: "[data-dev-rtg=season-complete]" }, { waitFor: ".rtg-journey-summary--complete" }];
+const nextSeason = [{ click: "[data-rtg-enter-next-season]" }, { wait: 800 }];
 const rtgPrematch = [...rtgS1, { click: "[data-rtg-current-node]" }, { click: "[data-rtg-start-node]:not([disabled])" }];
 
 export const scenes = [
@@ -119,6 +121,11 @@ export const scenes = [
   { name: "88-rtg-riepilogo-partita", account: "rtg", flowingClock: true, steps: [...rtgPrematch, { click: "[data-rtg-prematch-start]" }, { game: "playRtgMatch" }, { waitFor: "[data-rtg-result-continue]" }] },
   { name: "89-halloween-potere-allenatore", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-coach-power-configure]" }, { waitFor: ".rtg-coach-field-picker" }] },
   { name: "90-halloween-potere-scelto", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-coach-power-configure]" }, { click: ".rtg-coach-field-picker [data-rtg-squad-player^='halloween2026::']" }, { waitFor: ".rtg-coach-power-projection" }] },
+  // Fine Season RTG (comando ?dev=1 "FINE SEASON"): titolo accanto al cerchio della Season, in Season diverse
+  { name: "93-rtg-fine-season-1", account: "rtg", dev: true, steps: [...rtgS1, ...seasonEnd] },
+  { name: "94-rtg-season-2-sbloccata", account: "rtg", dev: true, steps: [...rtgS1, ...seasonEnd, ...nextSeason] },
+  { name: "95-rtg-fine-campagna", account: "rtg", dev: true, fullPage: true, steps: [...rtgS1, ...seasonEnd, ...nextSeason, ...seasonEnd, ...nextSeason, ...seasonEnd] },
+  { name: "96-rtg-fine-season-ares", account: "rtg", dev: true, steps: [...rtgCampaigns, { click: "[data-rtg-campaign=rtg-ares-orion]" }, ...seasonEnd] },
   // Scheda Halloween aperta da un percorso che non aggiunge #modal-root.halloween-detail-native (es. Shawn dalla squadra)
   { name: "92-halloween-scheda-senza-evento", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-player-detail^='halloween2026::']" }, { removeClass: ["#modal-root", "halloween-detail-native"] }] },
   { name: "91-halloween-scheda-da-squadra", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-player-detail^='halloween2026::']" }] },
