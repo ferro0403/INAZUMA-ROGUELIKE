@@ -40,7 +40,7 @@ const vm=require("vm");
   const controller=context.RoadToGlorySquadController.create({
     id,
     clone:value=>JSON.parse(JSON.stringify(value)),
-    config:{SEASON_IDS:["ie1","ie1_s2","ie1_s3","ie2"]},
+    config:{SEASON_IDS:["ie1","ie1_s2","ie1_s3","ie2"],seasonLabel:id=>({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares"})[id]||"",seasonShortLabel:id=>({ie1:"S1",ie1_s2:"S2",ie1_s3:"S3",ie2:"AR"})[id]||""},
     cardIdentity:{versionGroupKey:cardId=>`card::${cardId}`},
     cardMeta:cardId=>{const [sid,pid]=String(cardId).split("::");return{cardId:String(cardId),playerId:pid,canonicalPlayerId:pid,legacySeasonId:sid,sourceKind:"season"};},
     acquiredCardIdSet:()=>new Set(cards),

@@ -106,17 +106,19 @@
     }
 
     const HALLOWEEN_FILTER_ID="halloween2026";
-    const SQUAD_FILTER_SEASON_LABELS=Object.freeze({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion",halloween2026:"Halloween"});
+    const SQUAD_FILTER_EVENT_LABELS=Object.freeze({halloween2026:"Halloween"});
     function squadFilterSeasonIds(){
       // Halloween is an owned-card source, NOT an additional playable RTG season.
       return [...new Set([...Array.from(deps.config?.SEASON_IDS||[]).map(deps.id).filter(Boolean),HALLOWEEN_FILTER_ID])];
     }
     function squadFilterSeasonLabel(seasonId){
       const sid=deps.id(seasonId);
-      return SQUAD_FILTER_SEASON_LABELS[sid]||global.SeasonRegistry?.get?.(sid)?.name||sid.toUpperCase();
+      return deps.config?.seasonLabel?.(sid)||SQUAD_FILTER_EVENT_LABELS[sid]||
+        global.SeasonRegistry?.get?.(sid)?.name||sid.toUpperCase();
     }
     function squadFilterSeasonShortLabel(seasonId){
-      return ({ie1:"S1",ie1_s2:"S2",ie1_s3:"S3",ie2:"AR",orion:"OR",halloween2026:"HW"})[deps.id(seasonId)]||squadFilterSeasonLabel(seasonId);
+      const sid=deps.id(seasonId);
+      return deps.config?.seasonShortLabel?.(sid)||({halloween2026:"HW"})[sid]||squadFilterSeasonLabel(seasonId);
     }
     function squadFilterSeasonOptions(){
       return [{value:"all",label:"Tutte"},...squadFilterSeasonIds().map(seasonId=>({value:seasonId,label:squadFilterSeasonLabel(seasonId)}))];

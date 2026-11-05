@@ -33,8 +33,10 @@
     }
     async function restartCompletedCampaign(){
       const campaign=deps.getCampaign(),fromId=deps.activeSeasonId();
-      const terminal=campaign?.campaignId==="rtg-ares-orion"?"orion":"ie1_s3";
-      const first=campaign?.campaignId==="rtg-ares-orion"?"ie2":"ie1";
+      // Prima e ultima Season dal registro; una campagna sconosciuta vale come la prima (come prima).
+      const own=deps.config.campaignSeasonIds(campaign?.campaignId);
+      const seasons=own.length?own:deps.config.campaignSeasonIds(deps.config.CAMPAIGN_IDS[0]);
+      const terminal=seasons.at(-1),first=seasons[0];
       if(fromId!==terminal||!campaign?.seasonComplete||campaign?.activeMatch)
         throw Object.assign(new Error("La campagna deve essere completata prima di ricominciare"),{code:"rtg-replay-unavailable"});
       const firstConfig=deps.config.season?.(first);

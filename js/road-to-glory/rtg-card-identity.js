@@ -130,12 +130,9 @@
 
   function legacyLabel(value) {
     const seasonId = typeof value === "object" ? parse(value).legacySeasonId : normalizeSeasonId(value);
+    const seasonShort = global.RoadToGloryConfig?.seasonShortLabel?.(seasonId);
+    if (seasonShort) return seasonShort;
     return ({
-      ie1: "S1",
-      ie1_s2: "S2",
-      ie1_s3: "S3",
-      ie2: "AR",
-      orion: "OR",
       [FREE_AGENTS]: "FA",
       halloween2026: "HW",
     })[seasonId] || (seasonId ? seasonId.toUpperCase() : "");

@@ -20,6 +20,9 @@
   const asId = x => String(x == null ? "" : x).trim();
   const escape = x => String(x == null ? "" : x).replace(/[&<>"']/g, x => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
   const isOpen = () => Date.now() <= EVENT_END_MS;
+  // Nome della provenienza di una carta: Season dal registro unico, poi Svincolati ed evento.
+  const sourceLabel = (id, eventLabel) => global.RoadToGloryConfig?.seasonLabel?.(id) ||
+    ({free_agents:"Svincolati", [EVENT_ID]:eventLabel})[id] || "";
   let assetsPromise = null;
   let assets = null;
   const fail = code => Object.assign(new Error(code), {code});
@@ -803,7 +806,7 @@
         }:null;
       }).filter(Boolean);
       const seasons=[{value:"all",label:"Tutte"},...Array.from(new Set(all.map(e=>e.seasonId))).map(id=>({
-        value:id,label:({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion",free_agents:"Svincolati",[EVENT_ID]:"Evento Halloween"})[id]||id
+        value:id,label:sourceLabel(id,"Evento Halloween")||id
       }))];
       const rarityOrder=["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"];
       const rarityRank=value=>{const n=rarityOrder.findIndex(v=>v.toLocaleLowerCase("it")===asId(value).toLocaleLowerCase("it"));return n<0?rarityOrder.length:n;};
@@ -875,7 +878,6 @@
     function openCatalog() {
       const view=deps.squadView;
       if(!deps.openModal||!view?.catalogMarkup)return;
-      const seasonName={ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion",free_agents:"Svincolati",[EVENT_ID]:"Halloween"};
       const catalog=(shared.gachaAcquiredCards||[]).map(meta=>{
         const cardId=asId(meta.cardId),p=resolveCard(cardId),sid=cardId.split("::")[0];
         if(!p)return null;
@@ -887,7 +889,7 @@
         })].map(asId).filter(Boolean)));
         return {cardId,playerId:cardId,source:"RTG",player:p,seasonId:sid,role:asId(p.normalizedRole||p.position).toUpperCase(),teamLabels};
       }).filter(Boolean);
-      const seasonOptions=[{value:"all",label:"Tutte"},...Array.from(new Set(catalog.map(x=>x.seasonId))).map(value=>({value,label:seasonName[value]||value}))];
+      const seasonOptions=[{value:"all",label:"Tutte"},...Array.from(new Set(catalog.map(x=>x.seasonId))).map(value=>({value,label:sourceLabel(value,"Halloween")||value}))];
       let query="",seasonFilter="all",teamFilter="all",roleFilter="all",visibleCount=16;
       const teamOptions=()=>[{value:"all",label:"Tutte"},...Array.from(new Set(catalog.filter(e=>seasonFilter==="all"||e.seasonId===seasonFilter).flatMap(e=>e.teamLabels)))
         .sort((a,b)=>a.localeCompare(b,"it")).map(value=>({value,label:value}))];
@@ -1486,7 +1488,7 @@
       dispose();const epoch=session;
       await prepare();assertCurrent(epoch);
       const previous=global.SeasonRegistry?.activeId?.();
-      const needed=["ie1","ie1_s2","ie1_s3","ie2","orion"];
+      const needed=Array.from(global.RoadToGloryConfig?.SEASON_IDS||[]); // tutte le Season, dal registro
       await Promise.all(needed.map(id=>global.SeasonRegistry?.loadDatabase?.(id).catch(()=>null)));
       if(previous)global.SeasonRegistry?.setActive?.(previous);
       const response=await global.fetch("data/FREE_AGENTS_compact.json");
