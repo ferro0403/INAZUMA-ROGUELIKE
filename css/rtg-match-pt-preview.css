@@ -117,10 +117,6 @@
   font-size:.6rem;
   font-weight:1000;
 }
-.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current strong {
-  font-size:.7rem;
-  font-weight:1000;
-}
 .rtg-duel-player-meta .rtg-duel-pt-inline.is-projected {
   display:inline-flex!important;
   flex-direction:row!important;

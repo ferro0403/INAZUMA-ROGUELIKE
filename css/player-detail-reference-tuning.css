@@ -157,10 +157,6 @@
     padding-bottom: 10px;
   }
 
-  .player-detail-content .player-detail-section:last-child,
-  .player-detail-content .equipped-detail:last-child {
-    margin-bottom: 0;
-  }
 }
 
 @media (max-width: 370px) {

@@ -184,6 +184,8 @@ for (const scene of selected) {
       }
     }
     await page.waitForTimeout(800);
+    // Il puntatore resta dove era l'ultimo clic: lo si sposta fuori, cosi' nessun elemento resta in "hover".
+    await page.mouse.move(0, 0);
     // Prima della foto: aspetta che la rete si calmi e che tutte le immagini abbiano finito di caricare
     // (anche quelle che falliscono). Senza questa attesa uno stemma poteva comparire o no a caso.
     await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => {});

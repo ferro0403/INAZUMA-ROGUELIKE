@@ -57,10 +57,6 @@
   filter: drop-shadow(3px 3px 0 rgba(255,255,255,.14));
 }
 
-:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary .five-match-action-copy,
-:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary .five-match-action-mark {
-  z-index: 2;
-}
 
 :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary .five-match-action-copy strong {
   font-size: clamp(1.2rem, 2.6vw, 1.62rem);
@@ -113,10 +109,6 @@
   background: center / contain no-repeat url("../assets/ui/5v5/action-tactics-board.svg");
 }
 
-:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary .five-match-action-copy,
-:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary .five-match-action-mark {
-  z-index: 2;
-}
 
 :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary .five-match-action-copy strong {
   font-size: clamp(1.2rem, 2.6vw, 1.62rem);

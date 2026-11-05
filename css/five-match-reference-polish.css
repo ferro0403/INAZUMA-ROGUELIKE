@@ -111,18 +111,7 @@
   box-shadow: 5px 6px 0 rgba(255, 255, 255, .15);
 }
 
-.five-match-screen .five-match-controls .five-match-action-cta .five-match-action-icon {
-  min-height: 82px;
-  margin-right: 14px;
-  border-right: 0;
-  clip-path: polygon(0 0, 76% 0, 100% 50%, 76% 100%, 0 100%);
-}
 
-.five-match-screen .five-match-controls .five-match-action-cta--primary {
-  background:
-    linear-gradient(96deg, rgba(255,255,255,.14) 0 36%, transparent 48%),
-    linear-gradient(105deg, #ffc91b 0%, #ffdd43 61%, #e9ae00 100%);
-}
 
 /* Ball + speed lines, positioned as a low-contrast texture instead of a plain circle. */
 .five-match-screen .five-match-controls .five-match-action-cta--primary::after {
@@ -142,17 +131,7 @@
   pointer-events: none;
 }
 
-.five-match-screen .five-match-controls .five-match-action-cta--primary .five-match-action-icon {
-  background: #111216;
-  color: #ffd21f;
-}
 
-.five-match-screen .five-match-controls .five-match-play-icon {
-  margin-left: -8px;
-  border-top-width: 16px;
-  border-bottom-width: 16px;
-  border-left-width: 24px;
-}
 
 .five-match-screen .five-match-controls .five-match-action-copy {
   z-index: 2;
@@ -175,14 +154,7 @@
 }
 
 /* Secondary action: clean ivory body + tactical board icon + pitch watermark. */
-.five-match-screen .five-match-controls .five-match-action-cta--secondary {
-  background: linear-gradient(112deg, #fffdf7 0 72%, #eee8dd 100%);
-}
 
-.five-match-screen .five-match-controls .five-match-action-cta--secondary .five-match-action-icon {
-  background: #111216;
-  color: #fffdf7;
-}
 
 .five-match-screen .five-match-controls .five-match-tactics-icon {
   width: 54px;
@@ -194,40 +166,13 @@
   background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 62 68'%3E%3Cpath d='M16 8h30l4 6h6v47H6V14h6Z' fill='%23111216' stroke='%23fffdf7' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M23 8V3h16v5M12 34h38M31 15v39' fill='none' stroke='%23fffdf7' stroke-width='2.3'/%3E%3Ccircle cx='21' cy='25' r='3' fill='%23ffd21f'/%3E%3Ccircle cx='42' cy='44' r='3' fill='%23ffd21f'/%3E%3Ccircle cx='40' cy='22' r='2.5' fill='%23fffdf7'/%3E%3Cpath d='m16 49 11-9 9 7 10-15M17 21l9 6 7-7 11 6' fill='none' stroke='%23fffdf7' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
-.five-match-screen .five-match-controls .five-match-action-cta--secondary::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 57%;
-  opacity: .12;
-  background: right 14px center / 170px auto no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 96'%3E%3Cg fill='none' stroke='%23111216'%3E%3Crect x='5' y='5' width='170' height='86' stroke-width='4'/%3E%3Cpath d='M90 5v86M5 48h170M90 33a15 15 0 1 0 0 30 15 15 0 1 0 0-30ZM5 26h24v44H5M175 26h-24v44h24' stroke-width='3'/%3E%3C/g%3E%3Cg fill='%23111216' opacity='.55'%3E%3Ccircle cx='145' cy='14' r='2'/%3E%3Ccircle cx='155' cy='14' r='2'/%3E%3Ccircle cx='165' cy='14' r='2'/%3E%3Ccircle cx='145' cy='24' r='2'/%3E%3Ccircle cx='155' cy='24' r='2'/%3E%3Ccircle cx='165' cy='24' r='2'/%3E%3C/g%3E%3C/svg%3E");
-  pointer-events: none;
-}
 
 /* Mobile fidelity pass. */
 @media (max-width: 780px) {
 
-  .five-match-screen .five-match-controls .five-match-action-cta {
-    grid-template-columns: 76px minmax(0, 1fr) 26px;
-    min-height: 78px;
-    padding-right: 8px;
-  }
 
-  .five-match-screen .five-match-controls .five-match-action-cta .five-match-action-icon {
-    min-height: 72px;
-    margin-right: 11px;
-  }
 
-  .five-match-screen .five-match-controls .five-match-action-copy strong {
-    font-size: clamp(1rem, 5vw, 1.28rem);
-  }
 
-  .five-match-screen .five-match-controls .five-match-action-copy small {
-    font-size: .68rem;
-  }
 
   .five-match-screen .five-match-controls .five-match-action-cta--primary::after {
     right: -10px;
@@ -235,22 +180,8 @@
     height: 96px;
   }
 
-  .five-match-screen .five-match-controls .five-match-play-icon {
-    border-top-width: 14px;
-    border-bottom-width: 14px;
-    border-left-width: 21px;
-  }
 
-  .five-match-screen .five-match-controls .five-match-tactics-icon {
-    width: 47px;
-    height: 53px;
-  }
 
-  .five-match-screen .five-match-controls .five-match-action-cta--secondary::after {
-    left: 58%;
-    background-position: right 5px center;
-    background-size: 132px auto;
-  }
 }
 
 @media (max-width: 390px) {

@@ -38,7 +38,6 @@
   padding: 17px 12px; background: #f9f7f0; border: 2px dashed #aaa;
   color: #555; font-size: .75rem; font-weight: 750;
 }
-.player-detail-rtg-four-moves .rtg-four-moves-item .player-move-card { margin: 0; }
 @media (max-width: 420px) {
   .player-detail-rtg-four-moves .rtg-four-moves-stack { gap: 10px; }
   .player-detail-section.player-detail-rtg-pt .rtg-pt-panel { padding: 10px; }

@@ -38,6 +38,9 @@ export function pageStyleSnapshot(detail = false) {
       const ps = getComputedStyle(el, pseudo);
       if (ps.content && ps.content !== "none" && ps.content !== "normal") text += `|${pseudo}|${serialize(ps)}`;
     }
+    // Testo segnaposto dei campi e pallini degli elenchi.
+    if (el.matches("input, textarea")) text += `|::placeholder|${serialize(getComputedStyle(el, "::placeholder"))}`;
+    if (style.display === "list-item") text += `|::marker|${serialize(getComputedStyle(el, "::marker"))}`;
     result[pathOf(el)] = detail ? text : fnv(text);
   }
   return result;

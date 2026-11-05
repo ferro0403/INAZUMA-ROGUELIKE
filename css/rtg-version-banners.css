@@ -7,7 +7,6 @@ button.player-card:has(> .rtg-legacy-badge),
 button.player-card:has(> .rtg-version-count-badge),
 .player-card:has(> .rtg-version-count-badge){overflow:visible!important;}
 .rtg-legacy-badge{position:absolute!important;z-index:24!important;left:auto!important;right:-4px!important;top:auto!important;bottom:-11px!important;transform:none!important;display:grid!important;place-items:center!important;width:auto!important;min-width:27px!important;height:16px!important;min-height:16px!important;padding:0 5px!important;border:2px solid #111216!important;border-radius:0!important;background:var(--rtg-legacy-color,#ffd21f)!important;color:var(--rtg-legacy-ink,#111216)!important;box-shadow:1px 2px 0 #111216!important;font:1000 7px/1 system-ui,sans-serif!important;letter-spacing:.04em!important;pointer-events:none!important;}
-.rtg-legacy-badge::before{content:none!important;}
 .rtg-legacy-badge[data-legacy-season="S1"]{--rtg-legacy-color:#ffd21f;--rtg-legacy-ink:#111216;}
 .rtg-legacy-badge[data-legacy-season="S2"]{--rtg-legacy-color:#35b8f4;--rtg-legacy-ink:#07131b;}
 .rtg-legacy-badge[data-legacy-season="S3"]{--rtg-legacy-color:#a678ff;--rtg-legacy-ink:#130b24;}

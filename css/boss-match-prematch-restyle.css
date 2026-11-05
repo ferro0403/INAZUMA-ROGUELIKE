@@ -44,10 +44,8 @@
 .boss-match-screen .boss-match-test-tools .btn { min-height: 34px; padding: 6px 10px; border-color: #77736b; background: #25272a; color: #eee8dc; font-size: .68rem; }
 @media (max-width: 780px) {
   .boss-match-screen { padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
-  .boss-match-screen .boss-match-content { padding-inline: 8px; }
   .boss-match-screen .boss-match-hero { padding: 9px; }
   .boss-match-screen .boss-match-pitch-panel { padding: 8px; }
-  .boss-match-screen .boss-match-controls { padding: 11px; }
   .boss-match-screen .boss-match-test-tools { align-items: stretch; flex-direction: column; }
   .boss-match-screen .boss-match-test-tools > div { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
   .boss-match-screen .boss-match-test-tools > div .btn:only-child { grid-column: 1/-1; }

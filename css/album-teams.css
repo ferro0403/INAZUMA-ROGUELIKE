@@ -20,9 +20,6 @@
   padding: 8px;
 }
 
-.album-teams-heading {
-  min-width: 0;
-}
 
 .album-teams-heading .eyebrow {
   margin: 0 0 3px;
@@ -298,9 +295,6 @@
     linear-gradient(135deg, #ffe36a 0 55%, #ffd21f 55% 67%, #111216 67% 70%, #fff8df 70% 100%);
 }
 
-.album-teams-screen .album-team-card--modern.album-complete .album-team-card__bar {
-  border-color: #fffdf6;
-}
 
 .album-teams-screen .album-team-card--modern.album-complete .album-team-card__bar > span {
   background:

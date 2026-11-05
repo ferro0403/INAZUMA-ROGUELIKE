@@ -20,9 +20,16 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
     (0/78 diverse). Regole viste in uso: 72% (prima 67%). Strumenti nuovi: impronta dello stile calcolato
     (`--styles`, `compare-styles.mjs`) e ricerca delle regole "battute" (`--rule-effect`).
     Non coperta: fine season RTG (servono reclute "recenti" non ottenibili in modo controllato).
+  - **1e** `refactor/css-5-regole-battute`: tolte 1.432 regole "battute" (sempre sovrascritte da altre),
+    trovate disattivandole una alla volta in modo cumulativo nelle 78 schermate a 412 px e ricontrollate a
+    360/768/1280 px. Tenute 18 regole: 15 cercate dai test nel testo dei CSS, 3 su pseudo-elementi
+    (::placeholder) che lo strumento non sapeva controllare (errore trovato da una foto e corretto).
+    Verifica: stile calcolato identico in tutte le schermate a 412, 768 e 1280 px; foto 0/78 diverse;
+    npm test invariato; prove 12/12. `!important`: 7.402 -> 6.464. Tetti dei test architettura abbassati.
+    Baseline rifatta: lo script ora sposta il mouse prima della foto (prima alcune foto avevano un "hover").
   - Prossimi: 87 regole morte certe nei file Halloween/coach (dopo il 7 novembre); rivedere le "non viste";
     unire i file patch nei proprietari; token; meno `!important`.
-  - `!important`: 8.852 all'inizio → 7.402 dopo 1c.
+  - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e.
 
 ## Scoperte del Passo 1
 

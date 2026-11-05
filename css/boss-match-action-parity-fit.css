@@ -22,12 +22,6 @@
   color: #f5efe3;
 }
 
-.boss-match-screen .boss-match-controls .five-match-actions-heading span {
-  font-size: .76rem;
-  font-weight: 950;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
 
 .boss-match-screen .boss-match-controls .five-match-actions-heading i {
   width: 92px;
@@ -67,9 +61,6 @@
   z-index: 2;
 }
 
-.boss-match-screen .boss-match-controls .five-match-action-mark {
-  justify-self: end;
-}
 
 /* Do not let the obsolete 11v11 action classes leak geometry into the
    shared five-match buttons. */
@@ -87,9 +78,6 @@
 
   /* five-match-action-assets.css supplies the exact 5v5 82/1fr/25
      columns and 80px CTA height. We only ensure the button is a grid. */
-  .boss-match-screen .boss-match-controls .five-match-primary-actions {
-    gap: 10px;
-  }
 }
 
 /* ---------------------------------------------------------------
