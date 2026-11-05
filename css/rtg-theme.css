@@ -548,6 +548,7 @@ position:absolute;
 .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-flap-v10{animation:rtg-vending-v12-flap .95s cubic-bezier(.2,.75,.28,1) both;}
 
 /* One continuous collision-resolved path, including the throat. No CSS teleport. */
+.rtg-vending-machine-v12.has-capsule-physics .rtg-vending-capsule-v9{animation:none!important;}
 .rtg-vending-machine-v12.has-capsule-physics .rtg-vending-funnel-v10{z-index:16;}
 
 .rtg-vending-machine-v12[data-pull-rarity="normale"]{--rtg-vending-reveal:#929ba8;--rtg-prize-color:#d9dee4}
