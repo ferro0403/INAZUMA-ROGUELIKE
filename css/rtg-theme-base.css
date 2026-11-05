@@ -88,7 +88,7 @@
 .rtg-journey-summary { position:relative; display:flex; align-items:center; justify-content:space-between; gap:18px; padding:24px; background:#22231f; color:#fffdf7; border-radius:12px; overflow:hidden; }
 .rtg-journey-summary .eyebrow { color:#d9bf7c!important; margin:0 0 7px; }.rtg-journey-summary h1 { font-size:30px; color:#fffdf7; margin:0 0 6px; letter-spacing:-.035em; }
 .rtg-journey-summary p:not(.eyebrow) { font-size:12px; color:#c8c1b1; margin:0; }.rtg-journey-summary .btn { flex-shrink:0; font-size:12px; }
-.rtg-journey-progress span { display:block; height:100%; background:#dfc271; }
+.rtg-journey-progress { position:absolute; bottom:0; left:0; width:100%; height:4px; background:#494838; }.rtg-journey-progress span { display:block; height:100%; background:#dfc271; }
 .rtg-run-command { grid-template-columns:1fr auto; padding:16px!important; border:1px solid #d8d8d2; border-radius:10px; box-shadow:none; background:#ffffff!important; gap:12px!important; }
 .rtg-run-command h2 { font-size:16px!important; text-transform:none; margin:2px 0 5px; }.rtg-run-command .muted { font-size:11px; }.rtg-run-command .eyebrow { margin:0; font-size:9px; }
 .rtg-run-command .rtg-vending-button { padding:10px; font-size:11px; min-height:44px; }
