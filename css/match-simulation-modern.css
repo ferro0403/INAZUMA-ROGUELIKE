@@ -1,10 +1,10 @@
 /* Match simulation V2 presentation layer.
    Pure visual skin: no gameplay, persistence or simulation rules. */
 .five-simulation-modal{
-  --sim-ink:#111216;
-  --sim-paper:#fffaf0;
+  --sim-ink:var(--ir-ink);
+  --sim-paper:var(--ir-paper-cream);
   --sim-cream:#f2ead9;
-  --sim-yellow:#ffd21f;
+  --sim-yellow:var(--ir-yellow);
   --sim-user:#248bc8;
   --sim-user-soft:#e6f5ff;
   --sim-opponent:#d94a45;
@@ -17,7 +17,7 @@
   border:4px solid var(--sim-ink);
   border-radius:2px;
   background:var(--sim-cream);
-  box-shadow:8px 10px 0 rgba(17,18,22,.28);
+  box-shadow:8px 10px 0 var(--ir-ink-a28);
 }
 
 .five-simulation-modal .five-simulation-head{
@@ -32,7 +32,7 @@
   border-bottom:4px solid var(--sim-yellow);
   background:
     linear-gradient(118deg,var(--sim-ink) 0 74%,#292b2e 74% 100%);
-  color:#fff;
+  color:var(--ir-white);
 }
 .five-simulation-modal .five-simulation-head::after{
   content:"";
@@ -58,7 +58,7 @@
 .five-simulation-modal .five-simulation-head h2{
   grid-area:title;
   margin:0;
-  color:#fff;
+  color:var(--ir-white);
   font-size:clamp(1.2rem,5vw,1.65rem);
   font-style:italic;
   font-weight:1000;
@@ -72,7 +72,7 @@
   z-index:1;
   min-width:88px;
   padding:9px 12px;
-  border:2px solid #fff;
+  border:2px solid var(--ir-white);
   background:var(--sim-yellow);
   color:var(--sim-ink);
   box-shadow:3px 3px 0 rgba(255,255,255,.22);
@@ -143,11 +143,11 @@
   padding:7px 15px 8px;
   clip-path:polygon(9% 0,100% 0,91% 100%,0 100%);
   background:var(--sim-ink);
-  color:#fff;
+  color:var(--ir-white);
   box-shadow:none;
 }
 .five-simulation-modal .five-simulation-score .boss-match-score span{
-  color:#fff;
+  color:var(--ir-white);
   font-size:clamp(2rem,8vw,2.8rem);
   font-weight:1000;
   line-height:.9;
@@ -232,8 +232,8 @@
   border-left:0;
   border-radius:1px;
   background:
-    linear-gradient(110deg,var(--event-soft) 0 22%,#fff 22% 100%);
-  box-shadow:3px 4px 0 rgba(17,18,22,.14);
+    linear-gradient(110deg,var(--event-soft) 0 22%,var(--ir-white) 22% 100%);
+  box-shadow:3px 4px 0 var(--ir-ink-a14);
   isolation:isolate;
 }
 .five-simulation-modal .match-sim-log>li::before{
@@ -279,7 +279,7 @@
   padding:4px 3px;
   border:2px solid var(--sim-ink);
   background:var(--sim-ink);
-  color:#fff;
+  color:var(--ir-white);
   font-size:.78rem;
   font-weight:1000;
   line-height:1;
@@ -361,7 +361,7 @@
   background:
     linear-gradient(110deg,var(--event-soft) 0 20%,#fff8dc 20% 100%);
   box-shadow:
-    4px 5px 0 rgba(17,18,22,.22),
+    4px 5px 0 var(--ir-ink-a22),
     inset 0 5px 0 var(--sim-yellow),
     inset 0 -3px 0 rgba(255,210,31,.62);
   transform:translateX(2px);
@@ -377,7 +377,7 @@
   border:2px solid var(--sim-ink);
   background:var(--sim-yellow);
   color:var(--sim-ink);
-  box-shadow:2px 2px 0 rgba(17,18,22,.18);
+  box-shadow:2px 2px 0 var(--ir-ink-a18);
   font-size:.58rem;
   letter-spacing:.16em;
   transform:skewX(-4deg);
@@ -402,14 +402,14 @@
   border:2px solid var(--sim-ink);
   border-radius:1px;
   font-weight:1000;
-  box-shadow:3px 4px 0 rgba(17,18,22,.18);
+  box-shadow:var(--ir-shadow-soft-3-4-a18);
 }
 .five-simulation-modal .five-simulation-actions .btn-yellow{
-  background:linear-gradient(105deg,#ffd21f,#ff9f32);
+  background:linear-gradient(105deg,var(--ir-yellow),#ff9f32);
 }
 
 @media(max-width:520px){
-  .five-simulation-modal .five-simulation-cabin{box-shadow:5px 6px 0 rgba(17,18,22,.28)}
+  .five-simulation-modal .five-simulation-cabin{box-shadow:5px 6px 0 var(--ir-ink-a28)}
   .five-simulation-modal .five-simulation-head{padding:12px 12px 11px;gap:2px 9px}
   .five-simulation-modal .five-simulation-head h2{font-size:1.16rem}
   .five-simulation-modal .five-simulation-state{min-width:78px;padding:8px 9px;font-size:.66rem}

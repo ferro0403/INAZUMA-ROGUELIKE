@@ -30,9 +30,14 @@ const ONLY = opt("only", "");
 const ALLOW_INCOMPLETE = args.includes("--allow-incomplete");
 // --styles=file.json: salva anche l'impronta dello stile calcolato di ogni schermata (vedi compare-styles.mjs).
 const STYLES_OUT = opt("styles", "");
-const styleSnapshots = {};
+// Le impronte si salvano anche in <file>.partial dopo ogni schermata: se il processo viene interrotto, rilanciando
+// lo stesso comando le schermate gia' misurate si saltano.
+const STYLES_PARTIAL = STYLES_OUT ? `${STYLES_OUT}.partial` : "";
+const styleSnapshots = STYLES_PARTIAL && existsSync(STYLES_PARTIAL) ? JSON.parse(readFileSync(STYLES_PARTIAL, "utf8")) : {};
 // --styles-detail=file.json: come --styles ma con tutte le proprieta' (lento e grande: usare con --only).
 const STYLES_DETAIL = opt("styles-detail", "");
+// --styles-ignore=--ir-: le variabili CSS con questo prefisso non entrano nell'impronta (token appena aggiunti).
+const STYLES_IGNORE = opt("styles-ignore", "");
 // --rule-effect=file.json: in ogni schermata disattiva una regola alla volta e registra quali cambiano lo stile.
 const RULE_EFFECT = opt("rule-effect", "");
 const ruleEffect = { known: new Set(), removed: new Set(), evaluated: new Set(), skipped: {} };
@@ -154,7 +159,8 @@ async function runStep(page, step) {
 
 const { server, url } = await startStaticServer();
 const browser = await chromium.launch();
-rmSync(OUT, { recursive: true, force: true });
+// Ripresa di una misura interrotta: le foto gia' fatte restano.
+if (!Object.keys(styleSnapshots).length) rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 
 const report = { createdAt: new Date().toISOString(), fixedTime: FIXED_TIME.toISOString(), viewport: VIEWPORT, scenes: [] };
@@ -163,6 +169,7 @@ const selected = scenes.filter((s) => !ONLY || s.name.includes(ONLY));
 
 for (const scene of selected) {
   if (ruleEffectDone.has(scene.name) || importantDone.has(scene.name)) continue;
+  if (STYLES_PARTIAL && styleSnapshots[scene.name]) continue;
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, locale: "it-IT", timezoneId: "Europe/Rome" });
   const page = await context.newPage();
   await page.clock.setFixedTime(FIXED_TIME);
@@ -216,8 +223,11 @@ for (const scene of selected) {
       shot = again;
     }
     writeFileSync(join(OUT, `${scene.name}.png`), shot);
-    if (STYLES_OUT) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot);
-    if (STYLES_DETAIL) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot, true);
+    if (STYLES_OUT) {
+      styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot, { ignore: STYLES_IGNORE });
+      writeFileSync(STYLES_PARTIAL, JSON.stringify(styleSnapshots));
+    }
+    if (STYLES_DETAIL) styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot, { detail: true, ignore: STYLES_IGNORE });
     if (IMPORTANT_EFFECT) {
       const r = await page.evaluate(pageImportantEffect, { known: [...importantEffect.known],
         demoted: [...importantEffect.demoted], recheckOnly: Boolean(IMPORTANT_EFFECT_FROM), frozen: FROZEN });

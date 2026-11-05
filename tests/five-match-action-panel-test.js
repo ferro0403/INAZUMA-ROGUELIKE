@@ -1,10 +1,11 @@
 'use strict';
+const { withLiteralTokens } = require("./helpers/css-tokens");
 
 const assert = require('assert');
 const fs = require('fs');
 
 const app = fs.readFileSync('js/app.js', 'utf8') + '\n' + fs.readFileSync('js/match/match-controller.js', 'utf8');
-const css = fs.readFileSync('css/game.css', 'utf8');
+const css = withLiteralTokens(fs.readFileSync('css/game.css', 'utf8'));
 const fiveStart = app.indexOf('if (!isBoss && !isSpecial)');
 const fiveEnd = app.indexOf('const userPlayers = userTeamPlayers()', fiveStart);
 const renderer = app.slice(fiveStart, fiveEnd);
