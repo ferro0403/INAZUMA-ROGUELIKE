@@ -1,9 +1,10 @@
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 const bridge = fs.readFileSync(path.join(root, 'js/boss-match-simulation-modal-bridge.js'), 'utf8');
-const css = fs.readFileSync(path.join(root, 'css/boss-match-simulation-modal-bridge.css'), 'utf8');
+const css = cssSection('boss-match-simulation-modal-bridge');
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 function assert(condition, message) {
@@ -23,7 +24,7 @@ assert(!bridge.includes('MatchSimulator.simulate'), 'Bridge must not duplicate s
 assert(!bridge.includes('RunState.save'), 'Bridge must not introduce persistence logic');
 assert(!bridge.includes('forceMatchOutcome('), 'Bridge must not duplicate force-result logic');
 assert(!bridge.includes('startMatchSimulation('), 'Bridge must not duplicate simulation-start logic');
-assert(index.includes('boss-match-simulation-modal-bridge.css?v=20260811-boss-simulation-modal-1'), 'Bridge stylesheet must be loaded');
+assert(stylesheetLoaded(index, 'boss-match-simulation-modal-bridge'), 'Bridge stylesheet must be loaded');
 assert(index.includes('boss-match-simulation-modal-bridge.js?v=20260829-match-hardening-pr363-1'), 'Hardened bridge script must be loaded with the current cache key');
 
 console.log('boss 11v11 reuses 5v5 simulation cabin: OK');

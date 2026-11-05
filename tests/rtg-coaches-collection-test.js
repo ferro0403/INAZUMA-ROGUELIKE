@@ -1,3 +1,5 @@
+const { withLiteralTokens } = require("./helpers/css-tokens");
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 (function coachTestSuite(){
   "use strict";
   const assert=require("node:assert/strict");
@@ -80,7 +82,7 @@
     assert.ok(album.indexOf('data-rtg-album-coach-entry="halloween-coach-54"')<
       album.indexOf('data-rtg-album-coach-entry="36"'),"Event card must be the first album entry");
     assert.match(album,/data-rtg-album-event-coach="true"/);
-    const css=read("css/rtg-coaches.css");
+    const css=withLiteralTokens(read("css/rtg-coaches.css"));
     assert.match(css,/\.rtg-coach-halloween img\.rtg-coach-fullbody/);
     assert.match(css,/\.rtg-coach-halloween \.rtg-coach-team-logo/);
     assert.match(css,/\.rtg-coach-halloween img\.rtg-coach-portrait/);
@@ -89,7 +91,7 @@
     // Hekyll-only scale(1) made him much smaller than the standard coaches.
     assert.doesNotMatch(css,/\.rtg-coach-detail\.rtg-coach-halloween \.player-detail-visual img\.rtg-coach-fullbody\s*\{/,
       "Never override the coach fullbody geometry just for Hekyll");
-    const baseArt=read("css/player-detail-reference-tuning.css");
+    const baseArt=cssSection('player-detail-reference-tuning');
     assert.match(baseArt,/\.player-detail-hero \.player-fullbody--fullbody\s*\{[^}]*scale\(1\.72\)/s,
       "The native coach fullbody already has the correct mobile scale");
     assert.match(css,/\.rtg-coach-detail\.rtg-coach-halloween \.rtg-coach-power\s*\{[^}]*background:#fff4e5!important/s,
@@ -217,7 +219,7 @@
   });
 
   test("Mobile: tre colonne, immagini eager con fallback e pulsante ASSEGNA in collezione",()=>{
-    const css=read("css/rtg-coaches.css");
+    const css=withLiteralTokens(read("css/rtg-coaches.css"));
     assert.match(css,/rtg-coaches-modal \.rtg-coaches-grid\s*\{[^}]*repeat\(3,minmax\(0,1fr\)\)/);
     assert.match(css,/rtg-coaches-album \.album-player-grid\s*\{[^}]*repeat\(3,minmax\(0,1fr\)\)/);
     const s=campaign();s.coachOwnedIds=["36"];
@@ -268,7 +270,7 @@
     listeners.error({target:image});
     assert.equal(image.src,rene.imageUrl);
     assert.ok(classes.has("rtg-coach-fullbody--portrait-fallback"));
-    assert.match(read("css/rtg-coaches.css"),/rtg-coach-fullbody--portrait-fallback/);
+    assert.match(withLiteralTokens(read("css/rtg-coaches.css")),/rtg-coach-fullbody--portrait-fallback/);
   });
   test("René: PNG richiesto subito, canvas visibile senza tab switch",()=>{
     const html=view.card(api.BY_ID["4761"],"locked");
@@ -278,7 +280,7 @@
     assert.doesNotMatch(html,/<img /);
     const page=read("index.html");
     assert.ok(page.includes('rel="preload" as="image" href="'+api.BY_ID["4761"].imageUrl+'"'));
-    assert.match(read("css/rtg-coaches.css"),/\.rtg-coach-rene-frame\.is-ready \.rtg-coach-rene-loading/);
+    assert.match(withLiteralTokens(read("css/rtg-coaches.css")),/\.rtg-coach-rene-frame\.is-ready \.rtg-coach-rene-loading/);
   });
   test("Safari: canvas dipinto al mount immediato, con drawImage e nessun decode bloccante",()=>{
     const imgs=[],events={},canvases=[],draws=[];
@@ -367,7 +369,7 @@
     assert.equal(canvas.dataset.renePainted,"true");
   });
   test("Coach grid non restringe David Arrows o altre card al contenuto dell'immagine",()=>{
-    const css=read("css/rtg-coaches.css");
+    const css=withLiteralTokens(read("css/rtg-coaches.css"));
     assert.match(css,/\.rtg-coaches-modal \.rtg-coaches-grid\.rtg-picker-grid\s*\{[^}]*justify-items:stretch!important/);
     assert.match(css,/\.rtg-coaches-modal \.rtg-coach-entry\s*\{[^}]*width:100%!important/);
     assert.match(css,/\.rtg-coaches-modal \.rtg-coach-entry>\.rtg-coach-card\.player-card\s*\{[^}]*width:100%!important/);
@@ -411,7 +413,7 @@
   });
   test("Il badge Inazuma National può andare a capo senza uscire dal dettaglio mobile",()=>{
     const markup=view.detail(campaign(),"1777");
-    const css=read("css/rtg-coaches.css");
+    const css=withLiteralTokens(read("css/rtg-coaches.css"));
     assert.match(markup,/rtg-coach-team-chip/);
     assert.match(markup,/Inazuma National/);
     assert.match(css,/\.rtg-coach-detail \.player-detail-tags\{flex-wrap:wrap!important;max-width:100%!important;\}/);
@@ -495,7 +497,7 @@
     assert.equal((html.match(/rtg-coach-album-card/g)||[]).length,11);
     assert.equal((html.match(/rtg-coach-album-status/g)||[]).length,11);
     assert.doesNotMatch(html,/album-player-lock|NON SBLOCCATO/);
-    const css=read("css/rtg-coaches.css");
+    const css=withLiteralTokens(read("css/rtg-coaches.css"));
     assert.match(css,/rtg-coach-album-card::before/);
     assert.match(css,/rtg-coach-album-status/);
   });

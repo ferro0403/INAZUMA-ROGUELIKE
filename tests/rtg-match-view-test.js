@@ -1,4 +1,5 @@
 "use strict";
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8"),c);
@@ -23,7 +24,7 @@ assert.match(pen,/rtg-penalty-player-card/);
 const penaltyCalls=compactCalls.filter(x=>String(x.options.extraClass||"").includes("rtg-penalty-player-card"));
 assert.strictEqual(penaltyCalls.length,2,"penalties must render both players through the same canonical compact card renderer used by squad/change UI");
 assert.ok(penaltyCalls.every(x=>x.options.detailLayout==="stacked"));
-const penaltyCss=fs.readFileSync("css/trade-result-card-fix.css","utf8");
+const penaltyCss=fs.readFileSync("css/rtg-halftime-penalty.css","utf8");
 assert.match(penaltyCss,/\.rtg-penalty-panel \.rtg-penalty-player-card/);
 assert.match(penaltyCss,/\.rtg-penalty-panel \.rtg-penalty-choice-copy\s*\{\s*display:none!important/);
 assert.match(penaltyCss,/\.rtg-penalty-head \.muted/);

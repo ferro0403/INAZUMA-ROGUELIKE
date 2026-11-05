@@ -1,13 +1,14 @@
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const fs = require('fs');
 
 const index = fs.readFileSync('index.html', 'utf8');
-const css = fs.readFileSync('css/player-detail-premium-fixes.css', 'utf8');
+const css = cssSection('player-detail-premium-fixes');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-assert(index.includes('css/player-detail-premium-fixes.css?v=20260812-overflow-fullbody-1'), 'overflow/fullbody fix stylesheet must be loaded after premium player detail');
+assert(stylesheetLoaded(index, 'player-detail-premium-fixes'), 'overflow/fullbody fix stylesheet must be loaded after premium player detail');
 assert(css.includes('.player-detail-modal::before'), 'legacy modal inner-border pseudo element must be explicitly neutralized');
 assert(css.includes('content: none !important'), 'modal pseudo border must not render over scrolling stats');
 assert(css.includes('.player-detail-layout {\n  border: 1px solid var(--pd-ink);'), 'inner border must move to the full scrolling layout');

@@ -20,7 +20,7 @@
     linear-gradient(135deg, rgba(255, 210, 31, .17), transparent 38%),
     var(--album-paper);
   color: var(--album-ink);
-  box-shadow: 7px 8px 0 rgba(17, 18, 22, .24);
+  box-shadow: 7px 8px 0 var(--ir-ink-a24);
 }
 
 .album-roster-hero::before {
@@ -76,7 +76,7 @@
   border: 3px solid var(--album-ink);
   border-radius: 0;
   background: rgba(255, 255, 255, .92);
-  box-shadow: 4px 5px 0 rgba(17, 18, 22, .16);
+  box-shadow: var(--ir-shadow-soft-4-5-a16);
   overflow: hidden;
 }
 
@@ -175,7 +175,7 @@
   background: var(--album-paper);
   color: var(--album-ink);
   box-shadow:
-    5px 6px 0 rgba(17, 18, 22, .24),
+    5px 6px 0 var(--ir-ink-a24),
     0 0 0 0 var(--album-rarity);
   filter: none;
   opacity: 1;
@@ -227,7 +227,7 @@
   border-bottom: 3px solid var(--album-ink);
   background:
     radial-gradient(circle at 50% 80%, color-mix(in srgb, var(--album-rarity) 26%, transparent), transparent 48%),
-    linear-gradient(160deg, #fffdf6 0 62%, color-mix(in srgb, var(--album-rarity) 14%, #eee8da) 62% 100%);
+    linear-gradient(160deg, var(--ir-paper) 0 62%, color-mix(in srgb, var(--album-rarity) 14%, #eee8da) 62% 100%);
 }
 
 .album-roster-screen--modern .album-player-card .player-portrait-wrap::before {
@@ -299,8 +299,8 @@
   padding: 4px 6px;
   border: 2px solid var(--album-ink);
   background: var(--album-rarity);
-  color: #111216;
-  box-shadow: 2px 2px 0 rgba(17, 18, 22, .16);
+  color: var(--ir-ink);
+  box-shadow: 2px 2px 0 var(--ir-ink-a16);
   font-size: .6rem;
   font-weight: 1000;
   line-height: 1;
@@ -313,18 +313,18 @@
 .album-roster-screen--modern .album-player-card.rarity-elite .player-meta span:last-child,
 .album-roster-screen--modern .album-player-card.rarity-mondiale .player-meta span:last-child,
 .album-roster-screen--modern .album-player-card.rarity-aurico .player-meta span:last-child {
-  color: #fffdf6;
+  color: var(--ir-paper);
 }
 
 .album-roster-screen--modern .album-player-card.rarity-aurico .player-meta span:last-child {
-  background: #111216;
+  background: var(--ir-ink);
 }
 
 .album-roster-screen--modern .album-player-card .player-corner {
   z-index: 6;
   border: 2px solid var(--album-ink);
   border-radius: 0;
-  box-shadow: 3px 3px 0 rgba(17, 18, 22, .18);
+  box-shadow: 3px 3px 0 var(--ir-ink-a18);
   font-weight: 1000;
 }
 
@@ -334,7 +334,7 @@
   min-width: 40px;
   min-height: 31px;
   background: var(--album-ink);
-  color: #fffdf6;
+  color: var(--ir-paper);
 }
 
 .album-roster-screen--modern .album-player-card .player-overall {
@@ -395,7 +395,7 @@
   padding: 6px 8px;
   border: 2px solid var(--album-ink);
   background: var(--album-ink);
-  color: #fffdf6;
+  color: var(--ir-paper);
   box-shadow: 3px 3px 0 var(--album-rarity);
   font-size: .61rem;
   font-weight: 1000;
@@ -407,7 +407,7 @@
 
 .album-roster-screen--modern .album-player-entry.is-unlocked > .album-player-card {
   box-shadow:
-    5px 6px 0 rgba(17, 18, 22, .24),
+    5px 6px 0 var(--ir-ink-a24),
     inset 0 -5px 0 color-mix(in srgb, var(--album-rarity) 82%, transparent);
 }
 

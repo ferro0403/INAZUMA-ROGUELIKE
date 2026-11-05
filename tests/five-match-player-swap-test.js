@@ -1,12 +1,13 @@
 'use strict';
 
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const assert = require('assert');
 const fs = require('fs');
 
 const app = fs.readFileSync('js/app.js', 'utf8') + '\n' + fs.readFileSync('js/match/match-controller.js', 'utf8');
 const fiveView = fs.readFileSync('js/five-v-five/five-v-five-view.js', 'utf8');
 const pickerBridge = fs.readFileSync('js/five-formation-floating-picker.js', 'utf8');
-const pickerCss = fs.readFileSync('css/five-formation-floating-picker.css', 'utf8');
+const pickerCss = cssSection('five-formation-floating-picker');
 const index = fs.readFileSync('index.html', 'utf8');
 
 function sourceBetween(startToken, endToken, source = app) {
