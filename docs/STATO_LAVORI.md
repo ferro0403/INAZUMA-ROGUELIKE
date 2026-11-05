@@ -84,6 +84,62 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
     test di controllo e evento finto, e aspettare l'ok.
   - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f → 4.371 dopo 1i.
 
+## Come unire le PR #540–#558 (aggiornato il 5 nov 2026)
+
+**Consigliato: unire solo la PR finale (`release/passo-1-css` -> `main`).** E' l'unico branch che contiene
+tutte le PR da #540 a #558 (controllato commit per commit). Unendola, `main` riceve tutto in una volta; dopo,
+le PR #540–#558 si possono chiudere senza unirle (il loro contenuto e' gia' in `main`).
+
+Verifica della PR finale **contro `main`** (non contro la PR precedente):
+- stile calcolato di ogni elemento e foto di 88 schermate (78 + 10 nuove) a 412 e 1280 px: identici a `main`,
+  tranne il riquadro dei requisiti RTG (#550, cambio voluto). Una foto (65, sconfitta RTG) differiva solo perche'
+  in `main` lo stemma Occult non era ancora caricato: stile identico.
+- `npm test`: 427 passati, 39 falliti; nessun test peggiorato rispetto a `main` (9 migliorati dal Passo 0).
+- prove nel browser 12/12.
+
+### Come sono collegate
+
+| PR | Branch | Base | Contenuto | Rapporto con le altre |
+|---|---|---|---|---|
+| #540 | `chore/safety-net` | main | Passo 0: test, prove nel browser, baseline | base della pila |
+| #541 | `refactor/css-1-misura` | #540 | misura CSS morto | — |
+| #542 | `refactor/css-2-file-mai-caricati` | #541 | 7 file mai caricati tolti | — |
+| #543 | `refactor/css-3-regole-morte` | #542 | 390 regole morte certe | **da sola ha 1 difetto** (capsula `.c14`), corretto da #558 |
+| #544 | `refactor/css-4-copertura` | #543 | 78 schermate, strumenti | contiene #558 |
+| #545 | `refactor/css-5-regole-battute` | #544 | regole "battute" tolte | contiene #558; **da sola ha difetti**, corretti da #552 |
+| #546 | `refactor/css-6-important` | #545 | `!important` inutili tolti | contiene #552, #558; **da sola ha difetti**, corretti da #553 e #556 |
+| #547 | `refactor/css-7-file-patch` | #546 | file patch uniti | contiene #552, #553, #556, #558 |
+| #548 | `refactor/css-8-token` | #547 | token colori | contiene #552, #553, #556, #558 |
+| #549 | `refactor/css-9-halloween-coach` | #548 | pulizia file Halloween/coach | contiene #552, #553, #556, #558; **da sola ha difetti**, corretti da #554 |
+| #550 | `fix/rtg-run-commento-rotto` | main | commento rotto (1 riga, cambio visibile voluto) | indipendente |
+| #551 | `chore/rimuovi-migrazioni-css` | main | script/workflow di migrazione tolti | indipendente |
+| #552 | `fix/css-5-regole-necessarie` | #545 | correzione di #545 (5 regole) | gia' dentro #546–#549 |
+| #553 | `fix/css-6-potere-allenatore` | #546 | correzione di #546 (36 `!important`) | gia' dentro #547–#549 |
+| #554 | `fix/css-9-scheda-halloween` | #549 | correzione di #549 | contiene #540–#549, #552, #553, #556, #558: **sostituisce #549** |
+| #555 | `test/copertura-regressioni` | #549 | 6 schermate + controllo hover | solo strumenti |
+| #556 | `fix/css-6-fine-season` | #546 | correzione di #546 (fine Season) | gia' dentro #547–#549 |
+| #557 | `dev/rtg-fine-season` | #555 | comando dev "FINE SEASON" + 4 schermate | contiene tutto tranne #550, #551, #554 |
+| #558 | `fix/css-3-capsula-c14` | #543 | correzione di #543 | gia' dentro #544–#549 |
+| finale | `release/passo-1-css` | main | tutto | **contiene tutte, #540–#558** |
+
+"Sostituisce / contiene" vuol dire: unendo quella PR si hanno gia' le PR elencate, che quindi non vanno
+unite a parte. Solo la PR finale contiene anche #550 e #551 (partono da `main`).
+
+### Se invece si vuole unire una PR alla volta
+Ordine esatto. Ogni correzione va unita nel branch della PR che corregge, **prima** di unire quella PR:
+1. #540 -> main
+2. #541 -> main, poi #542 -> main
+3. #558 -> branch di #543, poi #543 -> main
+4. #544 -> main
+5. #552 -> branch di #545, poi #545 -> main
+6. #553 e #556 -> branch di #546, poi #546 -> main
+7. #547 -> main, poi #548 -> main
+8. #554 -> branch di #549, poi #549 -> main
+9. #555 -> main, poi #557 -> main
+10. #550 e #551 -> main. #550 da' un conflitto di una riga se unita dopo #548: tenere la riga con i token e
+    togliere quella del commento rotto (come nella PR finale).
+GitHub sposta la base di una PR su `main` quando la sua base viene unita; se non lo fa, cambiarla a mano.
+
 ## Scoperte del Passo 1
 
 - **7 file CSS non vengono mai caricati** (`rtg-foundation`, `rtg-shell`, `rtg-match`, `rtg-prematch`,
