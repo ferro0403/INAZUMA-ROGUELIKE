@@ -296,6 +296,7 @@
 .rtg-run-screen .eyebrow,.rtg-squad-shell .eyebrow { color:#5d5e59!important; }
 .rtg-journey-summary { border:3px solid #111216; border-radius:2px; background:linear-gradient(115deg,#111216 0 78%,#25272d 78%); box-shadow:5px 5px 0 #ffd21f; padding:20px; }
 .rtg-journey-summary h1 { text-transform:uppercase; font-style:italic; font-weight:950; }
+.rtg-journey-summary p:not(.eyebrow) { color:#eee!important; }
 .rtg-journey-progress { background:#42454c; height:5px; }.rtg-journey-progress span { background:#ffd21f; }
 .rtg-map { gap:24px!important; }
 .rtg-map-block { padding:0!important; border:3px solid #111216!important; border-radius:2px!important; background:#111216!important; box-shadow:5px 5px 0 #111216!important; overflow:hidden; }
