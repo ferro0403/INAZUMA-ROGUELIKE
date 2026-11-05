@@ -538,8 +538,8 @@
   font-weight:1000;letter-spacing:-.03em;
   line-height:.96;text-shadow:3px 4px 0 #08070d}
 .rtg-halloween-run-screen .halloween-event-hero-copy>p:last-child{
-  color:#edd7c9;font-size:.9rem;line-height:1.4;
-  margin:0;max-width:340px
+  color:#edd7c9!important;font-size:.9rem!important;line-height:1.4!important;
+  margin:0!important;max-width:340px
 }
 .halloween-event-hero-crest{
   width:100%;max-width:105px;aspect-ratio:1;object-fit:contain;
