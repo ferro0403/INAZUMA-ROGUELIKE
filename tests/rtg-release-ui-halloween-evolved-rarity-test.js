@@ -122,7 +122,7 @@ test("Halloween XI: EXACT original prematch cards, HW badges and Album detail ro
   assert(event.indexOf("'</section>'+opponentPreviewSection()") > event.indexOf("data-halloween-open-vending"));
   assert.match(css,/\.halloween-opponent-preview-field\.rtg-prematch-shell/);
   assert.doesNotMatch(css,/Exact tactical card anatomy|rtg-shared-match-card\.boss-match-card/);
-  assert(index.includes("rtg-halloween-event.js?v=20261105-season-registry-1"));
+  assert(index.includes("rtg-halloween-event.js?v=20261105-eventi-dati-1"));
 });
 
 test("Release scope: the requested UI changes never write save, cloud or rewards",()=>{
