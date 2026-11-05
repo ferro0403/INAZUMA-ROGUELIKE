@@ -15,7 +15,10 @@
     if(["mountain","montagna"].includes(token))return "mountain";
     return "";
   };
-  const powerReady=coachId=>["208","1329","1777","1974","4401","halloween-coach-54"].includes(id(coachId));
+  // Tipo e parametri del potere dai dati (rtg-coach-power-types.js); niente id di allenatori scritti qui.
+  const powerOf=coachId=>global.RoadToGloryCoachPowerTypes?.powerFor?.(coachId)||null;
+  const typeOf=coachId=>powerOf(coachId)?.type||"";
+  const powerReady=coachId=>powerOf(coachId)?.phase==="squad";
   const nextRarity=rarity=>{
     const index=RARITIES.indexOf(String(rarity||""));
     return index>=0&&index<RARITIES.length-1?RARITIES[index+1]:null;
@@ -64,37 +67,39 @@
        new Set(config.cardIds).size!==config.cardIds.length)return null;
     const lineup=new Map(players.map(player=>[cardId(player),player]));
     const bench=new Map(benchPlayers.map(player=>[cardId(player),player]));
-    if(config.coachId==="halloween-coach-54"){
+    const power=powerOf(config.coachId),type=power?.type,picks=power?.params?.picks;
+    if(type==="requirementsOvrDiscount"){
       // The event coach affects only access requirements, never actual player stats.
-      return config.cardIds.length===1&&lineup.has(config.cardIds[0])&&
-        config.cardIds[0].startsWith("halloween2026::")?config:null;
+      // cardScope "event": only cards of the event that owns this coach (its card id prefix).
+      return config.cardIds.length===picks&&lineup.has(config.cardIds[0])&&!!power.eventCardPrefix&&
+        config.cardIds[0].startsWith(power.eventCardPrefix)?config:null;
     }
-    if(config.coachId==="208"){
-      return config.cardIds.length===2&&config.cardIds.every(key=>lineup.has(key))?config:null;
+    if(type==="ptBoost"){
+      return config.cardIds.length===picks&&config.cardIds.every(key=>lineup.has(key))?config:null;
     }
-    if(config.coachId==="1329"){
-      if(config.cardIds.length!==1||!lineup.has(config.cardIds[0]))return null;
+    if(type==="halveMoveCost"){
+      if(config.cardIds.length!==picks||!lineup.has(config.cardIds[0]))return null;
       const allMoves=availableMoveIndices(fourMoves(lineup.get(config.cardIds[0]),seasonId));
       // Legacy two-move selections remain readable; each NEW match snapshots all real moves.
       return allMoves?{...config,moveIndices:allMoves}:null;
     }
-    if(config.coachId==="1777"){
+    if(type==="benchCapOverride"){
       // Bench player is excluded from the 15-player *cap average* only.
-      return config.cardIds.length===1&&bench.has(config.cardIds[0])?config:null;
+      return config.cardIds.length===picks&&bench.has(config.cardIds[0])?config:null;
     }
-    if(config.coachId==="1974"){
+    if(type==="rarityUpgrade"){
       // Two distinct cards, each either starter or reserve. A previously saved
       // one-card choice remains valid until the user edits the configuration.
-      return config.cardIds.length>=1&&config.cardIds.length<=2&&
+      return config.cardIds.length>=1&&config.cardIds.length<=picks&&
         config.cardIds.every(key=>{
           const player=lineup.get(key)||bench.get(key);
           return player&&nextRarity(rarityOf(player));
         })?config:null;
     }
-    if(config.coachId==="4401"){
+    if(type==="elementTransform"){
       if(config.targets.length){
-        if(config.cardIds.length!==2||config.targets.length!==2||
-           new Set(config.targets.map(t=>t.cardId)).size!==2||
+        if(config.cardIds.length!==picks||config.targets.length!==picks||
+           new Set(config.targets.map(t=>t.cardId)).size!==picks||
            !config.cardIds.every(card=>config.targets.some(t=>t.cardId===card)))return null;
         for(const target of config.targets){
           const player=lineup.get(target.cardId);
@@ -116,12 +121,13 @@
     return null;
   }
   function capOverrideFor(squad,state){
-    if(id(squad?.coachId)!=="1777"||!owned(state,"1777"))return null;
+    const coachId=id(squad?.coachId);
+    if(typeOf(coachId)!=="benchCapOverride"||!owned(state,coachId))return null;
     // The power was committed at kickoff. At halftime the protected player
     // may enter the field, but its cap discount must not vanish mid-match.
     const match=state?.activeMatch,effect=match?.coachPowerEffect;
     const selectedId=id(effect?.cardIds?.[0]);
-    if(effect?.coachId==="1777"&&selectedId&&
+    if(id(effect?.coachId)===coachId&&selectedId&&
        id(match.seasonId)===id(state?.activeSeasonId)&&
        [...(squad?.lineup||[]),...(squad?.bench||[])].some(p=>cardId(p)===selectedId))
       return selectedId;
@@ -129,9 +135,10 @@
     return config?.cardIds?.[0]||null;
   }
   function overallDiscountFor(squad,state){
-    if(id(squad?.coachId)!=="halloween-coach-54"||!owned(state,"halloween-coach-54"))return null;
+    const coachId=id(squad?.coachId),power=powerOf(coachId);
+    if(power?.type!=="requirementsOvrDiscount"||!owned(state,coachId))return null;
     const config=validConfig(squad,squad?.lineup||[],state?.activeSeasonId,squad?.bench||[]);
-    return config?{cardId:config.cardIds[0],amount:15}:null;
+    return config?{cardId:config.cardIds[0],amount:power.params.amount}:null;
   }
   function eligibleRosterForCap(squad){
     // Preserve all 15 squad members. The capped value is substituted in teamPower.
@@ -141,26 +148,27 @@
     if(!match||!squad||!owned(state,squad.coachId)||match.coachPowerEffect)return match;
     const config=validConfig(squad,match.userSquad?.lineup||[],match.seasonId,match.userSquad?.bench||[]);
     if(!config)return match;
-    if(config.coachId==="halloween-coach-54")return match; // Strictly no in-match effect or snapshot.
+    const power=powerOf(config.coachId),type=power?.type;
+    if(type==="requirementsOvrDiscount")return match; // Strictly no in-match effect or snapshot.
     const coachId=config.coachId,card=config.cardIds[0];
-    if(["208","1329","1974"].includes(coachId)&&match.ptModeVersion!==1)return match;
+    if(power?.requiresPtMode&&match.ptModeVersion!==1)return match;
     const effect={
       coachId,cardIds:config.cardIds.slice(),moveIndices:config.moveIndices.slice(),
       element:config.element,
     };
-    if(coachId==="208"){
+    if(type==="ptBoost"){
       const current={...(match.ptCurrentByPlayerId||{})};
       const maximum={...(match.ptMaxByPlayerId||{})};
       for(const key of config.cardIds){
         if(!Number.isFinite(current["user:"+key])||!Number.isFinite(maximum["user:"+key]))return match;
-        current["user:"+key]+=100; maximum["user:"+key]+=100;
+        current["user:"+key]+=power.params.amount; maximum["user:"+key]+=power.params.amount;
       }
       return {...match,ptCurrentByPlayerId:current,ptMaxByPlayerId:maximum,coachPowerEffect:effect};
     }
-    if(coachId==="1329"||coachId==="1777"){
+    if(type==="halveMoveCost"||type==="benchCapOverride"){
       return {...match,coachPowerEffect:effect};
     }
-    if(coachId==="4401"){
+    if(type==="elementTransform"){
       const targets=config.targets||[];
       effect.targets=targets.map(t=>({cardId:t.cardId,element:t.element,moveIndices:t.moveIndices.slice()}));
       const changeById=new Map(targets.map(t=>[t.cardId,t.element]));
@@ -186,7 +194,7 @@
       });
       return {...match,userSquad:{...match.userSquad,lineup},coachPowerEffect:effect};
     }
-    if(coachId==="1974"){
+    if(type==="rarityUpgrade"){
       const all=[...(match.userSquad?.lineup||[]),...(match.userSquad?.bench||[])];
       const ptBreakdown=global.RtgFourMovesRuntime?.ptBreakdown;
       if(typeof options.upgradeRarity!=="function"||typeof ptBreakdown!=="function")return match;
@@ -228,12 +236,13 @@
   }
   function moveCost(match,side,playerId,moveIndex,ordinaryCost){
     const config=match?.coachPowerEffect;
-    if(side!=="user"||config?.coachId!=="1329"||config.cardIds?.[0]!==id(playerId)||
+    const power=side==="user"?powerOf(config?.coachId):null;
+    if(power?.type!=="halveMoveCost"||config.cardIds?.[0]!==id(playerId)||
        !config.moveIndices?.includes(moveIndex))return ordinaryCost;
-    return Number.isInteger(ordinaryCost)&&ordinaryCost>0?Math.ceil(ordinaryCost/2):ordinaryCost;
+    return Number.isInteger(ordinaryCost)&&ordinaryCost>0?Math.ceil(ordinaryCost/power.params.divisor):ordinaryCost;
   }
   function moveElement(match,side,playerId,moveIndex,originalElement){
-    if(side!=="user"||match?.coachPowerEffect?.coachId!=="4401")return originalElement;
+    if(side!=="user"||typeOf(match?.coachPowerEffect?.coachId)!=="elementTransform")return originalElement;
     const targets=match.coachPowerEffect.targets;
     const target=Array.isArray(targets)?
       targets.find(t=>t.cardId===id(playerId)):null;
@@ -241,7 +250,7 @@
       ?target.element:originalElement;
   }
   global.RoadToGloryCoachPowerRuntime=Object.freeze({
-    RARITIES,ELEMENTS,elementKey,powerReady,nextRarity,rarityOf,selected,fourMoves,availableMoveIndices,validConfig,
+    RARITIES,ELEMENTS,elementKey,powerReady,powerOf,typeOf,nextRarity,rarityOf,selected,fourMoves,availableMoveIndices,validConfig,
     eligibleRosterForCap,capOverrideFor,overallDiscountFor,applyToMatch,moveCost,moveElement,
   });
 })(globalThis);

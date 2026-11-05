@@ -9,32 +9,24 @@
     {key:"forest",label:"ALBERO",art:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 7.5 9h2.3L6 14h4v4H8v3h8v-3h-2v-4h4l-3.8-5h2.3L12 3Z"/></svg>'},
     {key:"mountain",label:"MONTAGNA",art:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 19 6.2-10 3.1 4.6L15.5 9 21 19H3Z"/><path d="m7.5 12 1.8 1.1 1.4-1.1"/></svg>'},
   ]);
-  const NAMES={
-    "208":"FIDUCIA NEI CAMPIONI","1329":"ALLENAMENTO SPECIALIZZATO",
-    "1777":"FUORI QUOTA","1974":"POTENZIALE RISVEGLIATO","4401":"TRASFORMAZIONE TOTALE",
-    "halloween-coach-54":"MASCHERA MALEDETTA",
-  };
-  const NOTES={
-    "208":"Tocca due titolari direttamente sul campo. Entrambi riceveranno +100 PT iniziali e massimi.",
-    "1329":"Tocca un titolare sul campo: tutte le sue mosse speciali disponibili costeranno la metà dei PT.",
-    "1777":"Tocca una riserva sulla panchina: nel calcolo dell'overall squadra conterà al massimo 60. I valori reali non cambiano.",
-    "halloween-coach-54":"Scegli un titolare Halloween sul campo: nei requisiti il suo OVR vale 15 punti in meno. In partita rimane identico.",
-    "1974":"Scegli 2 giocatori, titolari o riserve: entrambi salgono temporaneamente di 1 rarità. Puoi vedere le statistiche potenziate qui sotto.",
-    "4401":"Scegli 2 titolari. Per ognuno imposta un elemento diverso dall'originale: tutte le sue mosse speciali disponibili cambiano nello stesso elemento. Potenza e costo PT non cambiano.",
+  // Titolo e spiegazione del potere: dai dati dell'allenatore (power.ui), non scritti qui.
+  const powerUi=coachId=>{
+    const eventCoach=(global.GameEvents?.all?.()||[]).flatMap(e=>e.coaches||[]).find(c=>String(c.id)===String(coachId));
+    return eventCoach?.power?.ui||global.RoadToGloryCoaches?.BY_ID?.[coachId]?.power?.ui||{};
   };
   let busy=false;
   function open(ctx){
     const rules=global.RoadToGloryCoachPowerRuntime,squad=ctx.getSquadDraft?.();
-    const coachId=id(squad?.coachId);
+    const coachId=id(squad?.coachId),type=rules?.typeOf?.(coachId)||"",power=rules?.powerOf?.(coachId);
     if(!rules?.powerReady(coachId)||!global.RoadToGloryCoaches?.owned?.(ctx.getCampaign())?.has(coachId))
       return ctx.toast?.("Il potere di questo allenatore non è configurabile.","error");
     if(ctx.getCampaign()?.activeMatch)return ctx.toast?.("Completa prima la partita in corso.","error");
     const previous=rules.selected(squad);
     const choice={coachId,cardIds:previous?.cardIds?.slice()||[],
       moveIndices:previous?.moveIndices?.slice()||[],element:previous?.element||"",
-      targets:coachId==="4401"&&previous?.targets?.length===2?
+      targets:type==="elementTransform"&&previous?.targets?.length===2?
         previous.targets.map(t=>({cardId:t.cardId,element:t.element,moveIndices:t.moveIndices.slice()})):[]};
-    if(coachId==="4401")choice.cardIds=choice.targets.map(t=>t.cardId);
+    if(type==="elementTransform")choice.cardIds=choice.targets.map(t=>t.cardId);
     let retainedModalTop=0;
     const rememberModalScroll=()=>{const modal=ctx.getModalRoot?.()?.querySelector?.(".modal");if(modal)retainedModalTop=modal.scrollTop||0;};
     const restoreModalScroll=()=>{
@@ -51,16 +43,16 @@
     }).filter(Boolean);
     const selectionSquad=()=>({...squad,coachPowerSelection:choice});
     const valid=()=>!!rules.validConfig(selectionSquad(),from(squad.lineup),ctx.seasonId(),from(squad.bench));
-    const cap=["208","1974","4401"].includes(coachId)?2:1;
-    const allowed=key=>coachId==="halloween-coach-54"?
-      (squad.lineup||[]).includes(key)&&key.startsWith("halloween2026::"):
-      coachId==="1777"?(squad.bench||[]).includes(key):
-      coachId==="1974"?[...(squad.lineup||[]),...(squad.bench||[])].includes(key)&&
+    const cap=power?.params?.picks||1;
+    const allowed=key=>type==="requirementsOvrDiscount"?
+      (squad.lineup||[]).includes(key)&&!!power?.eventCardPrefix&&key.startsWith(power.eventCardPrefix):
+      type==="benchCapOverride"?(squad.bench||[]).includes(key):
+      type==="rarityUpgrade"?[...(squad.lineup||[]),...(squad.bench||[])].includes(key)&&
         !!rules.nextRarity(rules.rarityOf(resolve(key))):
         (squad.lineup||[]).includes(key);
     function pick(key){
       if(busy||!allowed(key))return;
-      if(coachId==="4401"){
+      if(type==="elementTransform"){
         const index=choice.targets.findIndex(t=>t.cardId===key);
         if(index>=0)choice.targets.splice(index,1);
         else if(choice.targets.length<2)choice.targets.push({cardId:key,element:"",moveIndices:[]});
@@ -68,7 +60,7 @@
         return render();
       }
       // A single starter is enough: the next match affects every real move.
-      if(coachId==="1329"){
+      if(type==="halveMoveCost"){
         choice.cardIds=choice.cardIds.includes(key)?[]:[key];
         choice.moveIndices=[]; // no fixed two-move choice
         return render();
@@ -79,7 +71,7 @@
       render();
     }
     function projectedChanges(){
-      if(coachId!=="1974"||!choice.cardIds.length)return "";
+      if(type!=="rarityUpgrade"||!choice.cardIds.length)return "";
       return choice.cardIds.map(key=>{
         const preview=ctx.previewChoice?.(key,choice);
         if(!preview)return '<p class="rtg-coach-picker-note">Rarità massima o anteprima non disponibile: scegli un altro giocatore.</p>';
@@ -95,20 +87,18 @@
       }).join("");
     }
     function overallPreview(){
-      if(!["1777","halloween-coach-54"].includes(coachId)||choice.cardIds.length!==1)return "";
+      if(!["benchCapOverride","requirementsOvrDiscount"].includes(type)||choice.cardIds.length!==1)return "";
       const overall=ctx.previewSquadOverall?.(choice);
       if(!overall||!Number.isFinite(overall.before)||!Number.isFinite(overall.after))return "";
       return '<section class="rtg-coach-power-projection" aria-label="Anteprima OVR squadra requisito">'+
         '<h4>OVERALL SQUADRA · ANTEPRIMA</h4><strong>'+esc(overall.before)+
-        ' → '+esc(overall.after)+'</strong><p>'+(coachId==="halloween-coach-54"?
-          "Il titolare Halloween selezionato conta 15 OVR in meno solo nei requisiti. Valori reali invariati.":
-          "La media resta su 15 giocatori. Solo la riserva scelta pesa al massimo 60.")+'</p></section>';
+        ' → '+esc(overall.after)+'</strong><p>'+powerUi(coachId).previewNote+'</p></section>';
     }
     function render(){
       const model=ctx.getModel?.();
       const pitch=ctx.squadView?.lineupPitchMarkup?.(model?.lineupRows||[],{readOnly:true})||"";
       const bench=(model?.bench||[]).map(row=>ctx.squadView?.playerCard?.(row,"bench",{readOnly:true})||"").join("");
-      const elementButtons=coachId==="4401"&&choice.targets.length
+      const elementButtons=type==="elementTransform"&&choice.targets.length
         ?'<div class="rtg-coach-picker-elements rtg-coach-yi-targets"><h4>TRASFORMAZIONE DEI GIOCATORI</h4>'+
           choice.targets.map((target,index)=>{
             const originalElement=ownElement(target.cardId);
@@ -123,18 +113,18 @@
             return '<section class="rtg-coach-yi-target"><h4>GIOCATORE '+(index+1)+' · '+name+'</h4>'+
               '<div class="rtg-coach-yi-element-options">'+options+'</div></section>';
           }).join("")+'</div>':"";
-      const title=coachId==="1777"?"SCEGLI UNA RISERVA":coachId==="halloween-coach-54"?"SCEGLI UN TITOLARE HALLOWEEN":"SCEGLI SUL CAMPO";
-      const summary=coachId==="1329"&&choice.cardIds[0]
+      const title=powerUi(coachId).pickerTitle||"SCEGLI SUL CAMPO";
+      const summary=type==="halveMoveCost"&&choice.cardIds[0]
         ?' · TUTTE LE '+(rules.availableMoveIndices(rules.fourMoves(resolve(choice.cardIds[0]),ctx.seasonId()))?.length||0)+' MOSSE':
-        coachId==="4401"?' · TUTTE LE MOSSE':"";
+        type==="elementTransform"?' · TUTTE LE MOSSE':"";
       const main='<section class="rtg-coach-power-config rtg-coach-field-picker development-squad-card-scope" aria-label="Configura potere allenatore">'+
-        '<h2>'+NAMES[coachId]+'</h2><p>'+NOTES[coachId]+'</p>'+
+        '<h2>'+powerUi(coachId).title+'</h2><p>'+powerUi(coachId).note+'</p>'+
         '<h3>'+title+' ('+choice.cardIds.length+'/'+cap+summary+')</h3>'+
         '<div class="rtg-coach-picker-pitch squad-field-panel">'+pitch+'</div>'+
         '<section class="rtg-coach-picker-bench"><h3>PANCHINA</h3><div class="rtg-coach-picker-bench-grid">'+bench+'</div></section>'+
         elementButtons+projectedChanges()+overallPreview()+
         '<div class="rtg-coach-power-actions"><button type="button" class="btn btn-yellow" data-rtg-coach-power-save'+
-        (valid()&&!(coachId==="1974"&&choice.cardIds.length!==2)?'':' disabled')+'>CONFERMA POTERE</button>'+
+        (valid()&&!(type==="rarityUpgrade"&&choice.cardIds.length!==2)?'':' disabled')+'>CONFERMA POTERE</button>'+
         '<button type="button" class="btn" data-rtg-coach-power-cancel>ANNULLA</button>'+
         '<button type="button" class="btn" data-rtg-coach-power-clear>RIMUOVI POTERE</button></div></section>';
       const active=ctx.getModalRoot?.()?.querySelector?.(".rtg-coach-power-config");
@@ -167,7 +157,7 @@
         finally{busy=false;}
       });
       root?.querySelector?.("[data-rtg-coach-power-save]")?.addEventListener("click",async()=>{
-        if(busy||!valid()||(coachId==="1974"&&choice.cardIds.length!==2))return;
+        if(busy||!valid()||(type==="rarityUpgrade"&&choice.cardIds.length!==2))return;
         busy=true;
         try{
           const current=ctx.getSquadDraft();

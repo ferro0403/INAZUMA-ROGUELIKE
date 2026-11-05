@@ -1,4 +1,5 @@
 "use strict";
+const { loadCoachPowerData } = require("./helpers/coach-powers");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
@@ -102,7 +103,7 @@ const context={
 };
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-entitlements.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches.js","utf8"),context);
-vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-runtime.js","utf8"),context);
+loadCoachPowerData(context);vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-runtime.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-preview.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-squad-ui.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches-view.js","utf8"),context);
@@ -860,7 +861,7 @@ async function main() {
   // parked, so this test inspects the actual kickoff snapshot atomically.
   context.RoadToGloryRng.float=()=>.5;
   vm.runInNewContext(fs.readFileSync("js/roguelike_progression.js","utf8"),context);
-  vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-prematch.js","utf8"),context);
+  loadCoachPowerData(context);vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-prematch.js","utf8"),context);
   context.RtgFourMovesRuntime={ready:Promise.resolve(true),isReady:()=>true,error:()=>null,
     ptBreakdown:()=>({base:150,bonus:0,total:150}),movesFor:()=>[]};
   vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-pt-runtime.js","utf8"),context);

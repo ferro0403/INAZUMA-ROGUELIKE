@@ -11,19 +11,12 @@ const context = { console };
 context.globalThis = context;
 vm.createContext(context);
 for (const file of ["js/road-to-glory/rtg-config.js", "js/road-to-glory/rtg-coaches.js", "js/events/event-registry.js",
-  "js/road-to-glory/rtg-economy.js"]) {
+  "js/road-to-glory/rtg-economy.js", "js/road-to-glory/rtg-coach-power-types.js"]) {
   vm.runInContext(fs.readFileSync(file, "utf8"), context, { filename: file });
 }
 const { RoadToGloryConfig: config, RoadToGloryCoaches: coaches, GameEvents: events } = context;
 const RARITIES = Array.from(context.RoadToGloryEconomy?.RARITIES ||
   ["Scarso", "Debole", "Normale", "Buono", "Forte", "Elite", "Mondiale", "Leggenda", "Aurico"]);
-// Tipi di potere conosciuti e i parametri che accettano (il registro dei poteri arriva nella PR 3.3).
-const POWER_TYPES = {
-  requirementsOvrDiscount: (p) => Number.isInteger(p.amount) && p.amount >= 1 && p.amount <= 30 &&
-    Number.isInteger(p.picks) && p.picks >= 1 && p.picks <= 3 && ["ownStarter", "ownBench", "ownAny"].includes(p.target) &&
-    ["event", "any"].includes(p.cardScope),
-};
-
 const DIR = "data/events";
 const index = JSON.parse(fs.readFileSync(path.join(DIR, "index.json"), "utf8"));
 const files = fs.readdirSync(DIR).filter((f) => f.endsWith(".json") && f !== "index.json");
@@ -84,9 +77,9 @@ for (const file of files) {
 
   // Allenatori: potere valido e almeno una carta a cui applicarlo.
   for (const coach of m.coaches || []) {
-    const check = POWER_TYPES[coach.power.type];
-    assert(check, `${where}: tipo di potere sconosciuto ${coach.power.type}`);
-    assert(check(coach.power.params), `${where}: parametri del potere di ${coach.id} non validi`);
+    // Stesso registro dei tipi usato dal gioco (rtg-coach-power-types.js).
+    const errors = Array.from(context.RoadToGloryCoachPowerTypes.problems(coach.power));
+    assert.strictEqual(errors.length, 0, `${where}: potere di ${coach.id} non valido: ${errors.join("; ")}`);
     const targets = coach.power.params.cardScope === "event" ? m.cards : [...players.values()];
     assert(targets.length >= coach.power.params.picks, `${where}: nessuna carta a cui applicare il potere di ${coach.id}`);
     const known = coaches.BY_ID[coach.id];
