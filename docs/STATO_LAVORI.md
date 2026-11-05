@@ -85,6 +85,29 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
   - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f → 4.371 dopo 1i.
     Dopo le correzioni del 5 nov (regole e `!important` rimessi): **4.504** nella PR finale; file CSS 50 → 27.
 
+## Passo 3 — Eventi come dati (approvato il 5 nov 2026)
+
+Proposta e analisi: `docs/PASSO_3_EVENTI.md` (PR #560). Risposte dell'utente: via libera; poteri degli allenatori
+identici (test prima/dopo); nessun numero di Halloween cambia (200/300/600/10%); inizio evento = primo commit
+dell'evento su main (**647c4672, 28 ott 2026 01:38:58 ora italiana**); salvataggio `shared.events.<id>` solo come campo
+aggiunto, Halloween resta in `shared.halloween`, test con salvataggio vecchio, l'evento finto non scrive mai
+sull'account reale; tema opzione A; immagini esterne per ora restano. Niente in `main`: tutto su
+`release/passo-1-css`, unisce l'utente alla fine.
+
+### Ordine delle PR (ognuna si appoggia alla precedente; la catena finisce in `release/passo-1-css`)
+
+| # | PR | Cosa cambia | Ci si puo' fermare qui? |
+|---|---|---|---|
+| 3.1 | #561 registro Season | etichette, sigle, campagne delle 5 Season in un solo posto (`rtg-config.js`) | si': una Season nuova si scrive in un posto solo |
+| 3.2 | evento nei dati | `data/events/halloween2026.json` + registro eventi; Halloween legge date, prezzi, premi, squadra, carte, immagini dal file; test dei dati | si': i numeri dell'evento sono nel file, controllati dal test |
+| 3.3 | poteri come dati | registro dei tipi di potere; Hekyll e `powerReady` dai dati; test di comportamento prima/dopo | si': un allenatore con un potere esistente si aggiunge con i dati |
+| 3.4 | modulo evento generico | via `halloween2026`/`occult-2`/`HW` scritti negli altri ~20 file; `shared.events.<id>` per gli eventi nuovi; test salvataggio vecchio | si': il sistema e' generico |
+| 3.5 | evento finto + test | evento di prova solo in `?dev=1`, mai scritto sull'account reale; prova nel browser; copertura | prova finale del passo |
+| 3.6 | tema (opzione A) | CSS tema `--event-*` per gli eventi nuovi; carta/scheda/badge Halloween sulle variabili | — |
+| 3.7 | immagini locali | rimandata (decisione del 5 nov) | — |
+
+Il vantaggio principale arriva con 3.1-3.3; 3.4-3.5 rendono il sistema davvero generico.
+
 ## Come unire le PR #540–#558 (aggiornato il 5 nov 2026)
 
 **Consigliato: unire solo la PR finale (`release/passo-1-css` -> `main`).** E' l'unico branch che contiene
