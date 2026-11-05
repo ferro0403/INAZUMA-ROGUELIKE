@@ -55,8 +55,33 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
     passati ai token `--ir-*`. Misure fatte con tutti gli altri file bloccati (`--frozen`). Verifica: stile identico
     a 412/768/1280 px (una differenza a 1280 nella schermata 70 non si ripete rifacendo la misura: misura instabile,
     non CSS), foto 0/78, npm test invariato (426/40), prove 12/12. `!important` totali: 4.804 -> 4.371.
-  - Prossimi: rivedere le regole "non viste"; meno `!important` (i tetti dei test architettura si possono
-    abbassare); dividere per componente.
+  - **Regressioni viste nelle preview (5 nov) e correzioni.** Quattro difetti in schermate che le 78 della misura
+    non visitavano. Trovati per bisezione con prove nel browser vero:
+    - avatar quadrati nel Riepilogo azioni RTG e capsule del distributore ammucchiate -> da #545 (regole
+      "battute" solo nelle schermate visitate; la regola delle capsule agiva solo con le animazioni attive).
+      Correzione ferro0403/INAZUMA-ROGUELIKE#552.
+    - carte del potere allenatore allargate (`.pitch-row` grid -> flex) + 34 `!important` che bloccavano
+      `:hover`/`:focus`/`:active` -> da #546. Correzione ferro0403/INAZUMA-ROGUELIKE#553.
+    - scheda giocatore Halloween chiara (Shawn) -> da #549: senza la classe `halloween-detail-native` sul modale
+      valgono le regole generiche, tolte come "battute". Correzione ferro0403/INAZUMA-ROGUELIKE#554.
+    - #547 (unione dei file) verificata: l'ordine delle 7.855 regole applicate dal browser e' identico a prima.
+    - Le correzioni sono state unite anche nei branch successivi (#546-#549 contengono quelle precedenti).
+    - Copertura e controllo hover/animazioni: ferro0403/INAZUMA-ROGUELIKE#555.
+    - **Lezione:** "battuta" e "!important inutile" valgono solo per gli stati misurati. Animazioni, hover e
+      percorsi diversi (classi messe dal JS) vanno controllati a parte; foto e stile non bastano.
+  - **Fine Season RTG (5 nov, segnalazione utente):** "Traguardo raggiunto" sotto il cerchio in tutte le Season, da
+    #546 (font-size del titolo non piu' !important). Correzione ferro0403/INAZUMA-ROGUELIKE#556 (+3 !important delle
+    mappe Season 2/3); 2 regole della fine campagna/mappe S2-S3 tolte da #545 aggiunte a #552; 4 !important del testo
+    Halloween in home aggiunti a #554. Comando ?dev=1 "FINE SEASON" e 4 schermate: ferro0403/INAZUMA-ROGUELIKE#557.
+    A 1280 px la fine Season e' rotta anche in main (problema esistente, non toccato).
+  - **Pulizia CSS fermata qui (decisione dell'utente, 5 nov).**
+  - Altre PR del 5 nov: ferro0403/INAZUMA-ROGUELIKE#550 (commento rotto in `rtg-run.css`, cambio visibile voluto),
+    ferro0403/INAZUMA-ROGUELIKE#551 (tolti 8 script di migrazione e 3 workflow legati a `refactor/rtg-css-cleanup`).
+  - `dynamic-progression-legacy-parity-test.js` (non toccato): i 4 giocatori tolti da IE1 il 13 set (commit
+    `c54483d`) sono Trice Topper (4461), Gideon Poe (4477), Electra Faraday (4482), Darren Gouger (4484), ora in
+    `removedPlayers` di `data/IE1_season_compact.json`.
+  - Prossimo: Passo 3 (eventi come dati) dopo il 7 novembre; prima del codice proporre formato del file evento,
+    test di controllo e evento finto, e aspettare l'ok.
   - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f → 4.371 dopo 1i.
 
 ## Scoperte del Passo 1

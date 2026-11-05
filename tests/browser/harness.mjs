@@ -7,7 +7,10 @@ import { collectCssUsage, flushCssUsage } from "../../scripts/css/css-usage-coll
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 
-export const VIEWPORT = { width: 412, height: 915 };
+// PROBE_VIEWPORT=WxH (solo per prove a mano) cambia la dimensione della finestra.
+export const VIEWPORT = process.env.PROBE_VIEWPORT
+  ? { width: Number(process.env.PROBE_VIEWPORT.split("x")[0]), height: Number(process.env.PROBE_VIEWPORT.split("x")[1]) }
+  : { width: 412, height: 915 };
 export const FIXED_TIME = new Date("2026-11-03T12:00:00Z");
 const STEP_TIMEOUT = 15000;
 
@@ -266,6 +269,23 @@ export class Game {
   // Con l'allenatore Halloween posseduto: lo assegna, mette in campo il primo giocatore Halloween proposto dal
   // cambio giocatore (ottenuto dal distributore), salva, configura il potere "Maschera Maledetta" su di lui.
   // Ritorna l'OVERALL della squadra mostrato prima e dopo il potere.
+  // Assegna l'allenatore Halloween e mette in campo il primo giocatore Halloween proposto dal cambio giocatore.
+  // Ritorna l'id della carta Halloween messa in campo.
+  async prepareHalloweenCoachSquad() {
+    await this.click("[data-halloween-tab=squad]");
+    await this.click("[data-rtg-squad-coach-select]");
+    await this.click("[data-rtg-coaches-equip=halloween-coach-54]");
+    if (await this.isVisible("[data-rtg-pull-continue]")) await this.click("[data-rtg-pull-continue]");
+    await this.visible("[data-rtg-coach-power-configure]");
+    await this.click("[data-rtg-change-player]");
+    const pick = this.page.locator("[data-rtg-picker-player^='halloween2026::']").locator("visible=true").first();
+    await pick.waitFor({ timeout: STEP_TIMEOUT });
+    const halloweenCardId = await pick.getAttribute("data-rtg-picker-player");
+    await pick.click();
+    await this.page.waitForTimeout(400);
+    await this.click("[data-rtg-save-squad]");
+    return halloweenCardId;
+  }
   async configureHalloweenCoachPower() {
     const overall = async () => (await this.waitText("#app", /OVERALL\s*[\d.]+/)).match(/OVERALL\s*([\d.]+)/)[1];
     await this.click("[data-halloween-tab=squad]");

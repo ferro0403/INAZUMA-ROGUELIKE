@@ -6,6 +6,7 @@
 //   { click: "selettore CSS" }   { text: "testo visibile" }   { fill: ["selettore", "valore"] }
 //   { repeat: [n, "selettore"] }  { wait: ms }   { scroll: "selettore" }
 //   { game: "metodo", args: [...] }  azione composta del banco di prova (tests/browser/harness.mjs)
+//   { removeClass: ["selettore", "classe"] }  toglie una classe (per simulare un percorso che non la aggiunge)
 //   { devClick: "selettore" }  clic via JavaScript (pulsanti degli strumenti ?dev=1)   { waitFor: "selettore" }
 // Opzioni della scena: seed (seme della casualita'), dev: true (apre il gioco con ?dev=1), fullPage: true.
 // Se un passo fallisce la scena viene segnata come "incompleta" nel report, senza fermare le altre.
@@ -26,6 +27,7 @@ const fiveMatch = [...onMap, { click: ".map-node.reachable[data-node-type=five_v
 const finalRun = [...onMap, { devClick: "[data-dev-run=final]" }, { devClick: "[data-dev-run=skip]" }, { click: "#development-reward-continue" }];
 const equipFlow = [...onMap, { click: "[data-node-id=zone_0_l1_n0]" }, { click: "[data-reward-candidate=physical_band]" }, { click: "[data-claim-item]" }, { click: "#finish-item-reward" }, { click: "[data-nav=inventory]" }, { click: "[data-equip-item]" }];
 const evolved = [{ click: "#open-shop-home" }, { click: "[data-shop-coins='1000']" }, { click: "[data-shop-cups=ie1][data-amount='5']" }, { click: "[data-buy-project=Buono]" }, { click: ".shop-buy-modal__confirm" }, { click: ".shop-back" }, { click: "#open-development-home" }, { click: "[data-development-card]" }, { click: "#prepare-evolution:not([disabled])" }, { click: "#confirm-evolution" }, { wait: 1000 }, { devClick: "#modal-root [data-close-modal]" }];
+const halloweenCoach = [...halloween, { devClick: "[data-halloween-dev-pumpkins]" }, { wait: 500 }, { game: "spinHalloweenUntilCoach" }, { game: "prepareHalloweenCoachSquad" }];
 const rtgPrematch = [...rtgS1, { click: "[data-rtg-current-node]" }, { click: "[data-rtg-start-node]:not([disabled])" }];
 
 export const scenes = [
@@ -111,6 +113,15 @@ export const scenes = [
   { name: "84-rtg-negozio", account: "sbloccato", steps: [{ click: "[data-rtg-home-open=shop]" }] },
   { name: "85-rtg-album", account: "sbloccato", steps: [{ click: "[data-rtg-home-open=album]" }] },
   { name: "86-rtg-premio-distributore", account: "rtg", dev: true, steps: [...rtgS1, { devClick: "[data-dev-rtg=tokens]" }, { devClick: "[data-dev-rtg=pool]" }, { click: "[data-rtg-open-vending]" }, { click: "[data-rtg-pull]:not([disabled])" }, { waitFor: "[data-rtg-pull-continue]" }] },
+
+  // --- Schermate aggiunte il 5 nov 2026 dopo regressioni viste solo nelle preview (mai visitate prima)
+  { name: "87-rtg-distributore-allenatori", account: "sbloccato", steps: [...rtgS1, { click: "[data-rtg-tab=squad]" }, { click: "[data-rtg-open-coaches]" }, { click: "[data-rtg-coaches-tab=draw]" }] },
+  { name: "88-rtg-riepilogo-partita", account: "rtg", flowingClock: true, steps: [...rtgPrematch, { click: "[data-rtg-prematch-start]" }, { game: "playRtgMatch" }, { waitFor: "[data-rtg-result-continue]" }] },
+  { name: "89-halloween-potere-allenatore", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-coach-power-configure]" }, { waitFor: ".rtg-coach-field-picker" }] },
+  { name: "90-halloween-potere-scelto", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-coach-power-configure]" }, { click: ".rtg-coach-field-picker [data-rtg-squad-player^='halloween2026::']" }, { waitFor: ".rtg-coach-power-projection" }] },
+  // Scheda Halloween aperta da un percorso che non aggiunge #modal-root.halloween-detail-native (es. Shawn dalla squadra)
+  { name: "92-halloween-scheda-senza-evento", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-player-detail^='halloween2026::']" }, { removeClass: ["#modal-root", "halloween-detail-native"] }] },
+  { name: "91-halloween-scheda-da-squadra", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-player-detail^='halloween2026::']" }] },
 
   // --- Evento Halloween (card giocatore e coach: bug gia' risolto, qui per accorgersi se ricompare)
   { name: "30-halloween-home", account: "sbloccato", steps: halloween },

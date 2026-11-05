@@ -38,6 +38,13 @@ const styleSnapshots = STYLES_PARTIAL && existsSync(STYLES_PARTIAL) ? JSON.parse
 const STYLES_DETAIL = opt("styles-detail", "");
 // --styles-ignore=--ir-: le variabili CSS con questo prefisso non entrano nell'impronta (token appena aggiunti).
 const STYLES_IGNORE = opt("styles-ignore", "");
+// --page-check=modulo.mjs --page-check-arg=dati.json --page-check-out=risultati.json: in ogni schermata esegue nella
+// pagina la funzione esportata di default dal modulo (con i dati come argomento) e salva il risultato per schermata.
+const PAGE_CHECK = opt("page-check", "");
+const PAGE_CHECK_OUT = opt("page-check-out", "");
+const PAGE_CHECK_ARG = opt("page-check-arg", "") ? JSON.parse(readFileSync(opt("page-check-arg", ""), "utf8")) : null;
+const pageCheck = PAGE_CHECK ? (await import(new URL(PAGE_CHECK, `file://${process.cwd()}/`).href)).default : null;
+const pageCheckResults = PAGE_CHECK_OUT && existsSync(PAGE_CHECK_OUT) ? JSON.parse(readFileSync(PAGE_CHECK_OUT, "utf8")) : {};
 // --rule-effect=file.json: in ogni schermata disattiva una regola alla volta e registra quali cambiano lo stile.
 const RULE_EFFECT = opt("rule-effect", "");
 const ruleEffect = { known: new Set(), removed: new Set(), evaluated: new Set(), skipped: {} };
@@ -144,6 +151,11 @@ async function runStep(page, step) {
   } else if (step.game) {
     // Azione composta del banco di prova (es. attraversare la mappa fino al boss, giocare una partita).
     await new Game(page, page.context(), [])[step.game](...(step.args || []));
+  } else if (step.removeClass) {
+    // Toglie una classe a un elemento: simula un percorso del gioco che non la aggiunge.
+    const [sel, cls] = step.removeClass;
+    await page.evaluate(([s, c]) => document.querySelector(s)?.classList.remove(c), [sel, cls]);
+    await page.waitForTimeout(300);
   } else if (step.devClick) {
     // Pulsanti degli strumenti di test (?dev=1), a volte coperti da altri elementi: clic via JavaScript.
     await page.waitForFunction((sel) => document.querySelector(sel), step.devClick, { timeout: STEP_TIMEOUT });
@@ -170,9 +182,12 @@ const selected = scenes.filter((s) => !ONLY || s.name.includes(ONLY));
 for (const scene of selected) {
   if (ruleEffectDone.has(scene.name) || importantDone.has(scene.name)) continue;
   if (STYLES_PARTIAL && styleSnapshots[scene.name]) continue;
+  if (pageCheck && pageCheckResults[scene.name]) continue;
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, locale: "it-IT", timezoneId: "Europe/Rome" });
   const page = await context.newPage();
-  await page.clock.setFixedTime(FIXED_TIME);
+  // flowingClock: l'orologio parte da FIXED_TIME e scorre (serve per giocare una partita RTG intera).
+  if (scene.flowingClock) await page.clock.install({ time: FIXED_TIME });
+  else await page.clock.setFixedTime(FIXED_TIME);
   await page.addInitScript(seededRandom(scene.seed ?? 0x2f6b1a3d));
   const errors = [];
   const failedImages = [];
@@ -223,6 +238,10 @@ for (const scene of selected) {
       shot = again;
     }
     writeFileSync(join(OUT, `${scene.name}.png`), shot);
+    if (pageCheck) {
+      pageCheckResults[scene.name] = await page.evaluate(pageCheck, PAGE_CHECK_ARG);
+      writeFileSync(PAGE_CHECK_OUT, JSON.stringify(pageCheckResults));
+    }
     if (STYLES_OUT) {
       styleSnapshots[scene.name] = await page.evaluate(pageStyleSnapshot, { ignore: STYLES_IGNORE });
       writeFileSync(STYLES_PARTIAL, JSON.stringify(styleSnapshots));
