@@ -38,7 +38,7 @@
   border-radius:2px;
   background:#fff;
   color:#111216;
-  box-shadow:2px 3px 0 rgba(17,18,22,.18);
+  box-shadow:2px 3px 0 rgba(17,18,22,.18)!important;
   font:950 .76rem/1 system-ui,sans-serif!important;
   letter-spacing:.06em;
   cursor:pointer;
@@ -548,6 +548,7 @@ position:absolute;
 .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-flap-v10{animation:rtg-vending-v12-flap .95s cubic-bezier(.2,.75,.28,1) both;}
 
 /* One continuous collision-resolved path, including the throat. No CSS teleport. */
+.rtg-vending-machine-v12.has-capsule-physics .rtg-vending-capsule-v9{animation:none!important;}
 .rtg-vending-machine-v12.has-capsule-physics .rtg-vending-funnel-v10{z-index:16;}
 
 .rtg-vending-machine-v12[data-pull-rarity="normale"]{--rtg-vending-reveal:#929ba8;--rtg-prize-color:#d9dee4}
@@ -666,11 +667,11 @@ position:absolute;
   width:calc(100% - 36px)!important;
   min-height:46px!important;
   margin:0 18px 18px!important;
-  border:2px solid #111216;
+  border:2px solid #111216!important;
   border-radius:8px;
   background:#ffd21f;
   color:#111216;
-  box-shadow:3px 4px 0 #111216;
+  box-shadow:3px 4px 0 #111216!important;
   font-weight:1000!important;
   letter-spacing:.08em!important;
 }

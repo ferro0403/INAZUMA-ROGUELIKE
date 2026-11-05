@@ -13,7 +13,7 @@
 .rtg-penalty-versus>article{display:grid;grid-template-rows:28px auto!important;justify-items:center;align-items:start;gap:7px!important;min-width:0;height:100%}
 .rtg-penalty-versus>article>small{display:grid;place-items:center;min-width:102px!important;height:28px!important;padding:0 9px!important;background:#111;color:#fff!important;font-size:.62rem!important;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
 .rtg-penalty-versus>b{align-self:center;justify-self:center;display:grid;place-items:center;width:46px!important;height:46px!important;margin:28px 0 0!important;background:#ffd21f;border:3px solid #111;box-shadow:4px 4px 0 #111!important;font-size:1rem!important;transform:none}
-.rtg-penalty-panel .rtg-penalty-player-card{width:104px;min-width:104px!important;max-width:104px!important;height:auto;min-height:126px!important;max-height:none;flex:0 0 104px!important;transform:none;overflow:visible}
+.rtg-penalty-panel .rtg-penalty-player-card{width:104px;min-width:104px!important;max-width:104px!important;height:auto;min-height:126px!important;max-height:none;flex:0 0 104px!important;transform:none!important;overflow:visible}
 .rtg-penalty-panel .rtg-penalty-player-card .player-portrait-wrap{width:100%;height:82px;min-height:82px!important;max-height:82px!important;aspect-ratio:auto;padding:5px 5px 0!important;overflow:hidden}
 .rtg-penalty-panel .rtg-penalty-player-card img.player-portrait{width:100%;height:100%;max-height:none;object-fit:contain;object-position:center bottom;transform:none}
 .rtg-penalty-panel .rtg-penalty-player-card .player-info{position:relative;width:100%;height:auto;min-height:30px;padding:5px 4px 6px;transform:none}
