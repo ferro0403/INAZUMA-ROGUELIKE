@@ -110,6 +110,9 @@ vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-encounter-runtime.js","
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-halloween-completion-reward.js","utf8"),context);
+// Dal Passo 3 il modulo riceve i dati dal manifest dell'evento tramite il registro eventi.
+vm.runInNewContext(fs.readFileSync("js/events/event-registry.js","utf8"),context);
+context.GameEvents.register(JSON.parse(fs.readFileSync("data/events/halloween2026.json","utf8")));
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-cloud-snapshot.js","utf8"),context);
 const squadView={

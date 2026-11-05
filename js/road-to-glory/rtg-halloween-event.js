@@ -1,21 +1,30 @@
 (function (global) {
   "use strict";
-  const EVENT_ID = "halloween2026";
-  const TEAM_ID = "occult-2";
-  const EVENT_END_MS = Date.UTC(2026, 10, 6, 22, 59, 59);
-  const MATCH_KEY = "local:halloween2026:match";
-  const SQUAD_KEY = "local:halloween2026:squad";
+  // Passo 3: i dati di Halloween (date, prezzi, squadra, carte, allenatore, immagini) arrivano dal manifest
+  // data/events/halloween2026.json tramite il registro eventi (js/events/event-registry.js). Qui sotto solo la
+  // lettura dei campi; la logica dell'evento resta quella di prima.
+  function install(manifest) {
+  const EVENT_ID = manifest.id;
+  const TEAM_ID = manifest.team.teamId;
+  const EVENT_END_MS = Date.parse(manifest.window.end);
+  const MATCH_KEY = manifest.save.matchKey;
+  const SQUAD_KEY = manifest.save.squadKey;
   const SHARED_KEY = "shared:account";
-  const PRICE = 200;
-  const PRIZE = 300;
-  const LUCKY_PRIZE = 600;
-  const BANNER_URL = "https://img.magnific.com/foto-gratuito/illustrazione-digitale-di-halloween_23-2151822706.jpg?semt=ais_hybrid&w=740&q=80";
-  const GRAVEYARD_URL = "https://static9.depositphotos.com/1014889/1236/i/450/depositphotos_12367834-stock-photo-halloween-background-spooky-graveyard.jpg";
-  const PUMPKIN_URL = "https://static.vecteezy.com/ti/vettori-gratis/p1/3690657-halloween-zucca-disegno-halloween-zucca-vettore-isolare-su-sfondo-bianco-gratuito-vettoriale.jpg";
-  const LOGO_URL = "https://dxi4wb638ujep.cloudfront.net/1/k/r/k/rk_nafgart8.webp";
-  const SPECIAL = Object.freeze(["custom_0002", "custom_0001"]);
-  const HALLOWEEN_COACH_ID = "halloween-coach-54";
-  const EVENT_FULLBODY_URLS = Object.freeze({"38":"https://dxi4wb638ujep.cloudfront.net/1/k/y/z/yz3gzfs1bku_r0_fullbody.webp","39":"https://dxi4wb638ujep.cloudfront.net/1/k/4/c/4cuzgcn9uqk_r0_fullbody.webp","40":"https://dxi4wb638ujep.cloudfront.net/1/k/j/0/j0lsn9bhdzm_r0_fullbody.webp","41":"https://dxi4wb638ujep.cloudfront.net/1/k/l/v/lviojktrgfm_r0_fullbody.webp","42":"https://dxi4wb638ujep.cloudfront.net/1/k/6/9/69tvob1rrsk_r0_fullbody.webp","43":"https://dxi4wb638ujep.cloudfront.net/1/k/a/s/aswadgazemu_r0_fullbody.webp","44":"https://dxi4wb638ujep.cloudfront.net/1/k/r/6/r6b7w5mjz_8_r0_fullbody.webp","45":"https://dxi4wb638ujep.cloudfront.net/1/k/f/q/fq-jb0lbuau_r0_fullbody.webp","46":"https://dxi4wb638ujep.cloudfront.net/1/k/u/4/u4pcsld75z8_r0_fullbody.webp","47":"https://dxi4wb638ujep.cloudfront.net/1/k/a/q/aqup2kkyyfc_r0_fullbody.webp","48":"https://dxi4wb638ujep.cloudfront.net/1/k/x/4/x4lub1si1s0_r0_fullbody.webp","49":"https://dxi4wb638ujep.cloudfront.net/1/k/r/x/rxgbiozaame_r0_fullbody.webp","50":"https://dxi4wb638ujep.cloudfront.net/1/k/g/_/g_36lx_6t_s_r0_fullbody.webp","51":"https://dxi4wb638ujep.cloudfront.net/1/k/i/e/iewmlotwo5s_r0_fullbody.webp","52":"https://dxi4wb638ujep.cloudfront.net/1/k/t/2/t2bhmxlsfke_r0_fullbody.webp","53":"https://dxi4wb638ujep.cloudfront.net/1/k/z/z/zziy1s-kwq0_r0_fullbody.webp"});
+  const PRICE = manifest.economy.pullPrice;
+  const PRIZE = manifest.economy.winPrize;
+  const LUCKY_PRIZE = manifest.economy.luckyPrize;
+  const LUCKY_CHANCE_PERCENT = manifest.economy.luckyChancePercent;
+  const ROSTER_SIZE = manifest.team.rosterSize;
+  const STARTERS_SIZE = manifest.team.startersSize;
+  const BANNER_URL = manifest.assets.banner;
+  const GRAVEYARD_URL = manifest.assets.background;
+  const PUMPKIN_URL = manifest.currency.icon;
+  const LOGO_URL = manifest.team.logo;
+  // Carte senza lo stile "vampiro" (le due speciali).
+  const SPECIAL = Object.freeze(manifest.cards.filter(card => !card.vampire).map(card => card.playerId));
+  const HALLOWEEN_COACH_ID = manifest.coaches[0].id;
+  const EVENT_FULLBODY_URLS = Object.freeze(Object.fromEntries(
+    manifest.cards.filter(card => card.fullbody).map(card => [card.playerId, card.fullbody])));
   const clone = x => JSON.parse(JSON.stringify(x));
   const asId = x => String(x == null ? "" : x).trim();
   const escape = x => String(x == null ? "" : x).replace(/[&<>"']/g, x => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
@@ -57,8 +66,8 @@
     })).then(([teams, lineup, moves]) => {
       const team = teams[0], setup = lineup.teams[0], list = team.players || [];
       if (team.teamId !== TEAM_ID || asId(setup.teamId).replaceAll("_","-") !== TEAM_ID ||
-        list.length !== 18 || setup.startingXI.length !== 11 ||
-        new Set(setup.startingXI).size !== 11 ||
+        list.length !== ROSTER_SIZE || setup.startingXI.length !== STARTERS_SIZE ||
+        new Set(setup.startingXI).size !== STARTERS_SIZE ||
         list.some(p => !moves.players[asId(p.playerId)]?.moves?.length) ||
         setup.startingXI.some(pid => !list.some(p => asId(p.playerId) === asId(pid)))) throw fail("halloween-invalid-asset-contract");
       assets = Object.freeze({team, setup, moves, players:new Map(list.map(p=>[asId(p.playerId),p]))});
@@ -1391,7 +1400,7 @@
         const ledger=account.halloween.completedIds;
         const already=ledger.includes(m.matchId);
         const won=m.result?.winner==="user";
-        const lucky=won&&global.RoadToGloryRng.int(m.matchId,"halloween-lucky",0,100)<10;
+        const lucky=won&&global.RoadToGloryRng.int(m.matchId,"halloween-lucky",0,100)<LUCKY_CHANCE_PERCENT;
         const award=already?Number(live.halloweenAward||0):!won?0:(lucky?LUCKY_PRIZE:PRIZE);
         if(!already){account.halloween.pumpkins+=award;ledger.push(m.matchId);if(lucky)account.halloween.luckyWins++;}
         return {writes:{[MATCH_KEY]:{...m,halloweenAward:award}},match:m};
@@ -1507,4 +1516,6 @@
     EVENT_ID,TEAM_ID,EVENT_END_MS,PRICE,PRIZE,LUCKY_PRIZE,isOpen,countdown,eventCard,prepare,
     eventPlayer:player,eventState,opponentOverall,weightedPick,create
   });
+  }
+  global.GameEvents?.onLoad?.("halloween2026", install);
 })(globalThis);

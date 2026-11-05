@@ -1650,6 +1650,12 @@
         console.warn("RTG VR kit preview manifest unavailable; existing visuals remain active", error);
       }
     }
+    // Eventi (Passo 3): i manifest in data/events/ vanno caricati prima di mostrare qualsiasi schermata.
+    try {
+      await global.GameEvents?.load?.();
+    } catch (error) {
+      console.warn("Eventi non disponibili; il gioco continua senza", error);
+    }
     return appBootstrap.init();
   }
   initAppRuntime();
