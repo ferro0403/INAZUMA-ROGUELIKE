@@ -343,11 +343,10 @@
         const previousSeasonButton=!active&&previousSeasonId
           ? `<button type="button" data-dev-rtg="previous-season">TORNA ALLA SEASON ${config.season(previousSeasonId)?.seasonNumber||"PRECEDENTE"}</button>`
           : "";
-        const routeButtons=active?"":`<button type="button" data-dev-rtg="next-node">TAPPA SUCCESSIVA</button>`
-          +`<button type="button" data-dev-rtg="season-complete">FINE SEASON</button>${previousSeasonButton}`;
+        const routeButtons=active?"":`<button type="button" data-dev-rtg="next-node">TAPPA SUCCESSIVA</button>${previousSeasonButton}`;
         const matchButtons=!active?"":'<button type="button" data-dev-rtg="halftime">VAI ALL\'INTERVALLO</button><button type="button" data-dev-rtg="extra">VAI AI SUPPLEMENTARI</button><button type="button" data-dev-rtg="penalties">VAI AI RIGORI</button><button type="button" data-dev-rtg="moves">RICARICA MOSSE</button><button type="button" data-dev-rtg="win">FORZA VITTORIA</button><button type="button" class="danger" data-dev-rtg="loss">FORZA SCONFITTA</button>';
         panel.innerHTML=`<summary>DEV RTG</summary><div><p><b>Gettoni: ${Number(campaign.tokens)||0}</b><br>Vite: ${Number(campaign.lives)||0}${active?` · ${active.status} / ${active.period}`:""}</p><button type="button" data-dev-rtg="tokens">999.999 GETTONI</button><button type="button" data-dev-rtg="lives">RIPRISTINA VITE</button><button type="button" data-dev-rtg="pool">SBLOCCA TUTTO IL POOL</button>${routeButtons}${matchButtons}</div>`;
-        doc.body?.appendChild(panel);
+        doc.body?.appendChild(panel);global.RoadToGloryDevSeasonComplete?.attach?.(panel,devUpdateCampaign);
         panel.querySelector('[data-dev-rtg="tokens"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-tokens",state=>{state.tokens=999999;},"Gettoni RTG portati a 999.999"));
         panel.querySelector('[data-dev-rtg="lives"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-lives",state=>{state.lives=Number(activeConfig()?.livesPerCheckpoint)||2;},"Vite RTG ripristinate"));
         panel.querySelector('[data-dev-rtg="pool"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-pool",state=>{state.defeatedTeamIds=Array.from(new Set(activeConfig()?.mainTeams||[]));},"Pool distributore RTG sbloccato"));
@@ -360,16 +359,6 @@
             state.furthestNodeIndex=Math.max(Number(state.furthestNodeIndex)||0,Math.max(0,currentIndex+1));
           }
         },"Avanzamento RTG spostato alla tappa successiva"));
-        // Porta la Season attiva alla schermata di fine Season (tutte le tappe fatte, tutte le squadre battute).
-        panel.querySelector('[data-dev-rtg="season-complete"]')?.addEventListener("click",()=>devUpdateCampaign(
-          "rtg-dev-season-complete",state=>{
-            const seasonConfig=activeConfig(),nodes=Array.from(config.buildSeasonNodes?.(activeSeasonId())||[]);
-            if(!nodes.length)return;
-            state.currentNodeId=nodes.at(-1).id;
-            state.furthestNodeIndex=nodes.length-1;
-            state.seasonComplete=true;
-            state.defeatedTeamIds=Array.from(new Set(seasonConfig?.mainTeams||[]));
-          },"DEV: Season completata"));
         panel.querySelector('[data-dev-rtg="previous-season"]')?.addEventListener("click",async()=>{
           const previousId=activeConfig()?.previousSeasonId,checkPrevious=controllerFence?.checkpoint();if(!previousId)return;
           const previousConfig=config.season(previousId),previousDb=global.SeasonRegistry?.database?.(previousId)||await global.SeasonRegistry?.loadDatabase?.(previousId);
