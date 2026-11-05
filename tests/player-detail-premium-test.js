@@ -1,4 +1,5 @@
 "use strict";
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const assert = require("assert");
 const fs = require("fs");
 
@@ -7,12 +8,10 @@ const controller = fs.readFileSync(
   "js/player/player-detail-controller.js",
   "utf8",
 );
-const css = fs.readFileSync("css/player-detail-premium.css", "utf8");
+const css = cssSection('player-detail-premium');
 const html = fs.readFileSync("index.html", "utf8");
 
-assert.match(
-  html,
-  /player-detail-premium\.css/,
+assert.ok(stylesheetLoaded(html, 'player-detail-premium'),
   "the premium sheet stylesheet is loaded",
 );
 assert.match(

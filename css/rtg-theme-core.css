@@ -3685,7 +3685,7 @@
   max-width:72%;
   margin:18px auto 14px;
   padding:10px 22px;
-  border:2px solid #111216;
+  border:2px solid #111216!important;
   border-radius:7px;
   box-shadow:3px 4px 0 #111216;
   font-size:14px;

@@ -61,7 +61,7 @@ if (fs.existsSync(legacyRoadPath)) {
 const debtFiles = ['road-to-glory.css','rtg-theme.css','rtg-version-banners.css'].filter(name => fs.existsSync(path.join(CSS_DIR, name)));
 const countImportant = source => (source.match(/!important\b/g) || []).length;
 const importantDebt = Object.fromEntries(debtFiles.map(name => [name, countImportant(fs.readFileSync(path.join(CSS_DIR, name), 'utf8'))]));
-const baselineCeilings = {"road-to-glory.css":577,"rtg-theme.css":515,"rtg-version-banners.css":62}; // Tetti abbassati il 4 nov 2026 (regole battute e !important inutili tolti): il debito puo' solo scendere. +1 il 5 nov: rimessa la regola delle capsule del distributore.
+const baselineCeilings = {"road-to-glory.css":594,"rtg-theme.css":518,"rtg-version-banners.css":62}; // Tetti abbassati il 4 nov 2026 (regole battute e !important inutili tolti): il debito puo' solo scendere. Il 5 nov +17 e +3: rimessi gli !important che bloccavano effetti :hover/:focus/:active.
 for (const [name,count] of Object.entries(importantDebt)) assert.ok(count <= baselineCeilings[name], `${name} !important debt grew to ${count}`);
 console.log('RTG CSS architecture guard: PASS');
 console.log(JSON.stringify({rtgCssFiles,importantDebt},null,2));
