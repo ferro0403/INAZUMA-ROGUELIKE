@@ -38,7 +38,7 @@
   border-radius:2px;
   background:#fff;
   color:#111216;
-  box-shadow:2px 3px 0 rgba(17,18,22,.18);
+  box-shadow:2px 3px 0 rgba(17,18,22,.18)!important;
   font:950 .76rem/1 system-ui,sans-serif!important;
   letter-spacing:.06em;
   cursor:pointer;
@@ -668,11 +668,11 @@ position:absolute;
   width:calc(100% - 36px)!important;
   min-height:46px!important;
   margin:0 18px 18px!important;
-  border:2px solid #111216;
+  border:2px solid #111216!important;
   border-radius:8px;
   background:#ffd21f;
   color:#111216;
-  box-shadow:3px 4px 0 #111216;
+  box-shadow:3px 4px 0 #111216!important;
   font-weight:1000!important;
   letter-spacing:.08em!important;
 }
