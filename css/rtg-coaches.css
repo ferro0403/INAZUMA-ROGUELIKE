@@ -87,7 +87,7 @@
   display:block;position:relative;padding:0;color:#101216!important;
   border:3px solid #f1872f!important;border-radius:4px!important;
   background:linear-gradient(155deg,#fff4e5 0%,#ffd7aa 63%,#ff9a44 63%)!important;
-  box-shadow:3px 4px 0 rgba(14,16,19,.27);
+  box-shadow:3px 4px 0 rgba(14,16,19,.27)!important;
 }
 .rtg-coaches-modal .rtg-coach-card .player-portrait-wrap{
   display:grid;place-items:end center;width:100%!important;

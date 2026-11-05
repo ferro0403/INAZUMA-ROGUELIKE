@@ -56,5 +56,5 @@ assert.doesNotMatch(css,/\.rtg-halloween-album-collection \.album-collection-cov
   "Only the coaches cover must be zoomed");
 const index=fs.readFileSync("index.html","utf8");
 assert.match(index,/rtg-album-view\.js\?v=20261102-event-progress-v1/);
-assert.match(index,/rtg-coaches\.css\?v=20261104-css-halloween-coach-1/);
+assert.match(index,/rtg-coaches\.css\?v=20261105-halloween-card-1/);
 console.log("RTG album Halloween progression 0/18, 1/18, 18/18, earned 19/19 and coach-only zoom: PASS");
