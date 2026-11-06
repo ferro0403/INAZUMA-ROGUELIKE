@@ -80,7 +80,7 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
   - `dynamic-progression-legacy-parity-test.js` (non toccato): i 4 giocatori tolti da IE1 il 13 set (commit
     `c54483d`) sono Trice Topper (4461), Gideon Poe (4477), Electra Faraday (4482), Darren Gouger (4484), ora in
     `removedPlayers` di `data/IE1_season_compact.json`.
-  - Passo 3 (eventi come dati): fatte 3.1-3.5 il 5-6 novembre, vedi sotto. PR finale `release/passo-1-3`.
+  - Passo 3 (eventi come dati): fatte 3.1-3.5 il 5-6 novembre, vedi sotto. PR finale #566 (`release/passo-1-3`).
   - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f → 4.371 dopo 1i.
     Dopo le correzioni del 5 nov (regole e `!important` rimessi): **4.504** nella PR finale; file CSS 50 → 27.
 
@@ -136,7 +136,7 @@ Restano nel codice:
 
 ### Cosa unire, in ordine
 
-**Consigliato: una sola PR, la finale `release/passo-1-3` -> `main`.** Contiene, controllato commit per commit:
+**Consigliato: una sola PR, la finale #566 (`release/passo-1-3` -> `main`).** Contiene, controllato commit per commit:
 1. Passo 0 e Passo 1: #540-#558, tutto quello che c'e' in `release/passo-1-css` (#559);
 2. proposta del Passo 3 (#560, solo documenti);
 3. 3.1 #561 -> 3.2 #562 -> 3.3 #563 -> 3.4 #564 -> 3.5 #565 (ognuna contiene la precedente);
