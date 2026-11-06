@@ -80,8 +80,7 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
   - `dynamic-progression-legacy-parity-test.js` (non toccato): i 4 giocatori tolti da IE1 il 13 set (commit
     `c54483d`) sono Trice Topper (4461), Gideon Poe (4477), Electra Faraday (4482), Darren Gouger (4484), ora in
     `removedPlayers` di `data/IE1_season_compact.json`.
-  - Prossimo: Passo 3 (eventi come dati) dopo il 7 novembre; prima del codice proporre formato del file evento,
-    test di controllo e evento finto, e aspettare l'ok.
+  - Passo 3 (eventi come dati): fatte 3.1-3.5 il 5-6 novembre, vedi sotto. PR finale `release/passo-1-3`.
   - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f → 4.371 dopo 1i.
     Dopo le correzioni del 5 nov (regole e `!important` rimessi): **4.504** nella PR finale; file CSS 50 → 27.
 
@@ -99,14 +98,58 @@ sull'account reale; tema opzione A; immagini esterne per ora restano. Niente in 
 | # | PR | Cosa cambia | Ci si puo' fermare qui? |
 |---|---|---|---|
 | 3.1 | #561 registro Season | etichette, sigle, campagne delle 5 Season in un solo posto (`rtg-config.js`) | si': una Season nuova si scrive in un posto solo |
-| 3.2 | evento nei dati | `data/events/halloween2026.json` + registro eventi; Halloween legge date, prezzi, premi, squadra, carte, immagini dal file; test dei dati | si': i numeri dell'evento sono nel file, controllati dal test |
-| 3.3 | poteri come dati | registro dei tipi di potere; Hekyll e `powerReady` dai dati; test di comportamento prima/dopo | si': un allenatore con un potere esistente si aggiunge con i dati |
-| 3.4 | modulo evento generico | via `halloween2026`/`occult-2`/`HW` scritti negli altri ~20 file; `shared.events.<id>` per gli eventi nuovi; test salvataggio vecchio | si': il sistema e' generico |
-| 3.5 | evento finto + test | evento di prova solo in `?dev=1`, mai scritto sull'account reale; prova nel browser; copertura | prova finale del passo |
-| 3.6 | tema (opzione A) | CSS tema `--event-*` per gli eventi nuovi; carta/scheda/badge Halloween sulle variabili | — |
+| 3.2 | #562 evento nei dati | `data/events/halloween2026.json` + registro eventi; Halloween legge date, prezzi, premi, squadra, carte, immagini dal file; test dei dati | si': i numeri dell'evento sono nel file, controllati dal test |
+| 3.3 | #563 poteri come dati | registro dei tipi di potere; Hekyll e `powerReady` dai dati; test di comportamento prima/dopo | si': un allenatore con un potere esistente si aggiunge con i dati |
+| 3.4 | #564 modulo evento generico | via `halloween2026`/`occult-2`/`HW` scritti negli altri ~20 file; `shared.events.<id>` per gli eventi nuovi; test salvataggio vecchio | si': il sistema e' generico |
+| 3.5 | #565 evento finto + test | evento di prova solo in `?dev=1`, mai scritto sull'account reale; prova nel browser; copertura | prova finale del passo |
+| 3.6 | tema (opzione A) | CSS tema `--event-*` per gli eventi nuovi; carta/scheda/badge Halloween sulle variabili | rimandata (decisione del 6 nov) |
 | 3.7 | immagini locali | rimandata (decisione del 5 nov) | — |
 
 Il vantaggio principale arriva con 3.1-3.3; 3.4-3.5 rendono il sistema davvero generico.
+
+### Passo 3: risultato finale (6 nov 2026)
+
+Fatte 3.1-3.5. Restano fuori, per decisione dell'utente del 6 nov: 3.6 (tema) e 3.7 (immagini locali).
+La proposta di partenza resta in `docs/PASSO_3_EVENTI.md` (le stime di tempo li' sono quelle del 5 nov).
+
+| Controllo | Risultato |
+|---|---|
+| `npm test` | 471 test: **432 passati, 39 falliti**. Sono gli stessi 39 gia' rossi in `release/passo-1-css` (gruppo 2, `dynamic-progression-legacy-parity` e gli altri noti): nessun test peggiorato. 5 test nuovi: `rtg-season-registry`, `event-manifest`, `coach-power-parity`, `event-save-compat`, `event-registry-load` |
+| Parita' dei poteri degli allenatori | `tests/coach-power-parity-test.js`: **1.861 casi identici** al codice di prima (tutti gli 11 allenatori + uno sconosciuto, squadra e prepartita), verde a ogni push |
+| Numeri di Halloween | `tests/event-manifest-test.js`: prezzo 200, premi 300/600, 10%, fine 6 nov 23:59:59, inizio 647c4672, 18 carte (14 Forte, 2 Elite, 2 Leggenda), Shawn invariato: verde a ogni push |
+| Salvataggio | `tests/event-save-compat-test.js`: un salvataggio vecchio da' nel cloud lo stesso risultato del codice di prima (impronta registrata con il Passo 3.3); `shared.events.<id>` solo aggiunto; Halloween in `shared.halloween`. Regole Firestore non toccate |
+| Prove nel browser | **13/13** (le 12 di prima + `12-evento-finto`: l'evento finto non scrive mai `shared:account`, controllato anche con un guasto voluto) |
+| Foto e stile calcolato | Identici a `release/passo-1-css`: 12 schermate Halloween, 5 album, squadra RTG, allenatori RTG, 4 sviluppo (3.4 e di nuovo 3.5); 4 allenatori, 2 potere, distributore allenatori (3.3 e di nuovo dopo la correzione della scheda allenatori). 0 schermate diverse |
+
+Cosa e' cambiato nel comportamento (voluto):
+- **Avvio:** se `data/events/index.json` non si carica, il gioco riprova una volta e poi si ferma con "Impossibile caricare i dati del gioco…".
+  Prima partiva lo stesso, ma senza l'elenco degli eventi le carte Halloween sarebbero state lette come carte IE1.
+- **Evento finto:** esiste solo con `?dev=1&evento=prova_dev`.
+
+Restano nel codice:
+- **Hekyll Jyde nel catalogo allenatori** (`rtg-coaches.js`, 1 riga: `halloween-coach-54` e `seasonId:"halloween2026"`).
+  E' una dipendenza vera: `rtg-state.js` tiene nel salvataggio solo gli allenatori del catalogo e rifiuta quelli sconosciuti.
+  Se l'allenatore fosse preso solo dal file dell'evento e quel file non si caricasse, l'allenatore sparirebbe dall'account.
+  Toglierla vuol dire cambiare le regole del salvataggio: si fa solo con l'ok dell'utente.
+  `event-manifest-test` controlla che nome e potere coincidano con il file dell'evento.
+- I testi dell'ingresso evento ("EVENTO HALLOWEEN", "ZUCCHE HALLOWEEN") e le classi CSS `halloween-*`: sono il lavoro del 3.6.
+
+### Cosa unire, in ordine
+
+**Consigliato: una sola PR, la finale `release/passo-1-3` -> `main`.** Contiene, controllato commit per commit:
+1. Passo 0 e Passo 1: #540-#558, tutto quello che c'e' in `release/passo-1-css` (#559);
+2. proposta del Passo 3 (#560, solo documenti);
+3. 3.1 #561 -> 3.2 #562 -> 3.3 #563 -> 3.4 #564 -> 3.5 #565 (ognuna contiene la precedente);
+4. #550 (commento rotto in `rtg-run.css`) e #551 (script di migrazione) sono gia' dentro #559.
+
+Dopo averla unita, le PR #540-#565 si chiudono senza unirle: il loro contenuto e' gia' in `main`.
+
+Se invece si vuole unire una PR alla volta, l'ordine e' questo, e ognuna va unita nel ramo su cui punta:
+#559 in `main`, poi #561 in `release/passo-1-css`, #562 in #561, #563, #564, #565, infine #560.
+In pratica e' piu' semplice unire solo la finale.
+
+Prima di unire: le verifiche con l'evento finito, dopo il 6 nov alle 23:59 italiane. Evento chiuso; carte, allenatore,
+potere e scheda Halloween ancora corretti in squadra e album.
 
 ## Come unire le PR #540–#558 (aggiornato il 5 nov 2026)
 
