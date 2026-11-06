@@ -21,7 +21,7 @@
     "matchKey": "dev:prova_dev:match",
     "squadKey": "dev:prova_dev:squad",
     "currencyField": "balance",
-    "ownedIdPattern": "^(?:[0-9]+|custom_000[12])$"
+    "ownedIdPattern": "^[0-9]+$"
   },
   "currency": {
     "id": "gettoni_prova",
@@ -35,123 +35,72 @@
     "luckyChancePercent": 10
   },
   "team": {
-    "teamId": "occult-2",
-    "name": "Occult Halloween",
-    "logo": "https://dxi4wb638ujep.cloudfront.net/1/k/r/k/rk_nafgart8.webp",
+    "teamId": "prova-angeli",
+    "name": "Angeli di prova",
+    "logo": "assets/icons/icon-512.png",
     "files": {
-      "players": "data/rtg-halloween-occult-players.json",
-      "lineup": "data/rtg-halloween-occult-lineup.json",
-      "moves": "data/rtg-halloween-occult-moves.json"
+      "players": "data/events/dev/prova_dev/prova-angeli-players.json",
+      "lineup": "data/events/dev/prova_dev/prova-angeli-lineup.json",
+      "moves": "data/events/dev/prova_dev/prova-angeli-moves.json"
     },
-    "rosterSize": 18,
+    "rosterSize": 11,
     "startersSize": 11
   },
   "cards": [
     {
-      "playerId": "45",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/f/q/fq-jb0lbuau_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "48",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/x/4/x4lub1si1s0_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "50",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/g/_/g_36lx_6t_s_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "custom_0002",
-      "rarity": "Leggenda",
+      "playerId": "2050",
+      "rarity": "Mondiale",
       "vampire": false
     },
     {
-      "playerId": "40",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/j/0/j0lsn9bhdzm_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "42",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/6/9/69tvob1rrsk_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "46",
+      "playerId": "2051",
       "rarity": "Elite",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/u/4/u4pcsld75z8_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "41",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/l/v/lviojktrgfm_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "53",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/z/z/zziy1s-kwq0_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "38",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/y/z/yz3gzfs1bku_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "custom_0001",
-      "rarity": "Leggenda",
       "vampire": false
     },
     {
-      "playerId": "52",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/t/2/t2bhmxlsfke_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "43",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/a/s/aswadgazemu_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "49",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/r/x/rxgbiozaame_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "44",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/r/6/r6b7w5mjz_8_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "39",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/4/c/4cuzgcn9uqk_r0_fullbody.webp",
-      "vampire": true
-    },
-    {
-      "playerId": "47",
+      "playerId": "2053",
       "rarity": "Elite",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/a/q/aqup2kkyyfc_r0_fullbody.webp",
-      "vampire": true
+      "vampire": false
     },
     {
-      "playerId": "51",
-      "rarity": "Forte",
-      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/i/e/iewmlotwo5s_r0_fullbody.webp",
-      "vampire": true
+      "playerId": "2060",
+      "rarity": "Mondiale",
+      "vampire": false
+    },
+    {
+      "playerId": "2048",
+      "rarity": "Elite",
+      "vampire": false
+    },
+    {
+      "playerId": "2043",
+      "rarity": "Elite",
+      "vampire": false
+    },
+    {
+      "playerId": "2055",
+      "rarity": "Mondiale",
+      "vampire": false
+    },
+    {
+      "playerId": "2040",
+      "rarity": "Elite",
+      "vampire": false
+    },
+    {
+      "playerId": "2049",
+      "rarity": "Mondiale",
+      "vampire": false
+    },
+    {
+      "playerId": "2059",
+      "rarity": "Elite",
+      "vampire": false
+    },
+    {
+      "playerId": "2045",
+      "rarity": "Elite",
+      "vampire": false
     }
   ],
   "coaches": [
@@ -159,7 +108,7 @@
       "id": "prova-coach-1",
       "zukanId": "prova1",
       "name": "Allenatore di prova",
-      "imageUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/j/ojxxbxm3gy8.png",
+      "imageUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/8/c/8cswivaougk.png",
       "power": {
         "type": "requirementsOvrDiscount",
         "name": "Maschera di prova",
