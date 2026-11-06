@@ -45,7 +45,9 @@
       // Normal RTG exposes shared acquired cards, not the event's private
       // ownedIds projection. Count only canonical Halloween card IDs.
       // Carte, premio finale e numero di giocatori arrivano dal file dell'evento (data/events/).
-      const albumEvent=(global.GameEvents?.all?.()||[]).find(event=>event.kind==="capsuleEvent")||null;
+      // Con due eventi attivi (?dev=1&evento=) l'album resta quello dell'evento vero.
+      const albumEvent=(global.GameEvents?.all?.()||[]).filter(event=>event.kind==="capsuleEvent")
+        .sort((a,b)=>Number(a.dev===true)-Number(b.dev===true))[0]||null;
       const eventPrefix=albumEvent?.save?.cardIdPrefix||"";
       const eventOwnedId=new RegExp(albumEvent?.save?.ownedIdPattern||"^$");
       const bonusPlayerId=albumEvent?.completionReward?.playerId||"";

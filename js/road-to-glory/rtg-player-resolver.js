@@ -79,8 +79,11 @@
     if (!api) return null;
     const parsed = api.parse(cardRef);
     if (!parsed.cardId || !api.isCardId(parsed.cardId)) return null;
-    if(parsed.legacySeasonId===global.RoadToGloryHalloween?.EVENT_ID){
-      const player=global.RoadToGloryHalloween.eventPlayer(parsed.playerId);
+    // Carta di un evento: il modulo del SUO evento (Passo 4.3), con Halloween come prima se il registro manca.
+    const eventModule=global.GameEvents?.module?.(parsed.legacySeasonId)||
+      (parsed.legacySeasonId===global.RoadToGloryHalloween?.EVENT_ID?global.RoadToGloryHalloween:null);
+    if(eventModule){
+      const player=eventModule.eventPlayer(parsed.playerId);
       return player?Object.freeze({cardId:parsed.cardId,playerId:parsed.playerId,legacySeasonId:parsed.legacySeasonId,seasonId:parsed.legacySeasonId,player:Object.freeze(player)}):null;
     }
     if (parsed.sourceKind === api.FREE_AGENTS) {
@@ -156,7 +159,9 @@
   function resolveBaseAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null, progressionOptions = null) {
     const api = cardIdentity();
     const rawRef = id(playerId?.cardId || playerId);
-    if(global.GameEvents?.isEventCard?.(rawRef))return global.RoadToGloryHalloween?.eventPlayer?.(rawRef.slice(rawRef.indexOf("::")+2))||null;
+    if(global.GameEvents?.isEventCard?.(rawRef))return (global.GameEvents.moduleForCard?.(rawRef)||
+      (rawRef.startsWith(global.RoadToGloryHalloween?.EVENT_ID+"::")?global.RoadToGloryHalloween:null))
+      ?.eventPlayer?.(rawRef.slice(rawRef.indexOf("::")+2))||null;
     const exactCard = api?.isCardId?.(rawRef);
     const parsed = exactCard ? api.parse(rawRef) : null;
     const resolved = resolveVersion(playerId, activeSeasonId, freeAgentsDb);

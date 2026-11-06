@@ -55,7 +55,8 @@
     return vals[0] + "g " + String(vals[1]).padStart(2,"0") + "h " + String(vals[2]).padStart(2,"0") + "m " + String(vals[3]).padStart(2,"0") + "s";
   }
   function eventCard() {
-    return '<button type="button" class="rtg-campaign-card rtg-halloween-entry" data-rtg-halloween-open ' +
+    return '<button type="button" class="rtg-campaign-card rtg-halloween-entry" data-rtg-halloween-open data-rtg-event-open="' +
+      escape(EVENT_ID) + '" ' +
       (isOpen() ? '' : 'disabled aria-disabled="true" ') +
       '><img class="rtg-campaign-card__image" src="' + escape(BANNER_URL) + '" alt="">' +
       '<span class="rtg-campaign-shade"></span><span class="rtg-campaign-copy"><small>EVENTO LIMITATO · 2026</small>' +
@@ -250,7 +251,8 @@
     }
     async function grantCompletionReward() {
       const bonus=global.RoadToGloryHalloweenCompletion;
-      if (!isOpen() || !bonus?.eligible?.(shared,assets?.players) || bonus.owns(shared)) return false;
+      // Il premio finale appartiene solo all'evento che lo ha nel suo file (Halloween: Shawn).
+      if (!manifest.completionReward || !isOpen() || !bonus?.eligible?.(shared,assets?.players) || bonus.owns(shared)) return false;
       let granted=false;
       await mutate("halloween-completion-reward",account=>{
         granted=bonus.grant(account,assets.players);
@@ -1526,13 +1528,17 @@
     }
     return Object.freeze({open,render,dispose,getState:()=>({shared:shared&&clone(shared),match:match&&clone(match)})});
   }
-  global.RoadToGloryHalloween = Object.freeze({
+  const api = Object.freeze({
     EVENT_ID,TEAM_ID,EVENT_END_MS,PRICE,PRIZE,LUCKY_PRIZE,isOpen,countdown,eventCard,prepare,
     eventPlayer:player,eventState,opponentOverall,weightedPick,create
   });
+  // Passo 4.3: un'istanza per ogni evento attivo, registrata nel registro eventi (GameEvents.module/moduleForCard).
+  // RoadToGloryHalloween resta il nome dell'istanza dell'evento vero, come prima: chi lo usa non cambia.
+  global.GameEvents?.registerModule?.(EVENT_ID, api);
+  if (manifest.dev !== true && !global.RoadToGloryHalloween) global.RoadToGloryHalloween = api;
   }
-  // Si installa per l'evento a capsule caricato dal registro (kind "capsuleEvent" nel file dell'evento).
-  // Con ?dev=1&evento=<id> si installa solo l'evento finto (GameEvents.isActive).
+  // Si installa per ogni evento a capsule attivo (kind "capsuleEvent" nel file dell'evento): gli eventi veri e,
+  // con ?dev=1&evento=<id>, anche l'evento finto, accanto agli altri.
   global.GameEvents?.onAnyLoad?.(manifest => {
     if (manifest.kind === "capsuleEvent" && global.GameEvents.isActive(manifest.id)) install(manifest);
   });

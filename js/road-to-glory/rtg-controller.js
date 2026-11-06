@@ -132,7 +132,7 @@
     }
     async function ensureData(){
       assertCurrent();const checkData=controllerFence?.checkpoint();
-      global.RoadToGloryHalloween?.prepare?.()?.catch?.(error=>global.console?.warn?.("[RTG Halloween] Optional assets unavailable",error));
+      for(const event of global.GameEvents?.modules?.()||[global.RoadToGloryHalloween].filter(Boolean))event.prepare?.()?.catch?.(error=>global.console?.warn?.("[RTG Halloween] Optional assets unavailable",error));
       const sid=activeSeasonId();
       seasonDb=global.SeasonRegistry?.database?.(sid)||seasonDb;
       if(!seasonDb||id(seasonDb?.seasonId||"ie1")!==sid){
@@ -158,7 +158,7 @@
       return (squadRuntime?.accessiblePlayerIds?.(args)||freeAgentIds).map(freeAgentCardId);
     }
     function rawPlayer(cardRef){const meta=cardMeta(cardRef);
-      if(meta.legacySeasonId===global.RoadToGloryHalloween?.EVENT_ID)return global.RoadToGloryHalloween.eventPlayer(meta.playerId);
+      const eventModule=global.GameEvents?.module?.(meta.legacySeasonId)||(meta.legacySeasonId===global.RoadToGloryHalloween?.EVENT_ID?global.RoadToGloryHalloween:null);if(eventModule)return eventModule.eventPlayer(meta.playerId);
       if(meta.sourceKind===cardIdentity?.FREE_AGENTS)return (freeAgentsDb?.players||[]).find(player=>id(player?.playerId||player?.id)===id(meta.playerId))||null;
       if(meta.legacySeasonId){
         const db=global.SeasonRegistry?.database?.(meta.legacySeasonId)||(meta.legacySeasonId==="ie1"?seasonDb:null);
@@ -1006,9 +1006,9 @@
       return result;
       }finally{pullBusy=false;}
     }
-    let halloweenMode=null;function openHalloween(){if(!halloweenMode)halloweenMode=global.RoadToGloryHalloween.create({app,devMode:DEV_MODE,toast:deps.toast,onReturn:()=>renderCampaignSelect(),squadView:deps.squadView,runView:deps.runView,matchView:deps.matchView,compactPlayerCardMarkup:deps.compactPlayerCardMarkup,showPlayerDetailsFor:deps.showPlayerDetailsFor,openModal:deps.openModal,closeModal:deps.closeModal,getModalRoot:deps.getModalRoot,getUserTeamMeta:deps.getUserTeamMeta,getAlbumProgress:deps.getAlbumProgress});return halloweenMode.open().catch(error=>{global.console?.error?.("[RTG Halloween]",error);deps.toast?.(error?.code==="halloween-squad-insufficient-players"||error?.code==="halloween-bench-insufficient"?"Sblocca abbastanza svincolati nelle run RTG o ottieni giocatori Halloween per comporre 11 titolari e 4 riserve.":"Evento Halloween non disponibile","error");renderCampaignSelect();});}
-    function renderCampaignSelect(){halloweenMode?.dispose?.();
-      renderHtml(runView.campaignSelectorMarkup());app?.querySelector?.("[data-rtg-halloween-open]")?.addEventListener("click",()=>openHalloween());
+    const eventModes=new Map();let halloweenMode=null;function openHalloween(eventId=""){const eventModule=global.GameEvents?.module?.(eventId)||global.RoadToGloryHalloween;for(const [key,mode] of eventModes)if(key!==eventModule.EVENT_ID)mode?.dispose?.();halloweenMode=eventModes.get(eventModule.EVENT_ID)||null;if(!halloweenMode){halloweenMode=eventModule.create({app,devMode:DEV_MODE,toast:deps.toast,onReturn:()=>renderCampaignSelect(),squadView:deps.squadView,runView:deps.runView,matchView:deps.matchView,compactPlayerCardMarkup:deps.compactPlayerCardMarkup,showPlayerDetailsFor:deps.showPlayerDetailsFor,openModal:deps.openModal,closeModal:deps.closeModal,getModalRoot:deps.getModalRoot,getUserTeamMeta:deps.getUserTeamMeta,getAlbumProgress:deps.getAlbumProgress});eventModes.set(eventModule.EVENT_ID,halloweenMode);}return halloweenMode.open().catch(error=>{global.console?.error?.("[RTG Halloween]",error);deps.toast?.(error?.code==="halloween-squad-insufficient-players"||error?.code==="halloween-bench-insufficient"?"Sblocca abbastanza svincolati nelle run RTG o ottieni giocatori Halloween per comporre 11 titolari e 4 riserve.":"Evento Halloween non disponibile","error");renderCampaignSelect();});}
+    function renderCampaignSelect(){halloweenMode?.dispose?.();for(const mode of eventModes.values())mode?.dispose?.();
+      renderHtml(runView.campaignSelectorMarkup());app?.querySelectorAll?.("[data-rtg-halloween-open]")?.forEach(button=>button.addEventListener("click",()=>openHalloween(button.dataset.rtgEventOpen)));
       app?.querySelector?.("[data-rtg-campaign-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
       app?.querySelectorAll?.("[data-rtg-campaign]")?.forEach(button=>button.addEventListener("click",async()=>{
         const campaignId=id(button.dataset.rtgCampaign);repository.selectCampaign?.(campaignId);
@@ -1039,7 +1039,7 @@
       }
       campaign=await repository.ensureCampaign();checkOpen();
       if((campaign?.gachaAcquiredCards||[]).some(card=>global.GameEvents?.isEventCard?.(id(card?.cardId)))){
-        await global.RoadToGloryHalloween?.prepare?.();checkOpen();
+        for(const event of global.GameEvents?.modules?.()||[global.RoadToGloryHalloween].filter(Boolean)){if((campaign.gachaAcquiredCards||[]).some(card=>id(card?.cardId).startsWith(event.EVENT_ID+"::")))await event.prepare?.();}checkOpen();
       }
       progression?.setSeasonContext?.(campaign);if(typeof progression?.repairCheckpointPosition==="function"&&progression.repairCheckpointPosition(campaign)!==campaign){campaign=await repository.update("rtg-recover-earned-checkpoint",current=>progression.repairCheckpointPosition(current));checkOpen();}
       if(activeSeasonId()==="ie2"){
