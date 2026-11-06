@@ -1,7 +1,7 @@
 (function (global) {
   "use strict";
   // Passo 3: i dati di Halloween (date, prezzi, squadra, carte, allenatore, immagini) arrivano dal manifest
-  // data/events/halloween2026.json tramite il registro eventi (js/events/event-registry.js). Qui sotto solo la
+  // data/events/<id>.json tramite il registro eventi (js/events/event-registry.js). Qui sotto solo la
   // lettura dei campi; la logica dell'evento resta quella di prima.
   function install(manifest) {
   const EVENT_ID = manifest.id;
