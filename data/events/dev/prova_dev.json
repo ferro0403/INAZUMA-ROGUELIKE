@@ -8,7 +8,33 @@
     "badge": "PR",
     "collection": "Prova",
     "filter": "Prova",
-    "source": "Evento di prova"
+    "source": "Evento di prova",
+    "ui": {
+      "entryEyebrow": "EVENTO DI PROVA · SOLO DEV",
+      "entryTitle": "🧪 EVENTO DI PROVA",
+      "entrySubtitle": "ANGELI DI PROVA",
+      "completionTitle": "🧪 EVENTO DI PROVA",
+      "short": "di prova",
+      "appAria": "Road to Glory evento di prova",
+      "brand": "PROVA",
+      "nextMatchAria": "Prossima partita di prova",
+      "challengeEyebrow": "SFIDA DI PROVA · IL CIELO DEGLI ANGELI",
+      "challengeTitle": [
+        "ANGELI",
+        "DI PROVA"
+      ],
+      "capsuleEyebrow": "CAPSULE DI PROVA",
+      "vendingTitle": "DISTRIBUTORE DI PROVA",
+      "vendingTitleLong": "IL DISTRIBUTORE DI PROVA",
+      "vendingStation": "CAPSULE STATION · PROVA",
+      "vendingAria": "Distributore di prova",
+      "icon": "🧪",
+      "walletTitle": "GETTONI PROVA",
+      "tag": "PROVA · ANGELI",
+      "albumPath": "ALBUM → EVENTO DI PROVA",
+      "prizeCredited": "PREMIO DI PROVA ACCREDITATO",
+      "devTitle": "DEV EVENTO DI PROVA"
+    }
   },
   "window": {
     "start": "2026-11-01T00:00:00+01:00",
@@ -21,12 +47,17 @@
     "matchKey": "dev:prova_dev:match",
     "squadKey": "dev:prova_dev:squad",
     "currencyField": "balance",
-    "ownedIdPattern": "^[0-9]+$"
+    "ownedIdPattern": "^[0-9]+$",
+    "matchIdPrefix": "prova-dev:",
+    "matchNodeId": "event:prova-dev"
   },
   "currency": {
     "id": "gettoni_prova",
     "name": "Gettoni prova",
-    "icon": "assets/icons/icon-512.png"
+    "icon": "assets/icons/icon-512.png",
+    "unit": "gettoni",
+    "unitUpper": "GETTONI",
+    "iconAlt": "Gettone di prova"
   },
   "economy": {
     "pullPrice": 200,
@@ -129,7 +160,7 @@
     }
   ],
   "assets": {
-    "banner": "https://img.magnific.com/foto-gratuito/illustrazione-digitale-di-halloween_23-2151822706.jpg?semt=ais_hybrid&w=740&q=80",
-    "background": "https://static9.depositphotos.com/1014889/1236/i/450/depositphotos_12367834-stock-photo-halloween-background-spooky-graveyard.jpg"
+    "banner": "assets/rtg/rtg-orion-route-map-user.webp",
+    "background": "assets/rtg/rtg-season3-route-map-user.webp"
   }
 }

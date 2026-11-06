@@ -7,7 +7,33 @@
     "badge": "HW",
     "collection": "Halloween",
     "filter": "Halloween",
-    "source": "Evento Halloween"
+    "source": "Evento Halloween",
+    "ui": {
+      "entryEyebrow": "EVENTO LIMITATO · 2026",
+      "entryTitle": "🎃 EVENTO HALLOWEEN",
+      "entrySubtitle": "OCCULT HALLOWEEN",
+      "completionTitle": "🎃 EVENTO HALLOWEEN 2026",
+      "short": "Halloween",
+      "appAria": "Road to Glory Halloween",
+      "brand": "HALLOWEEN",
+      "nextMatchAria": "Prossima partita Halloween",
+      "challengeEyebrow": "SFIDA EVENTO · IL CIMITERO STREGATO",
+      "challengeTitle": [
+        "OCCULT",
+        "HALLOWEEN"
+      ],
+      "capsuleEyebrow": "CAPSULE HALLOWEEN",
+      "vendingTitle": "DISTRIBUTORE STREGATO",
+      "vendingTitleLong": "IL DISTRIBUTORE STREGATO",
+      "vendingStation": "CAPSULE STATION · HALLOWEEN",
+      "vendingAria": "Distributore Halloween",
+      "icon": "🎃",
+      "walletTitle": "ZUCCHE HALLOWEEN",
+      "tag": "OCCULT · HALLOWEEN",
+      "albumPath": "ALBUM → EVENTO HALLOWEEN",
+      "prizeCredited": "PREMIO HALLOWEEN ACCREDITATO",
+      "devTitle": "DEV HALLOWEEN"
+    }
   },
   "window": {
     "start": "2026-10-28T01:38:58+01:00",
@@ -20,12 +46,17 @@
     "matchKey": "local:halloween2026:match",
     "squadKey": "local:halloween2026:squad",
     "currencyField": "pumpkins",
-    "ownedIdPattern": "^(?:[0-9]+|custom_000[12])$"
+    "ownedIdPattern": "^(?:[0-9]+|custom_000[12])$",
+    "matchIdPrefix": "halloween-2026:",
+    "matchNodeId": "event:occult-halloween"
   },
   "currency": {
     "id": "pumpkins",
     "name": "Zucche",
-    "icon": "https://static.vecteezy.com/ti/vettori-gratis/p1/3690657-halloween-zucca-disegno-halloween-zucca-vettore-isolare-su-sfondo-bianco-gratuito-vettoriale.jpg"
+    "icon": "https://static.vecteezy.com/ti/vettori-gratis/p1/3690657-halloween-zucca-disegno-halloween-zucca-vettore-isolare-su-sfondo-bianco-gratuito-vettoriale.jpg",
+    "unit": "zucche",
+    "unitUpper": "ZUCCHE",
+    "iconAlt": "Zucca Halloween"
   },
   "economy": {
     "pullPrice": 200,
