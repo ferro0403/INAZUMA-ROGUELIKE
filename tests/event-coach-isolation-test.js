@@ -27,7 +27,7 @@ function engine(context) {
 }
 const card = (cardId, extra = {}) => ({ cardId, playerId: cardId.split("::")[1], legacySeasonId: cardId.split("::")[0],
   position: "MF", normalizedRole: "MF", category: "Forte", ...extra });
-const lineup = [card("halloween2026::38"), card("prova_dev::38"), card("ie1::a"), card("ie1::b", { position: "GK", normalizedRole: "GK" })];
+const lineup = [card("halloween2026::38"), card("prova_dev::2050"), card("ie1::a"), card("ie1::b", { position: "GK", normalizedRole: "GK" })];
 const discount = (context, coachId, cardIds) => plain(context.RoadToGloryCoachPowerRuntime.overallDiscountFor(
   { coachId, lineup, bench: [], coachPowerSelection: { coachId, cardIds } },
   { coachOwnedIds: [coachId], activeSeasonId: "ie1" }));
@@ -42,8 +42,8 @@ const discount = (context, coachId, cardIds) => plain(context.RoadToGloryCoachPo
   assert.strictEqual(types.powerFor("prova-coach-1").params.amount, 10, "sconto dell'allenatore finto: 10");
   assert.deepStrictEqual(discount(dev, "halloween-coach-54", ["halloween2026::38"]), { cardId: "halloween2026::38", amount: 15 },
     "Hekyll riconosce i giocatori Halloween anche con l'evento di prova attivo");
-  assert.strictEqual(discount(dev, "halloween-coach-54", ["prova_dev::38"]), null, "Hekyll non riconosce le carte di prova");
-  assert.deepStrictEqual(discount(dev, "prova-coach-1", ["prova_dev::38"]), { cardId: "prova_dev::38", amount: 10 });
+  assert.strictEqual(discount(dev, "halloween-coach-54", ["prova_dev::2050"]), null, "Hekyll non riconosce le carte di prova");
+  assert.deepStrictEqual(discount(dev, "prova-coach-1", ["prova_dev::2050"]), { cardId: "prova_dev::2050", amount: 10 });
   assert.strictEqual(discount(dev, "prova-coach-1", ["halloween2026::38"]), null,
     "l'allenatore di prova riconosce solo le carte del suo evento");
 
