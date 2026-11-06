@@ -45,3 +45,30 @@ assert(Array.from(events.validate({ ...plain(halloween), save: { ...halloween.sa
   .some((error) => /save\.key/.test(error)));
 
 console.log("event-save-compat-test: PASS (salvataggio vecchio invariato, shared.events.<id> solo aggiunto)");
+
+// Salvataggio nel cloud: con un salvataggio vecchio il risultato e' IDENTICO a quello del codice di prima. L'impronta
+// sotto e' stata calcolata con rtg-cloud-snapshot.js del Passo 3.3 (commit b3946e4c), prima di aggiungere events.
+const fs = require("fs");
+const vm = require("vm");
+const crypto = require("crypto");
+const FILE = "js/road-to-glory/rtg-cloud-snapshot.js";
+const OLD_SAVE_CLOUD_SHA1 = "18c47fc62d7ba7c0335da2f7ff300633a5d23c4a";
+const sandbox = vm.createContext({ console });
+sandbox.globalThis = sandbox;
+vm.runInContext(fs.readFileSync(FILE, "utf8"), sandbox, { filename: FILE });
+const now = sandbox.RoadToGloryCloudSnapshot;
+const project = (shared) => plain(now.project({ shared: plain(shared), trilogy: null, aresOrion: null, album: null }));
+const oldProjected = project(OLD_SAVE);
+assert.strictEqual(crypto.createHash("sha1").update(JSON.stringify(oldProjected)).digest("hex"), OLD_SAVE_CLOUD_SHA1,
+  "salvataggio vecchio: cloud identico a prima");
+assert(!("events" in oldProjected.shared), "un salvataggio vecchio non riceve il campo events");
+assert.deepStrictEqual(plain(now.validate(oldProjected)), oldProjected, "il salvataggio vecchio si rilegge uguale");
+
+const withEvents = { ...plain(OLD_SAVE), events: { prova: ledger } };
+const projected = project(withEvents);
+assert.deepStrictEqual(projected.shared.events, { prova: ledger }, "shared.events conservato nel cloud");
+assert.deepStrictEqual(projected.shared.halloween, plain(OLD_SAVE.halloween), "Halloween invariato accanto a events");
+assert.throws(() => project({ ...plain(OLD_SAVE), events: { prova: { balance: -1 } } }), /rtg-cloud-invalid/);
+assert.throws(() => project({ ...plain(OLD_SAVE), events: { "Non Valido": {} } }), /rtg-cloud-invalid-events/);
+
+console.log("event-save-compat-test: PASS anche nel cloud (vecchio identico a prima, events conservato)");
