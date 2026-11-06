@@ -20,6 +20,9 @@ const RARITIES = Array.from(context.RoadToGloryEconomy?.RARITIES ||
 const DIR = "data/events";
 const index = JSON.parse(fs.readFileSync(path.join(DIR, "index.json"), "utf8"));
 const files = fs.readdirSync(DIR).filter((f) => f.endsWith(".json") && f !== "index.json");
+// Eventi finti (solo sviluppo, Passo 3.5): stessi controlli, ma mai nell'indice e salvataggio solo in "dev:".
+const DEV_DIR = path.join(DIR, "dev");
+const devFiles = fs.existsSync(DEV_DIR) ? fs.readdirSync(DEV_DIR).filter((f) => f.endsWith(".json")) : [];
 assert.deepStrictEqual([...index.events].sort(), files.map((f) => f.replace(/\.json$/, "")).sort(),
   "index.json deve elencare esattamente i file evento presenti");
 
@@ -27,12 +30,21 @@ const seen = { id: new Set(), badge: new Set(config.SEASON_IDS.map((id) => confi
 const readJson = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const okImage = (value) => typeof value === "string" && (/^https:\/\//.test(value) || fs.existsSync(value));
 
-for (const file of files) {
+for (const file of [...files, ...devFiles.map((f) => `dev/${f}`)]) {
   const m = readJson(path.join(DIR, file));
+  const isDev = file.startsWith("dev/");
+  if (isDev) {
+    assert.strictEqual(m.dev, true, `evento ${file}: un file in dev/ deve avere dev: true`);
+    assert(!index.events.includes(m.id), `evento ${file}: un evento finto non va in index.json`);
+    assert(m.save.storagePrefix.startsWith("dev:"), `evento ${file}: salvataggio fuori da dev:`);
+    assert(!m.save.key, `evento ${file}: un evento finto non scrive campi dell'account vero`);
+  } else {
+    assert.notStrictEqual(m.dev, true, `evento ${file}: un evento finto va in data/events/dev/`);
+  }
   const where = `evento ${file}`;
   const problems = Array.from(events.validate(m));
   assert.strictEqual(problems.length, 0, `${where}: forma non valida: ${problems.join("; ")}`);
-  assert.strictEqual(`${m.id}.json`, file, `${where}: id diverso dal nome del file`);
+  assert.strictEqual(`${m.id}.json`, path.basename(file), `${where}: id diverso dal nome del file`);
 
   // Unici tra eventi e Season.
   assert(!config.SEASON_IDS.includes(m.id) && !seen.id.has(m.id), `${where}: id gia' usato`);
@@ -124,4 +136,4 @@ assert.strictEqual(h.coaches[0].id, "halloween-coach-54");
 assert.deepStrictEqual(JSON.parse(JSON.stringify(h.coaches[0].power.params)),
   { amount: 15, picks: 1, target: "ownStarter", cardScope: "event" });
 
-console.log(`event-manifest-test: PASS (${files.length} eventi)`);
+console.log(`event-manifest-test: PASS (${files.length} eventi, ${devFiles.length} finti)`);
