@@ -1645,7 +1645,9 @@
   async function loadEvents() {
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       try {
-        await global.GameEvents?.load?.();
+        // Evento finto (Passo 3.5): solo con ?dev=1&evento=<id>, mai nel gioco normale.
+        const devEventId = DEV_MODE ? new URLSearchParams(global.location?.search || "").get("evento") || "" : "";
+        await global.GameEvents?.load?.(undefined, { devEventId });
         return true;
       } catch (error) {
         console.warn(`Elenco eventi non disponibile (tentativo ${attempt})`, error);

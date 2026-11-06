@@ -9,7 +9,11 @@
   const EVENT_END_MS = Date.parse(manifest.window.end);
   const MATCH_KEY = manifest.save.matchKey;
   const SQUAD_KEY = manifest.save.squadKey;
-  const SHARED_KEY = "shared:account";
+  // Evento finto (solo sviluppo): legge e scrive solo chiavi locali "dev:<id>:...", mai shared:account e quindi
+  // mai il cloud. Alla prima apertura parte da una copia dell'account vero, letto e non modificato.
+  const REAL_SHARED_KEY = "shared:account";
+  const SANDBOX = manifest.dev === true;
+  const SHARED_KEY = SANDBOX ? manifest.save.storagePrefix + "shared:account" : REAL_SHARED_KEY;
   const PRICE = manifest.economy.pullPrice;
   const PRIZE = manifest.economy.winPrize;
   const LUCKY_PRIZE = manifest.economy.luckyPrize;
@@ -140,6 +144,7 @@
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
     let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved",pendingRevealHidden=false;
     let selectedAlbumTeamId=TEAM_ID;
+    let sandboxSeed=null;
     let vendingMotion=null;
     let lastPresentedView=null;
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
@@ -154,7 +159,8 @@
     function lock() { global.RoadToGloryPersistence?.assertWritable?.(); global.PersistenceRecoveryGuard?.assertWritable?.(); }
     async function load() {
       const records = await storage.readMany([SHARED_KEY,SQUAD_KEY,MATCH_KEY]);
-      shared = readAccount(records[SHARED_KEY]);
+      if (SANDBOX && records[SHARED_KEY] == null) sandboxSeed = clone((await storage.readMany([REAL_SHARED_KEY]))[REAL_SHARED_KEY] || {});
+      shared = readAccount(records[SHARED_KEY] ?? (SANDBOX ? sandboxSeed : null));
       const stored = records[SQUAD_KEY] || null;
       activeSquadSlot = Number(stored?.activeSquadSlot)||1;
       squadSlots = stored?.slots || null;
@@ -181,7 +187,7 @@
         lock();
         const epoch = session;
         const saved = await storage.updateMany(keys, records => {
-          const before = readAccount(records[SHARED_KEY]), next = clone(before);
+          const before = readAccount(records[SHARED_KEY] ?? (SANDBOX ? sandboxSeed : null)), next = clone(before);
           const updated = handler(next, records);
           if (updated && typeof updated.then === "function") throw fail("halloween-async-mutation");
           eventState(ledger(next));
@@ -1524,5 +1530,8 @@
   });
   }
   // Si installa per l'evento a capsule caricato dal registro (kind "capsuleEvent" nel file dell'evento).
-  global.GameEvents?.onAnyLoad?.(manifest => { if (manifest.kind === "capsuleEvent") install(manifest); });
+  // Con ?dev=1&evento=<id> si installa solo l'evento finto (GameEvents.isActive).
+  global.GameEvents?.onAnyLoad?.(manifest => {
+    if (manifest.kind === "capsuleEvent" && global.GameEvents.isActive(manifest.id)) install(manifest);
+  });
 })(globalThis);
