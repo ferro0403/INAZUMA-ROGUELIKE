@@ -151,6 +151,56 @@ In pratica e' piu' semplice unire solo la finale.
 Prima di unire: le verifiche con l'evento finito, dopo il 6 nov alle 23:59 italiane. Evento chiuso; carte, allenatore,
 potere e scheda Halloween ancora corretti in squadra e album.
 
+## Passo 4 — Due eventi attivi insieme (stima del 6 nov 2026, in attesa dell'ok)
+
+Richiesta: due eventi attivi insieme, ognuno con il suo ingresso nelle campagne. Halloween resta identico (200/300/600/10%,
+stessa partita, `shared.halloween`). L'evento finto ha id, squadra, carte, allenatore e valuta propri, sta accanto a
+Halloween e non scrive mai sull'account reale. Ogni potere riconosce solo le carte del proprio evento.
+PR da `release/passo-1-3` verso `release/passo-1-3`; niente in `main`.
+
+### Cosa succede oggi (misurato)
+- **Un solo modulo evento per volta.** `rtg-halloween-event.js` (1.537 righe) crea un solo oggetto globale
+  `RoadToGloryHalloween`. Lo usano altri 5 file, tutti come se esistesse un solo evento: ingresso nelle campagne
+  (`rtg-run-view.js`), apertura (`rtg-controller.js`, 4 punti), album (`rtg-album-controller.js`), carte
+  (`rtg-player-resolver.js`, 2 punti), premio finale (`rtg-halloween-completion-reward.js`).
+  Con `?evento=prova_dev` si installa l'evento finto **al posto** di Halloween, per questo la scheda "EVENTO HALLOWEEN"
+  mostra la scadenza dell'evento finto (84 giorni).
+- **Hekyll non riconosce i giocatori Halloween con `?evento=prova_dev` (causa trovata).** L'evento finto usa lo stesso
+  allenatore di Halloween (`halloween-coach-54`). Il potere viene letto dal primo evento caricato che ha
+  quell'allenatore, e in quella modalita' il primo e' l'evento finto. Risultato: Hekyll riconosce solo le carte
+  `prova_dev::`. Verificato: gioco normale -> `halloween2026::`, con l'evento finto -> `prova_dev::`.
+- **Testi fissi.** Nel modulo ci sono ~25 testi visibili scritti per Halloween: "🎃 EVENTO HALLOWEEN",
+  "ZUCCHE HALLOWEEN", "DISTRIBUTORE STREGATO", "Occult Halloween", "zucche", "PREMIO HALLOWEEN ACCREDITATO",
+  "ALBUM → EVENTO HALLOWEEN"... Ci sono anche gli attributi `data-halloween-*` e le classi `halloween-*`.
+- **Ora dell'evento.** `Date.now()` compare 3 volte nel modulo (apertura e conto alla rovescia) e una volta nel premio
+  finale.
+
+### PR proposte (in ordine; ognuna si appoggia alla precedente)
+
+| # | PR | Cosa cambia | Stima | Ci si puo' fermare qui? |
+|---|---|---|---|---|
+| 4.1 | Hekyll + ora dell'evento | Il potere di un allenatore si legge dal **suo** evento. Il registro rifiuta lo stesso allenatore in due eventi. L'evento finto riceve un allenatore e una valuta propri: l'allenatore e' visibile solo in sviluppo e posseduto solo nel salvataggio `dev:`. `?dev=1&oraEvento=2026-11-07` sposta solo l'ora usata dagli eventi (apertura, conto alla rovescia, premio finale); l'orologio del dispositivo non cambia e nell'account non si scrive niente. Test: il caso di Hekyll (punto 3) e l'ora dell'evento | 1,5-2 h | **Si'**: Hekyll funziona con Halloween anche con l'evento di prova, e le verifiche "evento finito" si possono fare anche prima delle 23:59 |
+| 4.2 | Squadra e carte proprie dell'evento finto | File dati in `data/events/dev/` (giocatori, formazione, 4 mosse per carta) presi da una squadra gia' esistente nei dati, con id squadra, nome e carte propri. Il test dei dati controlla anche questi file | 1-1,5 h | Si': l'evento finto non condivide piu' niente con Halloween |
+| 4.3 | Modulo a istanze + un ingresso per evento | Il modulo crea un'istanza per ogni evento attivo, ognuna con le sue chiavi di salvataggio. `RoadToGloryHalloween` resta come nome dell'istanza Halloween, cosi' il codice esistente non cambia. Carte, scheda giocatore, album e apertura scelgono l'istanza giusta dal prefisso della carta o dall'id dell'evento (`data-rtg-event-open="<id>"`). Nelle campagne compare un ingresso per ogni evento attivo, ognuno con la sua scadenza. Il premio finale vale per l'evento che lo ha. L'evento finto non sostituisce piu' Halloween, gli si affianca. Test automatici con due eventi insieme: due ingressi, date di fine diverse, nessuna interferenza tra carte, poteri e salvataggi, salvataggio vecchio invariato. Prova nel browser con i due eventi | 4-6 h | Si': due eventi insieme funzionano. L'evento finto pero' mostra ancora i testi di Halloween |
+| 4.4 | Etichette dal file dell'evento | I ~25 testi fissi si leggono dal file dell'evento (`labels`, `currency.name`, `team.name`). Halloween resta con gli stessi testi: lo controllano le foto e lo stile identici sulle 12 schermate Halloween. L'id del nodo partita salvato (`event:occult-halloween`) diventa un campo del file con lo stesso valore, cosi' le partite gia' salvate restano valide | 1,5-2 h | Fine del lavoro richiesto |
+
+**Totale: 4 PR, circa 8-11 ore di sessione.** La parte piu' lunga e rischiosa e' la 4.3. Come nel Passo 3, le verifiche
+(foto e stile sulle schermate Halloween, album e allenatori, `npm test`, prove nel browser) pesano quanto il codice.
+
+### Cosa resta uguale e cosa no
+- **Halloween:** numeri, partita, salvataggio (`shared.halloween`) e schermate identici. Il test di parita' dei poteri
+  (1.861 casi) e quello dei numeri di Halloween restano verdi a ogni push.
+- **Salvataggio:** solo campi aggiunti. Gli eventi nuovi usano `shared.events.<id>`; l'evento finto scrive solo nelle
+  chiavi locali `dev:<id>:...`, mai `shared:account` e quindi mai il cloud. Il test con il salvataggio vecchio viene
+  esteso al caso dei due eventi.
+- **Fuori da questo lavoro:** il tema grafico (3.6). L'evento finto avra' testi e allenatore propri, ma i colori e lo
+  stile delle carte di Halloween (classi `halloween-*`) finche' non si fa il tema.
+- **Rischio principale (4.3):** i punti che oggi danno per scontato un solo evento, cioe' l'apertura nel controller
+  RTG, l'album e le carte nella scheda giocatore. Per ognuno ci sara' un test con due eventi.
+- **Da decidere (non bloccante):** l'allenatore dell'evento finto. Proposta: un allenatore gia' esistente nelle immagini
+  ma senza potere, con il potere "Maschera Maledetta" su carte `prova_dev::` e uno sconto diverso, per esempio 10, cosi'
+  il test distingue i due poteri. Visibile solo con `?dev=1&evento=prova_dev`.
+
 ## Come unire le PR #540–#558 (aggiornato il 5 nov 2026)
 
 **Consigliato: unire solo la PR finale (`release/passo-1-css` -> `main`).** E' l'unico branch che contiene
