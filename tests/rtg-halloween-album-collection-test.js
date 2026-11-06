@@ -1,7 +1,9 @@
+const { withLiteralTokens } = require("./helpers/css-tokens");
 "use strict";
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const vm=require("node:vm");
+const { loadEvents } = require("./helpers/events");
 
 const context={
   RoadToGloryCoaches:{
@@ -10,6 +12,8 @@ const context={
   },
   RoadToGloryConfig:{season:()=>({})}
 };
+// Eventi dal file dati (data/events/), come nel gioco.
+loadEvents(context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8"),context);
 const view=context.RoadToGloryAlbumView.create({
   escapeHtml:s=>String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"),
@@ -47,13 +51,13 @@ assert.match(withDuplicate,/19 \/ 19/,"No double-counting saved cards or event I
 const coachCard=render().split('data-rtg-album-coaches-open')[1].split("</button>")[0];
 assert.match(coachCard,/1 \/ 11 allenatori sbloccati/);
 assert.match(coachCard,/9%/);
-const css=fs.readFileSync("css/rtg-coaches.css","utf8");
+const css=withLiteralTokens(fs.readFileSync("css/rtg-coaches.css","utf8"));
 assert.match(css,/\.album-collections-screen \.rtg-coach-album-collection \.album-collection-cover img\s*\{/);
 assert.match(css,/transform:\s*scale\(1\.52\)/);
 assert.match(css,/transform-origin:\s*50% 78%/);
 assert.doesNotMatch(css,/\.rtg-halloween-album-collection \.album-collection-cover img[^}]*scale\(/,
   "Only the coaches cover must be zoomed");
 const index=fs.readFileSync("index.html","utf8");
-assert.match(index,/rtg-album-view\.js\?v=20261102-event-progress-v1/);
-assert.match(index,/rtg-coaches\.css\?v=20261102-coach-cover-zoom-v1/);
+assert.match(index,/rtg-album-view\.js\?v=20261107-eventi-insieme-2/);
+assert.match(index,/rtg-coaches\.css\?v=20261105-halloween-card-1/);
 console.log("RTG album Halloween progression 0/18, 1/18, 18/18, earned 19/19 and coach-only zoom: PASS");

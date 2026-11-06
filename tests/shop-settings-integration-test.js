@@ -1,3 +1,4 @@
+const { withLiteralTokens } = require("./helpers/css-tokens");
 const assert = require("assert");
 const fs = require("fs");
 
@@ -6,7 +7,7 @@ const shopController = fs.readFileSync(require.resolve("../js/shop/shop-controll
 const shopView = fs.readFileSync(require.resolve("../js/shop/shop-view.js"), "utf8");
 const settingsController = fs.readFileSync(require.resolve("../js/settings/settings-controller.js"), "utf8");
 const settingsView = fs.readFileSync(require.resolve("../js/settings/settings-view.js"), "utf8");
-const css = fs.readFileSync(require.resolve("../css/game.css"), "utf8");
+const css = withLiteralTokens(fs.readFileSync(require.resolve("../css/game.css"), "utf8"));
 const development = fs.readFileSync(require.resolve("../js/development-v2.js"), "utf8");
 
 assert.match(app, /global\.ShopView\.create/);

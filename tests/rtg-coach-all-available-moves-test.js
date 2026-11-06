@@ -1,4 +1,5 @@
 "use strict";
+const { loadCoachPowerData } = require("./helpers/coach-powers");
 const test=require("node:test");
 const assert=require("node:assert/strict");
 const vm=require("node:vm");
@@ -16,7 +17,7 @@ const sandbox={
 };
 sandbox.globalThis=sandbox;
 vm.createContext(sandbox);
-for(const path of ["js/road-to-glory/rtg-coach-powers-runtime.js",
+loadCoachPowerData(sandbox);for(const path of ["js/road-to-glory/rtg-coach-powers-runtime.js",
   "js/road-to-glory/rtg-coach-powers-prematch.js",
   "js/road-to-glory/rtg-coach-powers-preview.js"])
   vm.runInContext(read(path),sandbox,{filename:path});

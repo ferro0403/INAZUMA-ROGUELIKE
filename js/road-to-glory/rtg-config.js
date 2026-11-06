@@ -51,6 +51,9 @@
   const SEASON1 = Object.freeze({
     seasonId: "ie1",
     seasonNumber: 1,
+    label: "Season 1",
+    shortLabel: "S1",
+    campaignId: "rtg-ie-trilogy",
     previousSeasonId: null,
     nextSeasonId: "ie1_s2",
     mainTeams,
@@ -130,6 +133,7 @@
   const SEASON2 = Object.freeze({
     seasonId:"ie1_s2",
     seasonNumber:2,
+    label:"Season 2",shortLabel:"S2",campaignId:"rtg-ie-trilogy",
     previousSeasonId:"ie1",
     nextSeasonId:"ie1_s3",
     mainTeams:season2Teams,
@@ -172,6 +176,7 @@
   ])));
   const SEASON3=Object.freeze({
     seasonId:"ie1_s3",seasonNumber:3,previousSeasonId:"ie1_s2",nextSeasonId:null,
+    label:"Season 3",shortLabel:"S3",campaignId:"rtg-ie-trilogy",
     mainTeams:season3Teams,importantMatches:season3Matches,formations,
     checkpointMainIndexes:Object.freeze([2,5,8,11,14,17]),
     visualBlocks:Object.freeze([Object.freeze([0,5]),Object.freeze([6,11]),Object.freeze([12,17]),Object.freeze([18,18])]),
@@ -201,6 +206,7 @@
   ])));
   const ARES=Object.freeze({
     seasonId:"ie2",seasonNumber:"AR",previousSeasonId:null,nextSeasonId:"orion",
+    label:"Ares",shortLabel:"AR",
     campaignId:"rtg-ares-orion",mainTeams:aresTeams,importantMatches:aresMatches,formations,
     checkpointMainIndexes:Object.freeze([2,5,8]),visualBlocks:Object.freeze([Object.freeze([0,2]),Object.freeze([3,5]),Object.freeze([6,8]),Object.freeze([9,10])]),
     livesPerCheckpoint:2,pullCost:250,recruitmentPullCost:null,postgameAdvancedReward:750,
@@ -230,6 +236,7 @@
   ])));
   const ORION=Object.freeze({
     seasonId:"orion",seasonNumber:"OR",previousSeasonId:"ie2",nextSeasonId:null,
+    label:"Orion",shortLabel:"OR",
     campaignId:"rtg-ares-orion",mainTeams:orionTeams,importantMatches:orionMatches,formations,
     checkpointMainIndexes:Object.freeze([2,5,8,11]),
     visualBlocks:Object.freeze([Object.freeze([0,5]),Object.freeze([6,9]),Object.freeze([10,12])]),
@@ -244,6 +251,13 @@
   const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3,ie2:ARES,orion:ORION});
   const SEASON_IDS=Object.freeze(Object.keys(SEASONS));
   function season(seasonId){ return SEASONS[String(seasonId||"ie1")]||null; }
+  // Registro unico delle Season RTG: etichette e campagne si leggono da qui, non da copie nei singoli file.
+  function seasonLabel(seasonId){ return SEASONS[String(seasonId||"")]?.label||""; }
+  function seasonShortLabel(seasonId){ return SEASONS[String(seasonId||"")]?.shortLabel||""; }
+  const CAMPAIGN_IDS=Object.freeze([...new Set(SEASON_IDS.map(id=>SEASONS[id].campaignId))]);
+  const CAMPAIGN_SEASONS=Object.freeze(Object.fromEntries(CAMPAIGN_IDS.map(campaignId=>[campaignId,
+    Object.freeze(SEASON_IDS.filter(id=>SEASONS[id].campaignId===campaignId))])));
+  function campaignSeasonIds(campaignId){ return CAMPAIGN_SEASONS[String(campaignId||"")]||Object.freeze([]); }
   const buildSeason1Nodes=buildSeasonNodes;
   function buildAnySeasonNodes(seasonId){
     const sid=String(seasonId||"ie1");
@@ -280,5 +294,10 @@
       :SECONDARY_REWARDS_BY_STAGE[stage];
   }
 
-  global.RoadToGloryConfig = Object.freeze({ MAIN_WIN_REWARD, SECONDARY_WIN_REWARD, SEASON_TRANSITION_REWARD, SEASON_COMPLETION_REWARD, MAIN_REWARDS_BY_STAGE, SECONDARY_REWARDS_BY_STAGE, rewardForNode, SEASON1, SEASON2, SEASON3, ARES, ORION, SEASONS, SEASON_IDS, season, buildSeasonNodes:buildAnySeasonNodes });
+  global.RoadToGloryConfig = Object.freeze({
+    MAIN_WIN_REWARD, SECONDARY_WIN_REWARD, SEASON_TRANSITION_REWARD, SEASON_COMPLETION_REWARD,
+    MAIN_REWARDS_BY_STAGE, SECONDARY_REWARDS_BY_STAGE, rewardForNode, SEASON1, SEASON2, SEASON3, ARES, ORION,
+    SEASONS, SEASON_IDS, season, seasonLabel, seasonShortLabel, CAMPAIGN_IDS, CAMPAIGN_SEASONS, campaignSeasonIds,
+    buildSeasonNodes:buildAnySeasonNodes
+  });
 })(globalThis);

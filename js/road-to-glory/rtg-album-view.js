@@ -44,16 +44,27 @@
       // locked slot. Until owned, the collection is exactly 18 players.
       // Normal RTG exposes shared acquired cards, not the event's private
       // ownedIds projection. Count only canonical Halloween card IDs.
+      // Carte, premio finale e numero di giocatori arrivano dal file dell'evento (data/events/).
+      // Con due eventi attivi (?dev=1&evento=) l'album resta quello dell'evento vero.
+      const albumEvent=(global.GameEvents?.all?.()||[]).filter(event=>event.kind==="capsuleEvent")
+        .sort((a,b)=>Number(a.dev===true)-Number(b.dev===true))[0]||null;
+      const eventPrefix=albumEvent?.save?.cardIdPrefix||"";
+      const eventOwnedId=new RegExp(albumEvent?.save?.ownedIdPattern||"^$");
+      const bonusPlayerId=albumEvent?.completionReward?.playerId||"";
+      const eventRoster=albumEvent?.team?.rosterSize||0;
       const halloweenCardIds=new Set(
         (Array.isArray(state?.gachaAcquiredCards)?state.gachaAcquiredCards:[])
           .map(entry=>String(entry?.cardId||""))
-          .filter(cardId=>/^halloween2026::(?:[0-9]+|custom_000[123])$/.test(cardId))
+          .filter(cardId=>eventPrefix&&cardId.startsWith(eventPrefix)&&(()=>{
+            const pid=cardId.slice(eventPrefix.length);
+            return eventOwnedId.test(pid)||(!!bonusPlayerId&&pid===bonusPlayerId);
+          })())
       );
-      const bonusCardId="halloween2026::custom_0003";
-      const bonusOwned=halloweenCardIds.has(bonusCardId);
-      const halloweenTotal=18+(bonusOwned?1:0);
-      const halloweenUnlocked=Math.min(18,halloweenCardIds.size-(bonusOwned?1:0))+(bonusOwned?1:0);
-      const halloweenPercent=Math.round(100*halloweenUnlocked/halloweenTotal);
+      const bonusCardId=eventPrefix+bonusPlayerId;
+      const bonusOwned=!!bonusPlayerId&&halloweenCardIds.has(bonusCardId);
+      const halloweenTotal=eventRoster+(bonusOwned?1:0);
+      const halloweenUnlocked=Math.min(eventRoster,halloweenCardIds.size-(bonusOwned?1:0))+(bonusOwned?1:0);
+      const halloweenPercent=Math.round(100*halloweenUnlocked/(halloweenTotal||1));
       const coachCard=coachItems.length?`<button type="button" class="panel album-collection-card rtg-coach-album-collection" data-rtg-album-coaches-open aria-label="Apri album allenatori"><span class="album-collection-cover album-collection-cover--hero"><img src="${escape(RTG_COACHES_COVER_URL)}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');"></span><span class="album-collection-content album-collection-content--hero"><span class="album-collection-title">ALLENATORI</span><span class="album-collection-progress-copy"><span>${obtained} / ${coachItems.length} allenatori sbloccati</span><strong>${percentCoach}%</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width:${percentCoach}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button>`:"";
       return `<main class="album-screen album-collections-screen rtg-album-collections-screen"><header class="topbar album-topbar album-collections-topbar"><button type="button" class="btn section-root-button album-collections-home-button" data-rtg-home aria-label="Torna a Road to Glory"><span aria-hidden="true">←</span></button><div class="album-collections-heading"><p class="eyebrow">ALBUM</p><h1>COLLEZIONI</h1></div><span class="album-collections-topbar-spacer" aria-hidden="true"></span></header><section class="album-collection-grid">${cards}${coachCard}<button type="button" class="panel album-collection-card rtg-halloween-album-collection" data-rtg-album-halloween aria-label="Apri collezione Giocatori Evento: ${halloweenUnlocked} su ${halloweenTotal} giocatori sbloccati, ${halloweenPercent}%"><span class="album-collection-cover album-collection-cover--hero"><img src="${escape(RTG_HALLOWEEN_PLAYERS_COVER_URL)}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');"></span><span class="album-collection-content album-collection-content--hero"><span class="album-collection-title">GIOCATORI EVENTO</span><span class="album-collection-progress-copy"><span>${halloweenUnlocked} / ${halloweenTotal} giocatori sbloccati</span><strong>${halloweenPercent}%</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width:${halloweenPercent}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button></section></main>`;
     }

@@ -105,18 +105,21 @@
       return ["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"];
     }
 
-    const HALLOWEEN_FILTER_ID="halloween2026";
-    const SQUAD_FILTER_SEASON_LABELS=Object.freeze({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion",halloween2026:"Halloween"});
+    // Gli eventi (data/events/) sono una provenienza di carte possedute, NON una Season giocabile in piu'.
+    const filterEvents=()=>global.GameEvents?.all?.()||[];
+    const isFilterEvent=seasonId=>filterEvents().some(event=>event.id===seasonId);
     function squadFilterSeasonIds(){
-      // Halloween is an owned-card source, NOT an additional playable RTG season.
-      return [...new Set([...Array.from(deps.config?.SEASON_IDS||[]).map(deps.id).filter(Boolean),HALLOWEEN_FILTER_ID])];
+      return [...new Set([...Array.from(deps.config?.SEASON_IDS||[]).map(deps.id).filter(Boolean),
+        ...filterEvents().map(event=>event.id)])];
     }
     function squadFilterSeasonLabel(seasonId){
       const sid=deps.id(seasonId);
-      return SQUAD_FILTER_SEASON_LABELS[sid]||global.SeasonRegistry?.get?.(sid)?.name||sid.toUpperCase();
+      return deps.config?.seasonLabel?.(sid)||global.GameEvents?.label?.(sid,"filter")||
+        global.SeasonRegistry?.get?.(sid)?.name||sid.toUpperCase();
     }
     function squadFilterSeasonShortLabel(seasonId){
-      return ({ie1:"S1",ie1_s2:"S2",ie1_s3:"S3",ie2:"AR",orion:"OR",halloween2026:"HW"})[deps.id(seasonId)]||squadFilterSeasonLabel(seasonId);
+      const sid=deps.id(seasonId);
+      return deps.config?.seasonShortLabel?.(sid)||global.GameEvents?.badge?.(sid)||squadFilterSeasonLabel(seasonId);
     }
     function squadFilterSeasonOptions(){
       return [{value:"all",label:"Tutte"},...squadFilterSeasonIds().map(seasonId=>({value:seasonId,label:squadFilterSeasonLabel(seasonId)}))];
@@ -128,7 +131,7 @@
       const previous=registry?.activeId?.();
       squadFilterDataPromise=(async()=>{
         for(const seasonId of squadFilterSeasonIds()){
-          if(seasonId===HALLOWEEN_FILTER_ID)continue; // Event assets do not belong to SeasonRegistry.
+          if(isFilterEvent(seasonId))continue; // Event assets do not belong to SeasonRegistry.
           if(registry?.database?.(seasonId))continue;
           if(typeof registry?.loadDatabase!=="function")continue;
           await registry.loadDatabase(seasonId);
@@ -144,7 +147,7 @@
     }
     function squadFilterDataReady(){
       return squadFilterSeasonIds().every(seasonId=>
-        seasonId===HALLOWEEN_FILTER_ID||!!global.SeasonRegistry?.database?.(seasonId));
+        isFilterEvent(seasonId)||!!global.SeasonRegistry?.database?.(seasonId));
     }
     function waitForSquadFilterData(reopen){
       if(squadFilterDataReady())return false;
@@ -164,11 +167,12 @@
       const identity=deps.cardMeta(cardId)||{};
       const seasonId=deps.id(identity.legacySeasonId);
       if(!squadFilterSeasonIds().includes(seasonId))return{seasonId:"",teamIds:[],teamNames:new Map()};
-      // All 18 Halloween event cards and the secret completion reward belong
-      // exclusively to Occult Halloween. No seasonal DB, migration or fetch.
-      if(seasonId===HALLOWEEN_FILTER_ID)return{
-        seasonId,teamIds:["occult-2"],
-        teamNames:new Map([["occult-2","Occult Halloween"]])
+      // Tutte le carte di un evento (premio finale compreso) appartengono solo alla squadra dell'evento,
+      // scritta nel suo file. Nessun database di Season, migrazione o download.
+      const event=global.GameEvents?.get?.(seasonId);
+      if(event)return{
+        seasonId,teamIds:[event.team.teamId],
+        teamNames:new Map([[event.team.teamId,event.team.name]])
       };
       const roleVariant=deps.squadDraft?.activeRoleVariantByCardId?.[cardId]||null;
       const player=deps.resolved(cardId,roleVariant);
@@ -189,7 +193,7 @@
       const seasonIds=squadFilterSeasonIds();
       const records=new Map();
       for(const seasonId of seasonIds){
-        if(seasonId===HALLOWEEN_FILTER_ID)continue; // Occult is added from its event catalog below.
+        if(isFilterEvent(seasonId))continue; // Event teams are added from their event files below.
         if(seasonFilter!=="all"&&seasonId!==seasonFilter)continue;
         const database=global.SeasonRegistry?.database?.(seasonId);
         for(const team of database?.teams||[]){
@@ -205,11 +209,12 @@
           });
         }
       }
-      if((seasonFilter==="all"||seasonFilter===HALLOWEEN_FILTER_ID)){
-        const value=HALLOWEEN_FILTER_ID+"::occult-2";
+      for(const event of filterEvents()){
+        if(seasonFilter!=="all"&&seasonFilter!==event.id)continue;
+        const value=event.id+"::"+event.team.teamId;
         records.set(value,{
-          value,seasonId:HALLOWEEN_FILTER_ID,teamId:"occult-2",
-          baseLabel:"Occult Halloween"
+          value,seasonId:event.id,teamId:event.team.teamId,
+          baseLabel:event.team.name
         });
       }
       const rows=Array.from(records.values());
@@ -965,9 +970,13 @@
               activeRoleVariantByCardId:draft.activeRoleVariantByCardId||{}};
             return {before:deps.squadRuntime.teamPower(base),
               after:deps.squadRuntime.teamPower({...base,
-                coachCapCardId:deps.squadDraft?.coachId==="1777"?selection?.cardIds?.[0]||null:null,
-                coachOverallDiscount:deps.squadDraft?.coachId==="halloween-coach-54"&&selection?.cardIds?.length===1
-                  ?{cardId:selection.cardIds[0],amount:15}:null})};
+                // Anteprima dei poteri sull'overall: tipo e valori dai dati del potere (rtg-coach-power-types.js).
+                ...(()=>{
+                  const power=global.RoadToGloryCoachPowerTypes?.powerFor?.(deps.squadDraft?.coachId),card=selection?.cardIds?.[0];
+                  const single=selection?.cardIds?.length===power?.params?.picks;
+                  return {coachCapCardId:power?.type==="benchCapOverride"?card||null:null,coachCapValue:power?.params?.cap??null,
+                    coachOverallDiscount:power?.type==="requirementsOvrDiscount"&&single?{cardId:card,amount:power.params.amount}:null};
+                })()})};
           },
           previewChoice:(key,selection)=>{
             const card=deps.resolved(key,deps.squadDraft?.activeRoleVariantByCardId?.[key]||null);

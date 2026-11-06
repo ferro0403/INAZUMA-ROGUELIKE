@@ -1,3 +1,5 @@
+const { loadCoachPowerData } = require("./helpers/coach-powers");
+const { withLiteralTokens } = require("./helpers/css-tokens");
 const assert=require("node:assert/strict");
 const test=require("node:test");
 const fs=require("node:fs"),vm=require("node:vm");
@@ -10,7 +12,7 @@ const moves=[
 ];
 const ctx={RoadToGloryCoaches:{owned:s=>new Set(s.coachOwnedIds||[])},
   RtgFourMovesRuntime:{movesFor:()=>moves,isReady:()=>true,error:()=>null,ptBreakdown:()=>({total:200})}};
-vm.runInNewContext(read("js/road-to-glory/rtg-coach-powers-runtime.js"),ctx);
+loadCoachPowerData(ctx);vm.runInNewContext(read("js/road-to-glory/rtg-coach-powers-runtime.js"),ctx);
 vm.runInNewContext(read("js/road-to-glory/rtg-match-pt-runtime.js"),ctx);
 const rules=ctx.RoadToGloryCoachPowerRuntime,pt=ctx.RoadToGloryMatchPtRuntime;
 const player=(cardId)=>({cardId,playerId:cardId,legacySeasonId:"ie1",baseStats:{}});
@@ -70,7 +72,7 @@ test("Hekyll Jyde: one Halloween starter counts -15 OVR only for pre-match eligi
   assert.equal(rules.overallDiscountFor({...squad,coachPowerSelection:{coachId,cardIds:["normal0"]}},state),null);
   assert.equal(rules.overallDiscountFor({...squad,coachPowerSelection:{coachId,cardIds:["r0"]}},state),null);
   const env={RoadToGloryCoachPowerRuntime:rules};
-  vm.runInNewContext(read("js/road-to-glory/rtg-squad-runtime.js"),env);
+  loadCoachPowerData(env);vm.runInNewContext(read("js/road-to-glory/rtg-squad-runtime.js"),env);
   const resolver={resolveAtLevel20:key=>({overall:key===target?96:86,position:"MF"}),resolveMove:()=>null};
   const common={lineup:[...lineup,...bench],activeSeasonId:"orion",playerResolver:resolver};
   assert.equal(env.RoadToGlorySquadRuntime.teamPower(common),86.7);
@@ -91,11 +93,14 @@ test("Travis counts 15 players but caps one chosen bench OVR at 60",()=>{
   assert.equal(rules.capOverrideFor(squad,{...state,coachOwnedIds:[]}),null);
   assert.equal(rules.capOverrideFor({...squad,coachPowerSelection:{coachId:"1777",cardIds:["t0"]}},state),null);
   const sandbox={RoadToGloryCoachPowerRuntime:rules};
-  vm.runInNewContext(read("js/road-to-glory/rtg-squad-runtime.js"),sandbox);
+  loadCoachPowerData(sandbox);vm.runInNewContext(read("js/road-to-glory/rtg-squad-runtime.js"),sandbox);
   const resolver={resolveAtLevel20:key=>({overall:key==="r0"?99:70}),resolveMove:()=>null};
   const common={lineup:[...lineup,...bench],playerResolver:resolver};
   assert.equal(sandbox.RoadToGlorySquadRuntime.teamPower(common),71.9);
-  assert.equal(sandbox.RoadToGlorySquadRuntime.teamPower({...common,coachCapCardId:"r0"}),69.3);
+  // Dal Passo 3.3 il tetto (60) viene dai dati del potere di Travis, passato a teamPower come coachCapValue.
+  const travisCap=sandbox.RoadToGloryCoachPowerTypes.powerFor("1777").params.cap;
+  assert.equal(travisCap,60);
+  assert.equal(sandbox.RoadToGlorySquadRuntime.teamPower({...common,coachCapCardId:"r0",coachCapValue:travisCap}),69.3);
   // A value lower than 60 must never get worse.
   const weaker={resolveAtLevel20:key=>({overall:key==="r0"?40:70}),resolveMove:()=>null};
   assert.equal(sandbox.RoadToGlorySquadRuntime.teamPower({...common,playerResolver:weaker}),
@@ -188,9 +193,10 @@ test("Arrows squad selection shows two cards and validates both previews",()=>{
   const ui=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
   const preview=read("js/road-to-glory/rtg-coach-powers-preview.js");
   const state=read("js/road-to-glory/rtg-state.js");
-  assert.match(ui,/\["208","1974","4401"\]\.includes\(coachId\)\?2:1/);
+  // Dal Passo 3.3 il numero di scelte viene dai dati del potere (params.picks), non da un elenco di id.
+  assert.match(ui,/const cap=power\?\.params\?\.picks\|\|1;/);
   assert.match(ui,/choice\.cardIds\.map\(key=>/);
-  assert.match(ui,/coachId==="1974"&&choice\.cardIds\.length!==2/);
+  assert.match(ui,/type==="rarityUpgrade"&&choice\.cardIds\.length!==2/);
   assert.match(preview,/config\.cardIds\.length<1\|\|config\.cardIds\.length>2/);
   assert.match(state,/cardIds:uniqueIds\(squad\.coachPowerSelection\.cardIds\)\.slice\(0,2\)/);
 });
@@ -262,7 +268,7 @@ test("Yi only permits the other three elements and keeps his Squad badge hidden"
   const view=read("js/road-to-glory/rtg-squad-view-base.js");
   assert.doesNotMatch(view,/rtg-coach-card-buff/);
   assert.match(read("js/road-to-glory/rtg-coach-powers-preview.js"),/forest:"Albero"/);
-  const css=read("css/rtg-coaches.css");
+  const css=withLiteralTokens(read("css/rtg-coaches.css"));
   assert.match(css,/\.player-detail-modal \.rtg-coach-move-select/);
   assert.match(css,/\.player-detail-modal \.rtg-coach-moves-confirm/);
   assert.match(css,/border-radius:2px!important/);
@@ -278,8 +284,12 @@ test("Five Squad power controls and season-safe element roundtrip are wired",()=
   assert.doesNotMatch(ui,/SELEZIONA 2 MOSSE NELLA SCHEDA/);
   assert.match(ui,/ctx\.saveSquad\(draft\)/);
   const view=read("js/road-to-glory/rtg-coaches-view.js");
-  for(const key of ['"208"','"1329"','"1777"','"1974"','"4401"'])
-    assert(view.includes(key));
+  // Passo 3.3: la scheda non elenca piu' gli id degli allenatori, legge la fase del potere dai dati.
+  assert.doesNotMatch(view,/\["208","1329"/);
+  assert.match(view,/powerFor\?\.\(coachId\)\?\.phase/);
+  const coachSource=read("js/road-to-glory/rtg-coaches.js");
+  for(const key of ["208","1329","1777","1974","4401"])
+    assert.match(coachSource,new RegExp(`\\{id:"${key}",power:\\{type:"(ptBoost|halveMoveCost|benchCapOverride|rarityUpgrade|elementTransform)"`));
   const stateSource=read("js/road-to-glory/rtg-state.js");
   assert.match(stateSource,/coachPowerSelection\.element/);
   const mainSource=read("js/road-to-glory/rtg-controller.js");
@@ -384,13 +394,13 @@ test("All Squad powers hide yellow card footer; selector matches slim RTG card b
   assert.match(view,/trailingMarkup: \x60\$\{legacyBadge/);
   assert.doesNotMatch(view,/rtg-coach-card-buff/);
   assert.match(view,/coachPreview:preview/); // projected PT, rarity and element remain available in detail
-  const styles=read("css/rtg-coaches.css");
+  const styles=withLiteralTokens(read("css/rtg-coaches.css"));
   assert.doesNotMatch(styles,/\.rtg-coach-card-buff\s*\{/);
   assert.match(styles,/border:2px solid var\(--rarity-border,#646464\)!important/);
   assert.doesNotMatch(styles,/border-left-width:4px!important/);
   assert.match(styles,/outline:2px solid #ffd21f/);
   const html=read("index.html");
-  assert.match(html,/rtg-coaches\.css\?v=20261102-coach-cover-zoom-v1/);
+  assert.match(html,/rtg-coaches\.css\?v=20261105-halloween-card-1/);
   assert.match(html,/rtg-squad-view\.js\?v=20261023-halftime-scroll-v2/);
 });
 
@@ -452,7 +462,8 @@ test("Yi double choice persists in canonical optional Squad config without chang
   assert.match(state,/targets:Array\.isArray\(squad\.coachPowerSelection\.targets\)/);
   assert.match(state,/moveIndices:Array\.from\(new Set/);
   const ui=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
-  assert.match(ui,/TRASFORMAZIONE TOTALE/);
+  // Dal Passo 3.3 titolo e spiegazione del potere sono nei dati dell'allenatore (rtg-coaches.js, power.ui).
+  assert.match(read("js/road-to-glory/rtg-coaches.js"),/TRASFORMAZIONE TOTALE/);
   assert.match(ui,/availableMoveIndices/);
   assert.match(ui,/choice\.targets\.length<2/);
   assert.match(ui,/targets:choice\.targets\.map/);

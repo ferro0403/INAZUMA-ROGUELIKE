@@ -61,13 +61,13 @@
     }
     // Same filter state and same exact RTG squad-picker toolbar, not a
     // second independent set of UI controls or one-off event filter.
-    const seasonName={ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",
-      ie2:"Ares",orion:"Orion",halloween2026:"Evento Halloween"};
+    const seasonName=sid=>global.RoadToGloryConfig?.seasonLabel?.(sid)||global.GameEvents?.label?.(sid,"source");
     const seasonFor=player=>String(player?.cardId||"").split("::")[0]||String(player?.resolvedSeasonId||player?.legacySeasonId||"");
     const roleFor=player=>String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
     function developmentTeamLabels(player){
       const sid=seasonFor(player),db=global.SeasonRegistry?.database?.(sid);
-      if(sid==="halloween2026")return ["Occult Halloween"];
+      const event=global.GameEvents?.get?.(sid);
+      if(event)return [event.team.name];
       const teamNames=new Map((db?.teams||[]).map(team=>[
         String(team?.teamId||team?.id||""),String(team?.teamName||team?.name||"")
       ]).filter(([id,name])=>id&&name));
@@ -92,7 +92,7 @@
     }
     function developmentSeasonOptions(players){
       return [{value:"all",label:"Tutte"},...Array.from(new Set(players.map(seasonFor)))
-        .filter(Boolean).map(value=>({value,label:seasonName[value]||value}))];
+        .filter(Boolean).map(value=>({value,label:seasonName(value)||value}))];
     }
     function filteredDevelopmentPlayers(players){
       const needle=String(developmentQuery||"").trim().toLocaleLowerCase("it");

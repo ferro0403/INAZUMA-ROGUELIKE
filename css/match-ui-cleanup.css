@@ -1,5 +1,0 @@
-/* Match result cleanup: keep the result panel focused on the score and status text. */
-.boss-match-result-panel .boss-match-score-teams,
-.boss-match-result-panel .result-badges {
-  display: none;
-}

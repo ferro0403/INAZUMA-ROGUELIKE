@@ -1,0 +1,644 @@
+{
+  "createdAt": "2026-11-04T05:33:04.561Z",
+  "fixedTime": "2026-11-03T12:00:00.000Z",
+  "viewport": {
+    "width": 412,
+    "height": 915
+  },
+  "scenes": [
+    {
+      "name": "01-home",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "02-home-rtg-tab",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "03-selezione-season",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "04-negozio",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "05-centro-sviluppo",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "06-album",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "07-albo-oro",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "08-modalita",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "09-impostazioni",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "10-run-nome-squadra",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "11-run-moduli",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "12-run-draft",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "13-run-squadra",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "14-run-mappa",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "15-run-anteprima-boss",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "16-run-inventario",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "17-run-tab-5v5",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "18-run-primo-nodo",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "20-rtg-campagne",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 1
+    },
+    {
+      "name": "21-rtg-mappa-s1",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "22-rtg-prepartita",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "23-rtg-squadra",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "26-rtg-allenatori",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "27-rtg-dettaglio-coach",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "24-rtg-distributore",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "25-rtg-mappa-ares-orion",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 1
+    },
+    {
+      "name": "40-album-collezione",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 5
+    },
+    {
+      "name": "41-album-rosa",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 5
+    },
+    {
+      "name": "42-album-scheda",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 5
+    },
+    {
+      "name": "43-run-elimina",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "44-run-modulo",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "45-run-editor-5v5",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "46-run-premio-oggetto",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "47-run-inventario-pieno",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "48-run-usa-oggetto",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "49-run-partita-5v5",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "50-run-risultato-5v5",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "51-rtg-scheda-giocatore",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "52-rtg-cambio-giocatore",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "53-rtg-prepartita-squadre",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "54-rtg-partita-duello",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "55-run-boss-vinto",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "56-run-dopo-boss-vinto",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "57-run-boss-perso",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "58-run-game-over",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "59-run-evento-casuale",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "60-run-partita-speciale",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "61-run-speciale-risultato",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "62-rtg-intervallo",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 4
+    },
+    {
+      "name": "63-rtg-rigori",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 5
+    },
+    {
+      "name": "64-rtg-vittoria",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 7
+    },
+    {
+      "name": "65-rtg-sconfitta",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 7
+    },
+    {
+      "name": "66-account",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "67-halloween-partita",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "70-run-zona-finale",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "71-run-ricompense-completata",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "72-run-celebrazione",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "73-run-riepilogo-squadra",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "74-run-riepilogo-statistiche",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "75-run-riepilogo-premi",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "76-albo-oro-dettaglio",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "77-run-pull-leggendario",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "78-run-oggetto-equipaggia",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "79-run-oggetto-equipaggiato",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "80-run-ie3-partita-speciale",
+      "account": "vuoto",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "81-sviluppo-evoluzioni",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "82-sviluppo-progetti",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "83-rtg-sviluppo",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "84-rtg-negozio",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 0
+    },
+    {
+      "name": "85-rtg-album",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 3
+    },
+    {
+      "name": "86-rtg-premio-distributore",
+      "account": "rtg",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 8
+    },
+    {
+      "name": "30-halloween-home",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "31-halloween-prepartita",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "32-halloween-distributore",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "33-halloween-squadra",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "36-halloween-allenatori",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "34-halloween-card-giocatore",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    },
+    {
+      "name": "35-halloween-pagina-intera",
+      "account": "sbloccato",
+      "ok": true,
+      "failedStep": null,
+      "errors": [],
+      "failedImages": 2
+    }
+  ],
+  "blockedHosts": {
+    "i0.wp.com": 68,
+    "www.akibagamers.it": 43,
+    "inazuma-eleven-legends.vercel.app": 43,
+    "i.namu.wiki": 28,
+    "opengameart.org": 1,
+    "static.vecteezy.com": 8,
+    "easycdn.es": 1
+  },
+  "validBaseline": false
+}

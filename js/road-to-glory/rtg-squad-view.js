@@ -27,7 +27,7 @@
   if(!document.querySelector('link[data-rtg-version-banners]')){
     const style=document.createElement('link');
     style.rel='stylesheet';
-    style.href='css/rtg-version-banners.css?v=20261010-numeric-badge-1';
+    style.href='css/rtg-version-banners.css?v=20261104-css-tokens-1';
     style.dataset.rtgVersionBanners='1';
     document.head.appendChild(style);
   }

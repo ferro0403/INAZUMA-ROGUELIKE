@@ -1,0 +1,325 @@
+{
+  "schemaVersion": 1,
+  "id": "halloween2026",
+  "kind": "capsuleEvent",
+  "name": "Occult Halloween",
+  "labels": {
+    "badge": "HW",
+    "collection": "Halloween",
+    "filter": "Halloween",
+    "source": "Evento Halloween",
+    "ui": {
+      "entryEyebrow": "EVENTO LIMITATO · 2026",
+      "entryTitle": "🎃 EVENTO HALLOWEEN",
+      "entrySubtitle": "OCCULT HALLOWEEN",
+      "completionTitle": "🎃 EVENTO HALLOWEEN 2026",
+      "short": "Halloween",
+      "appAria": "Road to Glory Halloween",
+      "brand": "HALLOWEEN",
+      "nextMatchAria": "Prossima partita Halloween",
+      "challengeEyebrow": "SFIDA EVENTO · IL CIMITERO STREGATO",
+      "challengeTitle": [
+        "OCCULT",
+        "HALLOWEEN"
+      ],
+      "capsuleEyebrow": "CAPSULE HALLOWEEN",
+      "vendingTitle": "DISTRIBUTORE STREGATO",
+      "vendingTitleLong": "IL DISTRIBUTORE STREGATO",
+      "vendingStation": "CAPSULE STATION · HALLOWEEN",
+      "vendingAria": "Distributore Halloween",
+      "icon": "🎃",
+      "walletTitle": "ZUCCHE HALLOWEEN",
+      "tag": "OCCULT · HALLOWEEN",
+      "albumPath": "ALBUM → EVENTO HALLOWEEN",
+      "prizeCredited": "PREMIO HALLOWEEN ACCREDITATO",
+      "devTitle": "DEV HALLOWEEN"
+    }
+  },
+  "window": {
+    "start": "2026-10-28T01:38:58+01:00",
+    "end": "2026-11-06T23:59:59+01:00"
+  },
+  "baseSeasonId": "ie1",
+  "save": {
+    "key": "halloween",
+    "cardIdPrefix": "halloween2026::",
+    "matchKey": "local:halloween2026:match",
+    "squadKey": "local:halloween2026:squad",
+    "currencyField": "pumpkins",
+    "ownedIdPattern": "^(?:[0-9]+|custom_000[12])$",
+    "matchIdPrefix": "halloween-2026:",
+    "matchNodeId": "event:occult-halloween"
+  },
+  "currency": {
+    "id": "pumpkins",
+    "name": "Zucche",
+    "icon": "https://static.vecteezy.com/ti/vettori-gratis/p1/3690657-halloween-zucca-disegno-halloween-zucca-vettore-isolare-su-sfondo-bianco-gratuito-vettoriale.jpg",
+    "unit": "zucche",
+    "unitUpper": "ZUCCHE",
+    "iconAlt": "Zucca Halloween"
+  },
+  "economy": {
+    "pullPrice": 200,
+    "winPrize": 300,
+    "luckyPrize": 600,
+    "luckyChancePercent": 10
+  },
+  "team": {
+    "teamId": "occult-2",
+    "name": "Occult Halloween",
+    "logo": "https://dxi4wb638ujep.cloudfront.net/1/k/r/k/rk_nafgart8.webp",
+    "files": {
+      "players": "data/rtg-halloween-occult-players.json",
+      "lineup": "data/rtg-halloween-occult-lineup.json",
+      "moves": "data/rtg-halloween-occult-moves.json"
+    },
+    "rosterSize": 18,
+    "startersSize": 11
+  },
+  "cards": [
+    {
+      "playerId": "45",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/f/q/fq-jb0lbuau_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "48",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/x/4/x4lub1si1s0_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "50",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/g/_/g_36lx_6t_s_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "custom_0002",
+      "rarity": "Leggenda",
+      "vampire": false
+    },
+    {
+      "playerId": "40",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/j/0/j0lsn9bhdzm_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "42",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/6/9/69tvob1rrsk_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "46",
+      "rarity": "Elite",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/u/4/u4pcsld75z8_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "41",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/l/v/lviojktrgfm_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "53",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/z/z/zziy1s-kwq0_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "38",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/y/z/yz3gzfs1bku_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "custom_0001",
+      "rarity": "Leggenda",
+      "vampire": false
+    },
+    {
+      "playerId": "52",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/t/2/t2bhmxlsfke_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "43",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/a/s/aswadgazemu_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "49",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/r/x/rxgbiozaame_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "44",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/r/6/r6b7w5mjz_8_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "39",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/4/c/4cuzgcn9uqk_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "47",
+      "rarity": "Elite",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/a/q/aqup2kkyyfc_r0_fullbody.webp",
+      "vampire": true
+    },
+    {
+      "playerId": "51",
+      "rarity": "Forte",
+      "fullbody": "https://dxi4wb638ujep.cloudfront.net/1/k/i/e/iewmlotwo5s_r0_fullbody.webp",
+      "vampire": true
+    }
+  ],
+  "completionReward": {
+    "playerId": "custom_0003",
+    "name": "Shawn Froste",
+    "rarity": "Leggenda",
+    "portrait": "assets/rtg/halloween-shawn-portrait.webp",
+    "fullbody": "assets/rtg/halloween-shawn-fullbody.webp",
+    "requires": {
+      "allCards": true,
+      "coachId": "halloween-coach-54"
+    },
+    "level": 20,
+    "overall": 97,
+    "role": "FW",
+    "player": {
+      "playerId": "custom_0003",
+      "id": "custom_0003",
+      "name": "Shawn Froste",
+      "portraitUrl": "assets/rtg/halloween-shawn-portrait.webp",
+      "position": "FW",
+      "ratingRole": "FW",
+      "element": "Wind",
+      "type": "Wind",
+      "teamIds": [
+        "occult-2"
+      ],
+      "teams": [
+        "Occult Halloween"
+      ],
+      "custom": true,
+      "attack": 10,
+      "physical": 9,
+      "stamina": 10,
+      "control": 10,
+      "defense": 9,
+      "speed": 10,
+      "grit": 9,
+      "save": 1,
+      "overall": 97,
+      "category": "Leggenda",
+      "defaultRoleVariantId": "fw",
+      "roleSwitchEnabled": false,
+      "roleVariants": [
+        {
+          "variantId": "fw",
+          "position": "FW",
+          "attack": 10,
+          "physical": 9,
+          "stamina": 10,
+          "control": 10,
+          "defense": 9,
+          "speed": 10,
+          "grit": 9,
+          "save": 1,
+          "overall": 97,
+          "portraitUrl": "assets/rtg/halloween-shawn-portrait.webp",
+          "frontFullbodyUrl": "assets/rtg/halloween-shawn-fullbody.webp",
+          "evaluated": true,
+          "updatedAt": "2026-11-02T01:37:09.900Z"
+        }
+      ],
+      "frontFullbodyUrl": "assets/rtg/halloween-shawn-fullbody.webp",
+      "fullbodyUrl": "assets/rtg/halloween-shawn-fullbody.webp"
+    },
+    "moves": [
+      {
+        "moveId": "4285_3",
+        "name": "Legendary Wolf",
+        "jpName": "ウルフレジェンド",
+        "type": "shot",
+        "element": "Wind",
+        "power": 85,
+        "tension": 85,
+        "source": "manual",
+        "ptCost": 85
+      },
+      {
+        "moveId": "3667_5",
+        "name": "Werewolf Howl",
+        "jpName": "ビーストロード",
+        "type": "shot",
+        "element": "Fire",
+        "power": 100,
+        "tension": 100,
+        "source": "manual",
+        "ptCost": 100
+      },
+      {
+        "moveId": "1244_2",
+        "name": "Frosticle",
+        "jpName": "ホワイトブレード",
+        "type": "dribble",
+        "element": "Wind",
+        "power": 60,
+        "tension": 60,
+        "source": "manual",
+        "ptCost": 60
+      },
+      {
+        "moveId": "279_1",
+        "name": "Land of Ice",
+        "jpName": "アイスグランド",
+        "type": "defense",
+        "element": "Wind",
+        "power": 85,
+        "tension": 85,
+        "source": "manual",
+        "ptCost": 85
+      }
+    ]
+  },
+  "coaches": [
+    {
+      "id": "halloween-coach-54",
+      "zukanId": "54",
+      "name": "Hekyll Jyde",
+      "power": {
+        "type": "requirementsOvrDiscount",
+        "name": "Maschera Maledetta",
+        "description": "Scegli un tuo titolare della collezione Halloween. Per i soli requisiti OVR della squadra, il suo contributo vale 15 punti in meno. Overall reale, statistiche, mosse e partita non cambiano.",
+        "params": {
+          "amount": 15,
+          "picks": 1,
+          "target": "ownStarter",
+          "cardScope": "event"
+        },
+        "ui": {
+          "title": "MASCHERA MALEDETTA",
+          "note": "Scegli un titolare Halloween sul campo: nei requisiti il suo OVR vale 15 punti in meno. In partita rimane identico.",
+          "pickerTitle": "SCEGLI UN TITOLARE HALLOWEEN",
+          "previewNote": "Il titolare Halloween selezionato conta 15 OVR in meno solo nei requisiti. Valori reali invariati."
+        }
+      }
+    }
+  ],
+  "assets": {
+    "banner": "https://img.magnific.com/foto-gratuito/illustrazione-digitale-di-halloween_23-2151822706.jpg?semt=ais_hybrid&w=740&q=80",
+    "background": "https://static9.depositphotos.com/1014889/1236/i/450/depositphotos_12367834-stock-photo-halloween-background-spooky-graveyard.jpg"
+  }
+}
