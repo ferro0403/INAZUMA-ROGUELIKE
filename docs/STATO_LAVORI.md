@@ -5,6 +5,9 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
 
 ## Dove siamo
 
+- **7 novembre 2026:** Passo 1 (CSS) chiuso, Passo 3 (eventi come dati) e Passo 4 (due eventi attivi insieme) fatti.
+  Tutto e' nella PR finale #572 (`release/passo-1-4` -> `main`), da unire dopo le verifiche: vedi "Ordine di unione
+  definitivo" qui sotto. Restano fuori il tema per evento (3.6) e le immagini locali di Halloween (3.7).
 - **Passo 0 — Rete di sicurezza: chiuso il 3 novembre 2026** (branch `chore/safety-net`, PR in bozza
   ferro0403/INAZUMA-ROGUELIKE#540).
 - **Passo 1 — CSS: in corso** (ok dell'utente il 3 novembre). PR in bozza, da unire in ordine dopo la #540:
@@ -84,6 +87,25 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
   - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f → 4.371 dopo 1i.
     Dopo le correzioni del 5 nov (regole e `!important` rimessi): **4.504** nella PR finale; file CSS 50 → 27.
 
+## Ordine di unione definitivo (7 nov 2026)
+
+**Da unire in `main`: una sola PR, la finale `release/passo-1-4` -> `main` (#572).** Contiene, controllato commit per commit:
+1. Passo 0 e Passo 1 (CSS): #540-#559, con #550 e #551;
+2. Passo 3, eventi come dati: proposta #560, poi #561, #562, #563, #564, #565, e la PR finale di allora #566;
+3. Passo 4, due eventi attivi insieme: stima #567, poi #568, #569, #570, #571;
+4. questo documento aggiornato.
+
+`main` e' antenato del ramo finale: nessun conflitto.
+
+**Da chiudere senza unire, dopo aver unito la #572** (il loro contenuto e' gia' in `main`):
+- #540-#559 (Passo 0 e 1);
+- #560-#566 (Passo 3, compresa la vecchia PR finale #566, sostituita dalla #572);
+- #567-#571 (Passo 4).
+
+Non si unisce una PR alla volta: sono a catena (ognuna punta alla precedente) e il risultato sarebbe lo stesso con molti
+piu' passaggi. Prima di unire ci sono le verifiche in anteprima: con `?dev=1&oraEvento=2026-11-07` l'evento e' finito;
+con `?dev=1&evento=prova_dev` ci sono due eventi.
+
 ## Passo 3 — Eventi come dati (approvato il 5 nov 2026)
 
 Proposta e analisi: `docs/PASSO_3_EVENTI.md` (PR #560). Risposte dell'utente: via libera; poteri degli allenatori
@@ -134,7 +156,7 @@ Restano nel codice:
   `event-manifest-test` controlla che nome e potere coincidano con il file dell'evento.
 - I testi dell'ingresso evento ("EVENTO HALLOWEEN", "ZUCCHE HALLOWEEN") e le classi CSS `halloween-*`: sono il lavoro del 3.6.
 
-### Cosa unire, in ordine
+### Cosa unire, in ordine (superato: vedi "Ordine di unione definitivo" in alto)
 
 **Consigliato: una sola PR, la finale #566 (`release/passo-1-3` -> `main`).** Contiene, controllato commit per commit:
 1. Passo 0 e Passo 1: #540-#558, tutto quello che c'e' in `release/passo-1-css` (#559);
@@ -151,7 +173,7 @@ In pratica e' piu' semplice unire solo la finale.
 Prima di unire: le verifiche con l'evento finito, dopo il 6 nov alle 23:59 italiane. Evento chiuso; carte, allenatore,
 potere e scheda Halloween ancora corretti in squadra e album.
 
-## Passo 4 — Due eventi attivi insieme (stima del 6 nov 2026, in attesa dell'ok)
+## Passo 4 — Due eventi attivi insieme (stima del 6 nov 2026, approvata; fatto il 6-7 nov)
 
 Richiesta: due eventi attivi insieme, ognuno con il suo ingresso nelle campagne. Halloween resta identico (200/300/600/10%,
 stessa partita, `shared.halloween`). L'evento finto ha id, squadra, carte, allenatore e valuta propri, sta accanto a
@@ -200,6 +222,34 @@ PR da `release/passo-1-3` verso `release/passo-1-3`; niente in `main`.
 - **Da decidere (non bloccante):** l'allenatore dell'evento finto. Proposta: un allenatore gia' esistente nelle immagini
   ma senza potere, con il potere "Maschera Maledetta" su carte `prova_dev::` e uno sconto diverso, per esempio 10, cosi'
   il test distingue i due poteri. Visibile solo con `?dev=1&evento=prova_dev`.
+
+### Passo 4: risultato finale (7 nov 2026)
+
+| PR | Cosa cambia |
+|---|---|
+| #568 4.1 | Hekyll con l'evento di prova (causa: l'evento finto riusava Hekyll, ora un allenatore sta in un solo evento); allenatore e valuta propri dell'evento di prova (l'allenatore finto mai nel catalogo reale ne' nel salvataggio); `?dev=1&oraEvento=` |
+| #569 4.2 | Squadra "Angeli di prova" (gli 11 Dark Angels con le loro 4 mosse dal database RTG) e carte proprie |
+| #570 4.3 | Un'istanza del modulo per evento, un ingresso per evento nelle campagne, l'evento di prova accanto a Halloween; correzione del 7 nov: 11 avversari in ogni evento (la formazione viene dal file dell'evento, prima era sempre 4-4-2 e se ne vedevano 9) |
+| #571 4.4 | Titolo, immagine, ~45 testi e valuta dal file di ogni evento; Halloween identico, l'evento di prova si distingue in Campagne |
+
+| Controllo | Risultato |
+|---|---|
+| `npm test` | 474 test: **435 passati, 39 falliti**. Sono gli stessi 39 gia' rossi prima del Passo 3, nessun peggioramento. Test nuovi: `event-coach-isolation`, `event-two-active`, `event-starters` |
+| Parita' dei poteri | **1.861 casi identici**, verde dopo ogni PR |
+| Numeri di Halloween | verdi dopo ogni PR (200/300/600/10%), con in piu' i testi di Halloween identici a quelli che erano nel codice |
+| Salvataggio vecchio | identico a prima (impronta del cloud), anche con due eventi attivi; Halloween solo in `shared.halloween`, evento di prova solo in chiavi locali `dev:` |
+| Prove nel browser | **15/15**: comprese `08b` (Hekyll con l'evento di prova attivo), `12-evento-finto` (due ingressi, carte e saldi separati, account vero invariato) e `13-ora-evento` (Halloween chiuso, evento di prova aperto e apribile) |
+| Foto e stile calcolato | identici a prima su 12 schermate Halloween, 5 album, 4 allenatori, 2 potere (dopo ogni PR) |
+
+Differenze rispetto alla stima:
+- i testi da spostare erano circa 45 e non 25;
+- `rtg-album-controller.js` non e' cambiato, perche' apre gia' Halloween; e' cambiato invece `rtg-album-view.js`, che con
+  l'evento di prova attivo continua a mostrare l'evento vero.
+
+Restano fuori:
+- il tema grafico (3.6): l'evento di prova ha ancora i colori di Halloween;
+- le immagini locali di Halloween (3.7);
+- Hekyll nel catalogo allenatori, una dipendenza del salvataggio spiegata sopra.
 
 ## Come unire le PR #540–#558 (aggiornato il 5 nov 2026)
 
