@@ -79,6 +79,8 @@
       if (team.teamId !== TEAM_ID || asId(setup.teamId).replaceAll("_","-") !== TEAM_ID ||
         list.length !== ROSTER_SIZE || setup.startingXI.length !== STARTERS_SIZE ||
         new Set(setup.startingXI).size !== STARTERS_SIZE ||
+        !setup.bossFormation || (global.RoadToGloryConfig?.season?.("ie1")?.formations &&
+          !global.RoadToGloryConfig.season("ie1").formations.some(f => f.id === setup.bossFormation)) ||
         list.some(p => !moves.players[asId(p.playerId)]?.moves?.length) ||
         setup.startingXI.some(pid => !list.some(p => asId(p.playerId) === asId(pid)))) throw fail("halloween-invalid-asset-contract");
       assets = Object.freeze({team, setup, moves, players:new Map(list.map(p=>[asId(p.playerId),p]))});
@@ -235,7 +237,8 @@
       return {formationId,seasonId:"ie1",lineup:line.map((p,i)=>({...p,tacticalRole:slots?.[i]||p.tacticalRole||p.normalizedRole||p.position})),bench:bench.filter(Boolean),coachId:localSquad?.coachId||""};
     }
     function opponent() {
-      return {name:manifest.team.name,teamId:TEAM_ID,logoUrl:LOGO_URL,seasonId:EVENT_ID,formationId:"4-4-2",
+      // Formazione avversaria dal file della formazione dell'evento (bossFormation: Halloween 4-4-2, prova 4-2-4).
+      return {name:manifest.team.name,teamId:TEAM_ID,logoUrl:LOGO_URL,seasonId:EVENT_ID,formationId:assets.setup.bossFormation,
         lineup:assets.setup.startingXI.map(pid=>player(pid)),bench:Array.from(assets.players.keys()).filter(pid=>!assets.setup.startingXI.includes(pid)).map(pid=>player(pid))};
     }
     function currency(n) { return '<span class="halloween-currency"><img src="'+escape(PUMPKIN_URL)+'" alt="">'+escape(n)+'</span>'; }
