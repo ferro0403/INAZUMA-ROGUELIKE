@@ -1646,7 +1646,12 @@
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       try {
         // Evento finto (Passo 3.5): solo con ?dev=1&evento=<id>, mai nel gioco normale.
-        const devEventId = DEV_MODE ? new URLSearchParams(global.location?.search || "").get("evento") || "" : "";
+        const params = new URLSearchParams(global.location?.search || "");
+        const devEventId = DEV_MODE ? params.get("evento") || "" : "";
+        // ?dev=1&oraEvento=2026-11-07: sposta solo l'ora usata dagli eventi (Passo 4.1), non scrive niente.
+        if (DEV_MODE && params.get("oraEvento") && !global.GameEvents?.setEventTime?.(params.get("oraEvento"))) {
+          console.warn("oraEvento non valida (usare 2026-11-07 o 2026-11-07T10:00:00+01:00)");
+        }
         await global.GameEvents?.load?.(undefined, { devEventId });
         return true;
       } catch (error) {

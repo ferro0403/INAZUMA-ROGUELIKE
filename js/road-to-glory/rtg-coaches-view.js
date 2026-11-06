@@ -159,7 +159,7 @@
     </button>`;
   }
   function squadSlot(state,coachId="",selection=null){
-    const c=model().owned(state).has(String(coachId))?model().BY_ID[String(coachId)]:null;
+    const c=model().owned(state).has(String(coachId))?model().lookup(coachId):null;
     return `<section class="rtg-coach-squad-slot ${c?.eventCoach?"rtg-coach-halloween":""}" aria-label="Allenatore della formazione">
       <div class="rtg-coach-squad-heading"><h2>ALLENATORE</h2><b>STAFF</b></div>
       ${c?`<div class="rtg-coach-squad-selected"><button type="button" data-rtg-squad-coach-detail class="rtg-coach-squad-image" aria-label="Scheda di ${esc(c.name)}">${portrait(c)}</button><div><strong>${esc(c.name)}</strong><span>${esc(c.team)} · ${esc(c.season)}</span><small>${squadPower(c.id)?(selection?.coachId===c.id?"Potere configurabile · selezione salvata":"Potere configurabile in Squadra"):(prematchPower(c.id)?"Potere attivo nel Prepartita":"Potere non ancora attivo")}</small></div></div>`:
@@ -185,15 +185,15 @@
       <button type="button" class="btn rtg-vending-album-link" data-rtg-coaches-tab="collection">ALBUM ALLENATORI</button>
     </div>`;
   }
-  function markup(state,{tab="draw",equippedId=""}={}){
-    const coaches=model().catalog(state).sort((a,b)=>Number(Boolean(b.eventCoach))-Number(Boolean(a.eventCoach))),got=coaches.filter(c=>model().status(state,c.id)==="owned").length;
+  function markup(state,{tab="draw",equippedId="",eventId=""}={}){
+    const coaches=model().catalog(state,{eventId}).sort((a,b)=>Number(Boolean(b.eventCoach))-Number(Boolean(a.eventCoach))),got=coaches.filter(c=>model().status(state,c.id)==="owned").length;
     return `<section class="rtg-coaches-window" aria-label="Allenatori"><header class="rtg-coaches-heading"><div><p class="eyebrow">ROAD TO GLORY · COLLEZIONE</p><h2>ALLENATORI</h2><p>${got} / ${coaches.length} ottenuti</p></div></header>
       <div class="rtg-coaches-tabs"><button type="button" class="${tab==="draw"?"active":""}" data-rtg-coaches-tab="draw">DISTRIBUTORE</button><button type="button" class="${tab==="collection"?"active":""}" data-rtg-coaches-tab="collection">COLLEZIONE</button></div>
       ${tab==="draw"?vending(state):`<div class="rtg-coaches-grid rtg-picker-grid">${coaches.map(c=>`<div class="rtg-coach-entry ${c.eventCoach?"rtg-coach-halloween":""} ${c.zukanId==="4763"?"is-rene":""} ${model().status(state,c.id)==="owned"?"is-unlocked":"is-locked"}">${card(c,model().status(state,c.id),equippedId===c.id)}${model().status(state,c.id)==="owned"?`<button type="button" class="rtg-coach-quick-equip" data-rtg-coaches-equip="${equippedId===c.id?"":esc(c.id)}" aria-label="${equippedId===c.id?"Rimuovi":"Assegna"} ${esc(c.name)}">${equippedId===c.id?"✓ ASSEGNATO":"＋ ASSEGNA"}</button>`:""}</div>`).join("")}</div>`}
     </section>`;
   }
   function detail(state,coachId,{equippedId=""}={}){
-    const c=model().BY_ID[String(coachId)];if(!c)return "";
+    const c=model().lookup(coachId);if(!c)return "";
     const status=model().status(state,c.id),isOwned=status==="owned",selected=isOwned&&c.id===equippedId;
     // Same PlayerView.detailMarkup DOM sections, replacing overall/stats with ability data.
     return `<div class="player-detail-layout rtg-coach-detail rarity-coach ${c.eventCoach?"rtg-coach-halloween":""}" aria-label="Scheda allenatore ${esc(c.name)}">

@@ -72,3 +72,31 @@ assert.throws(() => project({ ...plain(OLD_SAVE), events: { prova: { balance: -1
 assert.throws(() => project({ ...plain(OLD_SAVE), events: { "Non Valido": {} } }), /rtg-cloud-invalid-events/);
 
 console.log("event-save-compat-test: PASS anche nel cloud (vecchio identico a prima, events conservato)");
+
+// Passo 4: due eventi attivi insieme (Halloween + evento finto con ?dev=1&evento=prova_dev). Il salvataggio vecchio
+// resta identico; Halloween scrive solo shared.halloween dell'account vero; l'evento finto scrive solo nel suo
+// account locale "dev:prova_dev:shared:account", nel campo events.prova_dev, e mai nell'account vero.
+const { loadEventsWithDev } = require("./helpers/events");
+loadEventsWithDev({ console: { warn() {} } }, "prova_dev").then((both) => {
+  const pair = both.GameEvents;
+  const h = pair.get("halloween2026"), d = pair.get("prova_dev");
+  assert(h && d, "i due eventi sono caricati insieme");
+  assert.deepStrictEqual(Array.from(pair.ledgerPath(h)), ["halloween"]);
+  assert.deepStrictEqual(Array.from(pair.ledgerPath(d)), ["events", "prova_dev"]);
+  assert.strictEqual(d.save.storagePrefix, "dev:prova_dev:", "l'evento finto salva solo in chiavi locali dev:");
+  assert.notStrictEqual(d.save.cardIdPrefix, h.save.cardIdPrefix, "carte con prefissi diversi");
+  assert.notStrictEqual(d.save.currencyField || "balance", h.save.currencyField, "valute in campi diversi");
+  // Account vero: una mossa di Halloween su un salvataggio vecchio non aggiunge campi e non tocca altro.
+  const real = { ...plain(OLD_SAVE), ...plain(pair.withLedger(OLD_SAVE, h, { ...OLD_SAVE.halloween, pumpkins: 650 })) };
+  assert.deepStrictEqual(Object.keys(real).sort(), Object.keys(OLD_SAVE).sort(), "nessun campo nuovo nell'account vero");
+  assert.strictEqual(real.halloween.pumpkins, 650);
+  // Account finto: parte da una copia dell'account vero e riceve solo events.prova_dev.
+  const fakeLedger = { balance: 99799, ownedIds: ["38"], pullCount: 1, completedIds: [], luckyWins: 0 };
+  const sandboxAccount = { ...plain(real), ...plain(pair.withLedger(real, d, fakeLedger)) };
+  assert.deepStrictEqual(sandboxAccount.events, { prova_dev: fakeLedger });
+  assert.deepStrictEqual(sandboxAccount.halloween, real.halloween, "l'evento finto non tocca lo stato di Halloween");
+  assert(!("events" in real), "l'account vero resta senza events");
+  // Il cloud (che legge solo l'account vero) da' lo stesso risultato di prima sul salvataggio vecchio.
+  assert.strictEqual(crypto.createHash("sha1").update(JSON.stringify(project(OLD_SAVE))).digest("hex"), OLD_SAVE_CLOUD_SHA1);
+  console.log("event-save-compat-test: PASS con due eventi (Halloween in shared.halloween, finto solo in dev:)");
+}).catch((error) => { console.error(error); process.exit(1); });
