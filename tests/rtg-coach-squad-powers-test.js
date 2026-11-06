@@ -284,8 +284,12 @@ test("Five Squad power controls and season-safe element roundtrip are wired",()=
   assert.doesNotMatch(ui,/SELEZIONA 2 MOSSE NELLA SCHEDA/);
   assert.match(ui,/ctx\.saveSquad\(draft\)/);
   const view=read("js/road-to-glory/rtg-coaches-view.js");
-  for(const key of ['"208"','"1329"','"1777"','"1974"','"4401"'])
-    assert(view.includes(key));
+  // Passo 3.3: la scheda non elenca piu' gli id degli allenatori, legge la fase del potere dai dati.
+  assert.doesNotMatch(view,/\["208","1329"/);
+  assert.match(view,/powerFor\?\.\(coachId\)\?\.phase/);
+  const coachSource=read("js/road-to-glory/rtg-coaches.js");
+  for(const key of ["208","1329","1777","1974","4401"])
+    assert.match(coachSource,new RegExp(`\\{id:"${key}",power:\\{type:"(ptBoost|halveMoveCost|benchCapOverride|rarityUpgrade|elementTransform)"`));
   const stateSource=read("js/road-to-glory/rtg-state.js");
   assert.match(stateSource,/coachPowerSelection\.element/);
   const mainSource=read("js/road-to-glory/rtg-controller.js");

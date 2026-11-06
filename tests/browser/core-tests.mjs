@@ -259,4 +259,41 @@ export const tests = [
       await fresh.waitText("#app", /Inazuma Eleven 1 11 \/ \d+ giocatori sbloccati/); // gli 11 del draft compaiono
     },
   },
+  {
+    name: "12-evento-finto",
+    // Passo 3.5: l'evento finto (data/events/dev/prova_dev.json) si apre solo con ?dev=1&evento=prova_dev,
+    // funziona con lo stesso modulo di Halloween e NON scrive mai l'account vero (shared:account).
+    async run({ game, assert }) {
+      const normal = await game({ dev: true });
+      assert.equal(await normal.page.evaluate(() => window.GameEvents.get("prova_dev")), null,
+        "senza ?evento= l'evento finto non si carica");
+      assert.equal(await normal.page.evaluate(() => window.RoadToGloryHalloween.EVENT_ID), "halloween2026");
+
+      const g = await game({ dev: true, query: "evento=prova_dev" });
+      assert.equal(await g.page.evaluate(() => window.RoadToGloryHalloween.EVENT_ID), "prova_dev",
+        "con ?evento=prova_dev si usa l'evento finto");
+      await g.unlockAllFreeAgents();
+      const REAL = "shared:account", DEV = "dev:prova_dev:shared:account";
+      const before = await g.readRtgRecords([REAL, DEV]);
+      assert.equal(before[DEV] ?? null, null, "il salvataggio finto parte vuoto");
+      await g.click("[data-rtg-home-open=campaigns]");
+      await g.click("[data-rtg-halloween-open]");
+      await g.waitText("#app", /Formazione valida/i);
+      await g.devHalloweenPumpkins();
+      await g.click("[data-halloween-open-vending]");
+      await g.click("[data-halloween-pull]:not([disabled])");
+      await g.page.locator("[data-rtg-pull-continue], [data-rtg-coaches-collection]").locator("visible=true").first()
+        .waitFor({ timeout: 20000 });
+      const after = await g.readRtgRecords([REAL, DEV]);
+      assert.deepEqual(after[REAL] ?? null, before[REAL] ?? null, "l'account vero non e' cambiato");
+      const ledger = after[DEV]?.events?.prova_dev;
+      assert.ok(ledger, "lo stato dell'evento finto sta in dev:...:shared:account, campo events.prova_dev");
+      assert.equal(ledger.pullCount, 1, "una capsula aperta");
+      assert.equal(ledger.balance, 99999 - 200, "prezzo della capsula dal file dell'evento");
+      assert.equal(after[DEV].halloween, undefined, "l'evento finto non tocca lo stato di Halloween");
+      const won = (after[DEV].gachaAcquiredCards || []).filter((c) => String(c.cardId).startsWith("prova_dev::"));
+      const coach = (after[DEV].coachOwnedIds || []).length > (before[REAL]?.coachOwnedIds || []).length;
+      assert.ok(won.length === 1 || coach, "la capsula ha dato una carta dell'evento finto o l'allenatore");
+    },
+  },
 ];

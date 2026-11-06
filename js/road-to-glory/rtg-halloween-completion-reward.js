@@ -60,5 +60,7 @@
   });
   }
   // Evento con un premio finale, gia' caricato o caricato all'avvio del gioco.
-  global.GameEvents?.onAnyLoad?.(manifest=>{if(manifest.completionReward?.player)install(manifest);});
+  global.GameEvents?.onAnyLoad?.(manifest=>{
+    if(manifest.completionReward?.player&&global.GameEvents.isActive(manifest.id))install(manifest);
+  });
 })(globalThis);

@@ -38,7 +38,8 @@ export async function startHarness() {
   const browser = await chromium.launch();
   return {
     url,
-    async newGame({ seed = 0x2f6b1a3d, dev = false, flowingClock = false } = {}) {
+    // query: parametri in piu' nell'indirizzo (es. "evento=prova_dev" per l'evento finto, solo con dev).
+    async newGame({ seed = 0x2f6b1a3d, dev = false, flowingClock = false, query = "" } = {}) {
       const context = await browser.newContext({ viewport: VIEWPORT, locale: "it-IT", timezoneId: "Europe/Rome" });
       const page = await context.newPage();
       // Orologio fermo su FIXED_TIME: la run generata e' sempre la stessa.
@@ -49,7 +50,8 @@ export async function startHarness() {
       const errors = [];
       page.on("pageerror", (e) => { if (!IGNORED_ERRORS.test(e.message)) errors.push(e.message); });
       // dev: apre il gioco con ?dev=1, che mostra gli strumenti di test gia' presenti nel gioco (monete, zucche...).
-      await page.goto(dev ? `${url}?dev=1` : url, { waitUntil: "domcontentloaded" });
+      const search = [dev ? "dev=1" : "", query].filter(Boolean).join("&");
+      await page.goto(search ? `${url}?${search}` : url, { waitUntil: "domcontentloaded" });
       await waitForHome(page);
       return new Game(page, context, errors);
     },
@@ -245,6 +247,13 @@ export class Game {
     return false;
   }
   // Strumento di test del gioco (solo con ?dev=1): porta le zucche Halloween a 99.999.
+  // Legge dal salvataggio RTG del browser (IndexedDB) i record con queste chiavi.
+  async readRtgRecords(keys) {
+    return this.page.evaluate(async (names) => {
+      const storage = window.RoadToGloryStorage.create();
+      return JSON.parse(JSON.stringify(await storage.readMany(names)));
+    }, keys);
+  }
   async devHalloweenPumpkins() {
     await this.page.waitForFunction(() => document.querySelector("[data-halloween-dev-pumpkins]"));
     await this.page.evaluate(() => document.querySelector("[data-halloween-dev-pumpkins]").click());

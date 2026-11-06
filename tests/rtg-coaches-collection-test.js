@@ -14,6 +14,8 @@ const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sect
     }
   };
   vm.runInNewContext(read("js/road-to-glory/rtg-coaches.js"),sandbox);
+  // Fase dei poteri dai dati (registro dei tipi e file degli eventi), come nel gioco.
+  require("./helpers/coach-powers").loadCoachPowerData(sandbox);
   vm.runInNewContext(read("js/road-to-glory/rtg-rng.js"),sandbox);
   vm.runInNewContext(read("js/road-to-glory/rtg-state.js"),sandbox);
   vm.runInNewContext(read("js/road-to-glory/rtg-coaches-view.js"),sandbox);

@@ -54,6 +54,19 @@
     need(cards.length === team.rosterSize, "il numero di carte deve essere team.rosterSize");
     need(new Set(cards.map((card) => card.playerId)).size === cards.length, "carte ripetute");
     for (const card of cards) need(isText(card.playerId) && isText(card.rarity), "carta senza playerId o rarity");
+    // Evento finto (solo sviluppo, data/events/dev/): tutto il suo salvataggio sta in chiavi locali "dev:...",
+    // mai in shared:account (quindi mai nel cloud). Non usa save.key.
+    if (manifest.dev !== undefined) {
+      const prefix = manifest.save?.storagePrefix;
+      need(manifest.dev === true, "dev deve essere true");
+      need(isText(prefix) && /^dev:[a-z0-9_-]+:$/.test(prefix), "save.storagePrefix deve essere 'dev:<id>:'");
+      need(manifest.save?.key === undefined, "un evento finto non usa save.key");
+      for (const key of ["matchKey", "squadKey"]) {
+        need(isText(manifest.save?.[key]) && manifest.save[key].startsWith(prefix || "-"), `save.${key} fuori da dev:`);
+      }
+    } else {
+      need(manifest.save?.storagePrefix === undefined, "save.storagePrefix solo per gli eventi finti");
+    }
     for (const coach of manifest.coaches || []) {
       need(isText(coach.id) && isText(coach.name), "allenatore senza id o name");
       need(isText(coach.power?.type) && isObject(coach.power?.params), `allenatore ${coach.id}: potere non valido`);
@@ -61,9 +74,15 @@
     return errors;
   }
 
-  function register(manifest) {
+  // Evento finto scelto per questa sessione (solo con ?dev=1&evento=<id>): sostituisce gli eventi a capsule veri.
+  let devEventId = "";
+
+  function register(manifest, { dev = false } = {}) {
     const errors = validate(manifest);
     if (errors.length) throw Object.assign(new Error(`evento non valido: ${errors.join("; ")}`), { code: "event-invalid" });
+    if (manifest.dev === true && !dev) {
+      throw Object.assign(new Error("un evento finto si carica solo in sviluppo"), { code: "event-dev-only" });
+    }
     const frozen = deepFreeze(JSON.parse(JSON.stringify(manifest)));
     manifests.set(frozen.id, frozen);
     listed.add(frozen.id);
@@ -94,10 +113,22 @@
   }
 
   // Carica indice e manifest. Un evento con un file mancante o non valido viene saltato (avviso in console).
-  function load(fetcher = global.fetch && global.fetch.bind(global)) {
+  // options.devEventId (solo in sviluppo): carica anche data/events/dev/<id>.json, l'evento finto.
+  function load(fetcher = global.fetch && global.fetch.bind(global), options = {}) {
     if (loading) return loading;
+    const devId = String(options.devEventId || "");
+    if (devId && /^[a-z0-9_-]+$/.test(devId)) devEventId = devId;
     loading = (async () => {
       if (!fetcher) return [];
+      if (devEventId) {
+        try {
+          const file = await fetcher(`data/events/dev/${devEventId}.json`, { cache: "no-store" });
+          if (!file.ok) throw new Error(`HTTP ${file.status}`);
+          register(await file.json(), { dev: true });
+        } catch (error) {
+          global.console?.warn?.(`[eventi] evento finto ${devEventId} non caricato`, error);
+        }
+      }
       const response = await fetcher(INDEX_PATH, { cache: "no-store" });
       if (!response.ok) throw Object.assign(new Error("indice eventi non disponibile"), { code: "event-index" });
       const ids = (await response.json())?.events || [];
@@ -120,6 +151,12 @@
   }
 
   const get = (eventId) => manifests.get(String(eventId || "")) || null;
+  // Evento a capsule da installare in questa sessione: l'evento finto se scelto, altrimenti i veri.
+  const isActive = (eventId) => {
+    const manifest = get(eventId);
+    if (!manifest) return false;
+    return devEventId ? manifest.id === devEventId : manifest.dev !== true;
+  };
   const isEvent = (eventId) => listed.has(String(eventId || ""));
   // Carta di un evento elencato: il prefisso e' sempre "<id>::" (controllato da validate()).
   const isEventCard = (cardId) => {
@@ -151,5 +188,5 @@
   const endMs = (eventId) => Date.parse(get(eventId)?.window?.end || "");
 
   global.GameEvents = Object.freeze({ INDEX_PATH, validate, register, onLoad, onAnyLoad, load, get, all, startMs, endMs,
-    isEvent, isEventCard, forCardId, badge, label, ledgerPath, ledger, withLedger });
+    isEvent, isEventCard, isActive, forCardId, badge, label, ledgerPath, ledger, withLedger });
 })(globalThis);

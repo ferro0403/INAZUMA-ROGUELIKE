@@ -39,5 +39,32 @@ const reply = (body, ok = true) => ({ ok, status: ok ? 200 : 404, json: async ()
   assert.match(app, /if \(!\(await \(global\.GameEvents \? loadEvents\(\) : true\)\)\) return null;/);
   assert.match(app, /Impossibile caricare i dati del gioco/);
 
+  // 4) Evento finto (Passo 3.5): mai caricato senza ?evento=, mai registrabile come evento vero, salvataggio in dev:.
+  const devFile = JSON.parse(fs.readFileSync("data/events/dev/prova_dev.json", "utf8"));
+  const real = JSON.parse(fs.readFileSync("data/events/halloween2026.json", "utf8"));
+  const serve = (asked) => async (url) => {
+    asked.push(url);
+    if (url.endsWith("index.json")) return reply({ events: ["halloween2026", "prova_dev"] });
+    if (url.endsWith("dev/prova_dev.json") || url.endsWith("/prova_dev.json")) return reply(devFile);
+    return reply(real);
+  };
+  const production = fresh();
+  const askedProd = [];
+  await production.GameEvents.load(serve(askedProd));
+  assert(!askedProd.some((url) => url.includes("/dev/")), "in produzione la cartella dev/ non si legge");
+  assert.strictEqual(production.GameEvents.get("prova_dev"), null, "anche se elencato, un evento finto non si registra");
+  assert.strictEqual(production.GameEvents.isActive("halloween2026"), true);
+  const dev = fresh();
+  await dev.GameEvents.load(serve([]), { devEventId: "prova_dev" });
+  assert.strictEqual(dev.GameEvents.isActive("prova_dev"), true, "con ?evento= si usa l'evento finto");
+  assert.strictEqual(dev.GameEvents.isActive("halloween2026"), false, "e l'evento vero non si installa");
+  assert.strictEqual(dev.GameEvents.isEvent("halloween2026"), true, "le carte Halloween restano carte di evento");
+  const bad = (save) => Array.from(dev.GameEvents.validate({ ...devFile, save: { ...devFile.save, ...save } }));
+  assert(bad({ storagePrefix: "shared:" }).length, "prefisso fuori da dev: rifiutato");
+  assert(bad({ key: "halloween" }).length, "un evento finto non puo' scrivere shared.halloween");
+  assert(bad({ matchKey: "local:prova:match" }).length, "chiavi partita fuori da dev: rifiutate");
+  assert(Array.from(dev.GameEvents.validate({ ...real, save: { ...real.save, storagePrefix: "dev:x:" } })).length,
+    "un evento vero non puo' usare storagePrefix");
+
   console.log("event-registry-load-test: PASS (carte evento mai riscritte, elenco mancante = il gioco non parte)");
 })().catch((error) => { console.error(error); process.exit(1); });
