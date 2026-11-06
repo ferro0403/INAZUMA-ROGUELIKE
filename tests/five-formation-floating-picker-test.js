@@ -1,14 +1,15 @@
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const fs = require("fs");
 
 const index = fs.readFileSync("index.html", "utf8");
-const css = fs.readFileSync("css/five-formation-floating-picker.css", "utf8");
+const css = cssSection('five-formation-floating-picker');
 const js = fs.readFileSync("js/five-formation-floating-picker.js", "utf8");
 
 function expect(value, message) {
   if (!value) throw new Error(message);
 }
 
-expect(index.includes("five-formation-floating-picker.css"), "floating picker stylesheet must be loaded");
+expect(stylesheetLoaded(index, 'five-formation-floating-picker'), "floating picker stylesheet must be loaded");
 expect(index.includes("five-formation-floating-picker.js"), "floating picker bridge must be loaded");
 expect(css.includes(".five-layout > .five-selector"), "legacy in-flow selector must be hidden");
 expect(css.includes(".five-selector.five-selector-floating.is-open"), "picker must expose an explicit floating open state");

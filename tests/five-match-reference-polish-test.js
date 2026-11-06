@@ -1,9 +1,10 @@
 "use strict";
 
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const assert = require("assert");
 const fs = require("fs");
 
-const css = fs.readFileSync("css/five-match-reference-polish.css", "utf8");
+const css = cssSection('five-match-reference-polish');
 const index = fs.readFileSync("index.html", "utf8");
 
 assert(css.includes(".five-match-screen .five-match-vs .five-match-team small"), "matchup metadata selector must exist");
@@ -15,6 +16,6 @@ const opponentSideRule = css.match(/\.five-match-screen \.five-match-vs \.five-m
 assert(!opponentSideRule.includes("margin-left") && !opponentSideRule.includes("clip-path"), "opponent side must not use a structural offset");
 assert(css.includes("five-match-action-cta--primary::after"), "legacy primary action decoration layer must exist");
 assert(css.includes("five-match-tactics-icon"), "secondary action tactical-board icon must exist");
-assert(index.includes("css/five-match-reference-polish.css"), "reference polish stylesheet must be loaded after the base 5v5 styles");
+assert(stylesheetLoaded(index, 'five-match-reference-polish'), "reference polish stylesheet must be loaded after the base 5v5 styles");
 
 console.log("five-match-reference-polish-test: OK");

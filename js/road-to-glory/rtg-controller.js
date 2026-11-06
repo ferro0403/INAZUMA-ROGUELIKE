@@ -238,7 +238,7 @@
           return openRtgPlayerDetails(key,"",reopenOptions);
         }:null,
         moveSeasonId:id(detailMeta.legacySeasonId||player.resolvedSeasonId||campaign?.activeSeasonId||"ie1"),
-        rtgKitPreview:true,rtgFourMoves:true,rtgRarity:previewInfo?.coachId==="1974"?detailPlayer.category:
+        rtgKitPreview:true,rtgFourMoves:true,rtgRarity:global.RoadToGloryCoachPowerTypes?.typeOf?.(previewInfo?.coachId)==="rarityUpgrade"?detailPlayer.category:
           (campaign?.developmentByCardId?.[id(detailPlayer.cardId||key)]?.currentRarity||campaign?.developmentByCardId?.[key]?.currentRarity||detailPlayer.category),
         readOnly:true,
         mode:options?.mode||undefined,
@@ -346,7 +346,7 @@
         const routeButtons=active?"":`<button type="button" data-dev-rtg="next-node">TAPPA SUCCESSIVA</button>${previousSeasonButton}`;
         const matchButtons=!active?"":'<button type="button" data-dev-rtg="halftime">VAI ALL\'INTERVALLO</button><button type="button" data-dev-rtg="extra">VAI AI SUPPLEMENTARI</button><button type="button" data-dev-rtg="penalties">VAI AI RIGORI</button><button type="button" data-dev-rtg="moves">RICARICA MOSSE</button><button type="button" data-dev-rtg="win">FORZA VITTORIA</button><button type="button" class="danger" data-dev-rtg="loss">FORZA SCONFITTA</button>';
         panel.innerHTML=`<summary>DEV RTG</summary><div><p><b>Gettoni: ${Number(campaign.tokens)||0}</b><br>Vite: ${Number(campaign.lives)||0}${active?` · ${active.status} / ${active.period}`:""}</p><button type="button" data-dev-rtg="tokens">999.999 GETTONI</button><button type="button" data-dev-rtg="lives">RIPRISTINA VITE</button><button type="button" data-dev-rtg="pool">SBLOCCA TUTTO IL POOL</button>${routeButtons}${matchButtons}</div>`;
-        doc.body?.appendChild(panel);
+        doc.body?.appendChild(panel);global.RoadToGloryDevSeasonComplete?.attach?.(panel,devUpdateCampaign);
         panel.querySelector('[data-dev-rtg="tokens"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-tokens",state=>{state.tokens=999999;},"Gettoni RTG portati a 999.999"));
         panel.querySelector('[data-dev-rtg="lives"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-lives",state=>{state.lives=Number(activeConfig()?.livesPerCheckpoint)||2;},"Vite RTG ripristinate"));
         panel.querySelector('[data-dev-rtg="pool"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-pool",state=>{state.defeatedTeamIds=Array.from(new Set(activeConfig()?.mainTeams||[]));},"Pool distributore RTG sbloccato"));
@@ -631,7 +631,7 @@
         if(userMeta.teamIdentity)userSquad.teamIdentity=clone(userMeta.teamIdentity);
         const preMatchCoach=global.RoadToGloryCoachPreMatchRuntime?.coachFor?.(current,id(current.activeSeasonId||activeSeasonId()))||"";
         let opponentSquad=node.type==="main"?mainOpponent(node):secondaryOpponent(node,current,attemptNumber);
-        if(["36","1225"].includes(preMatchCoach))opponentSquad=global.RoadToGloryCoachOpponentBench?.build?.({opponent:opponentSquad,node:{...node,coachId:preMatchCoach},teamRecord:teamRecordForId(node.teamId),freeAgentsDb,resolveForTeam:resolvedForTeam,resolveStandard:resolvedStandard})||opponentSquad;
+        if(["swapOpponentStarter","borrowOpponentReserve"].includes(global.RoadToGloryCoachPowerTypes?.typeOf?.(preMatchCoach)))opponentSquad=global.RoadToGloryCoachOpponentBench?.build?.({opponent:opponentSquad,node:{...node,coachId:preMatchCoach},teamRecord:teamRecordForId(node.teamId),freeAgentsDb,resolveForTeam:resolvedForTeam,resolveStandard:resolvedStandard})||opponentSquad;
         const seed=`${current.campaignSeed}:${node.id}:${attemptNumber}`;
         const matchId=`rtg:${node.id}:${attemptNumber}`;
         let match=matchEngine.createMatch({matchId,nodeId:node.id,matchType:node.type,attemptNumber,seed,userSquad,opponentSquad,seasonId:id(current.activeSeasonId||activeSeasonId())});
@@ -920,7 +920,7 @@
         const candidateState=clone(campaign);
         candidateState.squads[activeSeasonId()]={...(candidateState.squads?.[activeSeasonId()]||{}),formationId:candidate.formationId,lineup:ids,bench:benchIds,activeRoleVariantByCardId:{...(candidate.activeRoleVariantByCardId||{})}};
         // The engine checks the frozen 15-player roster; Nerina's loan is not owned.
-        if(match.preMatchCoachEffect?.coachId==="1225")return {eligible:true,reasons:[]};
+        if(global.RoadToGloryCoachPowerTypes?.typeOf?.(match.preMatchCoachEffect?.coachId)==="borrowOpponentReserve")return {eligible:true,reasons:[]};
         if(match.matchType==="secondary"){
           const validation=squadRuntime.validateSquad({state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(candidateState)});
           return {eligible:validation.valid,reasons:validation.reasons||[]};
@@ -1038,7 +1038,7 @@
         return {locked:true,access};
       }
       campaign=await repository.ensureCampaign();checkOpen();
-      if((campaign?.gachaAcquiredCards||[]).some(card=>id(card?.cardId).startsWith("halloween2026::"))){
+      if((campaign?.gachaAcquiredCards||[]).some(card=>global.GameEvents?.isEventCard?.(id(card?.cardId)))){
         await global.RoadToGloryHalloween?.prepare?.();checkOpen();
       }
       progression?.setSeasonContext?.(campaign);if(typeof progression?.repairCheckpointPosition==="function"&&progression.repairCheckpointPosition(campaign)!==campaign){campaign=await repository.update("rtg-recover-earned-checkpoint",current=>progression.repairCheckpointPosition(current));checkOpen();}

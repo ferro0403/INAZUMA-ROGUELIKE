@@ -1,8 +1,12 @@
+const { withLiteralTokens } = require("./helpers/css-tokens");
 "use strict";
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const vm=require("node:vm");
+const { loadEvents } = require("./helpers/events");
 const ctx={console};ctx.globalThis=ctx;
+// Eventi dal file dati (data/events/), come nel gioco.
+loadEvents(ctx);
 for(const file of [
   "js/road-to-glory/rtg-config.js",
   "js/road-to-glory/rtg-squad-view-base.js",
@@ -75,10 +79,10 @@ assert.doesNotMatch(matchView.duelVisualMarkup(samford,"opponent"),/halloween-va
 assert.doesNotMatch(matchView.duelVisualMarkup(normal,"user"),/halloween-vampiro/);
 assert.equal((fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8").match(/class="rtg-duel-render\$\{shawnFwClass\}\$\{halloweenClass\}"/g)||[]).length,2,"Both original duel renderers must apply the tagged filter");
 const htmlShell=fs.readFileSync("index.html","utf8");
-assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261102-secret-shawn-reward-v1/,
+assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261106-evento-finto-1/,
   "iOS cache must not serve the older pre-fix Halloween controller");
 const albumViewSource=fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8");
-assert.ok(htmlShell.includes("js/road-to-glory/rtg-album-view.js?v=20261102-event-progress-v1"),
+assert.ok(htmlShell.includes("js/road-to-glory/rtg-album-view.js?v=20261106-modulo-evento-2"),
   "Safari must fetch the latest album covers");
 ctx.RoadToGloryCoaches={catalog:()=>[{id:"208",name:"Hillman"}],
   owned:()=>new Set(["208"])};
@@ -150,8 +154,8 @@ for (const [playerId, expectedPath] of [
 }
 assert.match(eventSource,/frontFullbodyUrl:raw\.frontFullbodyUrl \|\| EVENT_FULLBODY_URLS/,
   "Halloween player resolver must prefer the player-specific fullbody URL");
-const halloweenCss=fs.readFileSync("css/rtg-halloween-event.css","utf8");
-const coachesCss=fs.readFileSync("css/rtg-coaches.css","utf8");
+const halloweenCss=withLiteralTokens(fs.readFileSync("css/rtg-halloween-event.css","utf8"));
+const coachesCss=withLiteralTokens(fs.readFileSync("css/rtg-coaches.css","utf8"));
 assert.ok(coachesCss.includes("#modal-root .rtg-coach-player-preview p"),
   "Halloween coach preview requires a direct readable text-color override");
 assert.ok(coachesCss.includes("color:#24181a!important"),
@@ -165,7 +169,7 @@ assert.match(coachesCss,/transform:scale\(1\.52\)/,
 assert.ok(halloweenCss.includes(".rtg-halloween-album-collection .album-collection-title{color:#fffdf6!important"),
   "Event title must be white over the artwork");
 
-assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261102-shawn-portrait-exempt-v3"));
+assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261105-halloween-card-1"));
 assert.doesNotMatch(eventSource,/coachMatchStatus\(|halloween-coach-match-status/,
   "Never insert coach banners above native Halloween matches");
 assert.doesNotMatch(halloweenCss,/halloween-coach-match-status/,
@@ -174,8 +178,8 @@ assert.match(eventSource,/function squadCoachDetailPreview\(cardId,player\)/,
   "Halloween Squadra must resolve the actual saved coach power for card details");
 assert.match(eventSource,/RoadToGloryCoachSquadPreview\?\.decorateDetail\?\.\(/,
   "Halloween player details must render staff power stats and special moves");
-assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-runtime.js?v=20261030-yi-snapshot-v4"));
-assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-prematch.js?v=20261030-halloween-opponent-moves-v2"));
+assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-runtime.js?v=20261106-modulo-evento-2"));
+assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-prematch.js?v=20261106-poteri-dati-1"));
 assert.doesNotMatch(eventSource,/rtg-coach-cap-note/,
   "Hekyll helper below OVR max must be removed, not just hidden");
 assert.match(eventSource,/data-halloween-prize-color/,
@@ -183,7 +187,7 @@ assert.match(eventSource,/data-halloween-prize-color/,
 assert.ok(halloweenCss.includes('[data-halloween-prize-color="orange"] .rtg-vending-prize-v9'));
 assert.ok(halloweenCss.includes('[data-halloween-prize-color="black"] .rtg-vending-prize-v9'));
 
-assert.match(htmlShell,/rtg-coaches\.css\?v=20261102-coach-cover-zoom-v1/,
+assert.match(htmlShell,/rtg-coaches\.css\?v=20261105-halloween-card-1/,
   "iPhone must fetch the updated staff contrast rules");
 assert.match(coachesCss,/\.rtg-coach-squad-slot\.rtg-coach-halloween \.rtg-coach-squad-selected strong\s*\{\s*color:#24151a!important/,
   "Hekyll's name must be dark on the parchment background");

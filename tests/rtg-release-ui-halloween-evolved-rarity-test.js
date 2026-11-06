@@ -2,6 +2,7 @@
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const vm=require("node:vm");
+const { loadEvents } = require("./helpers/events");
 const test=require("node:test");
 const read=path=>fs.readFileSync(path,"utf8");
 const index=read("index.html");
@@ -22,9 +23,9 @@ test("Mobile RTG home: compact CTA and existing navigation contracts",()=>{
   assert.match(home,/data-rtg-home-open="\$\{target\}"/);
   assert.match(css,/home-rtg-shortcuts--compact/);
   assert(!index.includes("rtg-release-polish-20261030.css"),"No illegal finishing stylesheets");
-  assert(index.includes("css/game.css?v=20261030-rtg-home-owner-v4"));
-  assert(index.includes("css/rtg-theme.css?v=20261030-secondary-briefing-owner-v4"));
-  assert(index.includes("css/rtg-halloween-event.css?v=20261102-shawn-portrait-exempt-v3"));
+  assert(index.includes("css/game.css?v=20261104-css-tokens-1"), "game.css cambiato il 4 nov 2026 (file uniti): nuova chiave anti-cache");
+  assert(index.includes("css/rtg-theme.css?v=20261104-css-tokens-1"));
+  assert(index.includes("css/rtg-halloween-event.css?v=20261105-halloween-card-1"));
   assert(index.includes("home-view.js?v=20260923-rtg-direct-paint-p1-compact-v1"),
     "Mobile home HTML must be cache-busted");
 });
@@ -40,7 +41,7 @@ test("Evolved Halloween player filters read owned rarity first, not source chara
   const effective=upgraded.finalRarity||upgraded.category||sourceRarity;
   assert.equal(effective,"Mondiale");
   assert.notEqual(effective,sourceRarity);
-  assert(index.includes("rtg-squad-controller.js?v=20261102-halloween-normal-filters-v1"));
+  assert(index.includes("rtg-squad-controller.js?v=20261106-modulo-evento-2"));
 });
 
 test("Svincolati modal keeps the exact data-rtg-start-node action with clearer CTA",()=>{
@@ -61,6 +62,7 @@ test("Halloween XI: EXACT original prematch cards, HW badges and Album detail ro
   const playerById=new Map(team.players.map(p=>[String(p.playerId),p]));
   assert(lineup.startingXI.every(id=>playerById.has(id)));
   const ctx={console};ctx.globalThis=ctx;
+  loadEvents(ctx); // eventi dal file dati, come nel gioco
   for(const script of ["js/road-to-glory/rtg-card-identity.js",
     "js/road-to-glory/rtg-config.js","js/road-to-glory/rtg-squad-view-base.js",
     "js/road-to-glory/rtg-match-view.js"])
@@ -122,7 +124,7 @@ test("Halloween XI: EXACT original prematch cards, HW badges and Album detail ro
   assert(event.indexOf("'</section>'+opponentPreviewSection()") > event.indexOf("data-halloween-open-vending"));
   assert.match(css,/\.halloween-opponent-preview-field\.rtg-prematch-shell/);
   assert.doesNotMatch(css,/Exact tactical card anatomy|rtg-shared-match-card\.boss-match-card/);
-  assert(index.includes("rtg-halloween-event.js?v=20261102-secret-shawn-reward-v1"));
+  assert(index.includes("rtg-halloween-event.js?v=20261106-evento-finto-1"));
 });
 
 test("Release scope: the requested UI changes never write save, cloud or rewards",()=>{

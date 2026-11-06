@@ -20,9 +20,6 @@
   padding: 8px;
 }
 
-.album-teams-heading {
-  min-width: 0;
-}
 
 .album-teams-heading .eyebrow {
   margin: 0 0 3px;
@@ -73,7 +70,7 @@
   border: 3px solid var(--album-ink);
   border-radius: 0;
   background: var(--album-ink);
-  color: #fffdf6;
+  color: var(--ir-paper);
   box-shadow: 7px 8px 0 rgba(17, 18, 22, .26);
   text-align: left;
 }
@@ -109,7 +106,7 @@
   border-bottom: 3px solid var(--album-ink);
   background:
     radial-gradient(circle at 50% 42%, rgba(255, 255, 255, .9) 0 13%, rgba(255, 255, 255, .16) 34%, transparent 56%),
-    linear-gradient(135deg, #ffd21f 0 55%, #f7bd0f 55% 67%, #111216 67% 70%, #f4ead0 70% 100%);
+    linear-gradient(135deg, var(--ir-yellow) 0 55%, #f7bd0f 55% 67%, var(--ir-ink) 67% 70%, #f4ead0 70% 100%);
 }
 
 .album-team-card__stage::before {
@@ -168,7 +165,7 @@
   background: transparent;
   box-shadow: none;
   overflow: visible;
-  filter: drop-shadow(0 7px 0 rgba(17, 18, 22, .14)) drop-shadow(0 12px 18px rgba(17, 18, 22, .18));
+  filter: drop-shadow(0 7px 0 var(--ir-ink-a14)) drop-shadow(0 12px 18px var(--ir-ink-a18));
 }
 
 .album-teams-screen .album-team-card__logo img {
@@ -194,7 +191,7 @@
   background:
     linear-gradient(125deg, rgba(255,210,31,.12), transparent 42%),
     var(--album-ink);
-  color: #fffdf6;
+  color: var(--ir-paper);
 }
 
 .album-team-card__heading {
@@ -207,7 +204,7 @@
 
 .album-team-card__name {
   min-width: 0;
-  color: #fffdf6;
+  color: var(--ir-paper);
   font-size: clamp(1.08rem, 2vw, 1.3rem);
   font-weight: 1000;
   line-height: .98;
@@ -220,13 +217,13 @@
   place-items: center;
   width: 32px;
   height: 32px;
-  border: 2px solid #fffdf6;
+  border: 2px solid var(--ir-paper);
   background: var(--album-yellow);
   color: var(--album-ink);
   font-size: 1.15rem;
   font-weight: 1000;
   line-height: 1;
-  box-shadow: 3px 3px 0 rgba(255,255,255,.18);
+  box-shadow: 3px 3px 0 var(--ir-white-a18);
 }
 
 .album-team-card__progress {
@@ -263,7 +260,7 @@
   place-items: center;
   width: 18px;
   height: 18px;
-  border: 2px solid #fffdf6;
+  border: 2px solid var(--ir-paper);
   background: var(--album-yellow);
   color: var(--album-ink);
   font-size: .62rem;
@@ -276,7 +273,7 @@
   display: block;
   height: 9px;
   overflow: hidden;
-  border: 2px solid #fffdf6;
+  border: 2px solid var(--ir-paper);
   background: rgba(255,255,255,.12);
 }
 
@@ -294,17 +291,14 @@
 
 .album-teams-screen .album-team-card--modern.album-complete .album-team-card__stage {
   background:
-    radial-gradient(circle at 50% 42%, rgba(255,255,255,.98) 0 13%, rgba(255,255,255,.24) 34%, transparent 56%),
-    linear-gradient(135deg, #ffe36a 0 55%, #ffd21f 55% 67%, #111216 67% 70%, #fff8df 70% 100%);
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,.98) 0 13%, var(--ir-white-a24) 34%, transparent 56%),
+    linear-gradient(135deg, #ffe36a 0 55%, var(--ir-yellow) 55% 67%, var(--ir-ink) 67% 70%, #fff8df 70% 100%);
 }
 
-.album-teams-screen .album-team-card--modern.album-complete .album-team-card__bar {
-  border-color: #fffdf6;
-}
 
 .album-teams-screen .album-team-card--modern.album-complete .album-team-card__bar > span {
   background:
-    linear-gradient(90deg, #ffd21f 0%, #ffe36a 52%, #ffd21f 100%);
+    linear-gradient(90deg, var(--ir-yellow) 0%, #ffe36a 52%, var(--ir-yellow) 100%);
 }
 
 @media (max-width: 780px) {

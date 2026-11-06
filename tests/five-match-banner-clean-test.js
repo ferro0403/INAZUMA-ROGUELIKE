@@ -1,9 +1,10 @@
 "use strict";
 
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const assert = require("assert");
 const fs = require("fs");
 
-const css = fs.readFileSync("css/five-match-banner-clean.css", "utf8");
+const css = cssSection('five-match-banner-clean');
 const gameCss = fs.readFileSync("css/game.css", "utf8");
 const bridge = fs.readFileSync("js/five-match-banner-clean.js", "utf8");
 const freeAgentsEmblem = fs.readFileSync("assets/emblems/free-agents.svg", "utf8");
@@ -24,8 +25,8 @@ assert.match(gameCss, /\.five-match-hero-band::after\s*\{\s*content:\s*none;\s*d
 assert(!freeAgentsEmblem.includes("#ffd21f"), "free-agents emblem must not contain stray yellow bars");
 assert(bridge.includes("cloneNode(true)"), "dynamic emblem image must be cloned with its resolver/fallback attributes intact");
 assert(bridge.includes(".five-match-screen .five-match-hero > .five-match-vs"), "bridge must only replace the 5v5 hero matchup, not other match UI");
-assert(index.includes("css/five-match-banner-clean.css"), "clean banner stylesheet must be loaded");
+assert(stylesheetLoaded(index, 'five-match-banner-clean'), "clean banner stylesheet must be loaded");
 assert(index.includes("js/five-match-banner-clean.js"), "clean banner renderer must be loaded");
-assert(index.indexOf("css/five-match-banner-clean.css") > index.indexOf("css/five-match-reference-polish.css"), "clean CSS must load after legacy banner CSS");
+assert(loadsAfter(index, 'five-match-banner-clean', 'five-match-reference-polish'), "clean CSS must load after legacy banner CSS");
 
 console.log("five-match-banner-clean-test: isolated screen-2 banner component OK");

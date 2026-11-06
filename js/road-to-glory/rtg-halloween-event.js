@@ -1,25 +1,45 @@
 (function (global) {
   "use strict";
-  const EVENT_ID = "halloween2026";
-  const TEAM_ID = "occult-2";
-  const EVENT_END_MS = Date.UTC(2026, 10, 6, 22, 59, 59);
-  const MATCH_KEY = "local:halloween2026:match";
-  const SQUAD_KEY = "local:halloween2026:squad";
-  const SHARED_KEY = "shared:account";
-  const PRICE = 200;
-  const PRIZE = 300;
-  const LUCKY_PRIZE = 600;
-  const BANNER_URL = "https://img.magnific.com/foto-gratuito/illustrazione-digitale-di-halloween_23-2151822706.jpg?semt=ais_hybrid&w=740&q=80";
-  const GRAVEYARD_URL = "https://static9.depositphotos.com/1014889/1236/i/450/depositphotos_12367834-stock-photo-halloween-background-spooky-graveyard.jpg";
-  const PUMPKIN_URL = "https://static.vecteezy.com/ti/vettori-gratis/p1/3690657-halloween-zucca-disegno-halloween-zucca-vettore-isolare-su-sfondo-bianco-gratuito-vettoriale.jpg";
-  const LOGO_URL = "https://dxi4wb638ujep.cloudfront.net/1/k/r/k/rk_nafgart8.webp";
-  const SPECIAL = Object.freeze(["custom_0002", "custom_0001"]);
-  const HALLOWEEN_COACH_ID = "halloween-coach-54";
-  const EVENT_FULLBODY_URLS = Object.freeze({"38":"https://dxi4wb638ujep.cloudfront.net/1/k/y/z/yz3gzfs1bku_r0_fullbody.webp","39":"https://dxi4wb638ujep.cloudfront.net/1/k/4/c/4cuzgcn9uqk_r0_fullbody.webp","40":"https://dxi4wb638ujep.cloudfront.net/1/k/j/0/j0lsn9bhdzm_r0_fullbody.webp","41":"https://dxi4wb638ujep.cloudfront.net/1/k/l/v/lviojktrgfm_r0_fullbody.webp","42":"https://dxi4wb638ujep.cloudfront.net/1/k/6/9/69tvob1rrsk_r0_fullbody.webp","43":"https://dxi4wb638ujep.cloudfront.net/1/k/a/s/aswadgazemu_r0_fullbody.webp","44":"https://dxi4wb638ujep.cloudfront.net/1/k/r/6/r6b7w5mjz_8_r0_fullbody.webp","45":"https://dxi4wb638ujep.cloudfront.net/1/k/f/q/fq-jb0lbuau_r0_fullbody.webp","46":"https://dxi4wb638ujep.cloudfront.net/1/k/u/4/u4pcsld75z8_r0_fullbody.webp","47":"https://dxi4wb638ujep.cloudfront.net/1/k/a/q/aqup2kkyyfc_r0_fullbody.webp","48":"https://dxi4wb638ujep.cloudfront.net/1/k/x/4/x4lub1si1s0_r0_fullbody.webp","49":"https://dxi4wb638ujep.cloudfront.net/1/k/r/x/rxgbiozaame_r0_fullbody.webp","50":"https://dxi4wb638ujep.cloudfront.net/1/k/g/_/g_36lx_6t_s_r0_fullbody.webp","51":"https://dxi4wb638ujep.cloudfront.net/1/k/i/e/iewmlotwo5s_r0_fullbody.webp","52":"https://dxi4wb638ujep.cloudfront.net/1/k/t/2/t2bhmxlsfke_r0_fullbody.webp","53":"https://dxi4wb638ujep.cloudfront.net/1/k/z/z/zziy1s-kwq0_r0_fullbody.webp"});
+  // Passo 3: i dati di Halloween (date, prezzi, squadra, carte, allenatore, immagini) arrivano dal manifest
+  // data/events/<id>.json tramite il registro eventi (js/events/event-registry.js). Qui sotto solo la
+  // lettura dei campi; la logica dell'evento resta quella di prima.
+  function install(manifest) {
+  const EVENT_ID = manifest.id;
+  const TEAM_ID = manifest.team.teamId;
+  const EVENT_END_MS = Date.parse(manifest.window.end);
+  const MATCH_KEY = manifest.save.matchKey;
+  const SQUAD_KEY = manifest.save.squadKey;
+  // Evento finto (solo sviluppo): legge e scrive solo chiavi locali "dev:<id>:...", mai shared:account e quindi
+  // mai il cloud. Alla prima apertura parte da una copia dell'account vero, letto e non modificato.
+  const REAL_SHARED_KEY = "shared:account";
+  const SANDBOX = manifest.dev === true;
+  const SHARED_KEY = SANDBOX ? manifest.save.storagePrefix + "shared:account" : REAL_SHARED_KEY;
+  const PRICE = manifest.economy.pullPrice;
+  const PRIZE = manifest.economy.winPrize;
+  const LUCKY_PRIZE = manifest.economy.luckyPrize;
+  const LUCKY_CHANCE_PERCENT = manifest.economy.luckyChancePercent;
+  const ROSTER_SIZE = manifest.team.rosterSize;
+  const STARTERS_SIZE = manifest.team.startersSize;
+  const BANNER_URL = manifest.assets.banner;
+  const GRAVEYARD_URL = manifest.assets.background;
+  const PUMPKIN_URL = manifest.currency.icon;
+  const LOGO_URL = manifest.team.logo;
+  // Stato dell'evento nel salvataggio: shared.halloween per Halloween, shared.events.<id> per gli eventi nuovi.
+  const CURRENCY = manifest.save.currencyField || "balance";
+  const OWNED_ID = new RegExp(manifest.save.ownedIdPattern || "^[A-Za-z0-9_]+$");
+  const ledger = account => global.GameEvents.ledger(account, manifest);
+  // Carte senza lo stile "vampiro" (le due speciali).
+  const SPECIAL = Object.freeze(manifest.cards.filter(card => !card.vampire).map(card => card.playerId));
+  const HALLOWEEN_COACH_ID = manifest.coaches[0].id;
+  const EVENT_FULLBODY_URLS = Object.freeze(Object.fromEntries(
+    manifest.cards.filter(card => card.fullbody).map(card => [card.playerId, card.fullbody])));
   const clone = x => JSON.parse(JSON.stringify(x));
   const asId = x => String(x == null ? "" : x).trim();
   const escape = x => String(x == null ? "" : x).replace(/[&<>"']/g, x => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
   const isOpen = () => Date.now() <= EVENT_END_MS;
+  // Nome della provenienza di una carta: Season dal registro unico, poi Svincolati ed evento.
+  const sourceLabel = (id, eventLabel) => global.RoadToGloryConfig?.seasonLabel?.(id) ||
+    ({free_agents:"Svincolati", [EVENT_ID]:eventLabel})[id] || "";
   let assetsPromise = null;
   let assets = null;
   const fail = code => Object.assign(new Error(code), {code});
@@ -44,9 +64,9 @@
     if (assets) return assets;
     if (!fetcher) throw fail("halloween-fetch-unavailable");
     if (!assetsPromise) assetsPromise = Promise.all([
-      "data/rtg-halloween-occult-players.json",
-      "data/rtg-halloween-occult-lineup.json",
-      "data/rtg-halloween-occult-moves.json"
+      manifest.team.files.players,
+      manifest.team.files.lineup,
+      manifest.team.files.moves
     ].map(async path => {
       const response = await fetcher(path, {cache:"no-store"});
       if (!response.ok) throw fail("halloween-asset-unavailable");
@@ -54,8 +74,8 @@
     })).then(([teams, lineup, moves]) => {
       const team = teams[0], setup = lineup.teams[0], list = team.players || [];
       if (team.teamId !== TEAM_ID || asId(setup.teamId).replaceAll("_","-") !== TEAM_ID ||
-        list.length !== 18 || setup.startingXI.length !== 11 ||
-        new Set(setup.startingXI).size !== 11 ||
+        list.length !== ROSTER_SIZE || setup.startingXI.length !== STARTERS_SIZE ||
+        new Set(setup.startingXI).size !== STARTERS_SIZE ||
         list.some(p => !moves.players[asId(p.playerId)]?.moves?.length) ||
         setup.startingXI.some(pid => !list.some(p => asId(p.playerId) === asId(pid)))) throw fail("halloween-invalid-asset-contract");
       assets = Object.freeze({team, setup, moves, players:new Map(list.map(p=>[asId(p.playerId),p]))});
@@ -84,15 +104,15 @@
     };
   }
   function eventState(raw) {
-    if (raw == null) return {pumpkins:0, ownedIds:[], pullCount:0, completedIds:[], luckyWins:0};
+    if (raw == null) return {[CURRENCY]:0, ownedIds:[], pullCount:0, completedIds:[], luckyWins:0};
     if (!raw || typeof raw !== "object" || Array.isArray(raw) ||
-      !Number.isSafeInteger(raw.pumpkins) || raw.pumpkins < 0 ||
+      !Number.isSafeInteger(raw[CURRENCY]) || raw[CURRENCY] < 0 ||
       !Number.isSafeInteger(raw.pullCount) || raw.pullCount < 0 ||
       !Number.isSafeInteger(raw.luckyWins) || raw.luckyWins < 0 ||
       !Array.isArray(raw.ownedIds) || !Array.isArray(raw.completedIds) ||
       new Set(raw.ownedIds).size !== raw.ownedIds.length ||
       new Set(raw.completedIds).size !== raw.completedIds.length ||
-      raw.ownedIds.some(id => !/^(?:[0-9]+|custom_000[12])$/.test(id)) ||
+      raw.ownedIds.some(id => !OWNED_ID.test(id)) ||
       raw.completedIds.some(id => typeof id !== "string" || !id || id.length > 120)) throw fail("halloween-invalid-account");
     return clone(raw);
   }
@@ -124,6 +144,7 @@
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
     let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved",pendingRevealHidden=false;
     let selectedAlbumTeamId=TEAM_ID;
+    let sandboxSeed=null;
     let vendingMotion=null;
     let lastPresentedView=null;
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
@@ -133,11 +154,13 @@
       deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
     }
     function listen() { if(tick!=null)global.clearInterval?.(tick);tick=global.setInterval?.(()=>{const el=app?.querySelector?.("[data-halloween-countdown]"); if(el)el.textContent=isOpen()?countdown():"EVENTO TERMINATO";if(!isOpen())app?.querySelectorAll?.("[data-halloween-start],[data-halloween-pull]")?.forEach(b=>b.disabled=true);},1000); }
-    function readAccount(record) { const current = record || {}; return {...clone(current),tokens:current.tokens??0,gachaAcquiredCards:current.gachaAcquiredCards||[],developmentByCardId:current.developmentByCardId||{},coachOwnedIds:current.coachOwnedIds||[],halloween:eventState(current.halloween)}; }
+    function readAccount(record) { const current = record || {}; return {...clone(current),tokens:current.tokens??0,gachaAcquiredCards:current.gachaAcquiredCards||[],developmentByCardId:current.developmentByCardId||{},coachOwnedIds:current.coachOwnedIds||[],
+      ...global.GameEvents.withLedger(current,manifest,eventState(ledger(current)))}; }
     function lock() { global.RoadToGloryPersistence?.assertWritable?.(); global.PersistenceRecoveryGuard?.assertWritable?.(); }
     async function load() {
       const records = await storage.readMany([SHARED_KEY,SQUAD_KEY,MATCH_KEY]);
-      shared = readAccount(records[SHARED_KEY]);
+      if (SANDBOX && records[SHARED_KEY] == null) sandboxSeed = clone((await storage.readMany([REAL_SHARED_KEY]))[REAL_SHARED_KEY] || {});
+      shared = readAccount(records[SHARED_KEY] ?? (SANDBOX ? sandboxSeed : null));
       const stored = records[SQUAD_KEY] || null;
       activeSquadSlot = Number(stored?.activeSquadSlot)||1;
       squadSlots = stored?.slots || null;
@@ -164,10 +187,10 @@
         lock();
         const epoch = session;
         const saved = await storage.updateMany(keys, records => {
-          const before = readAccount(records[SHARED_KEY]), next = clone(before);
+          const before = readAccount(records[SHARED_KEY] ?? (SANDBOX ? sandboxSeed : null)), next = clone(before);
           const updated = handler(next, records);
           if (updated && typeof updated.then === "function") throw fail("halloween-async-mutation");
-          eventState(next.halloween);
+          eventState(ledger(next));
           const writes = {[SHARED_KEY]:next};
           if (updated?.writes) Object.assign(writes,updated.writes);
           return {writes,value:{account:next,match:updated?.match??null,selection:updated?.selection??null}};
@@ -209,17 +232,17 @@
       return {formationId,seasonId:"ie1",lineup:line.map((p,i)=>({...p,tacticalRole:slots?.[i]||p.tacticalRole||p.normalizedRole||p.position})),bench:bench.filter(Boolean),coachId:localSquad?.coachId||""};
     }
     function opponent() {
-      return {name:"Occult Halloween",teamId:TEAM_ID,logoUrl:LOGO_URL,seasonId:EVENT_ID,formationId:"4-4-2",
+      return {name:manifest.team.name,teamId:TEAM_ID,logoUrl:LOGO_URL,seasonId:EVENT_ID,formationId:"4-4-2",
         lineup:assets.setup.startingXI.map(pid=>player(pid)),bench:Array.from(assets.players.keys()).filter(pid=>!assets.setup.startingXI.includes(pid)).map(pid=>player(pid))};
     }
     function currency(n) { return '<span class="halloween-currency"><img src="'+escape(PUMPKIN_URL)+'" alt="">'+escape(n)+'</span>'; }
     function isOwned(pid) {
       if(asId(pid)===global.RoadToGloryHalloweenCompletion?.PLAYER_ID)
         return global.RoadToGloryHalloweenCompletion.owns(shared);
-      return shared?.halloween.ownedIds.includes(pid);
+      return ledger(shared).ownedIds.includes(pid);
     }
     function halloweenPrizeIds(account) {
-      const missing=Array.from(assets.players.keys()).filter(pid=>!account.halloween.ownedIds.includes(pid));
+      const missing=Array.from(assets.players.keys()).filter(pid=>!ledger(account).ownedIds.includes(pid));
       if(!account.coachOwnedIds.includes(HALLOWEEN_COACH_ID))missing.push(HALLOWEEN_COACH_ID);
       return missing;
     }
@@ -408,7 +431,7 @@
       const roster=resolvedPowerRoster(localSquad);
       const config=rules?.validConfig?.(localSquad,roster.lineup,"ie1",roster.bench);
       if(!config||!config.cardIds?.includes(cardId))return null;
-      if(coachId==="1974"&&cardId.startsWith(EVENT_ID+"::")){
+      if(global.RoadToGloryCoachPowerTypes?.typeOf?.(coachId)==="rarityUpgrade"&&cardId.startsWith(EVENT_ID+"::")){
         // Event cards have no Season progression source. Reuse the exact
         // temporary upgrade used at Halloween kickoff, only for this preview.
         const nextRarity=rules?.nextRarity?.(rules.rarityOf(player));
@@ -478,7 +501,7 @@
       return '<main class="screen rtg-run-screen rtg-halloween-run-screen halloween-screen">'+
        '<header class="topbar rtg-main-topbar halloween-original-topbar"><button type="button" class="btn rtg-home-button" data-halloween-back aria-label="Torna alle campagne"><span>←</span></button>'+
        '<div class="rtg-main-title"><p class="eyebrow">ROAD TO GLORY · EVENTO</p><strong class="brand">HALLOWEEN</strong><span data-halloween-countdown>'+(isOpen()?countdown():"EVENTO TERMINATO")+'</span></div>'+
-       '<div class="status-strip"><span class="status-pill halloween-wallet">'+currency(shared?.halloween?.pumpkins||0)+'</span></div></header>'+
+       '<div class="status-strip"><span class="status-pill halloween-wallet">'+currency(ledger(shared)?.[CURRENCY]||0)+'</span></div></header>'+
        '<div class="content narrow rtg-run-content halloween-original-content">'+body+'</div>'+footer("run")+'</main>';
     }
     function matchSection() {
@@ -542,7 +565,7 @@
           requirementsMarkup:requirement,nextTeamName:"Occult Halloween",dirty:false})+'</div>';
     }
     function vendingSection() {
-      const available=halloweenPrizeIds(shared),enough=shared.halloween.pumpkins>=PRICE;
+      const available=halloweenPrizeIds(shared),enough=ledger(shared)[CURRENCY]>=PRICE;
       const capsules=Array.from({length:12},(_,i)=>'<div class="rtg-vending-capsule-v9 c'+(i%6+1)+'" data-capsule-rarity="'+(i%2?"orange":"black")+'"></div>').join("");
       return '<div class="halloween-vending"><button type="button" class="halloween-vending-close" data-halloween-close-vending aria-label="Chiudi distributore">×</button><p class="eyebrow">CAPSULE STATION · HALLOWEEN</p><h2>IL DISTRIBUTORE STREGATO</h2>'+
         '<div class="rtg-vending halloween-vending-classic"><div class="rtg-vending-stage"><div class="rtg-vending-machine-v9 rtg-vending-machine-v12" data-rtg-vending-machine aria-label="Distributore Halloween">'+
@@ -551,7 +574,7 @@
         '<div class="rtg-vending-body-v9"><div class="rtg-vending-info-v9"><small>1 CAPSULA</small><strong>'+PRICE+'</strong></div>'+
         '<div class="rtg-vending-crank-v9"><span></span></div><div class="rtg-vending-chute-v9"><span class="rtg-vending-chute-well-v9"></span><span class="rtg-vending-chute-flap-v10"></span><div class="rtg-vending-prize-track-v9"><span class="rtg-vending-prize-v9"></span></div></div><div class="rtg-vending-brand-v9">🎃</div></div></div>'+
         '<button class="btn btn-yellow rtg-vending-pull halloween-action" data-halloween-pull '+(!isOpen()||!enough||available.length===0?"disabled":"")+'>GIRA · '+currency(PRICE)+'</button>'+
-        '<div class="rtg-vending-wallet-chip"><span>ZUCCHE HALLOWEEN</span><strong>'+currency(shared.halloween.pumpkins)+'</strong></div></div></div>'+
+        '<div class="rtg-vending-wallet-chip"><span>ZUCCHE HALLOWEEN</span><strong>'+currency(ledger(shared)[CURRENCY])+'</strong></div></div></div>'+
         '</div>';
     }
     function eventAlbumTeams() {
@@ -803,7 +826,7 @@
         }:null;
       }).filter(Boolean);
       const seasons=[{value:"all",label:"Tutte"},...Array.from(new Set(all.map(e=>e.seasonId))).map(id=>({
-        value:id,label:({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion",free_agents:"Svincolati",[EVENT_ID]:"Evento Halloween"})[id]||id
+        value:id,label:sourceLabel(id,"Evento Halloween")||id
       }))];
       const rarityOrder=["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"];
       const rarityRank=value=>{const n=rarityOrder.findIndex(v=>v.toLocaleLowerCase("it")===asId(value).toLocaleLowerCase("it"));return n<0?rarityOrder.length:n;};
@@ -875,7 +898,6 @@
     function openCatalog() {
       const view=deps.squadView;
       if(!deps.openModal||!view?.catalogMarkup)return;
-      const seasonName={ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion",free_agents:"Svincolati",[EVENT_ID]:"Halloween"};
       const catalog=(shared.gachaAcquiredCards||[]).map(meta=>{
         const cardId=asId(meta.cardId),p=resolveCard(cardId),sid=cardId.split("::")[0];
         if(!p)return null;
@@ -887,7 +909,7 @@
         })].map(asId).filter(Boolean)));
         return {cardId,playerId:cardId,source:"RTG",player:p,seasonId:sid,role:asId(p.normalizedRole||p.position).toUpperCase(),teamLabels};
       }).filter(Boolean);
-      const seasonOptions=[{value:"all",label:"Tutte"},...Array.from(new Set(catalog.map(x=>x.seasonId))).map(value=>({value,label:seasonName[value]||value}))];
+      const seasonOptions=[{value:"all",label:"Tutte"},...Array.from(new Set(catalog.map(x=>x.seasonId))).map(value=>({value,label:sourceLabel(value,"Halloween")||value}))];
       let query="",seasonFilter="all",teamFilter="all",roleFilter="all",visibleCount=16;
       const teamOptions=()=>[{value:"all",label:"Tutte"},...Array.from(new Set(catalog.filter(e=>seasonFilter==="all"||e.seasonId===seasonFilter).flatMap(e=>e.teamLabels)))
         .sort((a,b)=>a.localeCompare(b,"it")).map(value=>({value,label:value}))];
@@ -959,7 +981,7 @@
         previewChoice:(key,selection)=>{
           const p=resolveCard(key);
           if(!p)return null;
-          if(localSquad.coachId==="1974"&&asId(key).startsWith(EVENT_ID+"::")){
+          if(global.RoadToGloryCoachPowerTypes?.typeOf?.(localSquad.coachId)==="rarityUpgrade"&&asId(key).startsWith(EVENT_ID+"::")){
             const rarityRules=global.RoadToGloryCoachPowerRuntime;
             const nextRarity=rarityRules?.nextRarity?.(rarityRules.rarityOf(p));
             const upgraded=nextRarity&&selection?.cardIds?.includes(key)
@@ -1023,14 +1045,14 @@
     function devToolsMarkup(){
       return '<details class="halloween-dev-quick-tools" data-halloween-dev-tools>'+
         '<summary>DEV HALLOWEEN</summary><div class="halloween-dev-quick-content">'+
-        '<p>Zucche: <b>'+escape(shared?.halloween?.pumpkins||0)+'</b></p>'+
+        '<p>Zucche: <b>'+escape(ledger(shared)?.[CURRENCY]||0)+'</b></p>'+
         '<button type="button" data-halloween-dev-pumpkins aria-label="Imposta almeno 99.999 zucche Halloween per test">🎃 99.999 ZUCCHE</button>'+
         '</div></details>';
     }
     async function grantDevPumpkins(){
       if(!devMode)throw fail("halloween-dev-unavailable");
       await mutate("halloween-dev-pumpkins",account=>{
-        account.halloween.pumpkins=Math.max(account.halloween.pumpkins,99999);
+        ledger(account)[CURRENCY]=Math.max(ledger(account)[CURRENCY],99999);
       });
       notify("DEV: 99.999 zucche Halloween disponibili");
     }
@@ -1357,7 +1379,8 @@
       if(ownedCoach&&!powerConfig)throw fail("halloween-coach-selection-invalid");
       // Hillman, Schiller and Arrows depend on PT initialization. An outdated
       // or unavailable PT runtime must never silently start a legacy match.
-      if(powerConfig&&["208","1329","1974"].includes(powerConfig.coachId)&&
+      const configuredPower=powerConfig&&global.RoadToGloryCoachPowerTypes?.powerFor?.(powerConfig.coachId);
+      if(configuredPower?.phase==="squad"&&configuredPower.requiresPtMode&&
          created.ptModeVersion!==1)throw fail("halloween-coach-power-not-applied");
       created=coachRules?.applyToMatch?.(created,localSquad,state,{
         upgradeRarity:(player,targetRarity,cardId)=>{
@@ -1386,12 +1409,12 @@
       if(!terminal)return m;
       const {value}=await mutate("halloween-match-reward",(account,records)=>{
         const live=records[MATCH_KEY];if(!live||live.matchId!==m.matchId)throw fail("halloween-stale-match");
-        const ledger=account.halloween.completedIds;
-        const already=ledger.includes(m.matchId);
+        const completed=ledger(account).completedIds;
+        const already=completed.includes(m.matchId);
         const won=m.result?.winner==="user";
-        const lucky=won&&global.RoadToGloryRng.int(m.matchId,"halloween-lucky",0,100)<10;
+        const lucky=won&&global.RoadToGloryRng.int(m.matchId,"halloween-lucky",0,100)<LUCKY_CHANCE_PERCENT;
         const award=already?Number(live.halloweenAward||0):!won?0:(lucky?LUCKY_PRIZE:PRIZE);
-        if(!already){account.halloween.pumpkins+=award;ledger.push(m.matchId);if(lucky)account.halloween.luckyWins++;}
+        if(!already){ledger(account)[CURRENCY]+=award;completed.push(m.matchId);if(lucky)ledger(account).luckyWins++;}
         return {writes:{[MATCH_KEY]:{...m,halloweenAward:award}},match:m};
       },[SHARED_KEY,MATCH_KEY]);
       match=(await storage.read(MATCH_KEY))||m;
@@ -1458,8 +1481,8 @@
       if(!isOpen()||(match&&!["completed","completed-draw","abandoned"].includes(match.status)))throw fail("halloween-pull-unavailable");
       let selected="";
       await mutate("halloween-capsule",(account)=>{
-        const ev=account.halloween;
-        if(ev.pumpkins<PRICE)throw fail("halloween-insufficient-pumpkins");
+        const ev=ledger(account);
+        if(ev[CURRENCY]<PRICE)throw fail("halloween-insufficient-pumpkins");
         const missing=halloweenPrizeIds(account);
         if(!missing.length)throw fail("halloween-collection-completed");
         const random=global.crypto?.getRandomValues?global.crypto.getRandomValues(new Uint32Array(1))[0]/4294967296:Math.random();
@@ -1468,25 +1491,25 @@
           if(account.coachOwnedIds.includes(selected))throw fail("halloween-coach-already-owned");
           // Existing RTG shared account persists coaches for BOTH campaigns.
           // Debit and coach grant commit in the SAME canonical transaction.
-          ev.pumpkins-=PRICE;ev.pullCount++;account.coachOwnedIds.push(selected);
+          ev[CURRENCY]-=PRICE;ev.pullCount++;account.coachOwnedIds.push(selected);
         }else{
           const record=recordCard(selected);
           if(account.gachaAcquiredCards.some(c=>c.cardId===record.cardId))throw fail("halloween-existing-card");
-          ev.pumpkins-=PRICE;ev.ownedIds.push(selected);ev.pullCount++;
+          ev[CURRENCY]-=PRICE;ev.ownedIds.push(selected);ev.pullCount++;
           account.gachaAcquiredCards.push(record);
         }
       });
       if(selected===HALLOWEEN_COACH_ID)
         return {coach:global.RoadToGloryCoaches?.BY_ID?.[selected],result:{
-          coachId:selected,rarity:"Leggenda",balanceAfter:shared.halloween.pumpkins}};
+          coachId:selected,rarity:"Leggenda",balanceAfter:ledger(shared)[CURRENCY]}};
       const p=player(selected);
-      return {player:p,result:{cardId:EVENT_ID+"::"+selected,playerId:selected,legacySeasonId:EVENT_ID,rarity:p?.category||"Normale",balanceAfter:shared.halloween.pumpkins}};
+      return {player:p,result:{cardId:EVENT_ID+"::"+selected,playerId:selected,legacySeasonId:EVENT_ID,rarity:p?.category||"Normale",balanceAfter:ledger(shared)[CURRENCY]}};
     }
     async function open(initialView="match") {
       dispose();const epoch=session;
       await prepare();assertCurrent(epoch);
       const previous=global.SeasonRegistry?.activeId?.();
-      const needed=["ie1","ie1_s2","ie1_s3","ie2","orion"];
+      const needed=Array.from(global.RoadToGloryConfig?.SEASON_IDS||[]); // tutte le Season, dal registro
       await Promise.all(needed.map(id=>global.SeasonRegistry?.loadDatabase?.(id).catch(()=>null)));
       if(previous)global.SeasonRegistry?.setActive?.(previous);
       const response=await global.fetch("data/FREE_AGENTS_compact.json");
@@ -1504,5 +1527,11 @@
   global.RoadToGloryHalloween = Object.freeze({
     EVENT_ID,TEAM_ID,EVENT_END_MS,PRICE,PRIZE,LUCKY_PRIZE,isOpen,countdown,eventCard,prepare,
     eventPlayer:player,eventState,opponentOverall,weightedPick,create
+  });
+  }
+  // Si installa per l'evento a capsule caricato dal registro (kind "capsuleEvent" nel file dell'evento).
+  // Con ?dev=1&evento=<id> si installa solo l'evento finto (GameEvents.isActive).
+  global.GameEvents?.onAnyLoad?.(manifest => {
+    if (manifest.kind === "capsuleEvent" && global.GameEvents.isActive(manifest.id)) install(manifest);
   });
 })(globalThis);

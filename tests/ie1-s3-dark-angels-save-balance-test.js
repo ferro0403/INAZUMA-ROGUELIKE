@@ -23,7 +23,7 @@ const context = {
 };
 context.globalThis = context;
 vm.createContext(context);
-for (const file of ['js/draft.js', 'js/map-generator.js', 'js/recruitment-pool.js']) {
+for (const file of ['js/draft.js', 'js/map-generator.js', 'js/recruitment/player-identity.js', 'js/recruitment-pool.js']) {
   vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
 }
 
