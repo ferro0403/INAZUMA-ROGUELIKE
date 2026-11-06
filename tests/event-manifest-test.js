@@ -70,9 +70,19 @@ for (const file of files) {
   if (m.completionReward) {
     assert(!m.cards.some((c) => c.playerId === m.completionReward.playerId), `${where}: il premio finale e' gia' tra le carte`);
     assert(RARITIES.includes(m.completionReward.rarity), `${where}: rarita' del premio finale non valida`);
+    if (m.completionReward.player) {
+      assert.strictEqual(m.completionReward.player.playerId, m.completionReward.playerId, `${where}: premio finale incoerente`);
+      assert.strictEqual(m.completionReward.moves?.length, 4, `${where}: il premio finale deve avere 4 mosse`);
+    }
     if (m.completionReward.requires?.coachId) {
       assert(m.coaches.some((c) => c.id === m.completionReward.requires.coachId), `${where}: il premio chiede un allenatore assente`);
     }
+  }
+
+  // Le carte dell'evento devono essere ammesse dal controllo del salvataggio (save.ownedIdPattern).
+  if (m.save.ownedIdPattern) {
+    const pattern = new RegExp(m.save.ownedIdPattern);
+    for (const card of m.cards) assert(pattern.test(card.playerId), `${where}: ${card.playerId} rifiutata dal salvataggio`);
   }
 
   // Allenatori: potere valido e almeno una carta a cui applicarlo.
@@ -101,6 +111,11 @@ assert.strictEqual(Date.parse(h.window.end), Date.UTC(2026, 10, 6, 22, 59, 59), 
 assert.strictEqual(h.window.start, "2026-10-28T01:38:58+01:00", "inizio: primo commit dell'evento su main (647c4672)");
 assert.strictEqual(h.team.teamId, "occult-2");
 assert.strictEqual(h.save.key, "halloween", "Halloween resta in shared.halloween");
+assert.strictEqual(h.save.currencyField, "pumpkins", "le zucche restano nel campo di prima");
+assert.strictEqual(h.save.ownedIdPattern, "^(?:[0-9]+|custom_000[12])$", "stesso controllo del salvataggio di prima");
+assert.strictEqual(h.kind, "capsuleEvent");
+assert.deepStrictEqual([h.completionReward.playerId, h.completionReward.rarity, h.completionReward.overall,
+  h.completionReward.level], ["custom_0003", "Leggenda", 97, 20], "premio finale (Shawn) invariato");
 assert.strictEqual(h.save.cardIdPrefix, "halloween2026::", "gli id delle carte gia' possedute non cambiano");
 const rarityCount = h.cards.reduce((acc, c) => ({ ...acc, [c.rarity]: (acc[c.rarity] || 0) + 1 }), {});
 assert.deepStrictEqual(rarityCount, { Forte: 14, Elite: 2, Leggenda: 2 });

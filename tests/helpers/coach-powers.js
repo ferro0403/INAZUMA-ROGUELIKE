@@ -5,6 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
+const { loadEvents } = require("./events");
 
 const ROOT = path.resolve(__dirname, "..", "..");
 const read = (file) => fs.readFileSync(path.join(ROOT, file), "utf8");
@@ -12,10 +13,7 @@ const read = (file) => fs.readFileSync(path.join(ROOT, file), "utf8");
 function loadCoachPowerData(context) {
   if (!vm.isContext(context)) vm.createContext(context);
   if (!context.RoadToGloryCoaches?.CATALOG) vm.runInContext(read("js/road-to-glory/rtg-coaches.js"), context);
-  if (!context.GameEvents) vm.runInContext(read("js/events/event-registry.js"), context);
-  for (const id of JSON.parse(read("data/events/index.json")).events) {
-    if (!context.GameEvents.get(id)) context.GameEvents.register(JSON.parse(read(`data/events/${id}.json`)));
-  }
+  loadEvents(context);
   if (!context.RoadToGloryCoachPowerTypes) vm.runInContext(read("js/road-to-glory/rtg-coach-power-types.js"), context);
   return context;
 }

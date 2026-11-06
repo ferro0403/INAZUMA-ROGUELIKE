@@ -3,6 +3,7 @@ const { withLiteralTokens } = require("./helpers/css-tokens");
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const vm=require("node:vm");
+const { loadEvents } = require("./helpers/events");
 
 const targets=JSON.parse(fs.readFileSync("data/RTG_move_power_targets_169.json","utf8")).powerByName;
 const context={RoadToGloryCardIdentity:{
@@ -12,8 +13,11 @@ const context={RoadToGloryCardIdentity:{
 }};
 let open=true;
 context.RoadToGloryHalloween={isOpen:()=>open};
-vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-halloween-completion-reward.js","utf8"),context);
-vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-cloud-snapshot.js","utf8"),context);
+// Il premio finale arriva dal file dell'evento (data/events/halloween2026.json), come nel gioco.
+vm.createContext(context);
+loadEvents(context);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-halloween-completion-reward.js","utf8"),context);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-cloud-snapshot.js","utf8"),context);
 const api=context.RoadToGloryHalloweenCompletion;
 const player=api.player();
 assert.equal(player.playerId,"custom_0003");
