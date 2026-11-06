@@ -123,6 +123,7 @@
         developmentByCardId:mergeDevelopmentMaps(state?.developmentByCardId),
         coachOwnedIds:mergeCoaches(shared.coachOwnedIds,state?.coachOwnedIds),
         ...(Object.prototype.hasOwnProperty.call(shared,"halloween")?{halloween:stateApi.clone(shared.halloween)}:{}),
+        ...(Object.prototype.hasOwnProperty.call(shared,"events")?{events:stateApi.clone(shared.events)}:{}),
       };
     }
 

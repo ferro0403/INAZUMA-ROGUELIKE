@@ -135,7 +135,7 @@
     const state=statusLabel(status);
     // Same markup/classes as PlayerView.compactCard: the card differs only in data and orange trim.
     return `<button type="button" class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player squad-player-card rtg-picker-squad-card rtg-coach-card ${c.eventCoach?"rtg-coach-halloween":""} ${selected?"selected":""} ${status==="locked"?"rtg-coach-locked":""}" data-rtg-coach-detail="${esc(c.id)}" aria-label="Scheda allenatore ${esc(c.name)}">
-      <span class="player-corner player-role" aria-label="Allenatore">ALL.</span><span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.eventCoach?"HW":c.season.replace("Season ","S"))}</span>
+      <span class="player-corner player-role" aria-label="Allenatore">ALL.</span><span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.eventCoach?global.GameEvents?.badge?.(c.seasonId)||"":c.season.replace("Season ","S"))}</span>
       <div class="player-portrait-wrap ${c.zukanId==="4763"?"rtg-coach-rene-wrap":""}">${portrait(c)}</div>
       <div class="player-info"><div class="player-title"><strong title="${esc(c.name)}">${esc(c.name)}</strong></div>
       <div class="player-meta" aria-label="Dettagli allenatore"><span>${esc(c.team)}</span><span>${esc(state)}</span></div></div>
@@ -149,7 +149,7 @@
   function albumCard(c,status="locked"){
     return `<button type="button" class="player-card rtg-coach-album-card ${c.eventCoach?"rtg-coach-halloween":""}" data-rtg-coach-detail="${esc(c.id)}" aria-label="Apri scheda di ${esc(c.name)}">
       <span class="player-corner player-role" aria-label="Allenatore">ALL.</span>
-      <span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.eventCoach?"HW":c.season.replace("Season ","S"))}</span>
+      <span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.eventCoach?global.GameEvents?.badge?.(c.seasonId)||"":c.season.replace("Season ","S"))}</span>
       <div class="player-portrait-wrap">${portrait(c)}</div>
       <div class="player-info"><div class="player-title"><strong title="${esc(c.name)}">${esc(c.name)}</strong></div></div>
     </button>`;

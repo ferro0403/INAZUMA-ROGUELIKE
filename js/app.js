@@ -1642,6 +1642,19 @@
       inventoryModel, ensureCurrentZoneMutation, devSkipCurrentBoss, devSkipToCompletedBosses, devGameOverNow,
     },
   });
+  async function loadEvents() {
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        await global.GameEvents?.load?.();
+        return true;
+      } catch (error) {
+        console.warn(`Elenco eventi non disponibile (tentativo ${attempt})`, error);
+      }
+    }
+    const message = global.document?.querySelector?.("#app .loading-screen p");
+    if (message) message.textContent = "Impossibile caricare i dati del gioco. Controlla la connessione e ricarica.";
+    return false;
+  }
   async function initAppRuntime() {
     if (playerKitVisuals?.enabled && playerKitVisuals?.load) {
       try {
@@ -1650,12 +1663,9 @@
         console.warn("RTG VR kit preview manifest unavailable; existing visuals remain active", error);
       }
     }
-    // Eventi (Passo 3): i manifest in data/events/ vanno caricati prima di mostrare qualsiasi schermata.
-    try {
-      await global.GameEvents?.load?.();
-    } catch (error) {
-      console.warn("Eventi non disponibili; il gioco continua senza", error);
-    }
+    // Eventi (Passo 3): i manifest in data/events/ vanno caricati prima di mostrare qualsiasi schermata. Senza
+    // l'elenco degli eventi il gioco non parte: le carte di un evento sarebbero lette come carte di una Season.
+    if (!(await (global.GameEvents ? loadEvents() : true))) return null;
     return appBootstrap.init();
   }
   initAppRuntime();

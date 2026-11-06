@@ -100,6 +100,7 @@
       developmentByCardId: winner,
       coachOwnedIds: owns(shared, "coachOwnedIds") ? shared.coachOwnedIds : [],
       ...(owns(shared, "halloween") ? {halloween:shared.halloween} : {}),
+      ...(owns(shared, "events") ? {events:shared.events} : {}),
     };
   }
 

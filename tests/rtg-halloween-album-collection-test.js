@@ -3,6 +3,7 @@ const { withLiteralTokens } = require("./helpers/css-tokens");
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const vm=require("node:vm");
+const { loadEvents } = require("./helpers/events");
 
 const context={
   RoadToGloryCoaches:{
@@ -11,6 +12,8 @@ const context={
   },
   RoadToGloryConfig:{season:()=>({})}
 };
+// Eventi dal file dati (data/events/), come nel gioco.
+loadEvents(context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8"),context);
 const view=context.RoadToGloryAlbumView.create({
   escapeHtml:s=>String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"),
@@ -55,6 +58,6 @@ assert.match(css,/transform-origin:\s*50% 78%/);
 assert.doesNotMatch(css,/\.rtg-halloween-album-collection \.album-collection-cover img[^}]*scale\(/,
   "Only the coaches cover must be zoomed");
 const index=fs.readFileSync("index.html","utf8");
-assert.match(index,/rtg-album-view\.js\?v=20261102-event-progress-v1/);
+assert.match(index,/rtg-album-view\.js\?v=20261106-modulo-evento-2/);
 assert.match(index,/rtg-coaches\.css\?v=20261105-halloween-card-1/);
 console.log("RTG album Halloween progression 0/18, 1/18, 18/18, earned 19/19 and coach-only zoom: PASS");

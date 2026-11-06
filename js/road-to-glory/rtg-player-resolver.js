@@ -156,7 +156,7 @@
   function resolveBaseAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null, progressionOptions = null) {
     const api = cardIdentity();
     const rawRef = id(playerId?.cardId || playerId);
-    if(rawRef.startsWith("halloween2026::"))return global.RoadToGloryHalloween?.eventPlayer?.(rawRef.slice("halloween2026::".length))||null;
+    if(global.GameEvents?.isEventCard?.(rawRef))return global.RoadToGloryHalloween?.eventPlayer?.(rawRef.slice(rawRef.indexOf("::")+2))||null;
     const exactCard = api?.isCardId?.(rawRef);
     const parsed = exactCard ? api.parse(rawRef) : null;
     const resolved = resolveVersion(playerId, activeSeasonId, freeAgentsDb);
@@ -237,7 +237,7 @@
     // campaign contains a stale local record for one, never replace the
     // permanent Development Center profile with the immutable base player.
     if (standard.developmentApplied === true) return standard;
-    if (cardId.startsWith("halloween2026::")) {
+    if (global.GameEvents?.isEventCard?.(cardId)) {
       // Halloween uses supplied level-20 character assets, not the compact
       // Season progressionCode. The ordinary RTG evolution was recorded in
       // developmentByCardId, but resolveBaseAtLevel20 returned the raw event

@@ -44,7 +44,7 @@
     // Event cards carry their own extracted four moves. They have power but
     // no ptCost field; normal RTG move costs use the exact final move power.
     // Keep the original Season catalog untouched for every non-event card.
-    if(id(player?.cardId).startsWith("halloween2026::")&&Array.isArray(player?.halloweenMoves))
+    if(global.GameEvents?.isEventCard?.(id(player?.cardId))&&Array.isArray(player?.halloweenMoves))
       return player.halloweenMoves.map(move=>({
         ...move,ptCost:move?.ptCost??move?.power
       }));

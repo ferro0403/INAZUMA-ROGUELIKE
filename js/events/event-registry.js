@@ -8,11 +8,16 @@
   const INDEX_PATH = "data/events/index.json";
   const manifests = new Map();
   const waiting = new Map();
+  const anyWaiting = [];
+  // Id elencati in index.json, anche se il loro file non si e' caricato: le carte "<id>::..." restano carte di quell'evento
+  // e non vengono mai scambiate per carte di una Season (gli id delle carte gia' possedute non si riscrivono).
+  const listed = new Set();
   let loading = null;
 
   const isObject = (value) => value && typeof value === "object" && !Array.isArray(value);
   const isText = (value) => typeof value === "string" && value.trim() !== "";
   const isPositiveInt = (value) => Number.isInteger(value) && value > 0;
+  const isPattern = (value) => { try { return isText(value) && !!new RegExp(value); } catch (error) { return false; } };
   // Data con fuso orario esplicito (es. 2026-11-06T23:59:59+01:00), per leggere le "ore italiane" senza ambiguita'.
   const ISO_WITH_ZONE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
@@ -30,7 +35,12 @@
     need(ISO_WITH_ZONE.test(manifest.window?.end || ""), "window.end deve essere una data ISO con fuso");
     need(Number.isFinite(start) && Number.isFinite(end) && end > start, "window.end deve essere dopo window.start");
     need(isText(manifest.baseSeasonId), "baseSeasonId mancante");
-    need(isText(manifest.save?.key), "save.key mancante");
+    // save.key: solo per gli eventi nati prima del Passo 3 (Halloween resta in shared.halloween). Senza save.key
+    // lo stato dell'evento sta in shared.events.<id> (campo aggiunto, i salvataggi vecchi restano validi).
+    need(manifest.save?.key === undefined || (isText(manifest.save.key) && manifest.save.key !== "events"),
+      "save.key non valido");
+    need(manifest.save?.ownedIdPattern === undefined || isPattern(manifest.save.ownedIdPattern),
+      "save.ownedIdPattern non e' un'espressione valida");
     need(manifest.save?.cardIdPrefix === `${manifest.id}::`, "save.cardIdPrefix deve essere '<id>::'");
     const economy = manifest.economy || {};
     for (const key of ["pullPrice", "winPrize", "luckyPrize"]) need(isPositiveInt(economy[key]), `economy.${key} non valido`);
@@ -56,8 +66,10 @@
     if (errors.length) throw Object.assign(new Error(`evento non valido: ${errors.join("; ")}`), { code: "event-invalid" });
     const frozen = deepFreeze(JSON.parse(JSON.stringify(manifest)));
     manifests.set(frozen.id, frozen);
+    listed.add(frozen.id);
     for (const install of waiting.get(frozen.id) || []) install(frozen);
     waiting.delete(frozen.id);
+    for (const install of anyWaiting) install(frozen);
     return frozen;
   }
 
@@ -74,6 +86,13 @@
     return undefined;
   }
 
+  // Un modulo generico (es. il modulo degli eventi a capsule) riceve ogni manifest: quelli gia' caricati subito,
+  // gli altri al caricamento. Il modulo sceglie dai campi del manifest se installarsi.
+  function onAnyLoad(install) {
+    anyWaiting.push(install);
+    for (const manifest of manifests.values()) install(manifest);
+  }
+
   // Carica indice e manifest. Un evento con un file mancante o non valido viene saltato (avviso in console).
   function load(fetcher = global.fetch && global.fetch.bind(global)) {
     if (loading) return loading;
@@ -82,6 +101,7 @@
       const response = await fetcher(INDEX_PATH, { cache: "no-store" });
       if (!response.ok) throw Object.assign(new Error("indice eventi non disponibile"), { code: "event-index" });
       const ids = (await response.json())?.events || [];
+      for (const eventId of ids) listed.add(String(eventId));
       const loaded = await Promise.all(ids.map(async (eventId) => {
         try {
           const file = await fetcher(`data/events/${eventId}.json`, { cache: "no-store" });
@@ -94,13 +114,42 @@
       }));
       return loaded.filter(Boolean);
     })();
+    // Se l'indice non arriva, una nuova chiamata a load() riprova.
+    loading.catch(() => { loading = null; });
     return loading;
   }
 
   const get = (eventId) => manifests.get(String(eventId || "")) || null;
+  const isEvent = (eventId) => listed.has(String(eventId || ""));
+  // Carta di un evento elencato: il prefisso e' sempre "<id>::" (controllato da validate()).
+  const isEventCard = (cardId) => {
+    const value = String(cardId || "");
+    const cut = value.indexOf("::");
+    return cut > 0 && listed.has(value.slice(0, cut));
+  };
+  // Evento a cui appartiene una carta ("<id>::<playerId>"), dal prefisso scritto nel manifest.
+  const forCardId = (cardId) => {
+    const value = String(cardId || "");
+    return all().find((manifest) => value.startsWith(manifest.save.cardIdPrefix)) || null;
+  };
+  const badge = (eventId) => get(eventId)?.labels?.badge || "";
+  const label = (eventId, key) => get(eventId)?.labels?.[key] || "";
+
+  // Stato dell'evento nel salvataggio condiviso: shared.<save.key> per gli eventi vecchi, altrimenti
+  // shared.events.<id>. ledger() legge, withLedger() ritorna il solo campo da aggiungere al salvataggio.
+  const ledgerPath = (manifest) => (manifest?.save?.key ? [manifest.save.key] : ["events", manifest.id]);
+  function ledger(account, manifest) {
+    const [first, second] = ledgerPath(manifest);
+    return second ? account?.[first]?.[second] : account?.[first];
+  }
+  function withLedger(account, manifest, value) {
+    const [first, second] = ledgerPath(manifest);
+    return second ? { [first]: { ...(account?.[first] || {}), [second]: value } } : { [first]: value };
+  }
   const all = () => Array.from(manifests.values());
   const startMs = (eventId) => Date.parse(get(eventId)?.window?.start || "");
   const endMs = (eventId) => Date.parse(get(eventId)?.window?.end || "");
 
-  global.GameEvents = Object.freeze({ INDEX_PATH, validate, register, onLoad, load, get, all, startMs, endMs });
+  global.GameEvents = Object.freeze({ INDEX_PATH, validate, register, onLoad, onAnyLoad, load, get, all, startMs, endMs,
+    isEvent, isEventCard, forCardId, badge, label, ledgerPath, ledger, withLedger });
 })(globalThis);

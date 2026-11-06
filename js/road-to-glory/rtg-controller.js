@@ -1038,7 +1038,7 @@
         return {locked:true,access};
       }
       campaign=await repository.ensureCampaign();checkOpen();
-      if((campaign?.gachaAcquiredCards||[]).some(card=>id(card?.cardId).startsWith("halloween2026::"))){
+      if((campaign?.gachaAcquiredCards||[]).some(card=>global.GameEvents?.isEventCard?.(id(card?.cardId)))){
         await global.RoadToGloryHalloween?.prepare?.();checkOpen();
       }
       progression?.setSeasonContext?.(campaign);if(typeof progression?.repairCheckpointPosition==="function"&&progression.repairCheckpointPosition(campaign)!==campaign){campaign=await repository.update("rtg-recover-earned-checkpoint",current=>progression.repairCheckpointPosition(current));checkOpen();}
