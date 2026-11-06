@@ -105,6 +105,12 @@ for (const file of [...files, ...devFiles.map((f) => `dev/${f}`)]) {
     const targets = coach.power.params.cardScope === "event" ? m.cards : [...players.values()];
     assert(targets.length >= coach.power.params.picks, `${where}: nessuna carta a cui applicare il potere di ${coach.id}`);
     const known = coaches.BY_ID[coach.id];
+    if (isDev) {
+      // Passo 4.1: l'allenatore di un evento finto non entra mai nel catalogo reale (ne' quindi nel salvataggio).
+      assert(!known, `${where}: l'allenatore finto ${coach.id} non deve stare nel catalogo reale`);
+      assert(/^https:\/\//.test(coach.imageUrl || "") || fs.existsSync(coach.imageUrl || ""), `${where}: immagine allenatore`);
+      continue;
+    }
     assert(known, `${where}: allenatore ${coach.id} assente dal catalogo`);
     assert.strictEqual(coach.name, known.name, `${where}: nome dell'allenatore ${coach.id} diverso dal catalogo`);
     assert.strictEqual(coach.power.name, known.powerName, `${where}: nome del potere diverso dal catalogo`);

@@ -24,9 +24,9 @@
     "ownedIdPattern": "^(?:[0-9]+|custom_000[12])$"
   },
   "currency": {
-    "id": "prova",
+    "id": "gettoni_prova",
     "name": "Gettoni prova",
-    "icon": "https://static.vecteezy.com/ti/vettori-gratis/p1/3690657-halloween-zucca-disegno-halloween-zucca-vettore-isolare-su-sfondo-bianco-gratuito-vettoriale.jpg"
+    "icon": "assets/icons/icon-512.png"
   },
   "economy": {
     "pullPrice": 200,
@@ -156,24 +156,25 @@
   ],
   "coaches": [
     {
-      "id": "halloween-coach-54",
-      "zukanId": "54",
-      "name": "Hekyll Jyde",
+      "id": "prova-coach-1",
+      "zukanId": "prova1",
+      "name": "Allenatore di prova",
+      "imageUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/j/ojxxbxm3gy8.png",
       "power": {
         "type": "requirementsOvrDiscount",
-        "name": "Maschera Maledetta",
-        "description": "Scegli un tuo titolare della collezione Halloween. Per i soli requisiti OVR della squadra, il suo contributo vale 15 punti in meno. Overall reale, statistiche, mosse e partita non cambiano.",
+        "name": "Maschera di prova",
+        "description": "Scegli un tuo titolare dell'evento di prova. Per i soli requisiti OVR della squadra, il suo contributo vale 10 punti in meno. Overall reale, statistiche, mosse e partita non cambiano.",
         "params": {
-          "amount": 15,
+          "amount": 10,
           "picks": 1,
           "target": "ownStarter",
           "cardScope": "event"
         },
         "ui": {
-          "title": "MASCHERA MALEDETTA",
-          "note": "Scegli un titolare Halloween sul campo: nei requisiti il suo OVR vale 15 punti in meno. In partita rimane identico.",
-          "pickerTitle": "SCEGLI UN TITOLARE HALLOWEEN",
-          "previewNote": "Il titolare Halloween selezionato conta 15 OVR in meno solo nei requisiti. Valori reali invariati."
+          "title": "MASCHERA DI PROVA",
+          "note": "Scegli un titolare dell'evento di prova sul campo: nei requisiti il suo OVR vale 10 punti in meno. In partita rimane identico.",
+          "pickerTitle": "SCEGLI UN TITOLARE DELL'EVENTO DI PROVA",
+          "previewNote": "Il titolare dell'evento di prova selezionato conta 10 OVR in meno solo nei requisiti. Valori reali invariati."
         }
       }
     }

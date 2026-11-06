@@ -36,7 +36,9 @@
   const clone = x => JSON.parse(JSON.stringify(x));
   const asId = x => String(x == null ? "" : x).trim();
   const escape = x => String(x == null ? "" : x).replace(/[&<>"']/g, x => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
-  const isOpen = () => Date.now() <= EVENT_END_MS;
+  // Ora degli eventi dal registro (spostabile solo in sviluppo con ?oraEvento=).
+  const eventNow = () => global.GameEvents?.now?.() ?? Date.now();
+  const isOpen = () => eventNow() <= EVENT_END_MS;
   // Nome della provenienza di una carta: Season dal registro unico, poi Svincolati ed evento.
   const sourceLabel = (id, eventLabel) => global.RoadToGloryConfig?.seasonLabel?.(id) ||
     ({free_agents:"Svincolati", [EVENT_ID]:eventLabel})[id] || "";
@@ -45,7 +47,7 @@
   const fail = code => Object.assign(new Error(code), {code});
 
   function countdown() {
-    const remaining = Math.max(0, EVENT_END_MS - Date.now());
+    const remaining = Math.max(0, EVENT_END_MS - eventNow());
     const units = [86400000, 3600000, 60000, 1000];
     const vals = [];
     let rest = remaining;
@@ -1017,7 +1019,7 @@
       const view=global.RoadToGloryCoachesView;
       if(!deps.openModal||!view?.markup)return notify("Catalogo allenatori RTG non disponibile","error");
       function openCollection(){
-        deps.openModal(view.markup(activeEventSquad(),{tab:"collection",equippedId:localSquad.coachId||""}),
+        deps.openModal(view.markup(activeEventSquad(),{tab:"collection",equippedId:localSquad.coachId||"",eventId:EVENT_ID}),
           {className:"rtg-modal rtg-coaches-modal rtg-halloween-picker"});
         const root=modalRoot();
         root?.querySelectorAll?.("[data-rtg-coaches-equip]")?.forEach(btn=>btn.addEventListener("click",()=>perform(async()=>{
@@ -1500,7 +1502,7 @@
         }
       });
       if(selected===HALLOWEEN_COACH_ID)
-        return {coach:global.RoadToGloryCoaches?.BY_ID?.[selected],result:{
+        return {coach:global.RoadToGloryCoaches?.lookup?.(selected),result:{
           coachId:selected,rarity:"Leggenda",balanceAfter:ledger(shared)[CURRENCY]}};
       const p=player(selected);
       return {player:p,result:{cardId:EVENT_ID+"::"+selected,playerId:selected,legacySeasonId:EVENT_ID,rarity:p?.category||"Normale",balanceAfter:ledger(shared)[CURRENCY]}};

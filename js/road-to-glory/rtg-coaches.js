@@ -32,11 +32,24 @@
     if(current===required&&state?.seasonComplete===true)return true;
     return (state?.seasonTransitionRewardedIds||[]).some(entry=>String(entry).startsWith(seasonId+"->"));
   }
-  function catalog(_state){return CATALOG.slice();} // Always show all ten coaches in either RTG campaign.
+  // Allenatori degli eventi FINTI (solo ?dev=1&evento=<id>, Passo 4.1): non entrano mai in CATALOG/BY_ID, che sono il
+  // catalogo reale usato anche dal salvataggio (rtg-state.js tiene solo gli allenatori di BY_ID). Si vedono solo
+  // dentro il loro evento finto, che salva nelle chiavi locali "dev:".
+  function devCoaches(eventId=""){
+    return (global.GameEvents?.all?.()||[]).filter(event=>event.dev===true&&(!eventId||event.id===eventId))
+      .flatMap(event=>(event.coaches||[]).map(coach=>Object.freeze({id:String(coach.id),zukanId:String(coach.zukanId||""),
+        powerName:coach.power.name,powerDescription:coach.power.description,name:coach.name,seasonId:event.id,
+        season:event.labels.collection,team:event.team.name,teamLogoUrl:event.team.logo,imageUrl:coach.imageUrl||"",
+        frontFullbodyUrl:coach.frontFullbodyUrl||coach.imageUrl||"",eventCoach:true,devCoach:true})));
+  }
+  // Allenatore per id: catalogo reale, poi gli allenatori degli eventi finti caricati.
+  const lookup=coachId=>BY_ID[String(coachId)]||devCoaches().find(c=>c.id===String(coachId))||null;
+  // Always show all ten coaches in either RTG campaign; inside a fake event also its own coach.
+  function catalog(_state,{eventId=""}={}){return [...CATALOG,...(eventId?devCoaches(eventId):[])];}
   function owned(state){return new Set((Array.isArray(state?.coachOwnedIds)?state.coachOwnedIds:[]).map(String));}
   function eligible(state){const have=owned(state);return catalog(state).filter(c=>!c.eventCoach&&seasonCompleted(state,c.seasonId)&&!have.has(c.id));}
   function status(state,coachId){
-    const c=BY_ID[String(coachId)];
+    const c=lookup(coachId);
     if(!c)return "locked";
     // Ownership belongs to the RTG account; only the draw pool depends on campaign.
     if(owned(state).has(c.id))return "owned";
@@ -56,6 +69,6 @@
     state.coachPullCount=(Number(state.coachPullCount)||0)+1;
     return {state,coach};
   }
-  global.RoadToGloryCoaches=Object.freeze({COST,CATALOG,BY_ID,
+  global.RoadToGloryCoaches=Object.freeze({COST,CATALOG,BY_ID,lookup,
     get CAMPAIGN_SEASONS(){return campaignSeasons();},catalog,seasonCompleted,owned,eligible,status,draw});
 })(globalThis);

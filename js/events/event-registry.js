@@ -77,11 +77,36 @@
   // Evento finto scelto per questa sessione (solo con ?dev=1&evento=<id>): sostituisce gli eventi a capsule veri.
   let devEventId = "";
 
+  // Ora usata dagli eventi (apertura, conto alla rovescia, premio finale). Solo in sviluppo (?dev=1&oraEvento=...)
+  // si puo' spostare: il tempo continua a scorrere da li'. L'orologio del dispositivo non cambia e niente si salva.
+  let clockOffset = 0;
+  const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+  function setEventTime(value) {
+    const text = String(value || "").trim();
+    // Solo data (2026-11-07): mezzanotte ora italiana d'inverno, come le date degli eventi.
+    const iso = DATE_ONLY.test(text) ? `${text}T00:00:00+01:00` : text;
+    const ms = ISO_WITH_ZONE.test(iso) ? Date.parse(iso) : NaN;
+    if (!Number.isFinite(ms)) return false;
+    clockOffset = ms - Date.now();
+    return true;
+  }
+  const now = () => Date.now() + clockOffset;
+  const eventTimeShifted = () => clockOffset !== 0;
+
   function register(manifest, { dev = false } = {}) {
     const errors = validate(manifest);
     if (errors.length) throw Object.assign(new Error(`evento non valido: ${errors.join("; ")}`), { code: "event-invalid" });
     if (manifest.dev === true && !dev) {
       throw Object.assign(new Error("un evento finto si carica solo in sviluppo"), { code: "event-dev-only" });
+    }
+    // Ogni allenatore appartiene a un solo evento: il suo potere riconosce solo le carte di quell'evento.
+    for (const coach of manifest.coaches || []) {
+      const owner = all().find((other) => other.id !== manifest.id &&
+        (other.coaches || []).some((entry) => String(entry.id) === String(coach.id)));
+      if (owner) {
+        throw Object.assign(new Error(`allenatore ${coach.id} gia' usato dall'evento ${owner.id}`),
+          { code: "event-coach-duplicate" });
+      }
     }
     const frozen = deepFreeze(JSON.parse(JSON.stringify(manifest)));
     manifests.set(frozen.id, frozen);
@@ -188,5 +213,5 @@
   const endMs = (eventId) => Date.parse(get(eventId)?.window?.end || "");
 
   global.GameEvents = Object.freeze({ INDEX_PATH, validate, register, onLoad, onAnyLoad, load, get, all, startMs, endMs,
-    isEvent, isEventCard, isActive, forCardId, badge, label, ledgerPath, ledger, withLedger });
+    isEvent, isEventCard, isActive, forCardId, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
 })(globalThis);
