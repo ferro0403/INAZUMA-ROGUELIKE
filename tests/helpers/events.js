@@ -18,4 +18,18 @@ function loadEvents(context) {
   return context;
 }
 
-module.exports = { loadEvents };
+// Come il gioco con ?dev=1&evento=<id>: carica l'indice, gli eventi veri e l'evento finto (data/events/dev/<id>.json).
+async function loadEventsWithDev(context, devEventId) {
+  if (!vm.isContext(context)) vm.createContext(context);
+  if (!context.globalThis) context.globalThis = context;
+  if (!context.GameEvents) vm.runInContext(read("js/events/event-registry.js"), context);
+  const fetcher = async (url) => {
+    const file = path.join(ROOT, String(url));
+    const ok = fs.existsSync(file);
+    return { ok, status: ok ? 200 : 404, json: async () => JSON.parse(fs.readFileSync(file, "utf8")) };
+  };
+  await context.GameEvents.load(fetcher, { devEventId });
+  return context;
+}
+
+module.exports = { loadEvents, loadEventsWithDev };

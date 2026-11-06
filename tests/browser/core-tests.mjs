@@ -296,4 +296,25 @@ export const tests = [
       assert.ok(won.length === 1 || coach, "la capsula ha dato una carta dell'evento finto o l'allenatore");
     },
   },
+  {
+    name: "13-ora-evento",
+    // Passo 4.1: ?dev=1&oraEvento=2026-11-07 mostra Halloween concluso (l'orologio delle prove e' fermo al 3 nov),
+    // senza toccare l'orologio della pagina e senza scrivere nel salvataggio. Senza ?dev=1 il parametro non vale.
+    async run({ game, assert }) {
+      const late = await game({ dev: true, query: "oraEvento=2026-11-07" });
+      const before = await late.readRtgRecords(["shared:account"]);
+      await late.click("[data-rtg-home-open=campaigns]");
+      await late.waitText(".rtg-halloween-entry", /EVENTO TERMINATO/);
+      assert.ok(await late.page.locator(".rtg-halloween-entry[disabled]").count(), "l'ingresso di Halloween e' chiuso");
+      assert.equal(await late.page.evaluate(() => new Date().toISOString()), "2026-11-03T12:00:00.000Z",
+        "l'orologio della pagina non cambia");
+      assert.deepEqual(await late.readRtgRecords(["shared:account"]), before, "niente scritto nel salvataggio");
+      const ignored = await game({ query: "oraEvento=2026-11-07" });
+      await ignored.click("[data-rtg-home-open=campaigns]");
+      assert.doesNotMatch(await ignored.text(".rtg-halloween-entry"), /EVENTO TERMINATO/, "senza ?dev=1 non vale");
+      const open = await game({ dev: true });
+      await open.click("[data-rtg-home-open=campaigns]");
+      assert.doesNotMatch(await open.text(".rtg-halloween-entry"), /EVENTO TERMINATO/, "il 3 nov Halloween e' aperto");
+    },
+  },
 ];
