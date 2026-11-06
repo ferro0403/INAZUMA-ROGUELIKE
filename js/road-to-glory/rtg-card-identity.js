@@ -8,7 +8,8 @@
 
   function normalizeSeasonId(value) {
     const raw = id(value);
-    if (!raw || raw === FREE_AGENTS || raw === "halloween2026") return raw;
+    // Gli eventi (data/events/) non sono Season: il loro id resta com'e'.
+    if (!raw || raw === FREE_AGENTS || global.GameEvents?.isEvent?.(raw)) return raw;
     return id(global.SeasonRegistry?.normalizeSeasonId?.(raw) || raw);
   }
 
@@ -109,7 +110,7 @@
 
   function versionGroupKey(value, fallbackSeasonId = null) {
     const parsed = parse(value, fallbackSeasonId);
-    if (parsed.legacySeasonId === "halloween2026") return `card${SEP}${parsed.cardId}`;
+    if (global.GameEvents?.isEvent?.(parsed.legacySeasonId)) return `card${SEP}${parsed.cardId}`;
     if (parsed.sourceKind === "season") {
       const canonical = id(parsed.canonicalPlayerId || canonicalPlayerId(parsed.legacySeasonId, parsed.profileId || parsed.playerId) || parsed.playerId);
       return canonical ? `season${SEP}${canonical}` : `card${SEP}${parsed.cardId}`;
@@ -132,10 +133,8 @@
     const seasonId = typeof value === "object" ? parse(value).legacySeasonId : normalizeSeasonId(value);
     const seasonShort = global.RoadToGloryConfig?.seasonShortLabel?.(seasonId);
     if (seasonShort) return seasonShort;
-    return ({
-      [FREE_AGENTS]: "FA",
-      halloween2026: "HW",
-    })[seasonId] || (seasonId ? seasonId.toUpperCase() : "");
+    if (seasonId === FREE_AGENTS) return "FA";
+    return global.GameEvents?.badge?.(seasonId) || (seasonId ? seasonId.toUpperCase() : "");
   }
 
   global.RoadToGloryCardIdentity = Object.freeze({

@@ -4,10 +4,13 @@
 const assert = require("assert");
 const fs = require("fs");
 const vm = require("vm");
+const { loadEvents } = require("./helpers/events");
 
 const context = { console };
 context.globalThis = context;
 vm.createContext(context);
+// Eventi dal file dati (data/events/), come nel gioco.
+loadEvents(context);
 for (const file of ["js/road-to-glory/rtg-config.js", "js/road-to-glory/rtg-card-identity.js", "js/road-to-glory/rtg-coaches.js",
   "js/road-to-glory/rtg-rng.js", "js/road-to-glory/rtg-state.js"]) {
   vm.runInContext(fs.readFileSync(file, "utf8"), context, { filename: file });

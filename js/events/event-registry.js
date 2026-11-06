@@ -9,6 +9,9 @@
   const manifests = new Map();
   const waiting = new Map();
   const anyWaiting = [];
+  // Id elencati in index.json, anche se il loro file non si e' caricato: le carte "<id>::..." restano carte di quell'evento
+  // e non vengono mai scambiate per carte di una Season (gli id delle carte gia' possedute non si riscrivono).
+  const listed = new Set();
   let loading = null;
 
   const isObject = (value) => value && typeof value === "object" && !Array.isArray(value);
@@ -63,6 +66,7 @@
     if (errors.length) throw Object.assign(new Error(`evento non valido: ${errors.join("; ")}`), { code: "event-invalid" });
     const frozen = deepFreeze(JSON.parse(JSON.stringify(manifest)));
     manifests.set(frozen.id, frozen);
+    listed.add(frozen.id);
     for (const install of waiting.get(frozen.id) || []) install(frozen);
     waiting.delete(frozen.id);
     for (const install of anyWaiting) install(frozen);
@@ -97,6 +101,7 @@
       const response = await fetcher(INDEX_PATH, { cache: "no-store" });
       if (!response.ok) throw Object.assign(new Error("indice eventi non disponibile"), { code: "event-index" });
       const ids = (await response.json())?.events || [];
+      for (const eventId of ids) listed.add(String(eventId));
       const loaded = await Promise.all(ids.map(async (eventId) => {
         try {
           const file = await fetcher(`data/events/${eventId}.json`, { cache: "no-store" });
@@ -109,11 +114,19 @@
       }));
       return loaded.filter(Boolean);
     })();
+    // Se l'indice non arriva, una nuova chiamata a load() riprova.
+    loading.catch(() => { loading = null; });
     return loading;
   }
 
   const get = (eventId) => manifests.get(String(eventId || "")) || null;
-  const isEvent = (eventId) => manifests.has(String(eventId || ""));
+  const isEvent = (eventId) => listed.has(String(eventId || ""));
+  // Carta di un evento elencato: il prefisso e' sempre "<id>::" (controllato da validate()).
+  const isEventCard = (cardId) => {
+    const value = String(cardId || "");
+    const cut = value.indexOf("::");
+    return cut > 0 && listed.has(value.slice(0, cut));
+  };
   // Evento a cui appartiene una carta ("<id>::<playerId>"), dal prefisso scritto nel manifest.
   const forCardId = (cardId) => {
     const value = String(cardId || "");
@@ -138,5 +151,5 @@
   const endMs = (eventId) => Date.parse(get(eventId)?.window?.end || "");
 
   global.GameEvents = Object.freeze({ INDEX_PATH, validate, register, onLoad, onAnyLoad, load, get, all, startMs, endMs,
-    isEvent, forCardId, badge, label, ledgerPath, ledger, withLedger });
+    isEvent, isEventCard, forCardId, badge, label, ledgerPath, ledger, withLedger });
 })(globalThis);

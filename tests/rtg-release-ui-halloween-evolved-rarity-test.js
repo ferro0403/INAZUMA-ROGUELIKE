@@ -2,6 +2,7 @@
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const vm=require("node:vm");
+const { loadEvents } = require("./helpers/events");
 const test=require("node:test");
 const read=path=>fs.readFileSync(path,"utf8");
 const index=read("index.html");
@@ -40,7 +41,7 @@ test("Evolved Halloween player filters read owned rarity first, not source chara
   const effective=upgraded.finalRarity||upgraded.category||sourceRarity;
   assert.equal(effective,"Mondiale");
   assert.notEqual(effective,sourceRarity);
-  assert(index.includes("rtg-squad-controller.js?v=20261106-poteri-dati-1"));
+  assert(index.includes("rtg-squad-controller.js?v=20261106-modulo-evento-2"));
 });
 
 test("Svincolati modal keeps the exact data-rtg-start-node action with clearer CTA",()=>{
@@ -61,6 +62,7 @@ test("Halloween XI: EXACT original prematch cards, HW badges and Album detail ro
   const playerById=new Map(team.players.map(p=>[String(p.playerId),p]));
   assert(lineup.startingXI.every(id=>playerById.has(id)));
   const ctx={console};ctx.globalThis=ctx;
+  loadEvents(ctx); // eventi dal file dati, come nel gioco
   for(const script of ["js/road-to-glory/rtg-card-identity.js",
     "js/road-to-glory/rtg-config.js","js/road-to-glory/rtg-squad-view-base.js",
     "js/road-to-glory/rtg-match-view.js"])
