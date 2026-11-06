@@ -303,12 +303,22 @@ export const tests = [
       assert.deepEqual(entries.map(([id]) => id), ["halloween2026", "prova_dev"], "un ingresso per evento");
       assert.match(entries[0][1], /^3g /, "Halloween: 3 giorni al 3 nov");
       assert.match(entries[1][1], /^87g /, "evento di prova: 87 giorni");
+      // Passo 4.4: ogni ingresso ha titolo, sottotitolo e immagine dal file del suo evento.
+      const looks = await g.page.$$eval("[data-rtg-event-open]", (els) => els.map((el) => ({
+        title: el.querySelector("strong")?.textContent, subtitle: el.querySelector("em")?.textContent,
+        image: el.querySelector("img")?.getAttribute("src") })));
+      assert.deepEqual(looks.map((l) => [l.title, l.subtitle]),
+        [["🎃 EVENTO HALLOWEEN", "OCCULT HALLOWEEN"], ["🧪 EVENTO DI PROVA", "ANGELI DI PROVA"]]);
+      assert.notEqual(looks[0].image, looks[1].image, "immagini diverse");
+      assert.equal(looks[1].image, "assets/rtg/rtg-orion-route-map-user.webp");
       await g.click("[data-rtg-event-open=prova_dev]");
       await g.waitText("#app", /Formazione valida/i);
       // 11 avversari al loro posto (Angeli di prova in 4-2-4; prima se ne vedevano 9 nel 4-4-2 fisso).
       assert.equal(await g.page.evaluate(() => document.querySelectorAll(".halloween-opponent-preview-field .tactical-player-card").length), 11, "11 titolari avversari nell'evento di prova");
+      assert.match(await g.text("#app .brand"), /^PROVA$/, "l'evento di prova ha il suo titolo");
       await g.devHalloweenPumpkins();
       await g.click("[data-halloween-open-vending]");
+      assert.match(await g.text("#app .rtg-vending-wallet-chip"), /GETTONI PROVA/, "valuta dell'evento di prova");
       await g.click("[data-halloween-pull]:not([disabled])");
       await g.page.locator("[data-rtg-pull-continue], [data-rtg-coaches-collection]").locator("visible=true").first()
         .waitFor({ timeout: 20000 });
@@ -336,6 +346,7 @@ export const tests = [
       await g.click("[data-rtg-event-open=halloween2026]");
       await g.waitText("#app", /Formazione valida/i);
       assert.match(await g.text(".halloween-wallet"), /^\s*0\s*$/, "Halloween mostra le sue zucche (0), non i gettoni di prova");
+      assert.match(await g.text("#app .brand"), /^HALLOWEEN$/, "Halloween resta con il suo titolo");
       assert.deepEqual((await g.readRtgRecords([REAL]))[REAL] ?? null, before[REAL] ?? null, "account vero ancora invariato");
       assert.ok(!(after[DEV].coachOwnedIds || []).includes("halloween-coach-54") ||
         (before[REAL]?.coachOwnedIds || []).includes("halloween-coach-54"), "Hekyll non arriva dall'evento finto");

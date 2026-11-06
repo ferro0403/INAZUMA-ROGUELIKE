@@ -139,6 +139,27 @@ for (const devFile of devFiles) {
   }
 }
 
+// Passo 4.4: ogni evento a capsule ha tutti i testi dell'interfaccia, la valuta e gli id partita nel suo file.
+const UI_KEYS = ["entryEyebrow", "entryTitle", "entrySubtitle", "completionTitle", "short", "appAria", "brand",
+  "nextMatchAria", "challengeEyebrow", "challengeTitle", "capsuleEyebrow", "vendingTitle", "vendingTitleLong",
+  "vendingStation", "vendingAria", "icon", "walletTitle", "tag", "albumPath", "prizeCredited", "devTitle"];
+const capsuleEvents = [...files.map((f) => path.join(DIR, f)), ...devFiles.map((f) => path.join(DEV_DIR, f))]
+  .map(readJson).filter((m) => m.kind === "capsuleEvent");
+for (const m of capsuleEvents) {
+  assert.deepStrictEqual(Object.keys(m.labels.ui).sort(), [...UI_KEYS].sort(), `${m.id}: testi dell'interfaccia`);
+  for (const key of UI_KEYS) assert(key === "challengeTitle" ? m.labels.ui[key].length >= 1 : typeof m.labels.ui[key] === "string"
+    && m.labels.ui[key].trim(), `${m.id}: testo ${key} vuoto`);
+  for (const key of ["name", "unit", "unitUpper", "iconAlt"]) assert(m.currency[key], `${m.id}: currency.${key}`);
+  for (const key of ["matchIdPrefix", "matchNodeId"]) assert(m.save[key], `${m.id}: save.${key}`);
+}
+const seenTitles = new Set();
+for (const m of capsuleEvents) {
+  assert(!seenTitles.has(m.labels.ui.entryTitle), `${m.id}: titolo dell'ingresso uguale a un altro evento`);
+  seenTitles.add(m.labels.ui.entryTitle);
+}
+const banners = capsuleEvents.map((m) => m.assets.banner);
+assert.strictEqual(new Set(banners).size, banners.length, "ogni evento ha la sua immagine di ingresso");
+
 // Parita' di Halloween con i valori che prima erano scritti nel codice: si spostano, non cambiano.
 const h = readJson(path.join(DIR, "halloween2026.json"));
 assert.deepStrictEqual(JSON.parse(JSON.stringify(h.economy)), { pullPrice: 200, winPrize: 300, luckyPrize: 600, luckyChancePercent: 10 });
@@ -149,6 +170,28 @@ assert.strictEqual(h.save.key, "halloween", "Halloween resta in shared.halloween
 assert.strictEqual(h.save.currencyField, "pumpkins", "le zucche restano nel campo di prima");
 assert.strictEqual(h.save.ownedIdPattern, "^(?:[0-9]+|custom_000[12])$", "stesso controllo del salvataggio di prima");
 assert.strictEqual(h.kind, "capsuleEvent");
+assert.deepStrictEqual(JSON.parse(JSON.stringify(h.labels.ui)), {
+  entryEyebrow: "EVENTO LIMITATO · 2026", entryTitle: "🎃 EVENTO HALLOWEEN", entrySubtitle: "OCCULT HALLOWEEN",
+  completionTitle: "🎃 EVENTO HALLOWEEN 2026", short: "Halloween", appAria: "Road to Glory Halloween", brand: "HALLOWEEN",
+  nextMatchAria: "Prossima partita Halloween", challengeEyebrow: "SFIDA EVENTO · IL CIMITERO STREGATO",
+  challengeTitle: ["OCCULT", "HALLOWEEN"], capsuleEyebrow: "CAPSULE HALLOWEEN", vendingTitle: "DISTRIBUTORE STREGATO",
+  vendingTitleLong: "IL DISTRIBUTORE STREGATO", vendingStation: "CAPSULE STATION · HALLOWEEN",
+  vendingAria: "Distributore Halloween", icon: "🎃", walletTitle: "ZUCCHE HALLOWEEN", tag: "OCCULT · HALLOWEEN",
+  albumPath: "ALBUM → EVENTO HALLOWEEN", prizeCredited: "PREMIO HALLOWEEN ACCREDITATO", devTitle: "DEV HALLOWEEN",
+}, "Passo 4.4: i testi di Halloween si spostano nel file, identici a quelli che erano nel codice");
+assert.deepStrictEqual([h.currency.name, h.currency.unit, h.currency.unitUpper, h.currency.iconAlt],
+  ["Zucche", "zucche", "ZUCCHE", "Zucca Halloween"]);
+assert.deepStrictEqual([h.save.matchIdPrefix, h.save.matchNodeId], ["halloween-2026:", "event:occult-halloween"],
+  "le partite gia' salvate restano valide");
+assert.strictEqual(h.team.name, "Occult Halloween");
+// Il modulo non ha piu' testi di Halloween scritti dentro: arrivano tutti dal file dell'evento.
+const WORDS = "HALLOWEEN|Halloween|ZUCCH|[Zz]ucch|STREGAT|OCCULT|Occult|CIMITERO|🎃|occult-halloween|halloween-2026:";
+const literal = new RegExp(`>[^<>'"\\n]*(${WORDS})[^<>'"\\n]*<|"[^"\\n]*(${WORDS})[^"\\n]*"|'[^'\\n]*(${WORDS})[^'\\n]*'`, "g");
+const technical = /class=|data-halloween|\[(RTG )?Halloween\]|fail\(|^["']halloween-[\w-]*["']$|^["'][\w-]*halloween-[\w-]*["']$/;
+const leftovers = fs.readFileSync("js/road-to-glory/rtg-halloween-event.js", "utf8").split("\n")
+  .filter((line) => !/^\s*\/\//.test(line))
+  .flatMap((line) => line.match(literal) || []).filter((text) => !technical.test(text));
+assert.deepStrictEqual(leftovers, [], `testi di Halloween ancora nel modulo: ${leftovers.join(" | ")}`);
 assert.deepStrictEqual([h.completionReward.playerId, h.completionReward.rarity, h.completionReward.overall,
   h.completionReward.level], ["custom_0003", "Leggenda", 97, 20], "premio finale (Shawn) invariato");
 assert.strictEqual(h.save.cardIdPrefix, "halloween2026::", "gli id delle carte gia' possedute non cambiano");
