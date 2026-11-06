@@ -45,7 +45,8 @@
   // Grant is invoked ONLY inside the canonical shared:account atomic transaction.
   // The acquired card itself is the durable, cloud-synchronized idempotency ledger.
   function grant(account,originalPlayers) {
-    if(owns(account)||!global.RoadToGloryHalloween?.isOpen?.()||
+    // Ora e apertura del SUO evento (Passo 4.3), non di un altro evento attivo insieme.
+    if(owns(account)||!(global.GameEvents?.module?.(EVENT_ID)||global.RoadToGloryHalloween)?.isOpen?.()||
       !eligible(account,originalPlayers))return false;
     const meta=global.RoadToGloryCardIdentity?.record?.({
       playerId:PLAYER_ID,legacySeasonId:EVENT_ID});

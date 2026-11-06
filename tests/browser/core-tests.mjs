@@ -165,6 +165,23 @@ export const tests = [
     },
   },
   {
+    name: "08b-coach-potere-con-evento-prova",
+    // Passo 4.3: lo stesso caso dell'08 con anche l'evento di prova attivo (?dev=1&evento=prova_dev): Hekyll
+    // riconosce i giocatori Halloween e il valore dei requisiti cambia come nel gioco normale.
+    async run({ game, assert }) {
+      const g = await game({ dev: true, query: "evento=prova_dev" });
+      await g.unlockAllFreeAgents({ maxOverall: RTG_MAX_OVERALL });
+      await g.click("[data-rtg-home-open=campaigns]");
+      await g.click("[data-rtg-event-open=halloween2026]");
+      await g.devHalloweenPumpkins();
+      const coachSpin = await g.spinHalloweenUntilCoach();
+      assert.ok(coachSpin >= 0, "il distributore Halloween non ha dato l'allenatore");
+      const result = await g.configureHalloweenCoachPower();
+      assert.ok(Number(result.after) < Number(result.before), `overall prima ${result.before}, dopo ${result.after}`);
+      assert.ok(result.preview.includes(`${result.before} → ${result.after}`), `anteprima diversa: ${result.preview}`);
+    },
+  },
+  {
     name: "09-evento-halloween",
     // Evento Halloween: si apre, la squadra e' valida, card giocatore e allenatori si vedono, il distributore si apre.
     async run({ game, assert }) {
@@ -173,6 +190,7 @@ export const tests = [
       await g.click("[data-rtg-home-open=campaigns]");
       await g.click("[data-rtg-halloween-open]");
       await g.waitText("#app", /Formazione valida/i); // la squadra dell'evento risulta valida
+      assert.equal(await g.page.evaluate(() => document.querySelectorAll(".halloween-opponent-preview-field .tactical-player-card").length), 11, "11 titolari avversari in Halloween");
       await g.click(".tactical-player-card");
       await g.waitText("#modal-root", /STATISTICHE/i); // la card giocatore Halloween si apre
       await g.click("#modal-root [data-close-modal], #modal-root .modal-close");
@@ -270,15 +288,25 @@ export const tests = [
       assert.equal(await normal.page.evaluate(() => window.RoadToGloryHalloween.EVENT_ID), "halloween2026");
 
       const g = await game({ dev: true, query: "evento=prova_dev" });
-      assert.equal(await g.page.evaluate(() => window.RoadToGloryHalloween.EVENT_ID), "prova_dev",
-        "con ?evento=prova_dev si usa l'evento finto");
+      // Passo 4.3: l'evento finto si affianca a Halloween, che resta RoadToGloryHalloween.
+      assert.equal(await g.page.evaluate(() => window.RoadToGloryHalloween.EVENT_ID), "halloween2026");
+      assert.deepEqual(await g.page.evaluate(() => window.GameEvents.modules().map((m) => m.EVENT_ID)),
+        ["halloween2026", "prova_dev"], "due eventi attivi insieme");
       await g.unlockAllFreeAgents();
       const REAL = "shared:account", DEV = "dev:prova_dev:shared:account";
       const before = await g.readRtgRecords([REAL, DEV]);
       assert.equal(before[DEV] ?? null, null, "il salvataggio finto parte vuoto");
       await g.click("[data-rtg-home-open=campaigns]");
-      await g.click("[data-rtg-halloween-open]");
+      // Due ingressi nelle campagne, ognuno con la sua scadenza (Halloween 6 nov, prova 29 gen).
+      const entries = await g.page.$$eval("[data-rtg-event-open]", (els) => els.map((el) =>
+        [el.dataset.rtgEventOpen, el.querySelector("[data-halloween-countdown]")?.textContent || ""]));
+      assert.deepEqual(entries.map(([id]) => id), ["halloween2026", "prova_dev"], "un ingresso per evento");
+      assert.match(entries[0][1], /^3g /, "Halloween: 3 giorni al 3 nov");
+      assert.match(entries[1][1], /^87g /, "evento di prova: 87 giorni");
+      await g.click("[data-rtg-event-open=prova_dev]");
       await g.waitText("#app", /Formazione valida/i);
+      // 11 avversari al loro posto (Angeli di prova in 4-2-4; prima se ne vedevano 9 nel 4-4-2 fisso).
+      assert.equal(await g.page.evaluate(() => document.querySelectorAll(".halloween-opponent-preview-field .tactical-player-card").length), 11, "11 titolari avversari nell'evento di prova");
       await g.devHalloweenPumpkins();
       await g.click("[data-halloween-open-vending]");
       await g.click("[data-halloween-pull]:not([disabled])");
@@ -298,6 +326,17 @@ export const tests = [
       const fakeRoster = await g.page.evaluate(() => window.GameEvents.get("prova_dev").cards.map((c) => c.playerId));
       for (const c of won) assert.ok(fakeRoster.includes(String(c.cardId).split("::")[1]), `carta fuori dalla squadra di prova: ${c.cardId}`);
       if (coach) assert.ok(after[DEV].coachOwnedIds.includes("prova-coach-1"), "l'allenatore ottenuto e' quello di prova");
+      // Poi Halloween, accanto: il suo saldo e' quello dell'account vero (0 zucche), non quello di prova.
+      const continueButton = g.page.locator("[data-rtg-pull-continue]").locator("visible=true");
+      if (await continueButton.count()) await continueButton.first().click();
+      else await g.page.evaluate(() => document.querySelector("#modal-root [data-close-modal]")?.click());
+      await g.click("[data-halloween-close-vending]").catch(() => {});
+      await g.page.evaluate(() => document.querySelector("[data-halloween-back]")?.click());
+      if (!(await g.page.locator("[data-rtg-event-open]").count())) await g.click("[data-rtg-home-open=campaigns]");
+      await g.click("[data-rtg-event-open=halloween2026]");
+      await g.waitText("#app", /Formazione valida/i);
+      assert.match(await g.text(".halloween-wallet"), /^\s*0\s*$/, "Halloween mostra le sue zucche (0), non i gettoni di prova");
+      assert.deepEqual((await g.readRtgRecords([REAL]))[REAL] ?? null, before[REAL] ?? null, "account vero ancora invariato");
       assert.ok(!(after[DEV].coachOwnedIds || []).includes("halloween-coach-54") ||
         (before[REAL]?.coachOwnedIds || []).includes("halloween-coach-54"), "Hekyll non arriva dall'evento finto");
     },
@@ -321,6 +360,19 @@ export const tests = [
       const open = await game({ dev: true });
       await open.click("[data-rtg-home-open=campaigns]");
       assert.doesNotMatch(await open.text(".rtg-halloween-entry"), /EVENTO TERMINATO/, "il 3 nov Halloween e' aperto");
+      // Uno chiuso e uno aperto: Halloween terminato, evento di prova aperto e apribile.
+      const mixed = await game({ dev: true, query: "evento=prova_dev&oraEvento=2026-11-07" });
+      await mixed.unlockAllFreeAgents();
+      await mixed.click("[data-rtg-home-open=campaigns]");
+      const state = await mixed.page.$$eval("[data-rtg-event-open]", (els) => els.map((el) =>
+        [el.dataset.rtgEventOpen, el.disabled, el.querySelector("[data-halloween-countdown]")?.textContent || ""]));
+      assert.deepEqual(state.map(([id, disabled]) => [id, disabled]), [["halloween2026", true], ["prova_dev", false]]);
+      assert.equal(state[0][2], "EVENTO TERMINATO");
+      assert.match(state[1][2], /^83g /, "evento di prova: 83 giorni dal 7 nov");
+      await mixed.click("[data-rtg-event-open=halloween2026]").catch(() => {});
+      assert.ok(await mixed.page.locator("[data-rtg-event-open]").count(), "Halloween chiuso non si apre");
+      await mixed.click("[data-rtg-event-open=prova_dev]");
+      await mixed.waitText("#app", /Formazione valida/i);
     },
   },
 ];

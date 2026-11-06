@@ -51,7 +51,7 @@ test("Svincolati modal keeps the exact data-rtg-start-node action with clearer C
   assert(run.includes("data-rtg-start-node"));
   assert(!run.includes("rtg-node-modal-secondary"));
   assert(css.includes("rtg-secondary-summary"));
-  assert(index.includes("rtg-run-view.js?v=20261030-secondary-redesign-v2"));
+  assert(index.includes("rtg-run-view.js?v=20261107-eventi-insieme-2"));
 });
 
 test("Halloween XI: EXACT original prematch cards, HW badges and Album detail routing",()=>{
@@ -124,7 +124,7 @@ test("Halloween XI: EXACT original prematch cards, HW badges and Album detail ro
   assert(event.indexOf("'</section>'+opponentPreviewSection()") > event.indexOf("data-halloween-open-vending"));
   assert.match(css,/\.halloween-opponent-preview-field\.rtg-prematch-shell/);
   assert.doesNotMatch(css,/Exact tactical card anatomy|rtg-shared-match-card\.boss-match-card/);
-  assert(index.includes("rtg-halloween-event.js?v=20261107-squadra-finta-1"));
+  assert(index.includes("rtg-halloween-event.js?v=20261107-formazione-1"));
 });
 
 test("Release scope: the requested UI changes never write save, cloud or rewards",()=>{

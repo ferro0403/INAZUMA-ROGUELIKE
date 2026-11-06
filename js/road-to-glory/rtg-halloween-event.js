@@ -55,7 +55,8 @@
     return vals[0] + "g " + String(vals[1]).padStart(2,"0") + "h " + String(vals[2]).padStart(2,"0") + "m " + String(vals[3]).padStart(2,"0") + "s";
   }
   function eventCard() {
-    return '<button type="button" class="rtg-campaign-card rtg-halloween-entry" data-rtg-halloween-open ' +
+    return '<button type="button" class="rtg-campaign-card rtg-halloween-entry" data-rtg-halloween-open data-rtg-event-open="' +
+      escape(EVENT_ID) + '" ' +
       (isOpen() ? '' : 'disabled aria-disabled="true" ') +
       '><img class="rtg-campaign-card__image" src="' + escape(BANNER_URL) + '" alt="">' +
       '<span class="rtg-campaign-shade"></span><span class="rtg-campaign-copy"><small>EVENTO LIMITATO · 2026</small>' +
@@ -78,6 +79,8 @@
       if (team.teamId !== TEAM_ID || asId(setup.teamId).replaceAll("_","-") !== TEAM_ID ||
         list.length !== ROSTER_SIZE || setup.startingXI.length !== STARTERS_SIZE ||
         new Set(setup.startingXI).size !== STARTERS_SIZE ||
+        !setup.bossFormation || (global.RoadToGloryConfig?.season?.("ie1")?.formations &&
+          !global.RoadToGloryConfig.season("ie1").formations.some(f => f.id === setup.bossFormation)) ||
         list.some(p => !moves.players[asId(p.playerId)]?.moves?.length) ||
         setup.startingXI.some(pid => !list.some(p => asId(p.playerId) === asId(pid)))) throw fail("halloween-invalid-asset-contract");
       assets = Object.freeze({team, setup, moves, players:new Map(list.map(p=>[asId(p.playerId),p]))});
@@ -234,7 +237,8 @@
       return {formationId,seasonId:"ie1",lineup:line.map((p,i)=>({...p,tacticalRole:slots?.[i]||p.tacticalRole||p.normalizedRole||p.position})),bench:bench.filter(Boolean),coachId:localSquad?.coachId||""};
     }
     function opponent() {
-      return {name:manifest.team.name,teamId:TEAM_ID,logoUrl:LOGO_URL,seasonId:EVENT_ID,formationId:"4-4-2",
+      // Formazione avversaria dal file della formazione dell'evento (bossFormation: Halloween 4-4-2, prova 4-2-4).
+      return {name:manifest.team.name,teamId:TEAM_ID,logoUrl:LOGO_URL,seasonId:EVENT_ID,formationId:assets.setup.bossFormation,
         lineup:assets.setup.startingXI.map(pid=>player(pid)),bench:Array.from(assets.players.keys()).filter(pid=>!assets.setup.startingXI.includes(pid)).map(pid=>player(pid))};
     }
     function currency(n) { return '<span class="halloween-currency"><img src="'+escape(PUMPKIN_URL)+'" alt="">'+escape(n)+'</span>'; }
@@ -250,7 +254,8 @@
     }
     async function grantCompletionReward() {
       const bonus=global.RoadToGloryHalloweenCompletion;
-      if (!isOpen() || !bonus?.eligible?.(shared,assets?.players) || bonus.owns(shared)) return false;
+      // Il premio finale appartiene solo all'evento che lo ha nel suo file (Halloween: Shawn).
+      if (!manifest.completionReward || !isOpen() || !bonus?.eligible?.(shared,assets?.players) || bonus.owns(shared)) return false;
       let granted=false;
       await mutate("halloween-completion-reward",account=>{
         granted=bonus.grant(account,assets.players);
@@ -1526,13 +1531,17 @@
     }
     return Object.freeze({open,render,dispose,getState:()=>({shared:shared&&clone(shared),match:match&&clone(match)})});
   }
-  global.RoadToGloryHalloween = Object.freeze({
+  const api = Object.freeze({
     EVENT_ID,TEAM_ID,EVENT_END_MS,PRICE,PRIZE,LUCKY_PRIZE,isOpen,countdown,eventCard,prepare,
     eventPlayer:player,eventState,opponentOverall,weightedPick,create
   });
+  // Passo 4.3: un'istanza per ogni evento attivo, registrata nel registro eventi (GameEvents.module/moduleForCard).
+  // RoadToGloryHalloween resta il nome dell'istanza dell'evento vero, come prima: chi lo usa non cambia.
+  global.GameEvents?.registerModule?.(EVENT_ID, api);
+  if (manifest.dev !== true && !global.RoadToGloryHalloween) global.RoadToGloryHalloween = api;
   }
-  // Si installa per l'evento a capsule caricato dal registro (kind "capsuleEvent" nel file dell'evento).
-  // Con ?dev=1&evento=<id> si installa solo l'evento finto (GameEvents.isActive).
+  // Si installa per ogni evento a capsule attivo (kind "capsuleEvent" nel file dell'evento): gli eventi veri e,
+  // con ?dev=1&evento=<id>, anche l'evento finto, accanto agli altri.
   global.GameEvents?.onAnyLoad?.(manifest => {
     if (manifest.kind === "capsuleEvent" && global.GameEvents.isActive(manifest.id)) install(manifest);
   });

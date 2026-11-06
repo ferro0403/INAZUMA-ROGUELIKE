@@ -57,7 +57,8 @@ const reply = (body, ok = true) => ({ ok, status: ok ? 200 : 404, json: async ()
   const dev = fresh();
   await dev.GameEvents.load(serve([]), { devEventId: "prova_dev" });
   assert.strictEqual(dev.GameEvents.isActive("prova_dev"), true, "con ?evento= si usa l'evento finto");
-  assert.strictEqual(dev.GameEvents.isActive("halloween2026"), false, "e l'evento vero non si installa");
+  // Passo 4.3 (richiesta del 6 nov): l'evento finto si affianca all'evento vero, non lo sostituisce piu'.
+  assert.strictEqual(dev.GameEvents.isActive("halloween2026"), true, "e l'evento vero resta attivo accanto");
   assert.strictEqual(dev.GameEvents.isEvent("halloween2026"), true, "le carte Halloween restano carte di evento");
   const bad = (save) => Array.from(dev.GameEvents.validate({ ...devFile, save: { ...devFile.save, ...save } }));
   assert(bad({ storagePrefix: "shared:" }).length, "prefisso fuori da dev: rifiutato");

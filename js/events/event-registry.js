@@ -176,12 +176,30 @@
   }
 
   const get = (eventId) => manifests.get(String(eventId || "")) || null;
-  // Evento a capsule da installare in questa sessione: l'evento finto se scelto, altrimenti i veri.
+  // Eventi attivi in questa sessione: tutti i veri, piu' l'evento finto scelto con ?dev=1&evento=<id> (Passo 4.3:
+  // l'evento finto si affianca agli eventi veri, non li sostituisce).
   const isActive = (eventId) => {
     const manifest = get(eventId);
     if (!manifest) return false;
-    return devEventId ? manifest.id === devEventId : manifest.dev !== true;
+    return manifest.dev !== true || manifest.id === devEventId;
   };
+
+  // Moduli installati, uno per evento attivo (es. un'istanza del modulo degli eventi a capsule per ogni evento).
+  // Ordine: prima gli eventi veri, nell'ordine dell'indice, poi quello finto.
+  const modules = new Map();
+  function registerModule(eventId, api) {
+    if (!isActive(eventId)) throw Object.assign(new Error(`evento ${eventId} non attivo`), { code: "event-inactive" });
+    modules.set(String(eventId), api);
+    return api;
+  }
+  const module = (eventId) => modules.get(String(eventId || "")) || null;
+  const moduleForCard = (cardId) => {
+    const value = String(cardId || "");
+    const cut = value.indexOf("::");
+    return cut > 0 ? module(value.slice(0, cut)) : null;
+  };
+  const moduleList = () => Array.from(modules.entries())
+    .sort(([a], [b]) => Number(get(a)?.dev === true) - Number(get(b)?.dev === true)).map(([, api]) => api);
   const isEvent = (eventId) => listed.has(String(eventId || ""));
   // Carta di un evento elencato: il prefisso e' sempre "<id>::" (controllato da validate()).
   const isEventCard = (cardId) => {
@@ -213,5 +231,5 @@
   const endMs = (eventId) => Date.parse(get(eventId)?.window?.end || "");
 
   global.GameEvents = Object.freeze({ INDEX_PATH, validate, register, onLoad, onAnyLoad, load, get, all, startMs, endMs,
-    isEvent, isEventCard, isActive, forCardId, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
+    isEvent, isEventCard, isActive, forCardId, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
 })(globalThis);
