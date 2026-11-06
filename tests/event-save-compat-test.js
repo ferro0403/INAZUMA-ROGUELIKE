@@ -91,7 +91,7 @@ loadEventsWithDev({ console: { warn() {} } }, "prova_dev").then((both) => {
   assert.deepStrictEqual(Object.keys(real).sort(), Object.keys(OLD_SAVE).sort(), "nessun campo nuovo nell'account vero");
   assert.strictEqual(real.halloween.pumpkins, 650);
   // Account finto: parte da una copia dell'account vero e riceve solo events.prova_dev.
-  const fakeLedger = { balance: 99799, ownedIds: ["38"], pullCount: 1, completedIds: [], luckyWins: 0 };
+  const fakeLedger = { balance: 99799, ownedIds: ["2050"], pullCount: 1, completedIds: [], luckyWins: 0 };
   const sandboxAccount = { ...plain(real), ...plain(pair.withLedger(real, d, fakeLedger)) };
   assert.deepStrictEqual(sandboxAccount.events, { prova_dev: fakeLedger });
   assert.deepStrictEqual(sandboxAccount.halloween, real.halloween, "l'evento finto non tocca lo stato di Halloween");

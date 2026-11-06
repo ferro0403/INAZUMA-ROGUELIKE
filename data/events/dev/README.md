@@ -8,3 +8,10 @@ Un evento finto salva tutto in chiavi locali `dev:<id>:...` (campo `save.storage
 copia dell'account vero, solo letta.
 
 Serve a provare il formato degli eventi (Passo 3.5) senza aspettare un evento reale.
+
+## Squadra dell'evento di prova (Passo 4.2)
+
+`prova_dev/` contiene la squadra propria dell'evento di prova, "Angeli di prova" (`prova-angeli`): gli 11 giocatori
+di `data/DARK_ANGELS_team.json` con la formazione di `data/DARK_ANGELS_lineup.json` e le 4 mosse di ciascuno prese
+dal database delle mosse RTG (Season `ie1_s3`, `rtg-four-moves-runtime.js`). Nessun dato inventato: cambia solo l'id
+e il nome della squadra. Allenatore "Allenatore di prova" (sconto 10) e valuta "Gettoni prova" sono propri.

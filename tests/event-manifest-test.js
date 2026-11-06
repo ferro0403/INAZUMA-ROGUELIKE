@@ -122,6 +122,23 @@ for (const file of [...files, ...devFiles.map((f) => `dev/${f}`)]) {
   }
 }
 
+// Passo 4.2: l'evento finto ha squadra, carte, allenatore e valuta propri, che non si mescolano con gli eventi veri.
+for (const devFile of devFiles) {
+  const fake = readJson(path.join(DEV_DIR, devFile));
+  for (const file of files) {
+    const real = readJson(path.join(DIR, file));
+    const where = `evento dev/${devFile} accanto a ${file}`;
+    assert.notStrictEqual(fake.team.teamId, real.team.teamId, `${where}: stessa squadra`);
+    for (const key of ["players", "lineup", "moves"]) assert.notStrictEqual(fake.team.files[key], real.team.files[key], `${where}: stesso file ${key}`);
+    const realIds = new Set(real.cards.map((c) => c.playerId));
+    assert(!fake.cards.some((c) => realIds.has(c.playerId)), `${where}: carte con gli stessi giocatori`);
+    const realCoaches = new Set((real.coaches || []).map((c) => c.id));
+    assert(!(fake.coaches || []).some((c) => realCoaches.has(c.id)), `${where}: stesso allenatore`);
+    assert.notStrictEqual(fake.currency.id, real.currency.id, `${where}: stessa valuta`);
+    assert.notStrictEqual(fake.save.currencyField || "balance", real.save.currencyField || "balance", `${where}: stesso campo valuta`);
+  }
+}
+
 // Parita' di Halloween con i valori che prima erano scritti nel codice: si spostano, non cambiano.
 const h = readJson(path.join(DIR, "halloween2026.json"));
 assert.deepStrictEqual(JSON.parse(JSON.stringify(h.economy)), { pullPrice: 200, winPrize: 300, luckyPrize: 600, luckyChancePercent: 10 });

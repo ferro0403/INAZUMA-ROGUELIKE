@@ -294,6 +294,12 @@ export const tests = [
       const won = (after[DEV].gachaAcquiredCards || []).filter((c) => String(c.cardId).startsWith("prova_dev::"));
       const coach = (after[DEV].coachOwnedIds || []).length > (before[REAL]?.coachOwnedIds || []).length;
       assert.ok(won.length === 1 || coach, "la capsula ha dato una carta dell'evento finto o l'allenatore");
+      // Passo 4.2: carte e allenatore propri dell'evento finto (Angeli di prova), mai quelli di Halloween.
+      const fakeRoster = await g.page.evaluate(() => window.GameEvents.get("prova_dev").cards.map((c) => c.playerId));
+      for (const c of won) assert.ok(fakeRoster.includes(String(c.cardId).split("::")[1]), `carta fuori dalla squadra di prova: ${c.cardId}`);
+      if (coach) assert.ok(after[DEV].coachOwnedIds.includes("prova-coach-1"), "l'allenatore ottenuto e' quello di prova");
+      assert.ok(!(after[DEV].coachOwnedIds || []).includes("halloween-coach-54") ||
+        (before[REAL]?.coachOwnedIds || []).includes("halloween-coach-54"), "Hekyll non arriva dall'evento finto");
     },
   },
   {
