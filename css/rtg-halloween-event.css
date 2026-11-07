@@ -6,6 +6,11 @@
   --event-background:var(--ir-black);--event-background-image:none;
   --event-coin-radius:50%;--event-coin-blend:normal}
 
+/* Passo 3.6d: riquadro in piu' che un pezzo aggiuntivo mette nella home del suo evento (hook "homeSection"). */
+.event-extra-section{background:var(--event-surface);color:var(--event-text);border:3px solid var(--event-primary);padding:16px;margin:12px 0}
+.event-extra-section .eyebrow{color:var(--event-accent)}
+.event-extra-section h2{color:var(--event-text)}
+
 /* Passo 3.6b: pelle BASE delle carte di un evento (per gli eventi che non nominano una pelle propria in theme.skin).
    Stessa struttura della carta Halloween, con i colori base dell'evento (classe .rtg-event--<id> messa dal registro).
    La striscia della rarita' in alto non si tocca: resta quella di tutte le carte. */

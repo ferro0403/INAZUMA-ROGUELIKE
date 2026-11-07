@@ -4,7 +4,7 @@
   "use strict";
   global.GameEvents?.extend?.("prova_dev", {
     homeSection({ escape }) {
-      return '<section class="panel rtg-run-command event-extra-section" data-event-extra="prova_dev">' +
+      return '<section class="panel event-extra-section" data-event-extra="prova_dev">' +
         '<span class="eyebrow">' + escape("PEZZO AGGIUNTIVO") + '</span>' +
         '<h2>' + escape("Solo nell'evento di prova") + '</h2>' +
         '<p>' + escape("Questo riquadro arriva dal file js/events/prova_dev/pezzo-di-prova.js.") + '</p></section>';
