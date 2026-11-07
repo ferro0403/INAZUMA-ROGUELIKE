@@ -321,5 +321,16 @@
   "assets": {
     "banner": "https://img.magnific.com/foto-gratuito/illustrazione-digitale-di-halloween_23-2151822706.jpg?semt=ais_hybrid&w=740&q=80",
     "background": "https://static9.depositphotos.com/1014889/1236/i/450/depositphotos_12367834-stock-photo-halloween-background-spooky-graveyard.jpg"
+  },
+  "theme": {
+    "colors": {
+      "primary": "#ff8c0b",
+      "secondary": "#f35c10",
+      "accent": "#ffcc7c",
+      "text": "#ffe6b1",
+      "ink": "#140c0b",
+      "surface": "#21111a",
+      "background": "#08090d"
+    }
   }
 }

@@ -152,6 +152,20 @@ for (const m of capsuleEvents) {
   for (const key of ["name", "unit", "unitUpper", "iconAlt"]) assert(m.currency[key], `${m.id}: currency.${key}`);
   for (const key of ["matchIdPrefix", "matchNodeId"]) assert(m.save[key], `${m.id}: save.${key}`);
 }
+// Passo 3.6a: ogni evento a capsule ha i suoi colori base (theme.colors) e un aspetto diverso dagli altri.
+const THEME_KEYS = Array.from(events.THEME_COLORS);
+for (const m of capsuleEvents) {
+  assert.deepStrictEqual(Object.keys(m.theme.colors).sort(), [...THEME_KEYS].sort(), `${m.id}: colori base dell'evento`);
+}
+const primaries = capsuleEvents.map((m) => m.theme.colors.primary.toLowerCase());
+assert.strictEqual(new Set(primaries).size, primaries.length, "ogni evento ha il suo colore principale");
+// Le schermate degli eventi prendono i colori dall'evento: nelle regole comuni non restano gli sfondi di Halloween.
+const eventCss = fs.readFileSync("css/rtg-halloween-event.css", "utf8");
+assert.match(eventCss, /:root\{--event-primary:/, "valori neutri della grafica comune degli eventi");
+assert.doesNotMatch(eventCss, /depositphotos/, "lo sfondo della home dell'evento viene dal file dell'evento");
+const eventModule = fs.readFileSync("js/road-to-glory/rtg-halloween-event.js", "utf8");
+assert.match(eventModule, /GameEvents\?\.applyTheme\?\.\(app,EVENT_ID\)/, "i colori dell'evento si applicano all'apertura");
+assert.match(eventModule, /GameEvents\?\.clearTheme\?\.\(app\)/, "e si tolgono all'uscita");
 const seenTitles = new Set();
 for (const m of capsuleEvents) {
   assert(!seenTitles.has(m.labels.ui.entryTitle), `${m.id}: titolo dell'ingresso uguale a un altro evento`);

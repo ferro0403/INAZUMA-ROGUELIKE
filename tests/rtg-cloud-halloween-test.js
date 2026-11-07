@@ -198,6 +198,9 @@ async function main() {
   } finally {
     Date.now=realNow;
   }
+  // Dal 7 nov 2026 Halloween e' concluso davvero: il resto del test gioca l'evento all'ora degli eventi del
+  // 3 nov (come le prove nel browser), con il comando ?oraEvento= del Passo 4.1. Il controllo della chiusura e' sopra.
+  context.GameEvents.setEventTime("2026-11-03T13:00:00+01:00");
   assert.equal(E.weightedPick(["custom_0002","custom_0001"],0),"custom_0002");
   assert.throws(()=>E.eventState({pumpkins:-1,ownedIds:[],completedIds:[],pullCount:0,luckyWins:0}),/halloween-invalid-account/);
   const controller=E.create({app,storage,toast:()=>{},squadView,runView:nativeRunView,

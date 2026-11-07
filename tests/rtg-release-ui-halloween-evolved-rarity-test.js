@@ -25,7 +25,7 @@ test("Mobile RTG home: compact CTA and existing navigation contracts",()=>{
   assert(!index.includes("rtg-release-polish-20261030.css"),"No illegal finishing stylesheets");
   assert(index.includes("css/game.css?v=20261104-css-tokens-1"), "game.css cambiato il 4 nov 2026 (file uniti): nuova chiave anti-cache");
   assert(index.includes("css/rtg-theme.css?v=20261104-css-tokens-1"));
-  assert(index.includes("css/rtg-halloween-event.css?v=20261105-halloween-card-1"));
+  assert(index.includes("css/rtg-halloween-event.css?v=20261107-grafica-eventi-1"));
   assert(index.includes("home-view.js?v=20260923-rtg-direct-paint-p1-compact-v1"),
     "Mobile home HTML must be cache-busted");
 });
@@ -124,7 +124,7 @@ test("Halloween XI: EXACT original prematch cards, HW badges and Album detail ro
   assert(event.indexOf("'</section>'+opponentPreviewSection()") > event.indexOf("data-halloween-open-vending"));
   assert.match(css,/\.halloween-opponent-preview-field\.rtg-prematch-shell/);
   assert.doesNotMatch(css,/Exact tactical card anatomy|rtg-shared-match-card\.boss-match-card/);
-  assert(index.includes("rtg-halloween-event.js?v=20261107-etichette-1"));
+  assert(index.includes("rtg-halloween-event.js?v=20261107-grafica-eventi-1"));
 });
 
 test("Release scope: the requested UI changes never write save, cloud or rewards",()=>{

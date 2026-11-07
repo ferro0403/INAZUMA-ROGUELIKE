@@ -162,5 +162,16 @@
   "assets": {
     "banner": "assets/rtg/rtg-orion-route-map-user.webp",
     "background": "assets/rtg/rtg-season3-route-map-user.webp"
+  },
+  "theme": {
+    "colors": {
+      "primary": "#4fb3ff",
+      "secondary": "#2f6fe0",
+      "accent": "#9fe3ff",
+      "text": "#eaf6ff",
+      "ink": "#0b1424",
+      "surface": "#13233d",
+      "background": "#060b16"
+    }
   }
 }
