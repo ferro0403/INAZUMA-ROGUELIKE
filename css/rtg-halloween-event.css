@@ -6,6 +6,33 @@
   --event-background:var(--ir-black);--event-background-image:none;
   --event-coin-radius:50%;--event-coin-blend:normal}
 
+/* Parte 2 (b): pagine proprie di un evento (home e schermate del suo pezzo aggiuntivo). Pezzi comuni, colori dell'evento. */
+.event-page{min-height:100dvh;padding:12px 12px 80px;background:linear-gradient(180deg,var(--event-background),var(--event-surface));
+  color:var(--event-text);display:flex;flex-direction:column;gap:12px}
+.event-page__top{display:flex;align-items:center;gap:10px}
+.event-page__titles{flex:1;min-width:0}
+.event-page__titles small{display:block;color:var(--event-accent);font-size:11px;font-weight:900;letter-spacing:.12em}
+.event-page__titles h1{margin:2px 0 0;font-size:clamp(20px,6vw,30px);line-height:1.05;color:var(--event-text)}
+.event-page__back{min-width:44px;background:var(--event-surface);color:var(--event-text);border:2px solid var(--event-primary)}
+.event-page__wallet{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.event-page__panel{background:color-mix(in srgb,var(--event-surface) 92%,transparent);border:2px solid var(--event-primary);
+  padding:14px;display:flex;flex-direction:column;gap:8px}
+.event-page__hero strong{font-size:22px;color:var(--event-primary)}
+.event-page__grid{display:grid;gap:10px}
+.event-page__team{flex-direction:row;align-items:center;gap:12px}
+.event-page__team img{width:56px;height:56px;object-fit:contain}
+.event-page__team div{flex:1;display:flex;flex-direction:column}
+.event-page__team small{color:var(--event-accent)}
+.event-page__actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.event-page .btn{background:var(--event-surface);color:var(--event-text);border:2px solid var(--event-primary)}
+.event-page .btn.event-page__cta{background:var(--event-primary);color:var(--event-ink)}
+.event-page .btn:disabled{opacity:.5}
+.event-page__chips{display:flex;flex-wrap:wrap;gap:8px}
+.event-page__chip{display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;border:2px solid var(--event-primary);
+  background:var(--event-surface);color:var(--event-text);font-weight:800}
+.event-page__chip small{color:var(--event-accent);font-size:10px}
+.event-page__chip.is-picked{background:var(--event-primary);color:var(--event-ink)}
+
 /* Passo 3.6d: riquadro in piu' che un pezzo aggiuntivo mette nella home del suo evento (hook "homeSection"). */
 .event-extra-section{background:var(--event-surface);color:var(--event-text);border:3px solid var(--event-primary);padding:16px;margin:12px 0}
 .event-extra-section .eyebrow{color:var(--event-accent)}

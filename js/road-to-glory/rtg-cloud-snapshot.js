@@ -155,6 +155,12 @@
       return [eventId, Object.fromEntries(Object.entries(ledger).map(([key, entry]) => {
         if (!identifier(key)) throw failure("rtg-cloud-invalid-events", eventId);
         if (count(entry)) return [key, entry];
+        // Parte 2 (b): dati propri di un evento (schermate e meccaniche sue), solo dati semplici e piccoli.
+        if (key === "extra") {
+          const text = object(entry) ? JSON.stringify(entry) : "";
+          if (!text || text.length > 8000) throw failure("rtg-cloud-invalid-events", eventId);
+          return [key, JSON.parse(text)];
+        }
         const list = ids(entry, `events.${eventId}.${key}`);
         if (list.length > 500 || list.some((id) => id.length > 120)) throw failure("rtg-cloud-invalid-events", eventId);
         return [key, list];

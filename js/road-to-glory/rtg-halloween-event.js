@@ -1108,17 +1108,95 @@
       });
       notify("DEV: 99.999 "+CUR.unit+" "+UI.short+" disponibili");
     }
+    // Parte 2 (b): home e schermate proprie di un evento (pezzo aggiuntivo: home, screens). La parte comune offre
+    // solo strumenti; sezione Squadra, partita e distributore restano quelli comuni (pulsanti data-event-action).
+    const customPart=name=>name==="home"?global.GameEvents?.extensionPart?.(EVENT_ID,"home"):
+      (global.GameEvents?.extensionPart?.(EVENT_ID,"screens")||{})[name]||null;
+    let customHomeFailed=false;
+    function ownEventCard(pid){return manifest.cards.some(card=>card.playerId===asId(pid));}
+    const tools=Object.freeze({
+      eventId:EVENT_ID,labels:manifest.labels,escape,text:key=>uiText(key),
+      isOpen,countdown,
+      currencies:()=>CURRENCIES.map(c=>({id:c.id,name:c.name,unit:c.unit,icon:c.icon})),
+      balance:currencyId=>Number(ledger(shared)?.[fieldOf(currencyId)]||0),
+      coin:(amount,currencyId)=>currency(amount,curOf(fieldOf(currencyId))),
+      wallet:()=>walletPills(),
+      teams:()=>TEAMS.map(t=>({teamId:t.teamId,name:t.name,logo:t.logo||LOGO_URL})),
+      player:pid=>player(asId(pid)),
+      ownedCards:()=>manifest.cards.map(card=>card.playerId).filter(pid=>isOwned(pid))
+        .map(pid=>({playerId:pid,cardId:EVENT_ID+"::"+pid,player:player(pid)})),
+      inSquad:pid=>[...(localSquad?.lineup||[]),...(localSquad?.bench||[])].includes(EVENT_ID+"::"+asId(pid)),
+      data:()=>clone(ledger(shared)?.extra||{}),
+      // Salva dati propri dell'evento (solo dati semplici) nello stato dell'evento, campo extra.
+      save:updater=>perform(()=>mutate("event-extra",account=>{
+        const l=ledger(account);const next=updater(clone(l.extra||{}));
+        if(!next||typeof next!=="object"||Array.isArray(next))throw fail("event-extra-invalid");
+        l.extra=JSON.parse(JSON.stringify(next));
+      })),
+      spend:(currencyId,amount)=>perform(()=>mutate("event-spend",account=>{
+        const l=ledger(account),field=fieldOf(currencyId),n=Math.max(0,Math.floor(Number(amount)||0));
+        if(Number(l[field]||0)<n)throw fail("event-insufficient-currency");l[field]=Number(l[field]||0)-n;})),
+      earn:(currencyId,amount)=>perform(()=>mutate("event-earn",account=>{
+        const l=ledger(account),field=fieldOf(currencyId);l[field]=Number(l[field]||0)+Math.max(0,Math.floor(Number(amount)||0));})),
+      // Consuma carte e ne crea altre: solo carte di QUESTO evento; una carta in squadra non si consuma.
+      exchangeCards:(consumeIds,grantIds)=>perform(()=>mutate("event-exchange",account=>{
+        const l=ledger(account);
+        const take=(consumeIds||[]).map(asId),give=(grantIds||[]).map(asId);
+        if(take.concat(give).some(pid=>!ownEventCard(pid)))throw fail("event-foreign-card");
+        if(take.some(pid=>!l.ownedIds.includes(pid)||tools.inSquad(pid)))throw fail("event-card-not-available");
+        if(give.some(pid=>l.ownedIds.includes(pid)&&!take.includes(pid)))throw fail("event-card-already-owned");
+        l.ownedIds=l.ownedIds.filter(pid=>!take.includes(pid));
+        account.gachaAcquiredCards=account.gachaAcquiredCards.filter(card=>!take.map(pid=>EVENT_ID+"::"+pid).includes(card?.cardId));
+        for(const pid of give){l.ownedIds.push(pid);account.gachaAcquiredCards.push(recordCard(pid));}
+      })),
+      toast:message=>notify(message),
+      go:name=>{view=name==="home"?"match":"screen:"+name;render();},
+      openSquad:()=>{view="squad";render();},
+      openAlbum:()=>{view="album";render();},
+      openVending:()=>{view="vending";render();},
+      startMatch:teamId=>{if(TEAMS.some(t=>t.teamId===teamId))challengeTeamId=teamId;return perform(startMatch);},
+      exit:()=>{dispose();deps.onReturn?.();},
+    });
+    function customPageMarkup(name){
+      const part=customPart(name);
+      if(!part||typeof part.render!=="function")return null;
+      try{return String(part.render(tools)||"");}
+      catch(error){global.console?.warn?.(`[eventi] pagina ${name} di ${EVENT_ID} non riuscita`,error);return null;}
+    }
+    function bindCustomPage(name){
+      const part=customPart(name);
+      try{part?.bind?.(app,tools);}catch(error){global.console?.warn?.(`[eventi] pagina ${name} di ${EVENT_ID}`,error);}
+    }
+    function bindEventActions(){
+      app.querySelectorAll?.("[data-event-action]")?.forEach(el=>el.addEventListener("click",()=>{
+        const action=el.dataset.eventAction;
+        if(action==="pull")tools.openVending();
+        else if(action==="squad")tools.openSquad();
+        else if(action==="album")tools.openAlbum();
+        else if(action==="start")tools.startMatch(el.dataset.eventTeam||TEAM_ID);
+        else if(action==="screen")tools.go(el.dataset.eventScreen||"home");
+        else if(action==="home")tools.go("home");
+        else if(action==="exit")tools.exit();
+      }));
+    }
     function render() {
       if(!app)return;
       const resetScrollOnNavigation=lastPresentedView!==view;
       lastPresentedView=view;
       if(matchTimer!=null){global.clearTimeout?.(matchTimer);matchTimer=null;}
       if(view!=="vending"){vendingMotion?.stop?.();vendingMotion=null;}
-      if(view==="squad")app.innerHTML=squadSection();
+      const customName=view.startsWith("screen:")?view.slice(7):(view==="match"&&!match&&!customHomeFailed?"home":"");
+      const customMarkup=customName?customPageMarkup(customName):null;
+      if(customName==="home"&&customMarkup===null&&customPart("home"))customHomeFailed=true;
+      if(customMarkup!==null)app.innerHTML=customMarkup;
+      else if(view.startsWith("screen:")){view="match";return render();}
+      else if(view==="squad")app.innerHTML=squadSection();
       else if(view==="album"||view==="album-roster")app.innerHTML=albumSection();
       else if(match&&view==="match"&&deps.matchView)app.innerHTML=nativeMatchMarkup();
       else app.innerHTML=shell(view==="vending"?vendingSection():match?pendingSection():matchSection());
       if(devMode)app.innerHTML+=devToolsMarkup();
+      bindEventActions();
+      if(customMarkup!==null)bindCustomPage(customName);
       if(devMode)app.querySelector?.("[data-halloween-dev-pumpkins]")?.addEventListener("click",event=>{
         const button=event.currentTarget;
         if(button.disabled)return;

@@ -312,18 +312,15 @@ export const tests = [
       assert.notEqual(looks[0].image, looks[1].image, "immagini diverse");
       assert.equal(looks[1].image, "assets/rtg/rtg-orion-route-map-user.webp");
       await g.click("[data-rtg-event-open=prova_dev]");
-      await g.waitText("#app", /Formazione valida/i);
-      // 11 avversari al loro posto (Angeli di prova in 4-2-4; prima se ne vedevano 9 nel 4-4-2 fisso).
-      assert.equal(await g.page.evaluate(() => document.querySelectorAll(".halloween-opponent-preview-field .tactical-player-card").length), 11, "11 titolari avversari nell'evento di prova");
-      assert.match(await g.text("#app .brand"), /^PROVA$/, "l'evento di prova ha il suo titolo");
-      // Passo 3.6d: aspetto completo e diverso da Halloween, e il suo pezzo aggiuntivo nella home.
-      assert.ok(await g.page.locator("[data-event-extra=prova_dev]").count(), "riquadro del pezzo aggiuntivo di prova");
+      // Parte 2 (b): l'evento di prova ha la sua home (pezzo aggiuntivo), non quella comune.
+      await g.page.waitForSelector(".event-page--prova");
+      assert.ok(await g.page.locator("[data-event-extra=prova_dev]").count(), "home propria dell'evento di prova");
       assert.equal(await g.page.evaluate(() => getComputedStyle(document.querySelector("#app")).getPropertyValue("--event-primary").trim()),
         "#4fb3ff", "colori dell'evento di prova");
-      assert.match(await g.page.locator("#app .halloween-currency img").first().getAttribute("src"), /prova_dev\/gettone\.webp$/,
-        "moneta dell'evento di prova");
+      assert.match(await g.page.locator("#app .event-page__wallet .halloween-currency img").first().getAttribute("src"),
+        /prova_dev\/gettone\.webp$/, "moneta dell'evento di prova");
       await g.devHalloweenPumpkins();
-      await g.click("[data-halloween-open-vending]");
+      await g.click("[data-event-action=pull]");
       assert.match(await g.text("#app .rtg-vending-wallet-chip"), /GETTONI PROVA/, "valuta dell'evento di prova");
       await g.click("[data-halloween-pull]:not([disabled])");
       await g.page.locator("[data-rtg-pull-continue], [data-rtg-coaches-collection]").locator("visible=true").first()
@@ -347,7 +344,7 @@ export const tests = [
       if (await continueButton.count()) await continueButton.first().click();
       else await g.page.evaluate(() => document.querySelector("#modal-root [data-close-modal]")?.click());
       await g.click("[data-halloween-close-vending]").catch(() => {});
-      await g.page.evaluate(() => document.querySelector("[data-halloween-back]")?.click());
+      await g.page.evaluate(() => document.querySelector("[data-halloween-back],[data-event-action=exit]")?.click());
       if (!(await g.page.locator("[data-rtg-event-open]").count())) await g.click("[data-rtg-home-open=campaigns]");
       await g.click("[data-rtg-event-open=halloween2026]");
       await g.waitText("#app", /Formazione valida/i);
@@ -393,6 +390,62 @@ export const tests = [
     },
   },
   {
+    name: "15-evento-home-propria",
+    // Parte 2 (a)+(b): l'evento di prova ha una home sua (due squadre da sfidare, due monete) e una schermata sua
+    // (Laboratorio: 2 carte dell'evento diventano 1 carta nuova, costa 1 stella), fatte con gli strumenti comuni.
+    // Distributore, squadra e partita restano quelli comuni. L'account vero non cambia. Se la home dell'evento si
+    // rompe, si torna alla home comune.
+    async run({ game, assert }) {
+      const g = await game({ dev: true, query: "evento=prova_dev" });
+      await g.unlockAllFreeAgents();
+      const REAL = "shared:account", DEV = "dev:prova_dev:shared:account";
+      const before = await g.readRtgRecords([REAL]);
+      await g.click("[data-rtg-home-open=campaigns]");
+      await g.click("[data-rtg-event-open=prova_dev]");
+      await g.page.waitForSelector(".event-page--prova");
+      assert.deepEqual(await g.page.$$eval("[data-event-action=start]", (els) => els.map((e) => e.dataset.eventTeam)),
+        ["prova-angeli", "prova-orchi"], "una sfida per squadra");
+      assert.equal(await g.page.locator(".event-page__wallet .halloween-currency").count(), 2, "due monete");
+      assert.equal(await g.page.locator(".halloween-event-hero-crest").count(), 0, "non e' la home di Halloween");
+      await g.devHalloweenPumpkins();
+      await g.click("[data-event-action=pull]");
+      for (let i = 0; i < 3; i++) {
+        await g.click("[data-halloween-pull]:not([disabled])");
+        await g.page.locator("[data-rtg-pull-continue], [data-rtg-coaches-collection]").locator("visible=true").first().waitFor({ timeout: 20000 });
+        if (await g.page.locator("#modal-root [data-rtg-coach-detail]").count()) await g.click("#modal-root [data-close-modal]");
+        else await g.click("[data-rtg-pull-continue]");
+      }
+      await g.click("[data-halloween-close-vending]");
+      await g.click("[data-event-action=screen][data-event-screen=lab]");
+      await g.page.waitForSelector("[data-lab-card]");
+      const cards = await g.page.$$eval("[data-lab-card]", (els) => els.map((e) => e.dataset.labCard));
+      assert.ok(cards.length >= 2, "almeno 2 carte dal distributore");
+      const ledger = async () => (await g.readRtgRecords([DEV]))[DEV].events.prova_dev;
+      const start = await ledger();
+      await g.click(`[data-lab-card="${cards[0]}"]`);
+      await g.click(`[data-lab-card="${cards[1]}"]`);
+      await g.click("[data-lab-create]:not([disabled])");
+      await g.page.waitForFunction(() => /Nuova carta/.test(document.querySelector("#toast-root")?.innerText || ""));
+      const end = await ledger();
+      assert.ok(!end.ownedIds.includes(cards[0]) && !end.ownedIds.includes(cards[1]), "le 2 carte sono consumate");
+      assert.equal(end.ownedIds.length, start.ownedIds.length - 1, "2 carte in meno, 1 in piu'");
+      assert.equal(end.stars, start.stars - 1, "1 stella spesa");
+      assert.equal(end.extra?.creations, 1, "dato proprio dell'evento salvato");
+      assert.deepEqual((await g.readRtgRecords([REAL]))[REAL] ?? null, before[REAL] ?? null, "account vero invariato");
+      await g.click("[data-event-action=home]");
+      await g.click("[data-event-action=start][data-event-team=prova-orchi]");
+      await g.waitText("#app", /ORCHI DI PROVA/);
+      // Home dell'evento rotta: si torna alla home comune, il gioco non si ferma.
+      const broken = await game({ dev: true, query: "evento=prova_dev" });
+      await broken.unlockAllFreeAgents();
+      await broken.page.evaluate(() => window.GameEvents.extend("prova_dev", { home: { render() { throw new Error("rotta"); } } }));
+      await broken.click("[data-rtg-home-open=campaigns]");
+      await broken.click("[data-rtg-event-open=prova_dev]");
+      await broken.waitText("#app", /Formazione valida/i);
+      assert.equal(await broken.page.locator(".event-page--prova").count(), 0, "home comune al posto di quella rotta");
+    },
+  },
+  {
     name: "13-ora-evento",
     // Passo 4.1: ?dev=1&oraEvento=2026-11-07 mostra Halloween concluso (l'orologio delle prove e' fermo al 3 nov),
     // senza toccare l'orologio della pagina e senza scrivere nel salvataggio. Senza ?dev=1 il parametro non vale.
@@ -423,7 +476,7 @@ export const tests = [
       await mixed.click("[data-rtg-event-open=halloween2026]").catch(() => {});
       assert.ok(await mixed.page.locator("[data-rtg-event-open]").count(), "Halloween chiuso non si apre");
       await mixed.click("[data-rtg-event-open=prova_dev]");
-      await mixed.waitText("#app", /Formazione valida/i);
+      await mixed.page.waitForSelector(".event-page--prova");
     },
   },
 ];
