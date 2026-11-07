@@ -57,27 +57,27 @@
 /* Moneta dell'evento: forma e fusione con lo sfondo dal file dell'evento (theme.coin). */
 .halloween-currency img{display:inline-block;width:29px;height:29px;border-radius:var(--event-coin-radius);object-fit:cover;mix-blend-mode:var(--event-coin-blend)}
 .halloween-graveyard{background:linear-gradient(180deg,color-mix(in srgb,var(--event-background) 72%,transparent),color-mix(in srgb,var(--event-ink) 90%,transparent)),var(--event-background-image) center center / cover;min-height:420px;padding:22px;display:flex;align-items:flex-start;justify-content:center}
-.halloween-match-card,.halloween-squad{background:linear-gradient(160deg,#120d14e8,#280f0be8);border:2px solid #f77f18;border-radius:10px;padding:20px;width:min(100%,750px);box-shadow:0 7px 25px #000b, inset 0 0 30px #fb5a0d16}
+.halloween-match-card,.halloween-squad{background:linear-gradient(160deg,color-mix(in srgb,var(--event-ink) 91%,transparent),color-mix(in srgb,var(--event-surface) 91%,transparent));border:2px solid var(--event-primary);border-radius:10px;padding:20px;width:min(100%,750px);box-shadow:0 7px 25px color-mix(in srgb,var(--event-background) 73%,transparent), inset 0 0 30px color-mix(in srgb,var(--event-secondary) 9%,transparent)}
 .halloween-match-card:before,.halloween-vending:before,.halloween-album:before{content:"🕸";position:absolute;right:16px;top:8px;font-size:29px;opacity:.55;pointer-events:none}
-.halloween-match-card h1{font-size:clamp(2.4rem,5vw,4.5rem);color:#ffc77d;text-align:center;margin:16px 0}
-.halloween-match-card h2,.halloween-squad h2,.halloween-vending h2,.halloween-album h2{color:#ff9e26;font-weight:1000;margin:8px 0 13px;letter-spacing:.07em}
-.halloween-match-card p,.halloween-squad p,.halloween-vending p,.halloween-album p{line-height:1.4;color:#f8ddba}
+.halloween-match-card h1{font-size:clamp(2.4rem,5vw,4.5rem);color:var(--event-accent);text-align:center;margin:16px 0}
+.halloween-match-card h2,.halloween-squad h2,.halloween-vending h2,.halloween-album h2{color:var(--event-primary);font-weight:1000;margin:8px 0 13px;letter-spacing:.07em}
+.halloween-match-card p,.halloween-squad p,.halloween-vending p,.halloween-album p{line-height:1.4;color:var(--event-text)}
 .halloween-match-brand{display:flex;align-items:center;gap:20px;padding-bottom:14px;border-bottom:2px solid var(--event-primary)}
 .halloween-crest{width:95px;height:95px;object-fit:contain;flex:0 0 auto}
 .halloween-vampiro{filter:sepia(.12) saturate(.65) hue-rotate(295deg) brightness(.68) contrast(1.32) drop-shadow(0 0 14px #ff304b90)}
 .halloween-match-brand small{color:var(--event-secondary);font-weight:900;letter-spacing:.14em}
 .halloween-action:disabled,.halloween-catalog-item:disabled{filter:grayscale(1);opacity:.55;cursor:not-allowed}
-.halloween-match-card button:not(.halloween-action),.halloween-lineup button,.halloween-choices button{color:#ffdaa4;background:#130e12;border:1px solid #fe7e21;border-radius:5px;padding:10px}
+.halloween-match-card button:not(.halloween-action),.halloween-lineup button,.halloween-choices button{color:var(--event-text);background:var(--event-ink);border:1px solid var(--event-primary);border-radius:5px;padding:10px}
 .halloween-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .halloween-choices .halloween-action{margin:0}
 .halloween-squad{width:min(100%,1000px)}
 .halloween-squad label{font-weight:900;color:var(--event-accent);display:flex;flex-direction:column;gap:6px;margin:13px 0}
 .halloween-squad input,.halloween-squad select{min-height:42px;border:1px solid var(--event-secondary);color:var(--event-text);background:var(--event-ink);border-radius:6px;padding:8px}
-.halloween-player-card{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-width:0;width:100%;aspect-ratio:.73;color:#fff3d9;border:3px solid #ff7711;background:radial-gradient(circle at 55% 35%,#b23b0e 0%,#2a100f 65%,#08080d 100%);border-radius:4px;box-shadow:inset 0 0 0 2px #23120b,0 2px 8px #000a;overflow:hidden;text-align:center}
-.halloween-player-card:before{content:"🦇  🎃";position:absolute;top:13%;left:0;right:0;color:#11060b;font-size:1.1rem;opacity:.7;z-index:0}
-.halloween-player-card strong{font-size:clamp(.71rem,1vw,.92rem);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:5px 3px;background:#0f0b0ddf;z-index:2}
-.halloween-player-card small{z-index:2;position:absolute;top:5px;left:5px;color:#0e0a0a;background:#ffecd0;padding:3px;font-weight:1000}
-.halloween-player-card em{z-index:2;font-weight:900;font-size:.65rem;color:#162e18;background:#a6eec3;font-style:normal;padding:3px}
+.halloween-player-card{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-width:0;width:100%;aspect-ratio:.73;color:var(--event-text);border:3px solid var(--event-primary);background:radial-gradient(circle at 55% 35%,var(--event-secondary) 0%,var(--event-surface) 65%,var(--event-background) 100%);border-radius:4px;box-shadow:inset 0 0 0 2px var(--event-surface),0 2px 8px color-mix(in srgb,var(--event-background) 67%,transparent);overflow:hidden;text-align:center}
+.halloween-player-card:before{content:"🦇  🎃";position:absolute;top:13%;left:0;right:0;color:var(--event-ink);font-size:1.1rem;opacity:.7;z-index:0}
+.halloween-player-card strong{font-size:clamp(.71rem,1vw,.92rem);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:5px 3px;background:color-mix(in srgb,var(--event-ink) 87%,transparent);z-index:2}
+.halloween-player-card small{z-index:2;position:absolute;top:5px;left:5px;color:var(--event-ink);background:var(--event-text);padding:3px;font-weight:1000}
+.halloween-player-card em{z-index:2;font-weight:900;font-size:.65rem;color:var(--event-surface);background:var(--event-text);font-style:normal;padding:3px}
 .halloween-vending,.halloween-album{position:relative;min-height:480px;padding:25px 16px;text-align:center;background:radial-gradient(circle at 50% 30%,var(--event-surface) 0,var(--event-surface) 48%,var(--event-background) 100%)}
 @media(max-width:600px){.halloween-back{padding:8px}.halloween-wallet{width:100%;text-align:right}.halloween-graveyard{padding:9px}.halloween-match-card,.halloween-squad{padding:11px}.halloween-match-brand{gap:10px}.halloween-crest{width:70px;height:70px}.halloween-choices{grid-template-columns:1fr 1fr}}
 
@@ -329,7 +329,7 @@
 }
 .rtg-halloween-picker .rtg-squad-picker,
 .rtg-halloween-picker .rtg-formation-options,
-.rtg-halloween-picker .rtg-player-catalog{background:var(--ir-white)!important;color:#121419!important}
+.rtg-halloween-picker .rtg-player-catalog{background:var(--ir-white)!important;color:var(--event-surface)!important}
 .rtg-halloween-picker .rtg-picker-search>span,
 .rtg-halloween-picker .rtg-picker-season-team-filters label>span,
 .rtg-halloween-picker .rtg-picker-rarity-filter>span{color:#222!important}
@@ -399,7 +399,7 @@
  background:var(--event-surface)!important;border:3px solid var(--event-primary)!important;color:var(--event-text)!important
 }
 .rtg-halloween-pull-modal .rtg-pull-result-head{background:var(--event-surface)!important}
-.rtg-halloween-pull-modal .rtg-pull-reveal-label{background:#ff9028!important;color:#120d13!important}
+.rtg-halloween-pull-modal .rtg-pull-reveal-label{background:var(--event-primary)!important;color:var(--event-ink)!important}
 .rtg-halloween-pull-modal .rtg-pull-result-copy h2{color:var(--event-text)!important}
 .rtg-halloween-pull-modal .rtg-pull-continue{background:var(--event-primary)!important;color:var(--event-ink)!important}
 .rtg-halloween-pull-modal .rtg-pull-balance{background:var(--event-surface)!important;color:var(--event-text)!important}
@@ -463,7 +463,7 @@
 .rtg-halloween-pull-modal .rtg-pull-balance span,
 .rtg-halloween-pull-modal .rtg-pull-meta,
 .rtg-halloween-pull-modal .rtg-pull-player-identity{
-  color:#fff0db!important;opacity:1!important;text-shadow:0 1px 1px #140a11!important
+  color:var(--event-text)!important;opacity:1!important;text-shadow:0 1px 1px var(--event-ink)!important
 }
 .rtg-halloween-pull-modal .rtg-pull-result-head{
   background:var(--event-surface)!important;color:var(--event-text)!important
@@ -679,7 +679,7 @@
 .halloween-event-album-teams .album-team-card__watermark img,
 .halloween-event-album-roster .album-roster-hero__logo img{
   filter:sepia(.3) saturate(.55) hue-rotate(300deg) brightness(.67)
-    contrast(1.48) drop-shadow(0 0 8px #f13c7280)!important;
+    contrast(1.48) drop-shadow(0 0 8px color-mix(in srgb,var(--event-secondary) 50%,transparent))!important;
 }
 .rtg-halloween-run-screen .halloween-event-hero-crest{
   border-color:var(--event-accent);
@@ -687,7 +687,7 @@
   box-shadow:5px 5px 0 var(--event-background);
 }
 .halloween-event-album-teams .album-team-card{
-  border-color:#ee8431!important;
+  border-color:var(--event-primary)!important;
 }
 .halloween-event-album-roster .album-roster-hero__name{
   color:var(--event-text)!important;
@@ -711,7 +711,7 @@
   cursor:pointer!important;
 }
 .halloween-event-album-roster .album-player-entry.is-locked .album-player-card:focus-visible{
-  outline:3px solid #ffad35!important;outline-offset:3px!important;
+  outline:3px solid var(--event-primary)!important;outline-offset:3px!important;
 }
 /* More compact, readable event page: show challenge and capsule shortcut
    together on a small phone without losing the match requirements. */

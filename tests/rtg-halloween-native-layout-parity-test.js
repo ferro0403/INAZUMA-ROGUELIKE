@@ -170,7 +170,7 @@ assert.match(coachesCss,/transform:scale\(1\.52\)/,
 assert.ok(halloweenCss.includes(".rtg-halloween-album-collection .album-collection-title{color:#fffdf6!important"),
   "Event title must be white over the artwork");
 
-assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261107-pezzi-evento-2"));
+assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261107-finestre-evento-1"));
 assert.doesNotMatch(eventSource,/coachMatchStatus\(|halloween-coach-match-status/,
   "Never insert coach banners above native Halloween matches");
 assert.doesNotMatch(halloweenCss,/halloween-coach-match-status/,
@@ -188,7 +188,7 @@ assert.match(eventSource,/data-halloween-prize-color/,
 assert.ok(halloweenCss.includes('[data-halloween-prize-color="orange"] .rtg-vending-prize-v9'));
 assert.ok(halloweenCss.includes('[data-halloween-prize-color="black"] .rtg-vending-prize-v9'));
 
-assert.match(htmlShell,/rtg-coaches\.css\?v=20261107-carte-evento-1/,
+assert.match(htmlShell,/rtg-coaches\.css\?v=20261107-finestre-evento-1/,
   "iPhone must fetch the updated staff contrast rules");
 assert.match(coachesCss,/\.rtg-coach-squad-slot\.rtg-coach-halloween \.rtg-coach-squad-selected strong\s*\{\s*color:#24151a!important/,
   "Hekyll's name must be dark on the parchment background");

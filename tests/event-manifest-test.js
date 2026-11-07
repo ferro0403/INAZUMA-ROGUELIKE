@@ -196,6 +196,15 @@ for (const m of capsuleEvents) for (const src of m.extensions || []) {
   assert(fs.existsSync(src), `${m.id}: pezzo aggiuntivo ${src} mancante`);
   assert(src.startsWith(`js/events/${m.id}/`), `${m.id}: un pezzo aggiuntivo sta nella cartella del suo evento`);
 }
+// Passo 3.6e: nessuna finestra o schermata di un evento (sblocco giocatore, sblocco allenatore, premio, avvisi,
+// gettoni, completamento, pannelli) ha colori fissi: solo le parti delle carte (rarita', pelle di Halloween) li hanno.
+const CARD_PART = /\.player-card|tactical-player-card|player-detail|legacy|vampir|portrait|fullbody|rarity|player-corner|player-info|player-title|player-meta|data-legacy-season|rtg-event-card|rtg-event-detail|detail-native|HW/;
+const fixedWindows = (fs.readFileSync("css/rtg-halloween-event.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "").match(/[^{}]+\{[^{}]*\}/g) || [])
+  .filter((rule) => { const [sel, body] = rule.split("{"); return !/^\s*(@|:root)/.test(sel) && !CARD_PART.test(sel)
+    && /#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(body); });
+assert.deepStrictEqual(fixedWindows, [], `finestre dell'evento con colori fissi: ${fixedWindows.join(" | ").slice(0, 300)}`);
+const coachesCss = fs.readFileSync("css/rtg-coaches.css", "utf8");
+assert.match(coachesCss, /\.rtg-coaches-reward\.rtg-paper-modal\.rtg-event-coach-base\{/, "finestra Nuovo allenatore con i colori dell'evento");
 const primaries = capsuleEvents.map((m) => m.theme.colors.primary.toLowerCase());
 assert.strictEqual(new Set(primaries).size, primaries.length, "ogni evento ha il suo colore principale");
 // Le schermate degli eventi prendono i colori dall'evento: nelle regole comuni non restano gli sfondi di Halloween.
