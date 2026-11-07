@@ -27,7 +27,7 @@ const resolveBasePlayer = (id) => bases[id] || null;
 function canonical() {
   return {
     schemaVersion: 7, coins: 123, legacyCups: 0, cupsBySeason: { ie1: 3, ie1_s2: 2, ie1_s3: 0, ie2: 1, orion: 0 },
-    projects: { Buono: 4, Forte: 3, Elite: 2, Mondiale: 1, Leggenda: 0 }, legacyProjectBuild: { Buono: 0, Forte: 0, Elite: 0, Mondiale: 0, Leggenda: 0 },
+    projects: { Buono: 4, Forte: 3, Elite: 2, Mondiale: 1, Leggenda: 0, Aurico: 0 }, legacyProjectBuild: { Buono: 0, Forte: 0, Elite: 0, Mondiale: 0, Leggenda: 0 },
     unlockedEmblems: ["a"], players: {}, evolutionHistory: [], redeemedRunIds: ["r"], victoryRewardRunIds: ["v"],
   };
 }

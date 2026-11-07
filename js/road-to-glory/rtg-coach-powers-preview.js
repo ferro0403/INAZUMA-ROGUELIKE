@@ -20,13 +20,14 @@
     const all=[...(squad.lineup||[]),...(squad.bench||[])].map(cardId);
     if(!all.includes(key))return null;
     const coachId=config.coachId,details={coachId,player,original:player,note:"",stats:[],pt:null,costs:{}};
-    if(coachId==="208"){
+    const type=engine.typeOf?.(coachId)||"";
+    if(type==="ptBoost"){
       if(config.cardIds.length!==2||!config.cardIds.every(x=>(squad.lineup||[]).map(cardId).includes(x)))return null;
       const base=global.RtgFourMovesRuntime?.ptBreakdown?.(player.baseStats||player.stats||player,player.finalRarity||player.category);
       if(!base)return null;
       details.pt={...base,total:base.total+100,coachBonus:100};details.badge="+100 PT";
       details.note="FIDUCIA NEI CAMPIONI · +100 PT iniziali e massimi per la partita";
-    }else if(coachId==="1329"){
+    }else if(type==="halveMoveCost"){
       if((squad.lineup||[]).every(x=>cardId(x)!==key))return null;
       const moves=engine.fourMoves(player,seasonId);
       const allIndices=engine.availableMoveIndices(moves);
@@ -37,12 +38,12 @@
         details.costs[index]=Math.ceil(price/2);
       }
       details.note="ALLENAMENTO SPECIALIZZATO · tutte le "+allIndices.length+" mosse a metà costo PT";details.badge="PT -50%";
-    }else if(coachId==="1777"){
+    }else if(type==="benchCapOverride"){
       if((squad.bench||[]).every(x=>cardId(x)!==key)||config.cardIds.length!==1)return null;
       const overall=Number(player.overall);
       details.note="FUORI QUOTA · OVR reale "+overall+" · contributo al limite squadra "+Math.min(overall,60)+" (su 15 giocatori)";
       details.badge="CAP "+Math.min(overall,60);
-    }else if(coachId==="4401"){
+    }else if(type==="elementTransform"){
       if((squad.lineup||[]).every(x=>cardId(x)!==key))return null;
       const target=config.targets?.find(t=>t.cardId===key)||
         (config.cardIds.length===1?{cardId:key,element:config.element}:null);
@@ -60,7 +61,7 @@
       }else{
         details.note="CAMBIO DI ELEMENTO · "+shown+" durante la partita (selezione precedente)";
       }
-    }else if(coachId==="1974"){
+    }else if(type==="rarityUpgrade"){
       // Both selected players have independent temporary upgrades; keep the
       // old one-player saved configuration readable until it is changed.
       if(config.cardIds.length<1||config.cardIds.length>2)return null;

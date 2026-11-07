@@ -69,15 +69,12 @@
   isolation: isolate;
   border: 3px solid var(--album-ink);
   border-radius: 0;
-  background: #111216;
-  color: #fffdf6;
+  background: var(--ir-ink);
+  color: var(--ir-paper);
   text-align: left;
-  box-shadow: 7px 8px 0 rgba(17, 18, 22, .28);
+  box-shadow: 7px 8px 0 var(--ir-ink-a28);
 }
 
-.album-collections-screen .album-collection-card::before {
-  content: none;
-}
 
 .album-collections-screen .album-collection-card:hover,
 .album-collections-screen .album-collection-card:focus-visible {
@@ -107,7 +104,7 @@
   z-index: 1;
   background:
     linear-gradient(180deg, rgba(17, 18, 22, .04) 0%, rgba(17, 18, 22, .10) 38%, rgba(17, 18, 22, .82) 72%, rgba(17, 18, 22, .96) 100%),
-    linear-gradient(90deg, rgba(17, 18, 22, .16), transparent 38%, rgba(17, 18, 22, .08));
+    linear-gradient(90deg, var(--ir-ink-a16), transparent 38%, rgba(17, 18, 22, .08));
   pointer-events: none;
 }
 
@@ -147,11 +144,11 @@
   padding: clamp(20px, 3.4vw, 30px);
   border: 0;
   background: transparent;
-  color: #fffdf6;
+  color: var(--ir-paper);
 }
 
 .album-collections-screen .album-collection-title {
-  color: #fffdf6;
+  color: var(--ir-paper);
   font-size: clamp(2rem, 4.8vw, 3rem);
   font-weight: 1000;
   line-height: .98;
@@ -164,7 +161,7 @@
   align-items: end;
   justify-content: space-between;
   gap: 14px;
-  color: #fffdf6;
+  color: var(--ir-paper);
   font-size: clamp(.9rem, 2vw, 1.05rem);
   font-weight: 800;
   line-height: 1.18;
@@ -186,7 +183,7 @@
 .album-collections-screen .album-collection-progress-bar {
   height: 13px;
   overflow: hidden;
-  border: 2px solid #fffdf6;
+  border: 2px solid var(--ir-paper);
   border-radius: 0;
   background: rgba(255, 253, 246, .24);
 }

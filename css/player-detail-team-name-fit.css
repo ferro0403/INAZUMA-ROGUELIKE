@@ -13,15 +13,11 @@
   max-width: min(580px, calc(100vw - 180px));
   overflow: hidden;
 }
-.player-detail-modal .player-detail-team img,
-.player-detail-modal .player-detail-team .team-logo-placeholder {
-  flex: 0 0 auto;
-}
 .player-detail-modal .player-detail-team strong {
   display: block !important;
-  flex: 0 1 auto !important;
+  flex: 0 1 auto;
   min-width: 0 !important;
-  max-width: 100% !important;
+  max-width: 100%;
   overflow: hidden !important;
   white-space: nowrap !important;
   text-overflow: ellipsis !important;
@@ -37,9 +33,6 @@
   max-width: min(520px, calc(100vw - 240px)) !important;
 }
 @media (max-width: 520px) {
-  .player-detail-modal .player-detail-team {
-    max-width: calc(100vw - 150px);
-  }
   .player-detail-modal .player-detail-hero:not(:has(.player-detail-rtg-legacy-badge)) .player-detail-team {
     max-width: calc(100vw - 100px);
   }

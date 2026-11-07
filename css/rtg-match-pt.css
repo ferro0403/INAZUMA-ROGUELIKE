@@ -17,7 +17,7 @@
 .rtg-paper-modal .rtg-pt-open-selector { border-left:7px solid var(--rtg-pt-action); }
 .rtg-paper-modal .rtg-pt-selector-chevron { font-size:2.2rem; font-weight:1000; align-self:center; margin-right:7px; }
 .rtg-paper-modal .rtg-pt-technique-picker {
-  margin-top:12px; border:3px solid #111216; border-radius:8px;
+  margin-top:12px; border:3px solid var(--ir-ink); border-radius:8px;
   background:#fffbee; padding:10px; box-shadow:5px 5px 0 #16161b;
   display:grid; gap:8px; min-width:0;
 }
@@ -25,7 +25,7 @@
 .rtg-pt-technique-heading strong { font-size:.8rem; letter-spacing:.075em; }
 .rtg-pt-technique-heading span { font-size:.69rem; font-weight:850; color:#65645e; }
 .rtg-paper-modal .rtg-pt-technique-option {
-  text-align:left; background:#fff; color:#141518; width:100%; min-width:0;
+  text-align:left; background:var(--ir-white); color:#141518; width:100%; min-width:0;
   border:2px solid #17171a; border-left:7px solid var(--rtg-pt-action);
   border-radius:5px; padding:10px 9px; display:grid; gap:7px;
   cursor:pointer; box-shadow:2px 3px 0 #262630;
@@ -40,7 +40,7 @@
 .rtg-pt-option-info .rtg-move-element-badge { padding:2px 7px; border-radius:18px; border:2px solid currentColor; font-size:.66rem; font-style:normal; }
 .rtg-pt-option-info .element-void { color:#7646ac; background:#efe1ff; }
 .rtg-paper-modal .rtg-pt-change-technique {
-  border:2px solid #18181b; background:#fffaf0; width:100%; border-radius:5px;
+  border:2px solid #18181b; background:var(--ir-paper-cream); width:100%; border-radius:5px;
   margin-top:8px; padding:9px; font-size:.74rem; font-weight:950;
   text-transform:uppercase; color:#17171b; cursor:pointer;
 }

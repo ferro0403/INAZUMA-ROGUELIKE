@@ -8,6 +8,7 @@ const c={
 };
 c.globalThis=c;
 vm.createContext(c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-config.js","utf8"),c,{filename:"rtg-config.js"});
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),c,{filename:"rtg-card-identity.js"});
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8"),c,{filename:"rtg-squad-view-base.js"});
 

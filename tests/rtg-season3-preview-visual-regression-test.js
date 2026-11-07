@@ -1,4 +1,5 @@
 "use strict";
+const { withLiteralTokens } = require("./helpers/css-tokens");
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const context={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};context.globalThis=context;vm.createContext(context);
 for(const file of ["js/road-to-glory/rtg-config.js","js/road-to-glory/rtg-route-view.js","js/road-to-glory/rtg-album-view.js","js/road-to-glory/rtg-run-view.js"])vm.runInContext(fs.readFileSync(file,"utf8"),context,{filename:file});
@@ -15,5 +16,5 @@ const candidates=[{cardId:"x",category:"Normale"}],rarities=[{rarity:"Normale",w
 const team=V.vendingMarkup({seasonId:"ie1_s3",mode:"team",cost:300,tokens:300,candidates,rarities});assert(team.includes('data-rtg-vending-mode="team" class="active" aria-pressed="true"'));assert(team.includes("GIRA · 300"));assert(team.includes("<strong>300</strong>"));
 const recruitment=V.vendingMarkup({seasonId:"ie1_s3",mode:"recruitment",cost:150,tokens:150,candidates,rarities});assert(recruitment.includes('data-rtg-vending-mode="recruitment" class="active" aria-pressed="true"'));assert(recruitment.includes("GIRA · 150"));assert(recruitment.includes("<strong>150</strong>"));
 const controller=["js/road-to-glory/rtg-vending-controller.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n");assert(controller.includes('openVending(toggle.dataset.rtgVendingMode)'));assert(controller.includes('gacha.previewPool(campaign,seasonDb,deps.accessibleCards(campaign),selectedMode)'));
-const css=fs.readFileSync("css/rtg-theme.css","utf8");assert(css.includes('background:#ffd21f!important'));assert(css.includes('.rtg-vending-stage>.rtg-vending-pull{margin-top:18px!important;}'));
+const css=withLiteralTokens(fs.readFileSync("css/rtg-theme.css","utf8"));assert(css.includes('background:#ffd21f!important'));assert(css.includes('.rtg-vending-stage>.rtg-vending-pull{margin-top:18px!important;}'));
 console.log("RTG Season 3 preview visual regression tests passed");

@@ -2,6 +2,7 @@
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const vm=require("node:vm");
+const { loadEvents } = require("./helpers/events");
 const css=fs.readFileSync("css/rtg-halloween-event.css","utf8");
 const cardFilter=css.match(/\.halloween-squad-mode \[data-rtg-squad-player\^="halloween2026::"\][\s\S]*?\.player-portrait\{/);
 assert.ok(cardFilter,"Existing Halloween card portrait filter present");
@@ -37,6 +38,8 @@ const registry={
 };
 const ctx={Object,Array,String,Number,Math,Set,Map,JSON,Promise,Error,TypeError,console,SeasonRegistry:registry};
 ctx.globalThis=ctx;
+// Eventi dal file dati (data/events/), come nel gioco.
+loadEvents(ctx);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-squad-controller.js","utf8"),ctx);
 const buttons=new Map();
 function node(selector){

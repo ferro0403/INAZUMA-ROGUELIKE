@@ -3,7 +3,7 @@
 const assert = require("assert");
 const Management = require("../js/development-management-v3.js");
 
-const capacities = { Buono: 50, Forte: 20, Elite: 15, Mondiale: 10, Leggenda: 5 };
+const capacities = { Buono: 50, Forte: 20, Elite: 15, Mondiale: 10, Leggenda: 5, Aurico: 1 };
 const Account = {
   slotUsage(state) {
     const usage = Object.fromEntries(Object.keys(capacities).map((rarity) => [rarity, 0]));
@@ -31,11 +31,11 @@ const state = { players: {
   b: { legacyNormale: null, steps: [step("Buono", 78), step("Forte", 80)] },
   c: { legacyNormale: null, steps: [step("Buono", 79), step("Forte", 84), step("Elite", 85)] },
 } };
-assert.deepStrictEqual(Account.slotUsage(state), { Buono: 1, Forte: 1, Elite: 1, Mondiale: 0, Leggenda: 0 });
+assert.deepStrictEqual(Account.slotUsage(state), { Buono: 1, Forte: 1, Elite: 1, Mondiale: 0, Leggenda: 0, Aurico: 0 });
 assert.deepStrictEqual(Management.buildSlotSummary(state, Account).map(({ rarity, capacity }) => [rarity, capacity]), Object.entries(capacities));
 assert.equal(Account.slotUsage({ players: { a: { legacyNormale: legacy, steps: [] } } }).Buono, 0);
 assert.equal(Account.slotUsage({ players: { a: { legacyNormale: legacy, steps: [step("Buono", 75)] } } }).Buono, 1);
-assert.deepStrictEqual(Account.slotUsage({ players: { b: { legacyNormale: null, steps: [step("Forte", 80)] } } }), { Buono: 0, Forte: 1, Elite: 0, Mondiale: 0, Leggenda: 0 });
+assert.deepStrictEqual(Account.slotUsage({ players: { b: { legacyNormale: null, steps: [step("Forte", 80)] } } }), { Buono: 0, Forte: 1, Elite: 0, Mondiale: 0, Leggenda: 0, Aurico: 0 });
 const overflowAccount = { ...Account, slotUsage: () => ({ Buono: 51 }) };
 assert.deepStrictEqual(Management.buildSlotSummary({ players: {} }, overflowAccount)[0], { rarity: "Buono", used: 51, capacity: 50, display: "51 / 50", overCapacity: true });
 

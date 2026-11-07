@@ -1,0 +1,458 @@
+{
+  "schemaVersion": 1,
+  "seasonId": "prova_dev",
+  "maxMovesPerPlayer": 4,
+  "players": {
+    "2040": {
+      "primaryMoveId": "2040_1",
+      "moves": [
+        {
+          "moveId": "2040_1",
+          "name": "Dawnrise",
+          "type": "defense",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2040_2",
+          "name": "Angel Ball",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2040_3",
+          "name": "Illusory Ball",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2040_4",
+          "name": "The Ikaros",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2043": {
+      "primaryMoveId": "2043_1",
+      "moves": [
+        {
+          "moveId": "2043_1",
+          "name": "Dawnrise",
+          "type": "defense",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2043_2",
+          "name": "Angel Ball",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2043_3",
+          "name": "The Ikaros",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2043_4",
+          "name": "Gladius Arch",
+          "type": "shot",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2045": {
+      "primaryMoveId": "2045_1",
+      "moves": [
+        {
+          "moveId": "2045_1",
+          "name": "Angel Ball",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2045_2",
+          "name": "The Ikaros",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2045_3",
+          "name": "Heaven's Time",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2045_4",
+          "name": "Snow Angel",
+          "type": "defense",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2048": {
+      "primaryMoveId": "2048_1",
+      "moves": [
+        {
+          "moveId": "2048_1",
+          "name": "Heavenly Drive",
+          "type": "shot",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2048_2",
+          "name": "Gungnir",
+          "type": "shot",
+          "element": "Wind",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2048_3",
+          "name": "The Ikaros",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2048_4",
+          "name": "Prima Donna",
+          "type": "dribble",
+          "element": "Mountain",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2049": {
+      "primaryMoveId": "2049_1",
+      "moves": [
+        {
+          "moveId": "2049_1",
+          "name": "Heavenly Drive",
+          "type": "shot",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2049_2",
+          "name": "Shadow Ray",
+          "type": "shot",
+          "element": "Forest",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2049_3",
+          "name": "Ultra Moon",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2049_4",
+          "name": "Angel Ball",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2050": {
+      "primaryMoveId": "2050_1",
+      "moves": [
+        {
+          "moveId": "2050_1",
+          "name": "The End",
+          "type": "save",
+          "element": "Forest",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2050_2",
+          "name": "Giant Spider",
+          "type": "save",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2050_3",
+          "name": "Temporal Wall",
+          "type": "save",
+          "element": "Wind",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2050_4",
+          "name": "Foul Offence 3",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2051": {
+      "primaryMoveId": "2051_1",
+      "moves": [
+        {
+          "moveId": "2051_1",
+          "name": "Duskfall",
+          "type": "defense",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2051_2",
+          "name": "Asteroid Belt",
+          "type": "defense",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2051_3",
+          "name": "Devil Ball",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2051_4",
+          "name": "Dark Tornado",
+          "type": "shot",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2053": {
+      "primaryMoveId": "2053_1",
+      "moves": [
+        {
+          "moveId": "2053_1",
+          "name": "Duskfall",
+          "type": "defense",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2053_2",
+          "name": "Gravitation",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2053_3",
+          "name": "No Escape",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2053_4",
+          "name": "Mega Quake",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2055": {
+      "primaryMoveId": "2055_1",
+      "moves": [
+        {
+          "moveId": "2055_1",
+          "name": "Devil Ball",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2055_2",
+          "name": "Foul Offence 3",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2055_3",
+          "name": "Air Ride",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2055_4",
+          "name": "Diabolical Cut",
+          "type": "defense",
+          "element": "Forest",
+          "power": 75,
+          "tension": 75,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2059": {
+      "primaryMoveId": "2059_1",
+      "moves": [
+        {
+          "moveId": "2059_1",
+          "name": "Dark Matter",
+          "type": "shot",
+          "element": "Forest",
+          "power": 80,
+          "tension": 80,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2059_2",
+          "name": "Dark Phoenix",
+          "type": "shot",
+          "element": "Forest",
+          "power": 100,
+          "tension": 100,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2059_3",
+          "name": "Devil Ball",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2059_4",
+          "name": "Duskfall",
+          "type": "defense",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2060": {
+      "primaryMoveId": "2060_1",
+      "moves": [
+        {
+          "moveId": "2060_1",
+          "name": "Dark Matter",
+          "type": "shot",
+          "element": "Forest",
+          "power": 80,
+          "tension": 80,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2060_2",
+          "name": "Hellfire",
+          "type": "shot",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2060_3",
+          "name": "Shadow Ray",
+          "type": "shot",
+          "element": "Mountain",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2060_4",
+          "name": "Gravitation",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    }
+  }
+}
