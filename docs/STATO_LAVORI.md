@@ -98,8 +98,8 @@ sulla preview, poi la successiva. Fuori: Passo 2, Passo 5, 3.7.
 
 | PR | Cosa | Stima | Stato |
 |---|---|---|---|
-| 3.6a | Grafica comune degli eventi: 7 colori base in `theme.colors` del file; schermate, ingresso e finestre dell'evento li usano | 3-4 h | fatta, in controllo |
-| 3.6b | Carte e allenatore dell'evento con la cornice dell'evento; carte Halloween identiche | 3-4 h | da fare |
+| 3.6a | Grafica comune degli eventi: 7 colori base in `theme.colors` del file; schermate, ingresso e finestre dell'evento li usano | 3-4 h | fatta (#573), vista dall'utente |
+| 3.6b | Carte, schede e allenatori dell'evento: pelle base con i colori dell'evento, oppure la pelle nominata nel file (`theme.skin`, Halloween); carte Halloween e Hekyll identici in 8 schermate (stile di ogni elemento); 10 schermate interne di Halloween cambiano solo nello sfondo | 3-4 h | fatta (#574), ~2,5 h |
 | 3.6c | Distributore e moneta per evento | 2 h | da fare |
 | 3.6d | Pezzi aggiuntivi per evento (i vampiri come pezzo di Halloween); evento di prova con aspetto completo suo | 3 h | da fare |
 
