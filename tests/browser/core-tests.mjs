@@ -360,6 +360,39 @@ export const tests = [
     },
   },
   {
+    name: "14-carte-evento-run-rtg",
+    // Regola fissa (7 nov): i giocatori sbloccati negli eventi sono giocabili in tutte le run RTG. In entrambe le
+    // campagne le carte Halloween possedute compaiono nel cambio giocatore (con il filtro dell'evento e senza) e una
+    // si puo' mettere in squadra.
+    async run({ game, assert }) {
+      for (const campaign of ["rtg-ie-trilogy", "rtg-ares-orion"]) {
+        const g = await game({ dev: true });
+        await g.unlockAllFreeAgents();
+        await g.giveHalloweenCollection();
+        await g.click("[data-rtg-home-open=campaigns]");
+        await g.click(`[data-rtg-campaign=${campaign}]`);
+        await g.click("[data-rtg-tab=squad]");
+        await g.click("[data-rtg-change-player]");
+        const season = g.page.locator("#modal-root select[aria-label='Filtra per season']").first();
+        await season.selectOption("halloween2026");
+        await g.page.waitForTimeout(300);
+        const eventCards = await g.page.$$eval("#modal-root [data-rtg-squad-player]", (els) =>
+          els.map((e) => e.dataset.rtgSquadPlayer).filter((id) => id.startsWith("halloween2026::")));
+        assert.ok(eventCards.length >= 12, `${campaign}: carte Halloween con il filtro dell'evento (${eventCards.length})`);
+        await season.selectOption("all");
+        await g.page.locator("#modal-root [data-rtg-picker-search]").first().fill("Samford");
+        await g.page.waitForTimeout(300);
+        const pick = g.page.locator("#modal-root [data-rtg-squad-player^='halloween2026::']").first();
+        assert.ok(await pick.count(), `${campaign}: carta Halloween anche senza filtro`);
+        const chosen = await pick.getAttribute("data-rtg-squad-player");
+        await pick.click();
+        await g.page.waitForTimeout(500);
+        const inSquad = await g.page.$$eval("[data-rtg-player-detail]", (els) => els.map((e) => e.dataset.rtgPlayerDetail));
+        assert.ok(inSquad.includes(chosen), `${campaign}: la carta Halloween scelta e' in squadra`);
+      }
+    },
+  },
+  {
     name: "13-ora-evento",
     // Passo 4.1: ?dev=1&oraEvento=2026-11-07 mostra Halloween concluso (l'orologio delle prove e' fermo al 3 nov),
     // senza toccare l'orologio della pagina e senza scrivere nel salvataggio. Senza ?dev=1 il parametro non vale.
