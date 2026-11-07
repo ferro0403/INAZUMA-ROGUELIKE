@@ -72,14 +72,15 @@ const matchView=ctx.RoadToGloryMatchView.create({
 });
 const normal={playerId:"n",name:"Normal",position:"FW",overall:90,
   fullbodyUrl:"https://example.test/normal.webp"};
-const event={...normal,playerId:"45",halloweenVampire:true};
-const samford={...normal,playerId:"custom_0001",halloweenVampire:false};
+// Le carte Halloween hanno legacySeasonId "halloween2026": l'aspetto vampiro arriva dal pezzo aggiuntivo di Halloween.
+const event={...normal,playerId:"45",legacySeasonId:"halloween2026",halloweenVampire:true};
+const samford={...normal,playerId:"custom_0001",legacySeasonId:"halloween2026",halloweenVampire:false};
 assert.match(matchView.duelVisualMarkup(event,"opponent"),/halloween-vampiro/);
 assert.doesNotMatch(matchView.duelVisualMarkup(samford,"opponent"),/halloween-vampiro/);
 assert.doesNotMatch(matchView.duelVisualMarkup(normal,"user"),/halloween-vampiro/);
 assert.equal((fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8").match(/class="rtg-duel-render\$\{shawnFwClass\}\$\{halloweenClass\}"/g)||[]).length,2,"Both original duel renderers must apply the tagged filter");
 const htmlShell=fs.readFileSync("index.html","utf8");
-assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261107-grafica-eventi-1/,
+assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261107-pezzi-evento-1/,
   "iOS cache must not serve the older pre-fix Halloween controller");
 const albumViewSource=fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8");
 assert.ok(htmlShell.includes("js/road-to-glory/rtg-album-view.js?v=20261107-grafica-eventi-1"),
@@ -211,7 +212,7 @@ assert.match(openCoachesPart,/"rtg-modal player-detail-modal rtg-coaches-modal"/
   "All normal coaches opened during Halloween must preserve the black RTG inset frame");
 assert.match(openCoachesPart,/"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"/,
   "Hekyll keeps his existing Halloween-only modal styling");
-assert.match(openCoachesPart,/classList\?\.remove\?\.\("halloween-detail-native","halloween-detail-vampire"\)/,
+assert.match(openCoachesPart,/classList\?\.remove\?\.\("halloween-detail-native"\);setModalExtraClass\(null\)/,
   "Opening a coach from the event clears the previously used player-only modal theme");
 for (const filename of ["halloween-nathan-fullbody.png","halloween-samford-fullbody.png"]) {
   assert.ok(halloweenCss.includes('img.player-fullbody--fullbody[src$="'+filename+'"]'),

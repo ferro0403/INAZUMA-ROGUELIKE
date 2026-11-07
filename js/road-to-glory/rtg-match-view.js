@@ -79,13 +79,14 @@
         }) || "");
         if (attrs) markup = markup.replace(/<button\b/, `<button ${attrs}`);
         if (extraClass) markup = markup.replace(/class="/, `class="${escape(extraClass)} `);
-        if(player?.halloweenVampire===true)markup=markup.replace(/class="/,'class="halloween-vampire-player ');
+        const eventCardClass=global.GameEvents?.extraClasses?.(player,"match-card")||"";
+        if(eventCardClass)markup=markup.replace(/class="/,()=>'class="'+eventCardClass+' ');
         return markup;
       }
       return card(
         player,
         attrs,
-        `run-tactical-card match-player-card match-player-card--${visualSide} boss-match-card boss-match-card--${visualSide} squad-player-card ${player?.halloweenVampire===true?"halloween-vampire-player":""} ${extraClass}`
+        `run-tactical-card match-player-card match-player-card--${visualSide} boss-match-card boss-match-card--${visualSide} squad-player-card ${global.GameEvents?.extraClasses?.(player,"match-card")||""} ${extraClass}`
       );
     }
 
@@ -124,7 +125,8 @@
       const playerRole = role(player) || "—";
       const overall = player?.overall ?? player?.finalOverall ?? "—";
       const shawnFwClass = isShawn1162Fw(player) ? " rtg-duel-render--shawn-1162-fw" : "";
-      const halloweenClass=player?.halloweenVampire===true?" halloween-vampiro":"";
+      const eventDuelClass=global.GameEvents?.extraClasses?.(player,"duel")||"";
+      const halloweenClass=eventDuelClass?" "+eventDuelClass:"";
       return `<button type="button" class="rtg-duel-visual rtg-duel-visual--${escape(side)}" ${attrs}>
         <span class="rtg-duel-render${shawnFwClass}${halloweenClass}">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
         <span class="rtg-duel-player-copy"><small>${escape(playerRole)} · OVR ${escape(overall)}</small><strong>${escape(name)}</strong></span>
@@ -187,7 +189,8 @@
       const elementClass = duelElementClass(player);
       const elementStateClass = opponent && duelElementDisadvantaged(player,opponent) ? "is-element-disadvantaged" : "";
       const shawnFwClass = isShawn1162Fw(player) ? " rtg-duel-render--shawn-1162-fw" : "";
-      const halloweenClass=player?.halloweenVampire===true?" halloween-vampiro":"";
+      const eventDuelClass=global.GameEvents?.extraClasses?.(player,"duel")||"";
+      const halloweenClass=eventDuelClass?" "+eventDuelClass:"";
       return `<button type="button" class="rtg-duel-visual rtg-duel-visual--compare rtg-duel-visual--${escape(side)} ${escape(elementClass)}" ${attrs}>
         <span class="rtg-duel-render${shawnFwClass}${halloweenClass}">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
         <span class="rtg-duel-player-copy">
