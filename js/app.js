@@ -1642,6 +1642,26 @@
       inventoryModel, ensureCurrentZoneMutation, devSkipCurrentBoss, devSkipToCompletedBosses, devGameOverNow,
     },
   });
+  async function loadEvents() {
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        // Evento finto (Passo 3.5): solo con ?dev=1&evento=<id>, mai nel gioco normale.
+        const params = new URLSearchParams(global.location?.search || "");
+        const devEventId = DEV_MODE ? params.get("evento") || "" : "";
+        // ?dev=1&oraEvento=2026-11-07: sposta solo l'ora usata dagli eventi (Passo 4.1), non scrive niente.
+        if (DEV_MODE && params.get("oraEvento") && !global.GameEvents?.setEventTime?.(params.get("oraEvento"))) {
+          console.warn("oraEvento non valida (usare 2026-11-07 o 2026-11-07T10:00:00+01:00)");
+        }
+        await global.GameEvents?.load?.(undefined, { devEventId });
+        return true;
+      } catch (error) {
+        console.warn(`Elenco eventi non disponibile (tentativo ${attempt})`, error);
+      }
+    }
+    const message = global.document?.querySelector?.("#app .loading-screen p");
+    if (message) message.textContent = "Impossibile caricare i dati del gioco. Controlla la connessione e ricarica.";
+    return false;
+  }
   async function initAppRuntime() {
     if (playerKitVisuals?.enabled && playerKitVisuals?.load) {
       try {
@@ -1650,6 +1670,9 @@
         console.warn("RTG VR kit preview manifest unavailable; existing visuals remain active", error);
       }
     }
+    // Eventi (Passo 3): i manifest in data/events/ vanno caricati prima di mostrare qualsiasi schermata. Senza
+    // l'elenco degli eventi il gioco non parte: le carte di un evento sarebbero lette come carte di una Season.
+    if (!(await (global.GameEvents ? loadEvents() : true))) return null;
     return appBootstrap.init();
   }
   initAppRuntime();

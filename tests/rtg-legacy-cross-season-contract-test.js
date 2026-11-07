@@ -25,6 +25,7 @@ const context={
 };
 context.globalThis=context;vm.createContext(context);
 for(const file of[
+  "js/road-to-glory/rtg-config.js",
   "js/road-to-glory/rtg-card-identity.js",
   "js/road-to-glory/rtg-player-resolver.js",
   "js/road-to-glory/rtg-gacha.js",

@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 1,
+  "id": "prova_dev",
+  "kind": "capsuleEvent",
+  "dev": true,
+  "name": "Evento di prova",
+  "labels": {
+    "badge": "PR",
+    "collection": "Prova",
+    "filter": "Prova",
+    "source": "Evento di prova",
+    "ui": {
+      "entryEyebrow": "EVENTO DI PROVA · SOLO DEV",
+      "entryTitle": "🧪 EVENTO DI PROVA",
+      "entrySubtitle": "ANGELI DI PROVA",
+      "completionTitle": "🧪 EVENTO DI PROVA",
+      "short": "di prova",
+      "appAria": "Road to Glory evento di prova",
+      "brand": "PROVA",
+      "nextMatchAria": "Prossima partita di prova",
+      "challengeEyebrow": "SFIDA DI PROVA · IL CIELO DEGLI ANGELI",
+      "challengeTitle": [
+        "ANGELI",
+        "DI PROVA"
+      ],
+      "capsuleEyebrow": "CAPSULE DI PROVA",
+      "vendingTitle": "DISTRIBUTORE DI PROVA",
+      "vendingTitleLong": "IL DISTRIBUTORE DI PROVA",
+      "vendingStation": "CAPSULE STATION · PROVA",
+      "vendingAria": "Distributore di prova",
+      "icon": "🧪",
+      "walletTitle": "GETTONI PROVA",
+      "tag": "PROVA · ANGELI",
+      "albumPath": "ALBUM → EVENTO DI PROVA",
+      "prizeCredited": "PREMIO DI PROVA ACCREDITATO",
+      "devTitle": "DEV EVENTO DI PROVA"
+    }
+  },
+  "window": {
+    "start": "2026-11-01T00:00:00+01:00",
+    "end": "2027-01-29T23:59:59+01:00"
+  },
+  "baseSeasonId": "ie1",
+  "save": {
+    "storagePrefix": "dev:prova_dev:",
+    "cardIdPrefix": "prova_dev::",
+    "matchKey": "dev:prova_dev:match",
+    "squadKey": "dev:prova_dev:squad",
+    "currencyField": "balance",
+    "ownedIdPattern": "^[0-9]+$",
+    "matchIdPrefix": "prova-dev:",
+    "matchNodeId": "event:prova-dev"
+  },
+  "currency": {
+    "id": "gettoni_prova",
+    "name": "Gettoni prova",
+    "icon": "assets/events/prova_dev/gettone.webp",
+    "unit": "gettoni",
+    "unitUpper": "GETTONI",
+    "iconAlt": "Gettone di prova"
+  },
+  "economy": {
+    "pullPrice": 200,
+    "winPrize": 300,
+    "luckyPrize": 600,
+    "luckyChancePercent": 10,
+    "luckyCurrency": "stelle_prova",
+    "pullCurrency": "gettoni_prova",
+    "winCurrency": "gettoni_prova"
+  },
+  "team": {
+    "teamId": "prova-angeli",
+    "name": "Angeli di prova",
+    "logo": "assets/events/prova_dev/stemma.webp",
+    "files": {
+      "players": "data/events/dev/prova_dev/prova-angeli-players.json",
+      "lineup": "data/events/dev/prova_dev/prova-angeli-lineup.json",
+      "moves": "data/events/dev/prova_dev/prova-angeli-moves.json"
+    },
+    "rosterSize": 11,
+    "startersSize": 11
+  },
+  "cards": [
+    {
+      "playerId": "2050",
+      "rarity": "Mondiale",
+      "vampire": false
+    },
+    {
+      "playerId": "2051",
+      "rarity": "Elite",
+      "vampire": false
+    },
+    {
+      "playerId": "2053",
+      "rarity": "Elite",
+      "vampire": false
+    },
+    {
+      "playerId": "2060",
+      "rarity": "Mondiale",
+      "vampire": false
+    },
+    {
+      "playerId": "2048",
+      "rarity": "Elite",
+      "vampire": false
+    },
+    {
+      "playerId": "2043",
+      "rarity": "Elite",
+      "vampire": false
+    },
+    {
+      "playerId": "2055",
+      "rarity": "Mondiale",
+      "vampire": false
+    },
+    {
+      "playerId": "2040",
+      "rarity": "Elite",
+      "vampire": false
+    },
+    {
+      "playerId": "2049",
+      "rarity": "Mondiale",
+      "vampire": false
+    },
+    {
+      "playerId": "2059",
+      "rarity": "Elite",
+      "vampire": false
+    },
+    {
+      "playerId": "2045",
+      "rarity": "Elite",
+      "vampire": false
+    },
+    {
+      "playerId": "2080",
+      "rarity": "Leggenda",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2074",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2076",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2079",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2081",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2082",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2072",
+      "rarity": "Leggenda",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2073",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2077",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2075",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2078",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    }
+  ],
+  "coaches": [
+    {
+      "id": "prova-coach-1",
+      "zukanId": "prova1",
+      "name": "Allenatore di prova",
+      "imageUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/8/c/8cswivaougk.png",
+      "power": {
+        "type": "requirementsOvrDiscount",
+        "name": "Maschera di prova",
+        "description": "Scegli un tuo titolare dell'evento di prova. Per i soli requisiti OVR della squadra, il suo contributo vale 10 punti in meno. Overall reale, statistiche, mosse e partita non cambiano.",
+        "params": {
+          "amount": 10,
+          "picks": 1,
+          "target": "ownStarter",
+          "cardScope": "event"
+        },
+        "ui": {
+          "title": "MASCHERA DI PROVA",
+          "note": "Scegli un titolare dell'evento di prova sul campo: nei requisiti il suo OVR vale 10 punti in meno. In partita rimane identico.",
+          "pickerTitle": "SCEGLI UN TITOLARE DELL'EVENTO DI PROVA",
+          "previewNote": "Il titolare dell'evento di prova selezionato conta 10 OVR in meno solo nei requisiti. Valori reali invariati."
+        }
+      }
+    }
+  ],
+  "assets": {
+    "banner": "assets/rtg/rtg-orion-route-map-user.webp",
+    "background": "assets/rtg/rtg-season3-route-map-user.webp"
+  },
+  "theme": {
+    "colors": {
+      "primary": "#4fb3ff",
+      "secondary": "#2f6fe0",
+      "accent": "#9fe3ff",
+      "text": "#eaf6ff",
+      "ink": "#0b1424",
+      "surface": "#13233d",
+      "background": "#060b16"
+    },
+    "coin": {
+      "shape": "round",
+      "blend": "normal"
+    }
+  },
+  "extensions": [
+    "js/events/prova_dev/pezzo-di-prova.js"
+  ],
+  "teams": [
+    {
+      "teamId": "prova-angeli",
+      "name": "Angeli di prova",
+      "logo": "assets/events/prova_dev/stemma.webp",
+      "files": {
+        "players": "data/events/dev/prova_dev/prova-angeli-players.json",
+        "lineup": "data/events/dev/prova_dev/prova-angeli-lineup.json",
+        "moves": "data/events/dev/prova_dev/prova-angeli-moves.json"
+      },
+      "rosterSize": 11,
+      "startersSize": 11
+    },
+    {
+      "teamId": "prova-orchi",
+      "name": "Orchi di prova",
+      "logo": "assets/events/prova_dev/stemma.webp",
+      "files": {
+        "players": "data/events/dev/prova_dev/prova-orchi-players.json",
+        "lineup": "data/events/dev/prova_dev/prova-orchi-lineup.json",
+        "moves": "data/events/dev/prova_dev/prova-orchi-moves.json"
+      },
+      "rosterSize": 11,
+      "startersSize": 11
+    }
+  ],
+  "currencies": [
+    {
+      "id": "gettoni_prova"
+    },
+    {
+      "id": "stelle_prova",
+      "name": "Stelle prova",
+      "unit": "stelle",
+      "unitUpper": "STELLE",
+      "icon": "assets/events/prova_dev/stella.webp",
+      "iconAlt": "Stella di prova",
+      "field": "stars"
+    }
+  ],
+  "uses": {
+    "cardsFrom": [
+      "halloween2026"
+    ]
+  }
+}

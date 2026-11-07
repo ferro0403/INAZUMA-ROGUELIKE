@@ -1,4 +1,5 @@
 "use strict";
+const { withLiteralTokens } = require("./helpers/css-tokens");
 
 const assert = require("assert");
 const fs = require("fs");
@@ -115,7 +116,7 @@ assert.equal(global.SEASON1_CONFIG.categoryRanks.Aurico, 8);
 assert.ok(global.SEASON1_CONFIG.legendaryCategories.includes("Aurico"));
 assert.equal(global.PlayerView.rarityClass("Aurico"), "rarity-aurico");
 
-const css = fs.readFileSync(path.join(root, "css/aurico-rarity.css"), "utf8");
+const css = withLiteralTokens(fs.readFileSync(path.join(root, "css/aurico-rarity.css"), "utf8"));
 assert.match(css, /\.rarity-aurico\s*\{/);
 assert.match(css, /--rarity-bg:\s*#fffdf6/);
 assert.match(css, /--rarity-surface:\s*#f1eee5/);
@@ -134,6 +135,6 @@ const developmentController = fs.readFileSync(path.join(root, "js/development/de
 assert.match(developmentController, /player\.category === "Aurico"[\s\S]*development-max/);
 
 const index = fs.readFileSync(path.join(root, "index.html"), "utf8");
-assert.match(index, /css\/aurico-rarity\.css\?v=20260923-rtg-vending-depth-v19/);
+assert.match(index, /css\/aurico-rarity\.css\?v=20261104-css-tokens-1/);
 
 console.log("aurico rarity production contract: 99 mapping, Development costs/capacity, training stat cap 100, legacy counters, UI class/assets and ivory-card/black-accent coverage OK");

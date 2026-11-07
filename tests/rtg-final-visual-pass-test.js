@@ -1,13 +1,14 @@
 "use strict";
+const { withLiteralTokens } = require("./helpers/css-tokens");
 
 const fs = require("fs");
 const path = require("path");
 const assert = require("assert");
 
 const root = path.resolve(__dirname, "..");
-const themeCss = fs.readFileSync(path.join(root, "css", "rtg-theme.css"), "utf8");
-const coreCss = fs.readFileSync(path.join(root, "css", "rtg-theme-core.css"), "utf8");
-const baseCss = fs.readFileSync(path.join(root, "css", "road-to-glory.css"), "utf8");
+const themeCss = withLiteralTokens(fs.readFileSync(path.join(root, "css", "rtg-theme.css"), "utf8"));
+const coreCss = withLiteralTokens(fs.readFileSync(path.join(root, "css", "rtg-theme-core.css"), "utf8"));
+const baseCss = withLiteralTokens(fs.readFileSync(path.join(root, "css", "road-to-glory.css"), "utf8"));
 const css = [baseCss, coreCss, themeCss].join("\n");
 const squadView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-squad-view.js"), "utf8");
 const squadViewBase = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-squad-view-base.js"), "utf8");

@@ -1,4 +1,5 @@
 "use strict";
+const { loadCoachPowerData } = require("./helpers/coach-powers");
 const test=require("node:test");
 const assert=require("node:assert/strict");
 const fs=require("node:fs"),vm=require("node:vm");
@@ -7,7 +8,7 @@ const sandbox={
  RoadToGloryCoaches:{owned:s=>new Set(s.coachOwnedIds||[])},
  RtgFourMovesRuntime:{movesFor:()=>[0,1,2,3].map(i=>({name:"Mossa "+i,type:"shot",power:40+i*10,ptCost:40+i*10}))}
 };
-vm.runInNewContext(read("js/road-to-glory/rtg-coach-powers-prematch.js"),sandbox);
+loadCoachPowerData(sandbox);vm.runInNewContext(read("js/road-to-glory/rtg-coach-powers-prematch.js"),sandbox);
 vm.runInNewContext(read("js/road-to-glory/rtg-coach-opponent-bench.js"),sandbox);
 const runtime=sandbox.RoadToGloryCoachPreMatchRuntime;
 const card=(cardId,normalizedRole)=>({cardId,playerId:cardId,normalizedRole,position:normalizedRole,

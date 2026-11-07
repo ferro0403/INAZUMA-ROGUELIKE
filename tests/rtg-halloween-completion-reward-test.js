@@ -1,7 +1,9 @@
+const { withLiteralTokens } = require("./helpers/css-tokens");
 "use strict";
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const vm=require("node:vm");
+const { loadEvents } = require("./helpers/events");
 
 const targets=JSON.parse(fs.readFileSync("data/RTG_move_power_targets_169.json","utf8")).powerByName;
 const context={RoadToGloryCardIdentity:{
@@ -11,8 +13,11 @@ const context={RoadToGloryCardIdentity:{
 }};
 let open=true;
 context.RoadToGloryHalloween={isOpen:()=>open};
-vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-halloween-completion-reward.js","utf8"),context);
-vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-cloud-snapshot.js","utf8"),context);
+// Il premio finale arriva dal file dell'evento (data/events/halloween2026.json), come nel gioco.
+vm.createContext(context);
+loadEvents(context);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-halloween-completion-reward.js","utf8"),context);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-cloud-snapshot.js","utf8"),context);
 const api=context.RoadToGloryHalloweenCompletion;
 const player=api.player();
 assert.equal(player.playerId,"custom_0003");
@@ -41,7 +46,7 @@ const webpHeight=1+renderBytes.readUIntLE(27,3);
 assert.equal(webpWidth,1097,"Use original user fullbody dimensions");
 assert.equal(webpHeight,1434,"Use original user fullbody dimensions");
 assert.ok((renderBytes[20]&0x10)!==0,"The fullbody image must retain an alpha channel");
-const referenceRule=fs.readFileSync("css/rtg-halloween-event.css","utf8");
+const referenceRule=withLiteralTokens(fs.readFileSync("css/rtg-halloween-event.css","utf8"));
 assert.match(referenceRule,/img\.player-fullbody--fullbody\[src\$="halloween-shawn-fullbody\.webp"\]/);
 assert.match(referenceRule,/height:69%!important;/,"Shawn must share Nathan and Samford fullbody geometry");
 
@@ -94,7 +99,7 @@ const before=JSON.stringify(failedCommit);
 const draft=JSON.parse(before);
 assert.equal(api.grant(draft,originalMap),true);
 assert.equal(JSON.stringify(failedCommit),before,"Discarding an uncommitted draft leaves the account unchanged");
-const css=fs.readFileSync("css/rtg-halloween-event.css","utf8");
+const css=withLiteralTokens(fs.readFileSync("css/rtg-halloween-event.css","utf8"));
 const event=fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8");
 const html=fs.readFileSync("index.html","utf8");
 assert.match(css,/\.player-card\.halloween-event-card/);

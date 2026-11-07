@@ -132,7 +132,7 @@
     }
     async function ensureData(){
       assertCurrent();const checkData=controllerFence?.checkpoint();
-      global.RoadToGloryHalloween?.prepare?.()?.catch?.(error=>global.console?.warn?.("[RTG Halloween] Optional assets unavailable",error));
+      for(const event of global.GameEvents?.modules?.()||[global.RoadToGloryHalloween].filter(Boolean))event.prepare?.()?.catch?.(error=>global.console?.warn?.("[RTG Halloween] Optional assets unavailable",error));
       const sid=activeSeasonId();
       seasonDb=global.SeasonRegistry?.database?.(sid)||seasonDb;
       if(!seasonDb||id(seasonDb?.seasonId||"ie1")!==sid){
@@ -158,7 +158,7 @@
       return (squadRuntime?.accessiblePlayerIds?.(args)||freeAgentIds).map(freeAgentCardId);
     }
     function rawPlayer(cardRef){const meta=cardMeta(cardRef);
-      if(meta.legacySeasonId===global.RoadToGloryHalloween?.EVENT_ID)return global.RoadToGloryHalloween.eventPlayer(meta.playerId);
+      const eventModule=global.GameEvents?.module?.(meta.legacySeasonId)||(meta.legacySeasonId===global.RoadToGloryHalloween?.EVENT_ID?global.RoadToGloryHalloween:null);if(eventModule)return eventModule.eventPlayer(meta.playerId);
       if(meta.sourceKind===cardIdentity?.FREE_AGENTS)return (freeAgentsDb?.players||[]).find(player=>id(player?.playerId||player?.id)===id(meta.playerId))||null;
       if(meta.legacySeasonId){
         const db=global.SeasonRegistry?.database?.(meta.legacySeasonId)||(meta.legacySeasonId==="ie1"?seasonDb:null);
@@ -238,7 +238,7 @@
           return openRtgPlayerDetails(key,"",reopenOptions);
         }:null,
         moveSeasonId:id(detailMeta.legacySeasonId||player.resolvedSeasonId||campaign?.activeSeasonId||"ie1"),
-        rtgKitPreview:true,rtgFourMoves:true,rtgRarity:previewInfo?.coachId==="1974"?detailPlayer.category:
+        rtgKitPreview:true,rtgFourMoves:true,rtgRarity:global.RoadToGloryCoachPowerTypes?.typeOf?.(previewInfo?.coachId)==="rarityUpgrade"?detailPlayer.category:
           (campaign?.developmentByCardId?.[id(detailPlayer.cardId||key)]?.currentRarity||campaign?.developmentByCardId?.[key]?.currentRarity||detailPlayer.category),
         readOnly:true,
         mode:options?.mode||undefined,
@@ -346,7 +346,7 @@
         const routeButtons=active?"":`<button type="button" data-dev-rtg="next-node">TAPPA SUCCESSIVA</button>${previousSeasonButton}`;
         const matchButtons=!active?"":'<button type="button" data-dev-rtg="halftime">VAI ALL\'INTERVALLO</button><button type="button" data-dev-rtg="extra">VAI AI SUPPLEMENTARI</button><button type="button" data-dev-rtg="penalties">VAI AI RIGORI</button><button type="button" data-dev-rtg="moves">RICARICA MOSSE</button><button type="button" data-dev-rtg="win">FORZA VITTORIA</button><button type="button" class="danger" data-dev-rtg="loss">FORZA SCONFITTA</button>';
         panel.innerHTML=`<summary>DEV RTG</summary><div><p><b>Gettoni: ${Number(campaign.tokens)||0}</b><br>Vite: ${Number(campaign.lives)||0}${active?` · ${active.status} / ${active.period}`:""}</p><button type="button" data-dev-rtg="tokens">999.999 GETTONI</button><button type="button" data-dev-rtg="lives">RIPRISTINA VITE</button><button type="button" data-dev-rtg="pool">SBLOCCA TUTTO IL POOL</button>${routeButtons}${matchButtons}</div>`;
-        doc.body?.appendChild(panel);
+        doc.body?.appendChild(panel);global.RoadToGloryDevSeasonComplete?.attach?.(panel,devUpdateCampaign);
         panel.querySelector('[data-dev-rtg="tokens"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-tokens",state=>{state.tokens=999999;},"Gettoni RTG portati a 999.999"));
         panel.querySelector('[data-dev-rtg="lives"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-lives",state=>{state.lives=Number(activeConfig()?.livesPerCheckpoint)||2;},"Vite RTG ripristinate"));
         panel.querySelector('[data-dev-rtg="pool"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-pool",state=>{state.defeatedTeamIds=Array.from(new Set(activeConfig()?.mainTeams||[]));},"Pool distributore RTG sbloccato"));
@@ -631,7 +631,7 @@
         if(userMeta.teamIdentity)userSquad.teamIdentity=clone(userMeta.teamIdentity);
         const preMatchCoach=global.RoadToGloryCoachPreMatchRuntime?.coachFor?.(current,id(current.activeSeasonId||activeSeasonId()))||"";
         let opponentSquad=node.type==="main"?mainOpponent(node):secondaryOpponent(node,current,attemptNumber);
-        if(["36","1225"].includes(preMatchCoach))opponentSquad=global.RoadToGloryCoachOpponentBench?.build?.({opponent:opponentSquad,node:{...node,coachId:preMatchCoach},teamRecord:teamRecordForId(node.teamId),freeAgentsDb,resolveForTeam:resolvedForTeam,resolveStandard:resolvedStandard})||opponentSquad;
+        if(["swapOpponentStarter","borrowOpponentReserve"].includes(global.RoadToGloryCoachPowerTypes?.typeOf?.(preMatchCoach)))opponentSquad=global.RoadToGloryCoachOpponentBench?.build?.({opponent:opponentSquad,node:{...node,coachId:preMatchCoach},teamRecord:teamRecordForId(node.teamId),freeAgentsDb,resolveForTeam:resolvedForTeam,resolveStandard:resolvedStandard})||opponentSquad;
         const seed=`${current.campaignSeed}:${node.id}:${attemptNumber}`;
         const matchId=`rtg:${node.id}:${attemptNumber}`;
         let match=matchEngine.createMatch({matchId,nodeId:node.id,matchType:node.type,attemptNumber,seed,userSquad,opponentSquad,seasonId:id(current.activeSeasonId||activeSeasonId())});
@@ -920,7 +920,7 @@
         const candidateState=clone(campaign);
         candidateState.squads[activeSeasonId()]={...(candidateState.squads?.[activeSeasonId()]||{}),formationId:candidate.formationId,lineup:ids,bench:benchIds,activeRoleVariantByCardId:{...(candidate.activeRoleVariantByCardId||{})}};
         // The engine checks the frozen 15-player roster; Nerina's loan is not owned.
-        if(match.preMatchCoachEffect?.coachId==="1225")return {eligible:true,reasons:[]};
+        if(global.RoadToGloryCoachPowerTypes?.typeOf?.(match.preMatchCoachEffect?.coachId)==="borrowOpponentReserve")return {eligible:true,reasons:[]};
         if(match.matchType==="secondary"){
           const validation=squadRuntime.validateSquad({state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(candidateState)});
           return {eligible:validation.valid,reasons:validation.reasons||[]};
@@ -1006,9 +1006,9 @@
       return result;
       }finally{pullBusy=false;}
     }
-    let halloweenMode=null;function openHalloween(){if(!halloweenMode)halloweenMode=global.RoadToGloryHalloween.create({app,devMode:DEV_MODE,toast:deps.toast,onReturn:()=>renderCampaignSelect(),squadView:deps.squadView,runView:deps.runView,matchView:deps.matchView,compactPlayerCardMarkup:deps.compactPlayerCardMarkup,showPlayerDetailsFor:deps.showPlayerDetailsFor,openModal:deps.openModal,closeModal:deps.closeModal,getModalRoot:deps.getModalRoot,getUserTeamMeta:deps.getUserTeamMeta,getAlbumProgress:deps.getAlbumProgress});return halloweenMode.open().catch(error=>{global.console?.error?.("[RTG Halloween]",error);deps.toast?.(error?.code==="halloween-squad-insufficient-players"||error?.code==="halloween-bench-insufficient"?"Sblocca abbastanza svincolati nelle run RTG o ottieni giocatori Halloween per comporre 11 titolari e 4 riserve.":"Evento Halloween non disponibile","error");renderCampaignSelect();});}
-    function renderCampaignSelect(){halloweenMode?.dispose?.();
-      renderHtml(runView.campaignSelectorMarkup());app?.querySelector?.("[data-rtg-halloween-open]")?.addEventListener("click",()=>openHalloween());
+    const eventModes=new Map();let halloweenMode=null;function openHalloween(eventId=""){const eventModule=global.GameEvents?.module?.(eventId)||global.RoadToGloryHalloween;for(const [key,mode] of eventModes)if(key!==eventModule.EVENT_ID)mode?.dispose?.();halloweenMode=eventModes.get(eventModule.EVENT_ID)||null;if(!halloweenMode){halloweenMode=eventModule.create({app,devMode:DEV_MODE,toast:deps.toast,onReturn:()=>renderCampaignSelect(),squadView:deps.squadView,runView:deps.runView,matchView:deps.matchView,compactPlayerCardMarkup:deps.compactPlayerCardMarkup,showPlayerDetailsFor:deps.showPlayerDetailsFor,openModal:deps.openModal,closeModal:deps.closeModal,getModalRoot:deps.getModalRoot,getUserTeamMeta:deps.getUserTeamMeta,getAlbumProgress:deps.getAlbumProgress});eventModes.set(eventModule.EVENT_ID,halloweenMode);}return halloweenMode.open().catch(error=>{global.console?.error?.("[RTG Halloween]",error);deps.toast?.(error?.code==="halloween-squad-insufficient-players"||error?.code==="halloween-bench-insufficient"?"Sblocca abbastanza svincolati nelle run RTG o ottieni giocatori "+(eventModule.LABELS?.ui?.short||"")+" per comporre 11 titolari e 4 riserve.":(eventModule.LABELS?.source||"Evento")+" non disponibile","error");renderCampaignSelect();});}
+    function renderCampaignSelect(){halloweenMode?.dispose?.();for(const mode of eventModes.values())mode?.dispose?.();
+      renderHtml(runView.campaignSelectorMarkup());app?.querySelectorAll?.("[data-rtg-halloween-open]")?.forEach(button=>button.addEventListener("click",()=>openHalloween(button.dataset.rtgEventOpen)));
       app?.querySelector?.("[data-rtg-campaign-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
       app?.querySelectorAll?.("[data-rtg-campaign]")?.forEach(button=>button.addEventListener("click",async()=>{
         const campaignId=id(button.dataset.rtgCampaign);repository.selectCampaign?.(campaignId);
@@ -1038,8 +1038,8 @@
         return {locked:true,access};
       }
       campaign=await repository.ensureCampaign();checkOpen();
-      if((campaign?.gachaAcquiredCards||[]).some(card=>id(card?.cardId).startsWith("halloween2026::"))){
-        await global.RoadToGloryHalloween?.prepare?.();checkOpen();
+      if((campaign?.gachaAcquiredCards||[]).some(card=>global.GameEvents?.isEventCard?.(id(card?.cardId)))){
+        for(const event of global.GameEvents?.modules?.()||[global.RoadToGloryHalloween].filter(Boolean)){if((campaign.gachaAcquiredCards||[]).some(card=>id(card?.cardId).startsWith(event.EVENT_ID+"::")))await event.prepare?.();}checkOpen();
       }
       progression?.setSeasonContext?.(campaign);if(typeof progression?.repairCheckpointPosition==="function"&&progression.repairCheckpointPosition(campaign)!==campaign){campaign=await repository.update("rtg-recover-earned-checkpoint",current=>progression.repairCheckpointPosition(current));checkOpen();}
       if(activeSeasonId()==="ie2"){

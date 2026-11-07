@@ -1,9 +1,10 @@
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const assert = require('assert');
 const fs = require('fs');
 const app = fs.readFileSync('js/app.js', 'utf8') + '\n' + fs.readFileSync('js/match/match-controller.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
-const css = fs.readFileSync('css/boss-match-prematch-restyle.css', 'utf8');
-const actionCss = fs.readFileSync('css/five-match-action-assets.css', 'utf8');
+const css = cssSection('boss-match-prematch-restyle');
+const actionCss = cssSection('five-match-action-assets');
 const pitch = fs.readFileSync('assets/ui/11v11/boss-tactical-pitch.svg', 'utf8');
 
 assert.match(app, /boss-match-bottom-grid" \$\{simulating \|\| resolved \? "" : "hidden"\}/, 'pre-match collapses result region');
@@ -20,7 +21,7 @@ assert.match(app, /2 pick 1 di 3 dalla squadra battuta/, 'boss reward copy and l
 assert.match(app, /teamEmblemMarkup\(userEmblem[\s\S]{0,120}boss-match-emblem/, 'dynamic TeamEmblems renderer is reused');
 assert.doesNotMatch(app.slice(app.indexOf('const userPlayers = userTeamPlayers();'), app.indexOf('resetRenderedViewScroll();', app.indexOf('const userPlayers = userTeamPlayers();'))), /data-nav="map"/, 'duplicate in-content map action is removed');
 assert.match(app, /topbar\(isSpecial \? "Partita speciale" : "Sfida Boss", "", "match"\)/, 'sticky header back action uses the existing match-to-map route');
-assert.match(html, /css\/boss-match-prematch-restyle\.css/, 'dedicated stylesheet is loaded');
+assert.ok(stylesheetLoaded(html, 'boss-match-prematch-restyle'), 'dedicated stylesheet is loaded');
 assert.doesNotMatch(css, /(?:^|\})\s*(?:body|button|\.panel|\.card|img)(?:[\s,{.:#])/m, 'stylesheet has no unscoped global selectors');
 assert.doesNotMatch(css, /\.five-match-screen/, '5v5 screen is not modified by the new stylesheet');
 assert.match(css, /boss-tactical-pitch\.svg/, '11v11 uses its dedicated portrait pitch artwork');
