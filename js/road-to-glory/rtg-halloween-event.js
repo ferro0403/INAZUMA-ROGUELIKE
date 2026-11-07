@@ -1113,7 +1113,6 @@
     const customPart=name=>name==="home"?global.GameEvents?.extensionPart?.(EVENT_ID,"home"):
       (global.GameEvents?.extensionPart?.(EVENT_ID,"screens")||{})[name]||null;
     let customHomeFailed=false;
-    function ownEventCard(pid){return manifest.cards.some(card=>card.playerId===asId(pid));}
     const tools=Object.freeze({
       eventId:EVENT_ID,labels:manifest.labels,escape,text:key=>uiText(key),
       isOpen,countdown,
@@ -1124,7 +1123,7 @@
       teams:()=>TEAMS.map(t=>({teamId:t.teamId,name:t.name,logo:t.logo||LOGO_URL})),
       player:pid=>player(asId(pid)),
       // Carte possedute di questo evento; con {from:"<id>"} quelle di un altro evento, solo se il file lo permette
-      // (uses.cardsFrom). Le carte di un altro evento sono in sola lettura: niente scambi, poteri o stato di quell'evento.
+      // (uses.cardsFrom). Le carte di un altro evento sono in sola lettura: niente poteri o stato di quell'evento.
       ownedCards:({from=EVENT_ID}={})=>{
         if(from===EVENT_ID)return manifest.cards.map(card=>card.playerId).filter(pid=>isOwned(pid))
           .map(pid=>({playerId:pid,cardId:EVENT_ID+"::"+pid,player:player(pid)}));
@@ -1135,29 +1134,12 @@
           .map(cardId=>({playerId:cardId.slice(prefix.length),cardId,eventId:from,readOnly:true,
             player:module?.eventPlayer?.(cardId.slice(prefix.length))||null}));
       },
-      inSquad:pid=>[...(localSquad?.lineup||[]),...(localSquad?.bench||[])].includes(EVENT_ID+"::"+asId(pid)),
       data:()=>clone(ledger(shared)?.extra||{}),
       // Salva dati propri dell'evento (solo dati semplici) nello stato dell'evento, campo extra.
       save:updater=>perform(()=>mutate("event-extra",account=>{
         const l=ledger(account);const next=updater(clone(l.extra||{}));
         if(!next||typeof next!=="object"||Array.isArray(next))throw fail("event-extra-invalid");
         l.extra=JSON.parse(JSON.stringify(next));
-      })),
-      spend:(currencyId,amount)=>perform(()=>mutate("event-spend",account=>{
-        const l=ledger(account),field=fieldOf(currencyId),n=Math.max(0,Math.floor(Number(amount)||0));
-        if(Number(l[field]||0)<n)throw fail("event-insufficient-currency");l[field]=Number(l[field]||0)-n;})),
-      earn:(currencyId,amount)=>perform(()=>mutate("event-earn",account=>{
-        const l=ledger(account),field=fieldOf(currencyId);l[field]=Number(l[field]||0)+Math.max(0,Math.floor(Number(amount)||0));})),
-      // Consuma carte e ne crea altre: solo carte di QUESTO evento; una carta in squadra non si consuma.
-      exchangeCards:(consumeIds,grantIds)=>perform(()=>mutate("event-exchange",account=>{
-        const l=ledger(account);
-        const take=(consumeIds||[]).map(asId),give=(grantIds||[]).map(asId);
-        if(take.concat(give).some(pid=>!ownEventCard(pid)))throw fail("event-foreign-card");
-        if(take.some(pid=>!l.ownedIds.includes(pid)||tools.inSquad(pid)))throw fail("event-card-not-available");
-        if(give.some(pid=>l.ownedIds.includes(pid)&&!take.includes(pid)))throw fail("event-card-already-owned");
-        l.ownedIds=l.ownedIds.filter(pid=>!take.includes(pid));
-        account.gachaAcquiredCards=account.gachaAcquiredCards.filter(card=>!take.map(pid=>EVENT_ID+"::"+pid).includes(card?.cardId));
-        for(const pid of give){l.ownedIds.push(pid);account.gachaAcquiredCards.push(recordCard(pid));}
       })),
       toast:message=>notify(message),
       go:name=>{view=name==="home"?"match":"screen:"+name;render();},

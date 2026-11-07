@@ -1,33 +1,36 @@
 // Pezzo aggiuntivo dell'evento di prova (solo sviluppo). Mostra come un evento ha una home e schermate tutte sue
-// (Parte 2 b) usando solo gli strumenti comuni: saldo, carte possedute, pesca, squadra, partita, dati propri,
-// scambio di carte. Non tocca la parte comune ne' gli altri eventi.
+// (Parte 2 b) usando solo gli strumenti comuni: saldo, carte possedute, pesca, squadra, partita, dati propri.
+// La schermata di esempio (Diario) non consuma carte. Non tocca la parte comune ne' gli altri eventi.
 (function (global) {
   "use strict";
-  const LAB_COST = 1; // stelle per una creazione
   const pill = (tools) => `<div class="event-page__wallet">${tools.wallet()}</div>`;
   const header = (tools, back, title, eyebrow) => `<header class="event-page__top">
       <button type="button" class="btn event-page__back" data-event-action="${back}" aria-label="Indietro">←</button>
-      <div class="event-page__titles"><small>${tools.escape(eyebrow)}</small><h1>${tools.escape(title)}</h1></div>${pill(tools)}</header>`;
-  let picked = [];
+      <div class="event-page__titles"><small>${tools.escape(eyebrow)}</small><h1>${tools.escape(title)}</h1></div>
+      ${pill(tools)}</header>`;
 
   function home(tools) {
+    const open = tools.isOpen() ? "" : "disabled";
     const teams = tools.teams().map((team) => `<article class="event-page__panel event-page__team">
         <img src="${tools.escape(team.logo)}" alt="" width="56" height="56">
         <div><strong>${tools.escape(team.name)}</strong><small>Sfida la squadra dell'evento</small></div>
-        <button type="button" class="btn event-page__cta" data-event-action="start" data-event-team="${tools.escape(team.teamId)}"
-          ${tools.isOpen() ? "" : "disabled"}>SFIDA</button></article>`).join("");
+        <button type="button" class="btn event-page__cta" data-event-action="start"
+          data-event-team="${tools.escape(team.teamId)}" ${open}>SFIDA</button></article>`).join("");
     const data = tools.data();
+    const countdown = tools.isOpen() ? tools.countdown() : "TERMINATO";
     return `<main class="screen event-page event-page--prova" data-event-extra="prova_dev">
-      ${header(tools, "exit", "Laboratorio degli Angeli", "EVENTO DI PROVA · HOME PROPRIA")}
-      <section class="event-page__panel event-page__hero"><span>Fine evento</span><strong>${tools.escape(tools.isOpen() ? tools.countdown() : "TERMINATO")}</strong>
-        <small>Creazioni nel laboratorio: ${tools.escape(data.creations || 0)}</small></section>
+      ${header(tools, "exit", "Torneo degli Angeli", "EVENTO DI PROVA · HOME PROPRIA")}
+      <section class="event-page__panel event-page__hero"><span>Fine evento</span>
+        <strong>${tools.escape(countdown)}</strong>
+        <small>Timbri sul diario: ${tools.escape(data.visits || 0)}</small></section>
       <section class="event-page__grid">${teams}</section>
       ${guests(tools)}
       <nav class="event-page__actions" aria-label="Azioni dell'evento">
         <button type="button" class="btn" data-event-action="pull">DISTRIBUTORE</button>
         <button type="button" class="btn" data-event-action="squad">SQUADRA</button>
         <button type="button" class="btn" data-event-action="album">COLLEZIONE</button>
-        <button type="button" class="btn event-page__cta" data-event-action="screen" data-event-screen="lab">LABORATORIO</button>
+        <button type="button" class="btn event-page__cta" data-event-action="screen"
+          data-event-screen="diario">DIARIO</button>
       </nav></main>`;
   }
 
@@ -37,46 +40,35 @@
     const names = cards.slice(0, 6).map((card) => tools.escape(card.player?.name || card.playerId)).join(", ");
     return `<section class="event-page__panel" data-event-guests="halloween2026">
       <strong>Carte da Halloween: ${tools.escape(cards.length)}</strong>
-      <small>${names || "Nessuna"}${cards.length > 6 ? "…" : ""} · si possono schierare in squadra, non si consumano nel laboratorio</small>
+      <small>${names || "Nessuna"}${cards.length > 6 ? "…" : ""} · si possono schierare in squadra</small>
     </section>`;
   }
-  function lab(tools) {
-    const cards = tools.ownedCards().filter((card) => !tools.inSquad(card.playerId));
-    const list = cards.map((card) => `<button type="button" class="event-page__chip ${picked.includes(card.playerId) ? "is-picked" : ""}"
-        data-lab-card="${tools.escape(card.playerId)}">${tools.escape(card.player?.name || card.playerId)}
-        <small>${tools.escape(card.player?.category || "")}</small></button>`).join("");
-    const stars = tools.balance("stelle_prova");
-    return `<main class="screen event-page event-page--prova" data-event-screen-name="lab">
-      ${header(tools, "home", "Laboratorio", "EVENTO DI PROVA · SCHERMATA PROPRIA")}
-      <section class="event-page__panel"><p>Scegli 2 carte dell'evento che non sono in squadra: diventano 1 carta dell'evento
-        che non hai ancora. Costo: ${LAB_COST} ${tools.escape("stella")}. Hai ${tools.escape(stars)} stelle.</p>
-        <div class="event-page__chips">${list || "<p>Nessuna carta disponibile: apri il distributore.</p>"}</div>
-        <button type="button" class="btn event-page__cta" data-lab-create ${picked.length === 2 && stars >= LAB_COST ? "" : "disabled"}>CREA</button>
+
+  // Schermata di esempio: elenca le carte possedute dell'evento e salva un dato proprio (i timbri). Non consuma nulla.
+  function diary(tools) {
+    const cards = tools.ownedCards();
+    const list = cards.map((card) => `<span class="event-page__chip" data-diary-card="${tools.escape(card.playerId)}">
+        ${tools.escape(card.player?.name || card.playerId)}<small>${tools.escape(card.player?.category || "")}</small>
+      </span>`).join("");
+    const visits = tools.data().visits || 0;
+    return `<main class="screen event-page event-page--prova" data-event-screen-name="diario">
+      ${header(tools, "home", "Diario", "EVENTO DI PROVA · SCHERMATA PROPRIA")}
+      <section class="event-page__panel"><p>Carte dell'evento che possiedi: ${tools.escape(cards.length)}.
+        Timbri sul diario: <strong data-diary-visits>${tools.escape(visits)}</strong>.</p>
+        <div class="event-page__chips">${list || "<p>Nessuna carta: apri il distributore.</p>"}</div>
+        <button type="button" class="btn event-page__cta" data-diary-stamp>TIMBRA</button>
       </section></main>`;
   }
-  function bindLab(root, tools) {
-    root.querySelectorAll("[data-lab-card]").forEach((el) => el.addEventListener("click", () => {
-      const id = el.dataset.labCard;
-      picked = picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id].slice(-2);
-      tools.go("lab");
-    }));
-    root.querySelector("[data-lab-create]")?.addEventListener("click", async () => {
-      const owned = new Set(tools.ownedCards().map((card) => card.playerId));
-      const event = global.GameEvents.get(tools.eventId);
-      const created = event.cards.map((card) => card.playerId).find((pid) => !owned.has(pid));
-      if (!created) return tools.toast("Hai gia' tutte le carte dell'evento.");
-      const [a, b] = picked;
-      picked = [];
-      await tools.exchangeCards([a, b], [created]);
-      await tools.spend("stelle_prova", LAB_COST);
-      await tools.save((data) => ({ ...data, creations: Number(data.creations || 0) + 1 }));
-      tools.toast(`Nuova carta: ${tools.player(created)?.name || created}`);
-      tools.go("lab");
+  function bindDiary(root, tools) {
+    root.querySelector("[data-diary-stamp]")?.addEventListener("click", async () => {
+      await tools.save((data) => ({ ...data, visits: Number(data.visits || 0) + 1 }));
+      tools.toast("Diario timbrato");
+      tools.go("diario");
     });
   }
 
   global.GameEvents?.extend?.("prova_dev", {
     home: { render: home },
-    screens: { lab: { render: lab, bind: bindLab } },
+    screens: { diario: { render: diary, bind: bindDiary } },
   });
 })(globalThis);

@@ -80,7 +80,7 @@ assert.doesNotMatch(matchView.duelVisualMarkup(samford,"opponent"),/halloween-va
 assert.doesNotMatch(matchView.duelVisualMarkup(normal,"user"),/halloween-vampiro/);
 assert.equal((fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8").match(/class="rtg-duel-render\$\{shawnFwClass\}\$\{halloweenClass\}"/g)||[]).length,2,"Both original duel renderers must apply the tagged filter");
 const htmlShell=fs.readFileSync("index.html","utf8");
-assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261108-carte-altri-eventi-1/,
+assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261108-via-scambio-1/,
   "iOS cache must not serve the older pre-fix Halloween controller");
 const albumViewSource=fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8");
 assert.ok(htmlShell.includes("js/road-to-glory/rtg-album-view.js?v=20261107-grafica-eventi-1"),
@@ -170,7 +170,7 @@ assert.match(coachesCss,/transform:scale\(1\.52\)/,
 assert.ok(halloweenCss.includes(".rtg-halloween-album-collection .album-collection-title{color:#fffdf6!important"),
   "Event title must be white over the artwork");
 
-assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261108-home-evento-1"));
+assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261108-via-scambio-1"));
 assert.doesNotMatch(eventSource,/coachMatchStatus\(|halloween-coach-match-status/,
   "Never insert coach banners above native Halloween matches");
 assert.doesNotMatch(halloweenCss,/halloween-coach-match-status/,

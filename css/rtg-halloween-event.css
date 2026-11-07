@@ -31,7 +31,6 @@
 .event-page__chip{display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;border:2px solid var(--event-primary);
   background:var(--event-surface);color:var(--event-text);font-weight:800}
 .event-page__chip small{color:var(--event-accent);font-size:10px}
-.event-page__chip.is-picked{background:var(--event-primary);color:var(--event-ink)}
 
 /* Passo 3.6d: riquadro in piu' che un pezzo aggiuntivo mette nella home del suo evento (hook "homeSection"). */
 .event-extra-section{background:var(--event-surface);color:var(--event-text);border:3px solid var(--event-primary);padding:16px;margin:12px 0}
