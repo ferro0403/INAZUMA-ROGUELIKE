@@ -173,6 +173,14 @@ const baseSkin = fs.readFileSync("css/rtg-halloween-event.css", "utf8");
 assert.match(baseSkin, /\.player-card\.rtg-event-card\.rtg-event-card-base\{/, "pelle base delle carte evento");
 assert.doesNotMatch(baseSkin.match(/Passo 3\.6b[\s\S]*?player-detail-rtg-legacy-badge\{[^}]*\}/)[0], /!important|::before|::after/,
   "la pelle base non usa !important e non tocca la striscia della rarita'");
+// Passo 3.6c: distributore e moneta dell'evento con i colori e la moneta del suo file.
+const vendingCss = fs.readFileSync("css/rtg-halloween-event.css", "utf8");
+const vendingRules = vendingCss.match(/[^{}]*(vending|pull-result|pull-balance|pull-continue|currency)[^{}]*\{[^{}]*\}/g) || [];
+const fixedVending = vendingRules.filter((rule) => !/player-|card|legacy|badge|reveal/.test(rule.split("{")[0]))
+  .filter((rule) => /#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(rule.split("{")[1]));
+assert.deepStrictEqual(fixedVending, [], `distributore con colori fissi: ${fixedVending.join(" | ").slice(0, 300)}`);
+assert.match(vendingCss, /border-radius:var\(--event-coin-radius\);object-fit:cover;mix-blend-mode:var\(--event-coin-blend\)/);
+assert.strictEqual(reg.themeVars("halloween2026")["--event-coin-blend"], "screen", "la zucca resta fusa con lo sfondo");
 const primaries = capsuleEvents.map((m) => m.theme.colors.primary.toLowerCase());
 assert.strictEqual(new Set(primaries).size, primaries.length, "ogni evento ha il suo colore principale");
 // Le schermate degli eventi prendono i colori dall'evento: nelle regole comuni non restano gli sfondi di Halloween.

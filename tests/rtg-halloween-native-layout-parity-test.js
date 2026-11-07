@@ -169,7 +169,7 @@ assert.match(coachesCss,/transform:scale\(1\.52\)/,
 assert.ok(halloweenCss.includes(".rtg-halloween-album-collection .album-collection-title{color:#fffdf6!important"),
   "Event title must be white over the artwork");
 
-assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261107-carte-evento-1"));
+assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261107-distributore-evento-1"));
 assert.doesNotMatch(eventSource,/coachMatchStatus\(|halloween-coach-match-status/,
   "Never insert coach banners above native Halloween matches");
 assert.doesNotMatch(halloweenCss,/halloween-coach-match-status/,
