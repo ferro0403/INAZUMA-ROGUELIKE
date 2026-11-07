@@ -5,9 +5,10 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
 
 ## Dove siamo
 
-- **7 novembre 2026:** Passo 1 (CSS) chiuso, Passo 3 (eventi come dati) e Passo 4 (due eventi attivi insieme) fatti.
-  Tutto e' nella PR finale #572 (`release/passo-1-4` -> `main`), da unire dopo le verifiche: vedi "Ordine di unione
-  definitivo" qui sotto. Restano fuori il tema per evento (3.6) e le immagini locali di Halloween (3.7).
+- **7 novembre 2026:** Passo 1 (CSS) chiuso; Passo 3 (eventi come dati), Passo 4 (due eventi attivi insieme) e
+  Passo 3.6 (aspetto degli eventi come dati) fatti. Tutto e' nella PR finale #577 (`release/passo-1-3-6` -> `main`),
+  da unire dopo le verifiche: vedi "Ordine di unione definitivo" qui sotto. Fuori: Passo 2, Passo 5 e la 3.7 (immagini
+  locali di Halloween).
 - **Passo 0 — Rete di sicurezza: chiuso il 3 novembre 2026** (branch `chore/safety-net`, PR in bozza
   ferro0403/INAZUMA-ROGUELIKE#540).
 - **Passo 1 — CSS: in corso** (ok dell'utente il 3 novembre). PR in bozza, da unire in ordine dopo la #540:
@@ -107,24 +108,25 @@ Foto: oltre alle 88 schermate di prima, 5 nuove con le carte Halloween nelle sch
 nell'album, scheda dall'album, cambio giocatore RTG, allenatori RTG, album allenatori), con un account che possiede le
 18 carte e Hekyll. Dal 7 nov Halloween e' concluso davvero: test e foto usano l'ora degli eventi del 3 nov.
 
-## Ordine di unione definitivo (7 nov 2026)
+## Ordine di unione definitivo (aggiornato il 7 nov 2026, dopo il Passo 3.6)
 
-**Da unire in `main`: una sola PR, la finale `release/passo-1-4` -> `main` (#572).** Contiene, controllato commit per commit:
+**Da unire in `main`: una sola PR, la finale `release/passo-1-3-6` -> `main` (#577).** Sostituisce la #572 e la #566.
+Contiene, controllato commit per commit:
 1. Passo 0 e Passo 1 (CSS): #540-#559, con #550 e #551;
-2. Passo 3, eventi come dati: proposta #560, poi #561, #562, #563, #564, #565, e la PR finale di allora #566;
-3. Passo 4, due eventi attivi insieme: stima #567, poi #568, #569, #570, #571;
-4. questo documento aggiornato.
+2. Passo 3, eventi come dati: #560-#565 (gia' nella vecchia finale #566);
+3. Passo 4, due eventi attivi insieme: #567-#571 (gia' nella finale #572);
+4. Passo 3.6, aspetto degli eventi come dati: #573 (3.6a), #574 (3.6b), #575 (3.6c), #576 (3.6d);
+5. questo documento.
 
 `main` e' antenato del ramo finale: nessun conflitto.
 
-**Da chiudere senza unire, dopo aver unito la #572** (il loro contenuto e' gia' in `main`):
-- #540-#559 (Passo 0 e 1);
-- #560-#566 (Passo 3, compresa la vecchia PR finale #566, sostituita dalla #572);
-- #567-#571 (Passo 4).
+**Da chiudere senza unire, dopo aver unito la #577** (il loro contenuto e' gia' in `main`): #540-#576, comprese le
+vecchie PR finali #566 e #572.
 
-Non si unisce una PR alla volta: sono a catena (ognuna punta alla precedente) e il risultato sarebbe lo stesso con molti
-piu' passaggi. Prima di unire ci sono le verifiche in anteprima: con `?dev=1&oraEvento=2026-11-07` l'evento e' finito;
-con `?dev=1&evento=prova_dev` ci sono due eventi.
+Prima di unire, controllare nell'anteprima della #577:
+- `?dev=1&oraEvento=2026-11-07`: Halloween e' concluso;
+- `?dev=1&evento=prova_dev`: due eventi, ognuno con il suo aspetto;
+- carte Halloween (squadra, album, collezione, Hekyll, vampiri) identiche.
 
 ## Passo 3 — Eventi come dati (approvato il 5 nov 2026)
 
