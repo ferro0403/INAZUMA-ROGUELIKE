@@ -390,6 +390,40 @@ export const tests = [
     },
   },
   {
+    name: "16-carte-di-altri-eventi",
+    // Parte 2 (c): l'evento di prova puo' usare (in sola lettura) le carte di Halloween, perche' il suo file lo dice
+    // (uses.cardsFrom). Le vede nella sua home e nel cambio giocatore della sua squadra; il laboratorio non le
+    // offre; lo stato di Halloween e l'account vero non cambiano.
+    async run({ game, assert }) {
+      const g = await game({ dev: true, query: "evento=prova_dev" });
+      await g.unlockAllFreeAgents();
+      await g.giveHalloweenCollection();
+      const REAL = "shared:account", DEV = "dev:prova_dev:shared:account";
+      const before = await g.readRtgRecords([REAL]);
+      await g.click("[data-rtg-home-open=campaigns]");
+      await g.click("[data-rtg-event-open=prova_dev]");
+      await g.page.waitForSelector("[data-event-guests=halloween2026]");
+      assert.match(await g.text("[data-event-guests=halloween2026]"), /Carte da Halloween: 18/, "le 18 carte Halloween si vedono");
+      await g.click("[data-event-action=screen][data-event-screen=lab]");
+      const labCards = await g.page.$$eval("[data-lab-card]", (els) => els.map((e) => e.dataset.labCard));
+      const halloweenIds = await g.page.evaluate(() => window.GameEvents.get("halloween2026").cards.map((c) => c.playerId));
+      assert.ok(!labCards.some((id) => halloweenIds.includes(id)), "il laboratorio non consuma carte di Halloween");
+      await g.click("[data-event-action=home]");
+      await g.click("[data-event-action=squad]");
+      await g.click("[data-rtg-change-player]");
+      await g.page.locator("#modal-root select[aria-label='Filtra per season']").first().selectOption("halloween2026");
+      await g.page.waitForTimeout(300);
+      const offered = await g.page.$$eval("#modal-root [data-rtg-squad-player]", (els) => els.map((e) => e.dataset.rtgSquadPlayer));
+      assert.ok(offered.some((id) => id.startsWith("halloween2026::")), "carte Halloween schierabili nella squadra dell'evento");
+      await g.click("#modal-root [data-close-modal]").catch(() => {});
+      await g.devHalloweenPumpkins(); // una scrittura dell'evento di prova: la sua copia locale viene salvata
+      const after = await g.readRtgRecords([REAL, DEV]);
+      assert.ok(after[DEV], "copia locale dell'evento di prova salvata");
+      assert.deepEqual(after[REAL] ?? null, before[REAL] ?? null, "account vero invariato");
+      assert.deepEqual(after[DEV]?.halloween ?? null, before[REAL]?.halloween ?? null, "stato di Halloween invariato anche nella copia");
+    },
+  },
+  {
     name: "15-evento-home-propria",
     // Parte 2 (a)+(b): l'evento di prova ha una home sua (due squadre da sfidare, due monete) e una schermata sua
     // (Laboratorio: 2 carte dell'evento diventano 1 carta nuova, costa 1 stella), fatte con gli strumenti comuni.

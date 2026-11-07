@@ -93,6 +93,10 @@
         new Set(allCurrencies.map((c) => c.field)).size === allCurrencies.length, "monete o campi ripetuti");
       for (const c of allCurrencies) need(isText(c.id) && isText(c.name) && /^[a-zA-Z][a-zA-Z0-9]*$/.test(c.field || ""), `moneta ${c.id}: dati mancanti`);
     }
+    // Parte 2 (c): carte di altri eventi che questo evento puo' usare (in sola lettura) nelle sue pagine.
+    const cardsFrom = manifest.uses?.cardsFrom;
+    need(cardsFrom === undefined || (Array.isArray(cardsFrom) && cardsFrom.every((id) =>
+      typeof id === "string" && /^[a-z0-9_-]+$/.test(id) && id !== manifest.id)), "uses.cardsFrom non valido");
     for (const key of ["pullCurrency", "winCurrency", "luckyCurrency"]) {
       need(economy[key] === undefined || allCurrencies.some((c) => c.id === economy[key]), `economy.${key}: moneta sconosciuta`);
     }
@@ -153,6 +157,9 @@
     }
   }
   // Parte 2 (b): una parte di un pezzo aggiuntivo che non e' una funzione da chiamare (home, screens).
+  // Un evento puo' usare le carte di un altro solo se lo dice nel suo file (uses.cardsFrom).
+  const canUseCardsFrom = (eventId, otherId) => String(eventId) === String(otherId) ||
+    (get(eventId)?.uses?.cardsFrom || []).includes(String(otherId));
   const extensionPart = (eventId, name) => extensions.get(String(eventId || ""))?.[name] || null;
   const eventIdOf = (player) => {
     const legacy = String(player?.legacySeasonId || "");
@@ -397,5 +404,5 @@
 
   global.GameEvents = Object.freeze({ INDEX_PATH, validate, register, onLoad, onAnyLoad, load, get, all, startMs, endMs,
     isEvent, isEventCard, isActive, forCardId, THEME_COLORS, themeVars, themeStyle, applyTheme, clearTheme, eventClasses,
-    extend, hook, extraClasses, extensionPart, teamsOf, currenciesOf, teamOfCard, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
+    extend, hook, extraClasses, extensionPart, canUseCardsFrom, teamsOf, currenciesOf, teamOfCard, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
 })(globalThis);

@@ -1123,8 +1123,18 @@
       wallet:()=>walletPills(),
       teams:()=>TEAMS.map(t=>({teamId:t.teamId,name:t.name,logo:t.logo||LOGO_URL})),
       player:pid=>player(asId(pid)),
-      ownedCards:()=>manifest.cards.map(card=>card.playerId).filter(pid=>isOwned(pid))
-        .map(pid=>({playerId:pid,cardId:EVENT_ID+"::"+pid,player:player(pid)})),
+      // Carte possedute di questo evento; con {from:"<id>"} quelle di un altro evento, solo se il file lo permette
+      // (uses.cardsFrom). Le carte di un altro evento sono in sola lettura: niente scambi, poteri o stato di quell'evento.
+      ownedCards:({from=EVENT_ID}={})=>{
+        if(from===EVENT_ID)return manifest.cards.map(card=>card.playerId).filter(pid=>isOwned(pid))
+          .map(pid=>({playerId:pid,cardId:EVENT_ID+"::"+pid,player:player(pid)}));
+        if(!global.GameEvents?.canUseCardsFrom?.(EVENT_ID,from))return [];
+        const other=global.GameEvents.get(from),module=global.GameEvents.module?.(from);
+        const prefix=other?.save?.cardIdPrefix||"";
+        return (shared?.gachaAcquiredCards||[]).map(card=>asId(card?.cardId)).filter(id=>prefix&&id.startsWith(prefix))
+          .map(cardId=>({playerId:cardId.slice(prefix.length),cardId,eventId:from,readOnly:true,
+            player:module?.eventPlayer?.(cardId.slice(prefix.length))||null}));
+      },
       inSquad:pid=>[...(localSquad?.lineup||[]),...(localSquad?.bench||[])].includes(EVENT_ID+"::"+asId(pid)),
       data:()=>clone(ledger(shared)?.extra||{}),
       // Salva dati propri dell'evento (solo dati semplici) nello stato dell'evento, campo extra.
@@ -1638,6 +1648,9 @@
     async function open(initialView="match") {
       dispose();const epoch=session;
       await prepare();assertCurrent(epoch);
+      // Parte 2 (c): i dati delle carte degli eventi che questo evento puo' usare (uses.cardsFrom).
+      await Promise.all((manifest.uses?.cardsFrom||[]).map(id=>global.GameEvents?.module?.(id)?.prepare?.()?.catch?.(()=>null)));
+      assertCurrent(epoch);
       global.GameEvents?.applyTheme?.(app,EVENT_ID);global.GameEvents?.applyTheme?.(deps.getModalRoot?.(),EVENT_ID);
       const previous=global.SeasonRegistry?.activeId?.();
       const needed=Array.from(global.RoadToGloryConfig?.SEASON_IDS||[]); // tutte le Season, dal registro
