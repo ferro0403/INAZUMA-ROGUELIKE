@@ -25,7 +25,7 @@ const root = process.argv[2];
 const { startHarness } = await import(pathToFileURL(`${root}/tests/browser/harness.mjs`).href);
 process.chdir(root);
 const h = await startHarness();
-const CARD = ".player-card, .tactical-player-card, .rtg-coach-album-card, .player-detail-layout, .rtg-pull-card";
+const CARD = ".player-card, .tactical-player-card, .rtg-coach-album-card, .player-detail-layout, .rtg-pull-card, .rtg-coach-squad-slot";
 const grab = (page) => page.evaluate((sel) => {
   const out = {};
   const path = (el) => { const parts = []; for (let e = el; e && e.parentElement; e = e.parentElement) {
@@ -59,6 +59,13 @@ await scene("album-collezione", async (g) => { await g.giveHalloweenCollection()
 await scene("squadra-rtg", async (g) => { await g.giveHalloweenCollection(); await g.click("[data-rtg-home-open=campaigns]");
   await g.click("[data-rtg-campaign=rtg-ie-trilogy]"); await g.click("[data-rtg-tab=squad]"); await g.click("[data-rtg-change-player]");
   await g.page.locator("[data-rtg-picker-search]").first().fill("Nathan"); });
+await scene("allenatori-rtg", async (g) => { await g.giveHalloweenCollection(); await g.click("[data-rtg-home-open=campaigns]");
+  await g.click("[data-rtg-campaign=rtg-ie-trilogy]"); await g.click("[data-rtg-tab=squad]"); await g.click("[data-rtg-open-coaches]");
+  await g.click("[data-rtg-coaches-tab=collection]"); });
+await scene("album-allenatori", async (g) => { await g.giveHalloweenCollection(); await g.click("[data-rtg-home-open=album]");
+  await g.click("[data-rtg-album-coaches-open]"); });
+await scene("scheda-hekyll", async (g) => { await g.giveHalloweenCollection(); await g.click("[data-rtg-home-open=album]");
+  await g.click("[data-rtg-album-coaches-open]"); await g.click(".rtg-coach-album-card"); });
 await h.close();
 writeFileSync(process.argv[3], JSON.stringify(result));
 console.log(Object.entries(result).map(([k, v]) => `${k}: ${Object.keys(v).length} elementi di carta`).join("\n"));

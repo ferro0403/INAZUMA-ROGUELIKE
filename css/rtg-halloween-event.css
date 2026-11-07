@@ -4,6 +4,41 @@
 :root{--event-primary:var(--ir-yellow);--event-secondary:var(--ir-yellow);--event-accent:var(--ir-yellow);
   --event-text:var(--ir-paper);--event-ink:var(--ir-ink-deep);--event-surface:var(--ir-ink-deep);
   --event-background:var(--ir-black);--event-background-image:none}
+
+/* Passo 3.6b: pelle BASE delle carte di un evento (per gli eventi che non nominano una pelle propria in theme.skin).
+   Stessa struttura della carta Halloween, con i colori base dell'evento (classe .rtg-event--<id> messa dal registro).
+   La striscia della rarita' in alto non si tocca: resta quella di tutte le carte. */
+.player-card.rtg-event-card.rtg-event-card-base{
+  background:linear-gradient(140deg,color-mix(in srgb,var(--event-secondary) 45%,var(--event-ink)),var(--event-surface) 68%,var(--event-background));
+  border-color:var(--event-primary);color:var(--event-text)}
+.player-card.rtg-event-card.rtg-event-card-base .player-info{
+  background:color-mix(in srgb,var(--event-surface) 93%,transparent);color:var(--event-text)}
+.player-card.rtg-event-card.rtg-event-card-base .player-info .player-title,
+.player-card.rtg-event-card.rtg-event-card-base .player-info .player-title strong,
+.player-card.rtg-event-card.rtg-event-card-base .player-meta,
+.player-card.rtg-event-card.rtg-event-card-base .player-meta span{color:var(--event-text)}
+.player-card.rtg-event-card.rtg-event-card-base .player-title strong{text-shadow:0 1px 2px var(--ir-black)}
+.player-card.rtg-event-card.rtg-event-card-base .player-corner.player-overall{
+  background:var(--event-primary);color:var(--event-ink);border-color:var(--event-secondary)}
+.player-card.rtg-event-card.rtg-event-card-base .player-corner.player-role{
+  background:var(--event-text);color:var(--event-ink)}
+.player-card.rtg-event-card.rtg-event-card-base .player-portrait-wrap{
+  background:radial-gradient(circle at 50% 25%,color-mix(in srgb,var(--event-secondary) 44%,transparent),var(--event-surface) 72%)}
+.player-card.rtg-event-card.rtg-event-card-base .rtg-legacy-badge{
+  --rtg-legacy-color:var(--event-ink);--rtg-legacy-ink:var(--ir-white);
+  background:var(--event-ink);color:var(--ir-white);border-color:var(--event-primary)}
+.player-detail-layout.rtg-event-detail.rtg-event-detail-base{background:var(--event-surface);color:var(--event-text)}
+.player-detail-layout.rtg-event-detail.rtg-event-detail-base .player-detail-hero{
+  background:linear-gradient(125deg,var(--event-surface),var(--event-secondary))}
+.player-detail-layout.rtg-event-detail.rtg-event-detail-base .player-detail-visual{
+  background:radial-gradient(circle at 55% 42%,color-mix(in srgb,var(--event-secondary) 66%,transparent),var(--event-surface) 75%)}
+.player-detail-layout.rtg-event-detail.rtg-event-detail-base .player-detail-section h3{color:var(--event-primary)}
+.player-detail-layout.rtg-event-detail.rtg-event-detail-base .detail-stats>div{
+  border-color:var(--event-primary);background:var(--event-surface);color:var(--event-text)}
+.player-detail-layout.rtg-event-detail.rtg-event-detail-base .rtg-legacy-badge,
+.player-detail-layout.rtg-event-detail.rtg-event-detail-base .player-detail-rtg-legacy-badge{
+  --rtg-legacy-color:var(--event-ink);--rtg-legacy-ink:var(--ir-white);
+  background:var(--event-ink);color:var(--ir-white);border-color:var(--event-primary)}
 .rtg-campaign-select .rtg-halloween-entry{grid-column:1/-1;min-height:180px;position:relative;border:2px solid var(--event-primary);box-shadow:0 0 20px color-mix(in srgb,var(--event-secondary) 24%,transparent), inset 0 0 0 1px var(--event-surface);isolation:isolate}
 .rtg-halloween-entry .rtg-campaign-card__image{object-position:center 42%;filter:brightness(.69) saturate(1.25) contrast(1.15)}
 .rtg-halloween-entry .rtg-campaign-copy strong{font-size:clamp(1.3rem,3vw,2.2rem);color:var(--event-primary);text-shadow:0 2px 10px var(--event-ink)}

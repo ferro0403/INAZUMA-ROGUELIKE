@@ -157,6 +157,22 @@ const THEME_KEYS = Array.from(events.THEME_COLORS);
 for (const m of capsuleEvents) {
   assert.deepStrictEqual(Object.keys(m.theme.colors).sort(), [...THEME_KEYS].sort(), `${m.id}: colori base dell'evento`);
 }
+// Passo 3.6b: carte, schede e allenatori di un evento prendono la classe del loro evento e la loro pelle.
+const reg = context.GameEvents;
+for (const m of capsuleEvents) if (!reg.get(m.id)) reg.register(JSON.parse(JSON.stringify(m)), { dev: m.dev === true });
+assert.strictEqual(reg.eventClasses("halloween2026", "card"), "rtg-event-card rtg-event--halloween2026 halloween-event-card",
+  "Halloween tiene la sua pelle delle carte, identica a prima");
+assert.strictEqual(reg.eventClasses("halloween2026", "coach"), "rtg-event-coach rtg-event--halloween2026 rtg-coach-halloween");
+assert.strictEqual(reg.eventClasses("prova_dev", "card"), "rtg-event-card rtg-event--prova_dev rtg-event-card-base",
+  "un evento senza pelle propria usa la pelle base con i suoi colori");
+assert.strictEqual(reg.eventClasses("ie1", "card"), "", "le carte normali non ricevono classi di evento");
+const playerView = fs.readFileSync("js/player/player-view.js", "utf8");
+assert.doesNotMatch(playerView, /"halloween-event-(card|detail)"/, "la carta non nomina piu' la pelle di Halloween");
+assert.doesNotMatch(fs.readFileSync("js/road-to-glory/rtg-coaches-view.js", "utf8"), /rtg-coach-halloween/);
+const baseSkin = fs.readFileSync("css/rtg-halloween-event.css", "utf8");
+assert.match(baseSkin, /\.player-card\.rtg-event-card\.rtg-event-card-base\{/, "pelle base delle carte evento");
+assert.doesNotMatch(baseSkin.match(/Passo 3\.6b[\s\S]*?player-detail-rtg-legacy-badge\{[^}]*\}/)[0], /!important|::before|::after/,
+  "la pelle base non usa !important e non tocca la striscia della rarita'");
 const primaries = capsuleEvents.map((m) => m.theme.colors.primary.toLowerCase());
 assert.strictEqual(new Set(primaries).size, primaries.length, "ogni evento ha il suo colore principale");
 // Le schermate degli eventi prendono i colori dall'evento: nelle regole comuni non restano gli sfondi di Halloween.
