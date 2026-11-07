@@ -144,6 +144,14 @@
 .rtg-coaches-album .rtg-coach-album-card img.player-portrait{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center bottom!important;}
 .rtg-coaches-album .rtg-coach-album-entry.is-locked .player-portrait-wrap{filter:grayscale(.95);}
 .rtg-coaches-album .rtg-coach-album-entry.is-locked img.player-portrait{opacity:.55;}
+/* 7 nov 2026: su Safari (WebKit) il ritratto di un allenatore bloccato, sotto il filtro grigio e fuori dalla parte
+   visibile di una finestra che scorre, a volte non viene disegnato (riquadro vuoto: David Arrows e Mister Yi, le
+   carte piu' in basso). Ogni ritratto bloccato ha un suo livello di disegno: stesso aspetto, Safari lo disegna.
+   René Gade' usa gia' la sua tela (piu' sotto). */
+.rtg-coaches-modal .rtg-coach-entry.is-locked .player-portrait-wrap,
+.rtg-coaches-album .rtg-coach-album-entry.is-locked .player-portrait-wrap,
+.rtg-coach-entry.is-locked img.player-portrait,
+.rtg-coach-album-entry.is-locked img.player-portrait{transform:translateZ(0);backface-visibility:hidden}
 
 
 /* Coach-only mobile parity with the three-column RTG player collection.
