@@ -152,6 +152,8 @@
       return undefined;
     }
   }
+  // Parte 2 (b): una parte di un pezzo aggiuntivo che non e' una funzione da chiamare (home, screens).
+  const extensionPart = (eventId, name) => extensions.get(String(eventId || ""))?.[name] || null;
   const eventIdOf = (player) => {
     const legacy = String(player?.legacySeasonId || "");
     if (listed.has(legacy)) return legacy;
@@ -395,5 +397,5 @@
 
   global.GameEvents = Object.freeze({ INDEX_PATH, validate, register, onLoad, onAnyLoad, load, get, all, startMs, endMs,
     isEvent, isEventCard, isActive, forCardId, THEME_COLORS, themeVars, themeStyle, applyTheme, clearTheme, eventClasses,
-    extend, hook, extraClasses, teamsOf, currenciesOf, teamOfCard, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
+    extend, hook, extraClasses, extensionPart, teamsOf, currenciesOf, teamOfCard, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
 })(globalThis);

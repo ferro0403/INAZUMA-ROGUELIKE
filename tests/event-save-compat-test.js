@@ -71,6 +71,11 @@ assert.deepStrictEqual(projected.shared.halloween, plain(OLD_SAVE.halloween), "H
 assert.throws(() => project({ ...plain(OLD_SAVE), events: { prova: { balance: -1 } } }), /rtg-cloud-invalid/);
 assert.throws(() => project({ ...plain(OLD_SAVE), events: { "Non Valido": {} } }), /rtg-cloud-invalid-events/);
 
+// Parte 2 (b): dati propri di un evento (events.<id>.extra) conservati nel cloud; troppo grandi o non oggetti: rifiutati.
+const withExtra = project({ ...plain(OLD_SAVE), events: { prova: { ...ledger, extra: { creations: 2, note: "ok" } } } });
+assert.deepStrictEqual(withExtra.shared.events.prova.extra, { creations: 2, note: "ok" });
+assert.throws(() => project({ ...plain(OLD_SAVE), events: { prova: { ...ledger, extra: { big: "x".repeat(9000) } } } }), /rtg-cloud-invalid-events/);
+assert.throws(() => project({ ...plain(OLD_SAVE), events: { prova: { ...ledger, extra: "testo" } } }), /rtg-cloud-invalid/);
 console.log("event-save-compat-test: PASS anche nel cloud (vecchio identico a prima, events conservato)");
 
 // Passo 4: due eventi attivi insieme (Halloween + evento finto con ?dev=1&evento=prova_dev). Il salvataggio vecchio
