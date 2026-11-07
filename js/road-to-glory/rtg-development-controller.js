@@ -67,7 +67,7 @@
     function developmentTeamLabels(player){
       const sid=seasonFor(player),db=global.SeasonRegistry?.database?.(sid);
       const event=global.GameEvents?.get?.(sid);
-      if(event)return [event.team.name];
+      if(event)return [(global.GameEvents.teamOfCard?.(event,String(player?.playerId||String(player?.cardId||"").split("::")[1]||""))||event.team).name];
       const teamNames=new Map((db?.teams||[]).map(team=>[
         String(team?.teamId||team?.id||""),String(team?.teamName||team?.name||"")
       ]).filter(([id,name])=>id&&name));

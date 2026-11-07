@@ -18,7 +18,9 @@
   const PRIZE = manifest.economy.winPrize;
   const LUCKY_PRIZE = manifest.economy.luckyPrize;
   const LUCKY_CHANCE_PERCENT = manifest.economy.luckyChancePercent;
-  const ROSTER_SIZE = manifest.team.rosterSize;
+  // Parte 2 (a): un evento puo' avere piu' squadre (la prima e' team) e piu' monete (la prima e' currency).
+  const TEAMS = global.GameEvents?.teamsOf?.(manifest) || [manifest.team];
+  const ROSTER_SIZE = TEAMS.reduce((sum, entry) => sum + Number(entry.rosterSize || 0), 0);
   const STARTERS_SIZE = manifest.team.startersSize;
   const BANNER_URL = manifest.assets.banner;
   const GRAVEYARD_URL = manifest.assets.background;
@@ -28,9 +30,15 @@
   const UI = manifest.labels.ui;
   const TEAM_NAME = manifest.team.name;
   const uiText = key => escape(UI[key]);
-  const CUR = manifest.currency;
+  const CURRENCIES = global.GameEvents?.currenciesOf?.(manifest) ||
+    [{ ...manifest.currency, field: manifest.save.currencyField || "balance" }];
+  const CUR = CURRENCIES[0];
+  const fieldOf = currencyId => (CURRENCIES.find(c => c.id === currencyId) || CURRENCIES[0]).field;
+  const PULL_FIELD = fieldOf(manifest.economy.pullCurrency);
+  const WIN_FIELD = fieldOf(manifest.economy.winCurrency);
+  const LUCKY_FIELD = fieldOf(manifest.economy.luckyCurrency || manifest.economy.winCurrency);
   // Stato dell'evento nel salvataggio: shared.halloween per Halloween, shared.events.<id> per gli eventi nuovi.
-  const CURRENCY = manifest.save.currencyField || "balance";
+  const CURRENCY = manifest.save.currencyField || "balance"; // moneta principale (la prima)
   const OWNED_ID = new RegExp(manifest.save.ownedIdPattern || "^[A-Za-z0-9_]+$");
   const ledger = account => global.GameEvents.ledger(account, manifest);
   // Carte senza lo stile "vampiro" (le due speciali).
@@ -71,24 +79,32 @@
   async function prepare(fetcher = global.fetch && global.fetch.bind(global)) {
     if (assets) return assets;
     if (!fetcher) throw fail("halloween-fetch-unavailable");
-    if (!assetsPromise) assetsPromise = Promise.all([
-      manifest.team.files.players,
-      manifest.team.files.lineup,
-      manifest.team.files.moves
+    if (!assetsPromise) assetsPromise = Promise.all(TEAMS.map(config => Promise.all([
+      config.files.players,
+      config.files.lineup,
+      config.files.moves
     ].map(async path => {
       const response = await fetcher(path, {cache:"no-store"});
       if (!response.ok) throw fail("halloween-asset-unavailable");
       return response.json();
     })).then(([teams, lineup, moves]) => {
       const team = teams[0], setup = lineup.teams[0], list = team.players || [];
-      if (team.teamId !== TEAM_ID || asId(setup.teamId).replaceAll("_","-") !== TEAM_ID ||
-        list.length !== ROSTER_SIZE || setup.startingXI.length !== STARTERS_SIZE ||
-        new Set(setup.startingXI).size !== STARTERS_SIZE ||
+      if (team.teamId !== config.teamId || asId(setup.teamId).replaceAll("_","-") !== config.teamId ||
+        list.length !== config.rosterSize || setup.startingXI.length !== config.startersSize ||
+        new Set(setup.startingXI).size !== config.startersSize ||
         !setup.bossFormation || (global.RoadToGloryConfig?.season?.("ie1")?.formations &&
           !global.RoadToGloryConfig.season("ie1").formations.some(f => f.id === setup.bossFormation)) ||
         list.some(p => !moves.players[asId(p.playerId)]?.moves?.length) ||
         setup.startingXI.some(pid => !list.some(p => asId(p.playerId) === asId(pid)))) throw fail("halloween-invalid-asset-contract");
-      assets = Object.freeze({team, setup, moves, players:new Map(list.map(p=>[asId(p.playerId),p]))});
+      return Object.freeze({config, team, setup, moves, players:new Map(list.map(p=>[asId(p.playerId),p]))});
+    }))).then(teamAssets => {
+      // La prima squadra resta quella di sempre (avversario predefinito); giocatori e mosse di tutte le squadre insieme.
+      const first = teamAssets[0];
+      const players = new Map(teamAssets.flatMap(entry => Array.from(entry.players.entries())));
+      const teamOf = new Map(teamAssets.flatMap(entry => Array.from(entry.players.keys()).map(pid => [pid, entry])));
+      const moves = teamAssets.length === 1 ? first.moves :
+        {...first.moves, players:Object.assign({}, ...teamAssets.map(entry => entry.moves.players))};
+      assets = Object.freeze({team:first.team, setup:first.setup, moves, players, teams:teamAssets, teamOf});
       return assets;
     }).catch(error => { assetsPromise = null; throw error; });
     return assetsPromise;
@@ -99,12 +115,13 @@
     const raw = assets?.players?.get(asId(pid));
     if (!raw) return null;
     const moves = assets.moves.players[asId(pid)]?.moves || [];
+    const teamConfig = assets.teamOf?.get(asId(pid))?.config || manifest.team;
     const statKeys = ["attack","control","speed","grit","physical","stamina","defense","save"];
     const stats = Object.fromEntries(statKeys.map(k => [k, Math.max(0, Number(raw[k]||0)*10)]));
     return {
       ...raw, ...stats, playerId:asId(raw.playerId), cardId:EVENT_ID+"::"+asId(raw.playerId),
-      legacySeasonId:EVENT_ID, resolvedSeasonId:EVENT_ID, teamId:TEAM_ID,
-      teamName:manifest.team.name, teamLogoUrl:LOGO_URL, level:20, stats, baseStats:stats,
+      legacySeasonId:EVENT_ID, resolvedSeasonId:EVENT_ID, teamId:teamConfig.teamId,
+      teamName:teamConfig.name, teamLogoUrl:teamConfig.logo || LOGO_URL, level:20, stats, baseStats:stats,
       normalizedRole:raw.position, finalOverall:Number(raw.overall)||0,
       category:raw.category, finalRarity:raw.category, activeMove:moves[0] || null,
       halloweenMoves:moves, halloweenVampire:!SPECIAL.includes(asId(pid)),
@@ -114,7 +131,7 @@
     };
   }
   function eventState(raw) {
-    if (raw == null) return {[CURRENCY]:0, ownedIds:[], pullCount:0, completedIds:[], luckyWins:0};
+    if (raw == null) return {...Object.fromEntries(CURRENCIES.map(c => [c.field, 0])), ownedIds:[], pullCount:0, completedIds:[], luckyWins:0};
     if (!raw || typeof raw !== "object" || Array.isArray(raw) ||
       !Number.isSafeInteger(raw[CURRENCY]) || raw[CURRENCY] < 0 ||
       !Number.isSafeInteger(raw.pullCount) || raw.pullCount < 0 ||
@@ -123,8 +140,11 @@
       new Set(raw.ownedIds).size !== raw.ownedIds.length ||
       new Set(raw.completedIds).size !== raw.completedIds.length ||
       raw.ownedIds.some(id => !OWNED_ID.test(id)) ||
-      raw.completedIds.some(id => typeof id !== "string" || !id || id.length > 120)) throw fail("halloween-invalid-account");
-    return clone(raw);
+      raw.completedIds.some(id => typeof id !== "string" || !id || id.length > 120) ||
+      CURRENCIES.slice(1).some(c => raw[c.field] !== undefined && (!Number.isSafeInteger(raw[c.field]) || raw[c.field] < 0)))
+      throw fail("halloween-invalid-account");
+    // Monete in piu' (Parte 2 a): uno stato vecchio senza il loro campo parte da 0.
+    return {...Object.fromEntries(CURRENCIES.slice(1).map(c => [c.field, 0])), ...clone(raw)};
   }
   function opponentOverall() {
     if (!assets) throw fail("halloween-assets-not-ready");
@@ -154,6 +174,7 @@
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
     let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved",pendingRevealHidden=false;
     let selectedAlbumTeamId=TEAM_ID;
+    let challengeTeamId=TEAM_ID; // squadra da sfidare (la home di un evento puo' sceglierla)
     let sandboxSeed=null;
     // Classi in piu' sulla finestra della scheda, dal pezzo aggiuntivo dell'evento (Halloween: vampiro).
     let modalExtraClass="";
@@ -253,10 +274,16 @@
     }
     function opponent() {
       // Formazione avversaria dal file della formazione dell'evento (bossFormation: Halloween 4-4-2, prova 4-2-4).
-      return {name:manifest.team.name,teamId:TEAM_ID,logoUrl:LOGO_URL,seasonId:EVENT_ID,formationId:assets.setup.bossFormation,
-        lineup:assets.setup.startingXI.map(pid=>player(pid)),bench:Array.from(assets.players.keys()).filter(pid=>!assets.setup.startingXI.includes(pid)).map(pid=>player(pid))};
+      // Avversario: una squadra dell'evento (la prima se non scelta; piu' squadre dalla Parte 2 a).
+      const opponentTeam=(assets.teams||[]).find(entry=>entry.config.teamId===challengeTeamId)||assets.teams?.[0]||{config:manifest.team,setup:assets.setup,players:assets.players};
+      const xi=opponentTeam.setup.startingXI;
+      return {name:opponentTeam.config.name,teamId:opponentTeam.config.teamId,logoUrl:opponentTeam.config.logo||LOGO_URL,seasonId:EVENT_ID,formationId:opponentTeam.setup.bossFormation,
+        lineup:xi.map(pid=>player(pid)),bench:Array.from(opponentTeam.players.keys()).filter(pid=>!xi.includes(pid)).map(pid=>player(pid))};
     }
-    function currency(n) { return '<span class="halloween-currency"><img src="'+escape(PUMPKIN_URL)+'" alt="">'+escape(n)+'</span>'; }
+    function currency(n,cur=CUR) { return '<span class="halloween-currency"><img src="'+escape(cur.icon||PUMPKIN_URL)+'" alt="">'+escape(n)+'</span>'; }
+    // Portafoglio: una pillola per moneta (Halloween: una sola, come prima).
+    const curOf = field => CURRENCIES.find(c => c.field === field) || CUR;
+    const walletPills = () => CURRENCIES.map(c => currency(ledger(shared)?.[c.field]||0, c)).join("");
     function isOwned(pid) {
       if(asId(pid)===global.RoadToGloryHalloweenCompletion?.PLAYER_ID)
         return global.RoadToGloryHalloweenCompletion.owns(shared);
@@ -524,7 +551,7 @@
       return '<main class="screen rtg-run-screen rtg-halloween-run-screen halloween-screen">'+
        '<header class="topbar rtg-main-topbar halloween-original-topbar"><button type="button" class="btn rtg-home-button" data-halloween-back aria-label="Torna alle campagne"><span>←</span></button>'+
        '<div class="rtg-main-title"><p class="eyebrow">ROAD TO GLORY · EVENTO</p><strong class="brand">'+uiText("brand")+'</strong><span data-halloween-countdown>'+(isOpen()?countdown():"EVENTO TERMINATO")+'</span></div>'+
-       '<div class="status-strip"><span class="status-pill halloween-wallet">'+currency(ledger(shared)?.[CURRENCY]||0)+'</span></div></header>'+
+       '<div class="status-strip"><span class="status-pill halloween-wallet">'+walletPills()+'</span></div></header>'+
        '<div class="content narrow rtg-run-content halloween-original-content">'+body+'</div>'+footer("run")+'</main>';
     }
     function matchSection() {
@@ -590,7 +617,7 @@
           requirementsMarkup:requirement,nextTeamName:TEAM_NAME,dirty:false})+'</div>';
     }
     function vendingSection() {
-      const available=halloweenPrizeIds(shared),enough=ledger(shared)[CURRENCY]>=PRICE;
+      const available=halloweenPrizeIds(shared),enough=ledger(shared)[PULL_FIELD]>=PRICE;
       const capsules=Array.from({length:12},(_,i)=>'<div class="rtg-vending-capsule-v9 c'+(i%6+1)+'" data-capsule-rarity="'+(i%2?"orange":"black")+'"></div>').join("");
       return '<div class="halloween-vending"><button type="button" class="halloween-vending-close" data-halloween-close-vending aria-label="Chiudi distributore">×</button><p class="eyebrow">'+uiText("vendingStation")+'</p><h2>'+uiText("vendingTitleLong")+'</h2>'+
         '<div class="rtg-vending halloween-vending-classic"><div class="rtg-vending-stage"><div class="rtg-vending-machine-v9 rtg-vending-machine-v12" data-rtg-vending-machine aria-label="'+uiText("vendingAria")+'">'+
@@ -598,17 +625,17 @@
         '<div class="rtg-vending-window-v9">'+capsules+'<span class="rtg-vending-funnel-v10"></span><span class="rtg-vending-window-glare-v9"></span></div>'+
         '<div class="rtg-vending-body-v9"><div class="rtg-vending-info-v9"><small>1 CAPSULA</small><strong>'+PRICE+'</strong></div>'+
         '<div class="rtg-vending-crank-v9"><span></span></div><div class="rtg-vending-chute-v9"><span class="rtg-vending-chute-well-v9"></span><span class="rtg-vending-chute-flap-v10"></span><div class="rtg-vending-prize-track-v9"><span class="rtg-vending-prize-v9"></span></div></div><div class="rtg-vending-brand-v9">'+uiText("icon")+'</div></div></div>'+
-        '<button class="btn btn-yellow rtg-vending-pull halloween-action" data-halloween-pull '+(!isOpen()||!enough||available.length===0?"disabled":"")+'>GIRA · '+currency(PRICE)+'</button>'+
-        '<div class="rtg-vending-wallet-chip"><span>'+uiText("walletTitle")+'</span><strong>'+currency(ledger(shared)[CURRENCY])+'</strong></div></div></div>'+
+        '<button class="btn btn-yellow rtg-vending-pull halloween-action" data-halloween-pull '+(!isOpen()||!enough||available.length===0?"disabled":"")+'>GIRA · '+currency(PRICE,curOf(PULL_FIELD))+'</button>'+
+        '<div class="rtg-vending-wallet-chip"><span>'+uiText("walletTitle")+'</span><strong>'+currency(ledger(shared)[PULL_FIELD],curOf(PULL_FIELD))+'</strong></div></div></div>'+
         '</div>';
     }
     function eventAlbumTeams() {
       // Single event team today; future event teams can be added to this
       // collection without replacing the native RTG teams/roster screens.
-      const teamRecords=[assets.team];
-      return teamRecords.filter(Boolean).map(team=>{
+      const teamRecords=(assets.teams||[{team:assets.team}]).map(entry=>entry.team);
+      return teamRecords.filter(Boolean).map((team,index)=>{
         const bonus=global.RoadToGloryHalloweenCompletion;
-        const extra=bonus?.owns?.(shared)?[player(bonus.PLAYER_ID)]:[];
+        const extra=index===0&&manifest.completionReward&&bonus?.owns?.(shared)?[player(bonus.PLAYER_ID)]:[];
         const roster=[...(team.players||[]).map(raw=>isOwned(asId(raw.playerId))
           ?resolveCard(EVENT_ID+"::"+asId(raw.playerId)):player(raw.playerId)),...extra].filter(Boolean);
         return {teamId:asId(team.teamId),teamName:asId(team.teamName||team.name)||TEAM_NAME,
@@ -1077,7 +1104,7 @@
     async function grantDevPumpkins(){
       if(!devMode)throw fail("halloween-dev-unavailable");
       await mutate("halloween-dev-pumpkins",account=>{
-        ledger(account)[CURRENCY]=Math.max(ledger(account)[CURRENCY],99999);
+        for(const c of CURRENCIES)ledger(account)[c.field]=Math.max(Number(ledger(account)[c.field])||0,99999);
       });
       notify("DEV: 99.999 "+CUR.unit+" "+UI.short+" disponibili");
     }
@@ -1159,11 +1186,11 @@
           const isCoach=Boolean(drawn.coach);
           let markup=isCoach
             ?global.RoadToGloryCoachesView?.result?.(drawn.coach)?.replace("ROAD TO GLORY · STAFF",UI.tag)
-            :deps.runView.pullResultMarkup(drawn.result,drawn.player,{teams:[{teamId:TEAM_ID,teamName:TEAM_NAME,logoUrl:LOGO_URL}]});
+            :deps.runView.pullResultMarkup(drawn.result,drawn.player,{teams:TEAMS.map(entry=>({teamId:entry.teamId,teamName:entry.name,logoUrl:entry.logo||LOGO_URL}))});
           if(!markup)return;
           if(!isCoach)markup=markup.replace("SALDO RTG",()=>uiText("walletTitle"))
             .replace(/(<div class="rtg-pull-balance">[\s\S]*?<strong>)[\s\S]*?(<\/strong>)/,
-               (_all,before,after)=>before+'<img class="halloween-reveal-currency-icon" src="'+escape(PUMPKIN_URL)+'" alt="'+escape(CUR.iconAlt)+'"> '+escape(drawn.result.balanceAfter)+' '+escape(CUR.unitUpper)+after)
+               (_all,before,after)=>before+'<img class="halloween-reveal-currency-icon" src="'+escape(curOf(PULL_FIELD).icon||PUMPKIN_URL)+'" alt="'+escape(curOf(PULL_FIELD).iconAlt||CUR.iconAlt)+'"> '+escape(drawn.result.balanceAfter)+' '+escape(CUR.unitUpper)+after)
             .replace(/ROAD TO GLORY · LEGACY [^<]*/,UI.tag);
           deps.openModal(markup,{className:"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"});
           modalRoot()?.querySelectorAll?.("[data-rtg-pull-continue],[data-rtg-coaches-collection]")?.forEach(btn=>btn.addEventListener("click",()=>deps.closeModal?.()));
@@ -1439,7 +1466,7 @@
         const won=m.result?.winner==="user";
         const lucky=won&&global.RoadToGloryRng.int(m.matchId,"halloween-lucky",0,100)<LUCKY_CHANCE_PERCENT;
         const award=already?Number(live.halloweenAward||0):!won?0:(lucky?LUCKY_PRIZE:PRIZE);
-        if(!already){ledger(account)[CURRENCY]+=award;completed.push(m.matchId);if(lucky)ledger(account).luckyWins++;}
+        if(!already){ledger(account)[lucky?LUCKY_FIELD:WIN_FIELD]+=award;completed.push(m.matchId);if(lucky)ledger(account).luckyWins++;}
         return {writes:{[MATCH_KEY]:{...m,halloweenAward:award}},match:m};
       },[SHARED_KEY,MATCH_KEY]);
       match=(await storage.read(MATCH_KEY))||m;
@@ -1507,7 +1534,7 @@
       let selected="";
       await mutate("halloween-capsule",(account)=>{
         const ev=ledger(account);
-        if(ev[CURRENCY]<PRICE)throw fail("halloween-insufficient-pumpkins");
+        if(ev[PULL_FIELD]<PRICE)throw fail("halloween-insufficient-pumpkins");
         const missing=halloweenPrizeIds(account);
         if(!missing.length)throw fail("halloween-collection-completed");
         const random=global.crypto?.getRandomValues?global.crypto.getRandomValues(new Uint32Array(1))[0]/4294967296:Math.random();
@@ -1516,19 +1543,19 @@
           if(account.coachOwnedIds.includes(selected))throw fail("halloween-coach-already-owned");
           // Existing RTG shared account persists coaches for BOTH campaigns.
           // Debit and coach grant commit in the SAME canonical transaction.
-          ev[CURRENCY]-=PRICE;ev.pullCount++;account.coachOwnedIds.push(selected);
+          ev[PULL_FIELD]-=PRICE;ev.pullCount++;account.coachOwnedIds.push(selected);
         }else{
           const record=recordCard(selected);
           if(account.gachaAcquiredCards.some(c=>c.cardId===record.cardId))throw fail("halloween-existing-card");
-          ev[CURRENCY]-=PRICE;ev.ownedIds.push(selected);ev.pullCount++;
+          ev[PULL_FIELD]-=PRICE;ev.ownedIds.push(selected);ev.pullCount++;
           account.gachaAcquiredCards.push(record);
         }
       });
       if(selected===HALLOWEEN_COACH_ID)
         return {coach:global.RoadToGloryCoaches?.lookup?.(selected),result:{
-          coachId:selected,rarity:"Leggenda",balanceAfter:ledger(shared)[CURRENCY]}};
+          coachId:selected,rarity:"Leggenda",balanceAfter:ledger(shared)[PULL_FIELD]}};
       const p=player(selected);
-      return {player:p,result:{cardId:EVENT_ID+"::"+selected,playerId:selected,legacySeasonId:EVENT_ID,rarity:p?.category||"Normale",balanceAfter:ledger(shared)[CURRENCY]}};
+      return {player:p,result:{cardId:EVENT_ID+"::"+selected,playerId:selected,legacySeasonId:EVENT_ID,rarity:p?.category||"Normale",balanceAfter:ledger(shared)[PULL_FIELD]}};
     }
     async function open(initialView="match") {
       dispose();const epoch=session;

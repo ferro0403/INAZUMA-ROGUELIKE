@@ -20,7 +20,9 @@ for (const f of index) if (!files.includes(f)) files.push(f);
 
 const count = (list) => list.reduce((acc, role) => ({ ...acc, [role]: (acc[role] || 0) + 1 }), {});
 for (const file of files) {
-  const m = JSON.parse(read(file));
+  const m0 = JSON.parse(read(file));
+  for (const teamConfig of (Array.isArray(m0.teams) && m0.teams.length ? m0.teams : [m0.team])) {
+  const m = { ...m0, id: `${m0.id}/${teamConfig.teamId}`, team: teamConfig };
   const lineup = JSON.parse(read(m.team.files.lineup)).teams[0];
   const team = JSON.parse(read(m.team.files.players))[0];
   const byId = new Map(team.players.map((p) => [String(p.playerId), p]));
@@ -32,8 +34,9 @@ for (const file of files) {
   const roles = lineup.startingXI.map((id) => byId.get(String(id))?.position);
   assert(roles.every(Boolean), `${where}: titolare fuori dalla squadra`);
   assert.deepStrictEqual(count(roles), count(slots), `${where}: i ruoli dei titolari devono riempire la formazione (11 al loro posto)`);
+  }
 }
 const source = read("js/road-to-glory/rtg-halloween-event.js");
 assert.doesNotMatch(source, /formationId:"4-4-2"/, "la formazione avversaria non e' piu' fissa");
-assert.match(source, /formationId:assets\.setup\.bossFormation/);
+assert.match(source, /formationId:opponentTeam\.setup\.bossFormation/, "formazione avversaria dal file della squadra");
 console.log(`event-starters-test: PASS (${files.length} eventi, 11 titolari al loro posto)`);

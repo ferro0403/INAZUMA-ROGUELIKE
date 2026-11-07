@@ -63,7 +63,10 @@
     "pullPrice": 200,
     "winPrize": 300,
     "luckyPrize": 600,
-    "luckyChancePercent": 10
+    "luckyChancePercent": 10,
+    "luckyCurrency": "stelle_prova",
+    "pullCurrency": "gettoni_prova",
+    "winCurrency": "gettoni_prova"
   },
   "team": {
     "teamId": "prova-angeli",
@@ -132,6 +135,72 @@
       "playerId": "2045",
       "rarity": "Elite",
       "vampire": false
+    },
+    {
+      "playerId": "2080",
+      "rarity": "Leggenda",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2074",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2076",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2079",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2081",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2082",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2072",
+      "rarity": "Leggenda",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2073",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2077",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2075",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
+    },
+    {
+      "playerId": "2078",
+      "rarity": "Mondiale",
+      "vampire": false,
+      "teamId": "prova-orchi"
     }
   ],
   "coaches": [
@@ -180,5 +249,45 @@
   },
   "extensions": [
     "js/events/prova_dev/pezzo-di-prova.js"
+  ],
+  "teams": [
+    {
+      "teamId": "prova-angeli",
+      "name": "Angeli di prova",
+      "logo": "assets/events/prova_dev/stemma.webp",
+      "files": {
+        "players": "data/events/dev/prova_dev/prova-angeli-players.json",
+        "lineup": "data/events/dev/prova_dev/prova-angeli-lineup.json",
+        "moves": "data/events/dev/prova_dev/prova-angeli-moves.json"
+      },
+      "rosterSize": 11,
+      "startersSize": 11
+    },
+    {
+      "teamId": "prova-orchi",
+      "name": "Orchi di prova",
+      "logo": "assets/events/prova_dev/stemma.webp",
+      "files": {
+        "players": "data/events/dev/prova_dev/prova-orchi-players.json",
+        "lineup": "data/events/dev/prova_dev/prova-orchi-lineup.json",
+        "moves": "data/events/dev/prova_dev/prova-orchi-moves.json"
+      },
+      "rosterSize": 11,
+      "startersSize": 11
+    }
+  ],
+  "currencies": [
+    {
+      "id": "gettoni_prova"
+    },
+    {
+      "id": "stelle_prova",
+      "name": "Stelle prova",
+      "unit": "stelle",
+      "unitUpper": "STELLE",
+      "icon": "assets/events/prova_dev/stella.webp",
+      "iconAlt": "Stella di prova",
+      "field": "stars"
+    }
   ]
 }
