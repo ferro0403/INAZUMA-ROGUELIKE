@@ -61,7 +61,7 @@
   }
   function eventCard() {
     return '<button type="button" class="rtg-campaign-card rtg-halloween-entry" data-rtg-halloween-open data-rtg-event-open="' +
-      escape(EVENT_ID) + '" ' +
+      escape(EVENT_ID) + '" style="' + (global.GameEvents?.themeStyle?.(EVENT_ID) || "") + '" ' +
       (isOpen() ? '' : 'disabled aria-disabled="true" ') +
       '><img class="rtg-campaign-card__image" src="' + escape(BANNER_URL) + '" alt="">' +
       '<span class="rtg-campaign-shade"></span><span class="rtg-campaign-copy"><small>' + uiText("entryEyebrow") + '</small>' +
@@ -162,6 +162,8 @@
       if(matchTimer!=null)global.clearTimeout?.(matchTimer);matchTimer=null;
       vendingMotion?.stop?.();vendingMotion=null;lastResolution=null;lastResolutionStage="resolved";pendingRevealHidden=false;lastPresentedView=null;
       deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
+      // Passo 3.6: i colori dell'evento valgono solo mentre l'evento e' aperto.
+      global.GameEvents?.clearTheme?.(app);global.GameEvents?.clearTheme?.(deps.getModalRoot?.());
     }
     function listen() { if(tick!=null)global.clearInterval?.(tick);tick=global.setInterval?.(()=>{const el=app?.querySelector?.("[data-halloween-countdown]"); if(el)el.textContent=isOpen()?countdown():"EVENTO TERMINATO";if(!isOpen())app?.querySelectorAll?.("[data-halloween-start],[data-halloween-pull]")?.forEach(b=>b.disabled=true);},1000); }
     function readAccount(record) { const current = record || {}; return {...clone(current),tokens:current.tokens??0,gachaAcquiredCards:current.gachaAcquiredCards||[],developmentByCardId:current.developmentByCardId||{},coachOwnedIds:current.coachOwnedIds||[],
@@ -1520,6 +1522,7 @@
     async function open(initialView="match") {
       dispose();const epoch=session;
       await prepare();assertCurrent(epoch);
+      global.GameEvents?.applyTheme?.(app,EVENT_ID);global.GameEvents?.applyTheme?.(deps.getModalRoot?.(),EVENT_ID);
       const previous=global.SeasonRegistry?.activeId?.();
       const needed=Array.from(global.RoadToGloryConfig?.SEASON_IDS||[]); // tutte le Season, dal registro
       await Promise.all(needed.map(id=>global.SeasonRegistry?.loadDatabase?.(id).catch(()=>null)));

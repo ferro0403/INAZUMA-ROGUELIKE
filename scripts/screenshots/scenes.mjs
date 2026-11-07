@@ -130,6 +130,13 @@ export const scenes = [
   { name: "92-halloween-scheda-senza-evento", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-player-detail^='halloween2026::']" }, { removeClass: ["#modal-root", "halloween-detail-native"] }] },
   { name: "91-halloween-scheda-da-squadra", account: "sbloccato", dev: true, steps: [...halloweenCoach, { click: "[data-rtg-player-detail^='halloween2026::']" }] },
 
+  // --- Carte Halloween nelle schermate RTG comuni (Passo 3.6: devono restare identiche). Account con le 18 carte e Hekyll.
+  { name: "97-hw-album-collezione", account: "sbloccato", steps: [{ game: "giveHalloweenCollection" }, { click: "[data-rtg-home-open=album]" }, { click: "[data-rtg-album-halloween]" }, { click: "[data-rtg-album-team]" }, { wait: 800 }] },
+  { name: "98-hw-album-scheda", account: "sbloccato", steps: [{ game: "giveHalloweenCollection" }, { click: "[data-rtg-home-open=album]" }, { click: "[data-rtg-album-halloween]" }, { click: "[data-rtg-album-team]" }, { wait: 800 }, { click: "[data-rtg-album-player-card], [data-rtg-album-player-entry]" }, { wait: 600 }] },
+  { name: "99-hw-cambio-giocatore-rtg", account: "sbloccato", steps: [{ game: "giveHalloweenCollection" }, ...rtgS1, { click: "[data-rtg-tab=squad]" }, { click: "[data-rtg-change-player]" }, { fill: ["[data-rtg-picker-search]", "Nathan"] }, { wait: 600 }] },
+  { name: "100-hw-allenatori-rtg", account: "sbloccato", steps: [{ game: "giveHalloweenCollection" }, ...rtgS1, { click: "[data-rtg-tab=squad]" }, { click: "[data-rtg-open-coaches]" }, { click: "[data-rtg-coaches-tab=collection]" }] },
+  { name: "101-hw-album-allenatori", account: "sbloccato", steps: [{ game: "giveHalloweenCollection" }, { click: "[data-rtg-home-open=album]" }, { click: "[data-rtg-album-coaches-open]" }, { wait: 600 }] },
+
   // --- Evento Halloween (card giocatore e coach: bug gia' risolto, qui per accorgersi se ricompare)
   { name: "30-halloween-home", account: "sbloccato", steps: halloween },
   { name: "31-halloween-prepartita", account: "sbloccato", steps: [...halloween, { click: ".halloween-event-main-cta" }] },

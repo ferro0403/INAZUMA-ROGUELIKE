@@ -17,6 +17,8 @@
   const isObject = (value) => value && typeof value === "object" && !Array.isArray(value);
   const isText = (value) => typeof value === "string" && value.trim() !== "";
   const isPositiveInt = (value) => Number.isInteger(value) && value > 0;
+  // Colori base dell'aspetto di un evento (theme.colors nel suo file).
+  const THEME_COLORS = Object.freeze(["primary", "secondary", "accent", "text", "ink", "surface", "background"]);
   const isPattern = (value) => { try { return isText(value) && !!new RegExp(value); } catch (error) { return false; } };
   // Data con fuso orario esplicito (es. 2026-11-06T23:59:59+01:00), per leggere le "ore italiane" senza ambiguita'.
   const ISO_WITH_ZONE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
@@ -66,6 +68,12 @@
       }
     } else {
       need(manifest.save?.storagePrefix === undefined, "save.storagePrefix solo per gli eventi finti");
+    }
+    // Passo 3.6: aspetto dell'evento (colori base). Tutto il resto dei colori si ricava da questi.
+    if (manifest.kind === "capsuleEvent") {
+      for (const key of THEME_COLORS) {
+        need(/^#[0-9a-fA-F]{6}$/.test(manifest.theme?.colors?.[key] || ""), `theme.colors.${key} deve essere #RRGGBB`);
+      }
     }
     for (const coach of manifest.coaches || []) {
       need(isText(coach.id) && isText(coach.name), "allenatore senza id o name");
@@ -213,6 +221,32 @@
     return all().find((manifest) => value.startsWith(manifest.save.cardIdPrefix)) || null;
   };
   const badge = (eventId) => get(eventId)?.labels?.badge || "";
+
+  // Aspetto di un evento per la pagina: i colori base del suo file (--event-primary...) e l'immagine di sfondo.
+  // themeStyle() per il markup (attributo style), applyTheme()/clearTheme() per un elemento gia' nella pagina.
+  function themeVars(eventId) {
+    const manifest = get(eventId);
+    if (!manifest?.theme?.colors) return {};
+    const vars = Object.fromEntries(THEME_COLORS.map((key) => [`--event-${key}`, manifest.theme.colors[key]]));
+    const background = manifest.assets?.background;
+    if (background) vars["--event-background-image"] = `url("${String(background).replace(/["\\]/g, "")}")`;
+    return vars;
+  }
+  const themeStyle = (eventId) => Object.entries(themeVars(eventId)).map(([key, value]) => `${key}:${value}`).join(";")
+    .replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  function applyTheme(element, eventId) {
+    if (typeof element?.style?.setProperty !== "function") return;
+    clearTheme(element);
+    for (const [key, value] of Object.entries(themeVars(eventId))) element.style.setProperty(key, value);
+    if (element.dataset) element.dataset.eventTheme = String(eventId);
+  }
+  function clearTheme(element) {
+    if (typeof element?.style?.removeProperty !== "function") return;
+    for (const key of [...THEME_COLORS.map((name) => `--event-${name}`), "--event-background-image"]) {
+      element.style.removeProperty(key);
+    }
+    if (element.dataset) delete element.dataset.eventTheme;
+  }
   const label = (eventId, key) => get(eventId)?.labels?.[key] || "";
 
   // Stato dell'evento nel salvataggio condiviso: shared.<save.key> per gli eventi vecchi, altrimenti
@@ -231,5 +265,5 @@
   const endMs = (eventId) => Date.parse(get(eventId)?.window?.end || "");
 
   global.GameEvents = Object.freeze({ INDEX_PATH, validate, register, onLoad, onAnyLoad, load, get, all, startMs, endMs,
-    isEvent, isEventCard, isActive, forCardId, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
+    isEvent, isEventCard, isActive, forCardId, THEME_COLORS, themeVars, themeStyle, applyTheme, clearTheme, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
 })(globalThis);

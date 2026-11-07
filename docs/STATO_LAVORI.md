@@ -87,6 +87,26 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
   - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f → 4.371 dopo 1i.
     Dopo le correzioni del 5 nov (regole e `!important` rimessi): **4.504** nella PR finale; file CSS 50 → 27.
 
+## Passo 3.6 — Aspetto degli eventi come dati (approvato il 7 nov 2026, in corso)
+
+Obiettivo: per un evento nuovo non si ricrea niente di condiviso. Squadra, Allenatori e Collezione restano comuni; le
+carte normali non cambiano; le carte dell'evento hanno la base comune (striscia della rarita' uguale) e cornice, sfondo,
+badge e bordi dell'evento; home, banner, colori, sfondi, moneta, pannelli e distributore vengono dal file dell'evento.
+Decisioni dell'utente (7 nov): Halloween e' concluso, il suo aspetto fuori dalle carte si semplifica; le carte Halloween
+(cornice, colori, striscia, badge HW, vampiri) e i loro dati restano identici. Dopo ogni PR: push, controllo dell'utente
+sulla preview, poi la successiva. Fuori: Passo 2, Passo 5, 3.7.
+
+| PR | Cosa | Stima | Stato |
+|---|---|---|---|
+| 3.6a | Grafica comune degli eventi: 7 colori base in `theme.colors` del file; schermate, ingresso e finestre dell'evento li usano | 3-4 h | fatta, in controllo |
+| 3.6b | Carte e allenatore dell'evento con la cornice dell'evento; carte Halloween identiche | 3-4 h | da fare |
+| 3.6c | Distributore e moneta per evento | 2 h | da fare |
+| 3.6d | Pezzi aggiuntivi per evento (i vampiri come pezzo di Halloween); evento di prova con aspetto completo suo | 3 h | da fare |
+
+Foto: oltre alle 88 schermate di prima, 5 nuove con le carte Halloween nelle schermate RTG comuni (97-101: collezione
+nell'album, scheda dall'album, cambio giocatore RTG, allenatori RTG, album allenatori), con un account che possiede le
+18 carte e Hekyll. Dal 7 nov Halloween e' concluso davvero: test e foto usano l'ora degli eventi del 3 nov.
+
 ## Ordine di unione definitivo (7 nov 2026)
 
 **Da unire in `main`: una sola PR, la finale `release/passo-1-4` -> `main` (#572).** Contiene, controllato commit per commit:
