@@ -392,8 +392,8 @@ export const tests = [
   {
     name: "16-carte-di-altri-eventi",
     // Parte 2 (c): l'evento di prova puo' usare (in sola lettura) le carte di Halloween, perche' il suo file lo dice
-    // (uses.cardsFrom). Le vede nella sua home e nel cambio giocatore della sua squadra; il laboratorio non le
-    // offre; lo stato di Halloween e l'account vero non cambiano.
+    // (uses.cardsFrom). Le vede nella sua home e nel cambio giocatore della sua squadra; il diario elenca solo
+    // le carte dell'evento; lo stato di Halloween e l'account vero non cambiano.
     async run({ game, assert }) {
       const g = await game({ dev: true, query: "evento=prova_dev" });
       await g.unlockAllFreeAgents();
@@ -404,10 +404,11 @@ export const tests = [
       await g.click("[data-rtg-event-open=prova_dev]");
       await g.page.waitForSelector("[data-event-guests=halloween2026]");
       assert.match(await g.text("[data-event-guests=halloween2026]"), /Carte da Halloween: 18/, "le 18 carte Halloween si vedono");
-      await g.click("[data-event-action=screen][data-event-screen=lab]");
-      const labCards = await g.page.$$eval("[data-lab-card]", (els) => els.map((e) => e.dataset.labCard));
+      await g.click("[data-event-action=screen][data-event-screen=diario]");
+      await g.page.waitForSelector("[data-diary-stamp]");
+      const diaryCards = await g.page.$$eval("[data-diary-card]", (els) => els.map((e) => e.dataset.diaryCard));
       const halloweenIds = await g.page.evaluate(() => window.GameEvents.get("halloween2026").cards.map((c) => c.playerId));
-      assert.ok(!labCards.some((id) => halloweenIds.includes(id)), "il laboratorio non consuma carte di Halloween");
+      assert.ok(!diaryCards.some((id) => halloweenIds.includes(id)), "il diario non elenca carte di Halloween");
       await g.click("[data-event-action=home]");
       await g.click("[data-event-action=squad]");
       await g.click("[data-rtg-change-player]");
@@ -426,7 +427,7 @@ export const tests = [
   {
     name: "15-evento-home-propria",
     // Parte 2 (a)+(b): l'evento di prova ha una home sua (due squadre da sfidare, due monete) e una schermata sua
-    // (Laboratorio: 2 carte dell'evento diventano 1 carta nuova, costa 1 stella), fatte con gli strumenti comuni.
+    // (Diario: elenca le carte dell'evento e salva un dato proprio, senza consumare carte), con gli strumenti comuni.
     // Distributore, squadra e partita restano quelli comuni. L'account vero non cambia. Se la home dell'evento si
     // rompe, si torna alla home comune.
     async run({ game, assert }) {
@@ -450,21 +451,19 @@ export const tests = [
         else await g.click("[data-rtg-pull-continue]");
       }
       await g.click("[data-halloween-close-vending]");
-      await g.click("[data-event-action=screen][data-event-screen=lab]");
-      await g.page.waitForSelector("[data-lab-card]");
-      const cards = await g.page.$$eval("[data-lab-card]", (els) => els.map((e) => e.dataset.labCard));
-      assert.ok(cards.length >= 2, "almeno 2 carte dal distributore");
+      await g.click("[data-event-action=screen][data-event-screen=diario]");
+      await g.page.waitForSelector("[data-diary-stamp]");
+      const cards = await g.page.$$eval("[data-diary-card]", (els) => els.map((e) => e.dataset.diaryCard));
+      assert.ok(cards.length >= 1, "le carte del distributore sono nel diario");
       const ledger = async () => (await g.readRtgRecords([DEV]))[DEV].events.prova_dev;
       const start = await ledger();
-      await g.click(`[data-lab-card="${cards[0]}"]`);
-      await g.click(`[data-lab-card="${cards[1]}"]`);
-      await g.click("[data-lab-create]:not([disabled])");
-      await g.page.waitForFunction(() => /Nuova carta/.test(document.querySelector("#toast-root")?.innerText || ""));
+      await g.click("[data-diary-stamp]");
+      await g.page.waitForFunction(() => /Diario timbrato/.test(document.querySelector("#toast-root")?.innerText || ""));
+      await g.waitText("[data-diary-visits]", /^1$/);
       const end = await ledger();
-      assert.ok(!end.ownedIds.includes(cards[0]) && !end.ownedIds.includes(cards[1]), "le 2 carte sono consumate");
-      assert.equal(end.ownedIds.length, start.ownedIds.length - 1, "2 carte in meno, 1 in piu'");
-      assert.equal(end.stars, start.stars - 1, "1 stella spesa");
-      assert.equal(end.extra?.creations, 1, "dato proprio dell'evento salvato");
+      assert.deepEqual(end.ownedIds, start.ownedIds, "nessuna carta consumata");
+      assert.equal(end.stars, start.stars, "nessuna moneta spesa");
+      assert.equal(end.extra?.visits, 1, "dato proprio dell'evento salvato");
       assert.deepEqual((await g.readRtgRecords([REAL]))[REAL] ?? null, before[REAL] ?? null, "account vero invariato");
       await g.click("[data-event-action=home]");
       await g.click("[data-event-action=start][data-event-team=prova-orchi]");

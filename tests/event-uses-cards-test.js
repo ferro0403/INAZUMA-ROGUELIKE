@@ -23,9 +23,9 @@ const { loadEventsWithDev } = require("./helpers/events");
   // Isolamento: i poteri restano del proprio evento.
   assert.strictEqual(context.RoadToGloryCoachPowerTypes.powerFor("prova-coach-1").eventCardPrefix, "prova_dev::");
   assert.strictEqual(context.RoadToGloryCoachPowerTypes.powerFor("halloween-coach-54").eventCardPrefix, "halloween2026::");
-  // Lo scambio di carte (strumento comune) accetta solo carte del proprio evento.
+  // Le carte di un altro evento passano solo se il file lo permette.
   const source = fs.readFileSync("js/road-to-glory/rtg-halloween-event.js", "utf8");
-  assert.match(source, /if\(take\.concat\(give\)\.some\(pid=>!ownEventCard\(pid\)\)\)throw fail\("event-foreign-card"\)/);
+  assert.doesNotMatch(source, /exchangeCards|ownEventCard/, "nessuno scambio di carte nella parte comune");
   assert.match(source, /if\(!global\.GameEvents\?\.canUseCardsFrom\?\.\(EVENT_ID,from\)\)return \[\];/);
   console.log("event-uses-cards-test: PASS (carte di altri eventi solo se permesse, in sola lettura)");
 })().catch((error) => { console.error(error); process.exit(1); });
