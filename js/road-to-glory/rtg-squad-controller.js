@@ -170,10 +170,10 @@
       // Tutte le carte di un evento (premio finale compreso) appartengono solo alla squadra dell'evento,
       // scritta nel suo file. Nessun database di Season, migrazione o download.
       const event=global.GameEvents?.get?.(seasonId);
-      if(event)return{
-        seasonId,teamIds:[event.team.teamId],
-        teamNames:new Map([[event.team.teamId,event.team.name]])
-      };
+      if(event){
+        const team=global.GameEvents.teamOfCard?.(event,deps.id(identity.playerId))||event.team;
+        return{seasonId,teamIds:[team.teamId],teamNames:new Map([[team.teamId,team.name]])};
+      }
       const roleVariant=deps.squadDraft?.activeRoleVariantByCardId?.[cardId]||null;
       const player=deps.resolved(cardId,roleVariant);
       const raw=deps.rawPlayer(cardId);
@@ -211,11 +211,10 @@
       }
       for(const event of filterEvents()){
         if(seasonFilter!=="all"&&seasonFilter!==event.id)continue;
-        const value=event.id+"::"+event.team.teamId;
-        records.set(value,{
-          value,seasonId:event.id,teamId:event.team.teamId,
-          baseLabel:event.team.name
-        });
+        for(const team of global.GameEvents.teamsOf?.(event)||[event.team]){
+          const value=event.id+"::"+team.teamId;
+          records.set(value,{value,seasonId:event.id,teamId:team.teamId,baseLabel:team.name});
+        }
       }
       const rows=Array.from(records.values());
       const labelCounts=new Map();

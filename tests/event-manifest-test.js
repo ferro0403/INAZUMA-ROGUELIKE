@@ -58,25 +58,35 @@ for (const file of [...files, ...devFiles.map((f) => `dev/${f}`)]) {
   assert(end - start <= 90 * 86400000, `${where}: evento piu' lungo di 90 giorni`);
   assert(config.SEASON_IDS.includes(m.baseSeasonId), `${where}: baseSeasonId ${m.baseSeasonId} non e' una Season`);
 
-  // Squadra e carte.
-  for (const key of ["players", "lineup", "moves"]) assert(fs.existsSync(m.team.files[key]), `${where}: manca ${m.team.files[key]}`);
-  const team = readJson(m.team.files.players).find((t) => t.teamId === m.team.teamId);
-  assert(team, `${where}: la squadra ${m.team.teamId} non e' nel file giocatori`);
-  const players = new Map(team.players.map((p) => [String(p.playerId), p]));
-  const moves = readJson(m.team.files.moves).players;
+  // Squadre e carte (Parte 2 a: un evento puo' avere piu' squadre; la prima e' team).
+  const eventTeams = Array.isArray(m.teams) && m.teams.length ? m.teams : [m.team];
+  const players = new Map();
+  const moves = {};
+  for (const teamConfig of eventTeams) {
+    for (const key of ["players", "lineup", "moves"]) assert(fs.existsSync(teamConfig.files[key]), `${where}: manca ${teamConfig.files[key]}`);
+    const team = readJson(teamConfig.files.players).find((t) => t.teamId === teamConfig.teamId);
+    assert(team, `${where}: la squadra ${teamConfig.teamId} non e' nel file giocatori`);
+    assert.strictEqual(team.players.length, teamConfig.rosterSize, `${where}: ${teamConfig.teamId} non ha ${teamConfig.rosterSize} carte`);
+    for (const p of team.players) {
+      assert(!players.has(String(p.playerId)), `${where}: giocatore ${p.playerId} in due squadre dell'evento`);
+      players.set(String(p.playerId), { ...p, eventTeamId: teamConfig.teamId });
+    }
+    Object.assign(moves, readJson(teamConfig.files.moves).players);
+    const lineup = readJson(teamConfig.files.lineup).teams.find((t) => t.teamId.replaceAll("_", "-") === teamConfig.teamId);
+    assert(lineup, `${where}: formazione della squadra ${teamConfig.teamId} mancante`);
+    assert.strictEqual(new Set(lineup.startingXI.map(String)).size, teamConfig.startersSize, `${where}: titolari ripetuti o mancanti`);
+    for (const id of lineup.startingXI) assert(m.cards.some((c) => c.playerId === String(id)), `${where}: titolare ${id} fuori dalle carte`);
+  }
   for (const card of m.cards) {
     const player = players.get(card.playerId);
     assert(player, `${where}: la carta ${card.playerId} non esiste nel file giocatori`);
+    assert.strictEqual(card.teamId || eventTeams[0].teamId, player.eventTeamId, `${where}: carta ${card.playerId} nella squadra sbagliata`);
     assert(RARITIES.includes(card.rarity), `${where}: rarita' ${card.rarity} non valida (${card.playerId})`);
     assert.strictEqual(card.rarity, player.category, `${where}: rarita' della carta ${card.playerId} diversa dai dati`);
     assert.strictEqual(moves[card.playerId]?.moves?.length, 4, `${where}: la carta ${card.playerId} deve avere 4 mosse`);
     if (card.fullbody !== undefined) assert(okImage(card.fullbody), `${where}: immagine non valida (${card.playerId})`);
   }
-  assert.strictEqual(players.size, m.team.rosterSize, `${where}: il file giocatori non ha ${m.team.rosterSize} carte`);
-  const lineup = readJson(m.team.files.lineup).teams.find((t) => t.teamId.replaceAll("_", "-") === m.team.teamId);
-  assert(lineup, `${where}: formazione della squadra mancante`);
-  assert.strictEqual(new Set(lineup.startingXI.map(String)).size, m.team.startersSize, `${where}: titolari ripetuti o mancanti`);
-  for (const id of lineup.startingXI) assert(m.cards.some((c) => c.playerId === String(id)), `${where}: titolare ${id} fuori dalle carte`);
+  assert.strictEqual(players.size, m.cards.length, `${where}: carte e giocatori delle squadre non coincidono`);
 
   // Premio finale: non e' una carta del distributore.
   if (m.completionReward) {

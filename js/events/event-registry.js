@@ -23,6 +23,22 @@
   // Data con fuso orario esplicito (es. 2026-11-06T23:59:59+01:00), per leggere le "ore italiane" senza ambiguita'.
   const ISO_WITH_ZONE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
+  // Squadre e monete di un evento (Parte 2 a): la prima e' sempre team / currency, come per gli eventi di prima.
+  function teamsOf(manifest) {
+    return Array.isArray(manifest?.teams) && manifest.teams.length ? manifest.teams : manifest?.team ? [manifest.team] : [];
+  }
+  function currenciesOf(manifest) {
+    const first = { ...(manifest?.currency || {}), field: manifest?.save?.currencyField || "balance" };
+    if (!Array.isArray(manifest?.currencies) || !manifest.currencies.length) return [first];
+    return manifest.currencies.map((c, index) => (index === 0 ? { ...first, ...c, field: first.field } : { ...c }));
+  }
+  // Squadra di una carta dell'evento (cards[].teamId, altrimenti la prima squadra).
+  function teamOfCard(manifest, playerId) {
+    const card = (manifest?.cards || []).find((entry) => entry.playerId === String(playerId));
+    const teams = teamsOf(manifest);
+    return teams.find((entry) => entry.teamId === card?.teamId) || teams[0] || null;
+  }
+
   // Controlli che non hanno bisogno di altri file. Ritorna l'elenco degli errori (vuoto = valido).
   function validate(manifest) {
     const errors = [];
@@ -53,7 +69,33 @@
     need(isPositiveInt(team.rosterSize) && isPositiveInt(team.startersSize), "team.rosterSize/startersSize non validi");
     for (const key of ["players", "lineup", "moves"]) need(isText(team.files?.[key]), `team.files.${key} mancante`);
     const cards = Array.isArray(manifest.cards) ? manifest.cards : [];
-    need(cards.length === team.rosterSize, "il numero di carte deve essere team.rosterSize");
+    // Parte 2 (a): piu' squadre in un evento (teams, la prima e' team) e piu' monete (currencies, la prima e' currency).
+    const allTeams = teamsOf(manifest);
+    if (manifest.teams !== undefined) {
+      need(Array.isArray(manifest.teams) && manifest.teams.length >= 1 && manifest.teams[0]?.teamId === team.teamId,
+        "teams deve iniziare con team");
+      need(new Set(allTeams.map((entry) => entry?.teamId)).size === allTeams.length, "squadre ripetute");
+      for (const entry of allTeams) {
+        need(isText(entry?.teamId) && isText(entry?.name) && isPositiveInt(entry?.rosterSize) &&
+          isPositiveInt(entry?.startersSize), `squadra ${entry?.teamId}: dati mancanti`);
+        for (const key of ["players", "lineup", "moves"]) need(isText(entry?.files?.[key]), `squadra ${entry?.teamId}: files.${key}`);
+      }
+    }
+    need(cards.length === allTeams.reduce((sum, entry) => sum + (Number(entry?.rosterSize) || 0), 0),
+      "il numero di carte deve essere la somma di rosterSize delle squadre");
+    for (const card of cards) {
+      need(card.teamId === undefined || allTeams.some((entry) => entry?.teamId === card.teamId), `carta ${card.playerId}: squadra sconosciuta`);
+    }
+    const allCurrencies = currenciesOf(manifest);
+    if (manifest.currencies !== undefined) {
+      need(Array.isArray(manifest.currencies) && manifest.currencies[0]?.id === manifest.currency?.id, "currencies deve iniziare con currency");
+      need(new Set(allCurrencies.map((c) => c.id)).size === allCurrencies.length &&
+        new Set(allCurrencies.map((c) => c.field)).size === allCurrencies.length, "monete o campi ripetuti");
+      for (const c of allCurrencies) need(isText(c.id) && isText(c.name) && /^[a-zA-Z][a-zA-Z0-9]*$/.test(c.field || ""), `moneta ${c.id}: dati mancanti`);
+    }
+    for (const key of ["pullCurrency", "winCurrency", "luckyCurrency"]) {
+      need(economy[key] === undefined || allCurrencies.some((c) => c.id === economy[key]), `economy.${key}: moneta sconosciuta`);
+    }
     need(new Set(cards.map((card) => card.playerId)).size === cards.length, "carte ripetute");
     for (const card of cards) need(isText(card.playerId) && isText(card.rarity), "carta senza playerId o rarity");
     // Evento finto (solo sviluppo, data/events/dev/): tutto il suo salvataggio sta in chiavi locali "dev:...",
@@ -353,5 +395,5 @@
 
   global.GameEvents = Object.freeze({ INDEX_PATH, validate, register, onLoad, onAnyLoad, load, get, all, startMs, endMs,
     isEvent, isEventCard, isActive, forCardId, THEME_COLORS, themeVars, themeStyle, applyTheme, clearTheme, eventClasses,
-    extend, hook, extraClasses, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
+    extend, hook, extraClasses, teamsOf, currenciesOf, teamOfCard, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
 })(globalThis);
