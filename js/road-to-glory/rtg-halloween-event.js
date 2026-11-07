@@ -155,13 +155,21 @@
     let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved",pendingRevealHidden=false;
     let selectedAlbumTeamId=TEAM_ID;
     let sandboxSeed=null;
+    // Classi in piu' sulla finestra della scheda, dal pezzo aggiuntivo dell'evento (Halloween: vampiro).
+    let modalExtraClass="";
+    function setModalExtraClass(p){
+      const modal=deps.getModalRoot?.();
+      if(modalExtraClass)modal?.classList?.remove?.(...modalExtraClass.split(" ").filter(Boolean));
+      modalExtraClass=String(global.GameEvents?.hook?.(EVENT_ID,"classes",p,"detail-modal")||"");
+      if(modalExtraClass)modal?.classList?.add?.(...modalExtraClass.split(" ").filter(Boolean));
+    }
     let vendingMotion=null;
     let lastPresentedView=null;
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
     function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null;
       if(matchTimer!=null)global.clearTimeout?.(matchTimer);matchTimer=null;
       vendingMotion?.stop?.();vendingMotion=null;lastResolution=null;lastResolutionStage="resolved";pendingRevealHidden=false;lastPresentedView=null;
-      deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
+      deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native");setModalExtraClass(null);
       // Passo 3.6: i colori dell'evento valgono solo mentre l'evento e' aperto.
       global.GameEvents?.clearTheme?.(app);global.GameEvents?.clearTheme?.(deps.getModalRoot?.());
     }
@@ -476,7 +484,8 @@
       })||null;
     }
     function nativeCard(p,opts={}) {
-      const cls=opts.event&&p?.halloweenVampire?" halloween-vampire-card":"";
+      const eventCardClass=opts.event?global.GameEvents?.hook?.(EVENT_ID,"classes",p,"event-card")||"":"";
+      const cls=eventCardClass?" "+eventCardClass:"";
       const attr=opts.attr||"";
       return typeof deps.compactPlayerCardMarkup==="function"
         ? deps.compactPlayerCardMarkup(p,{level:20,overall:p?.overall??p?.finalOverall,
@@ -504,7 +513,7 @@
       }
       const modal=deps.getModalRoot?.();
       modal?.classList?.toggle("halloween-detail-native",Boolean(p.halloweenMoves));
-      modal?.classList?.toggle("halloween-detail-vampire",Boolean(p.halloweenVampire));
+      setModalExtraClass(p);
     }
     function footer(active="run") {
       return '<nav class="bottom-nav rtg-bottom-nav" aria-label="'+uiText("appAria")+'">'+
@@ -542,7 +551,9 @@
         '<div class="'+(overLimit?"is-over-limit":!ours?"is-incomplete":"is-eligible")+'"><span>LA TUA SQUADRA</span><strong>'+escape(own??"—")+'</strong></div></div>'+
         '<div class="halloween-event-status '+(overLimit||!ours?"is-warning":"is-ready")+'"><strong>'+status+'</strong><span>'+statusMessage+'</span></div>'+
         mainAction+'</section>'+
-        '<section class="panel rtg-run-command halloween-vending-banner halloween-vending-teaser" aria-label="Distributore stregato">'+
+        // Riquadro in piu' dal pezzo aggiuntivo dell'evento (se ce l'ha), prima del distributore.
+        String(global.GameEvents?.hook?.(EVENT_ID,"homeSection",{eventId:EVENT_ID,labels:manifest.labels,escape})||"")+
+        '<section class="panel rtg-run-command halloween-vending-banner halloween-vending-teaser" aria-label="'+uiText("vendingAria")+'">'+
         '<div class="halloween-vending-teaser-copy"><span class="eyebrow">'+uiText("capsuleEyebrow")+'</span>'+
         '<h2>'+uiText("vendingTitle")+'</h2><p>1 capsula · '+PRICE+' '+escape(CUR.unit)+'</p></div>'+
         '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>APRI DISTRIBUTORE →</button>'+
@@ -638,8 +649,8 @@
       const info=m.pendingEncounter,options=info?.userMoveOptions||[];
       const status=m.status==="halftime"?"INTERVALLO":m.status==="penalties"?"CALCI DI RIGORE":info?"AZIONE DECISIVA":"INCONTRO";
       const opponentActor=[...(m.opponentSquad?.lineup||[]),...(m.opponentSquad?.bench||[])].find(p=>asId(p.cardId||p.playerId)===asId(info?.aiPlayerId));
-      const actorVisual=opponentActor?'<div class="halloween-match-actor"><div class="'+(opponentActor.halloweenVampire?'halloween-vampiro':'')+'"><img src="'+escape(opponentActor.fullbodyUrl||opponentActor.portraitUrl||'')+'" alt="'+escape(opponentActor.name||'')+'"></div><strong>'+escape(opponentActor.name||'')+'</strong></div>':'';
-      return '<div class="halloween-graveyard"><div class="halloween-match-card"><div class="halloween-match-brand"><img class="halloween-crest halloween-vampiro" src="'+escape(LOGO_URL)+'" alt=""><div><h2>'+status+'</h2><p>'+escape(TEAM_NAME)+'</p></div></div><h1>'+escape(m.score?.user||0)+' – '+escape(m.score?.opponent||0)+'</h1><div class="halloween-original-fields"><div class="halloween-pitch"><h3>LA TUA SQUADRA</h3>'+matchPitch(m,"user")+'</div><div class="halloween-pitch halloween-pitch--opponent"><h3>OCCULT HALLOWEEN</h3>'+matchPitch(m,"opponent")+'</div></div><p>'+escape(info?.kind||"")+' · '+escape(info?.userKind||"")+'</p>'+actorVisual+ (info?'<div class="halloween-choices"><button class="halloween-action" data-halloween-choice="base">AZIONE BASE</button>'+options.map((move,i)=>'<button data-halloween-choice="move:'+i+'">'+escape(move.name||move.moveId||"Tecnica")+' · PT '+escape(move.ptCost||move.power||0)+'</button>').join("")+'</div>':m.status==="halftime"?'<button class="halloween-action" data-halloween-halftime>RIPRENDI SECONDO TEMPO</button>':m.status==="penalties"?'<div class="halloween-choices">'+["left","center","right"].map(d=>'<button data-halloween-penalty="'+d+'">'+({left:"SINISTRA",center:"CENTRO",right:"DESTRA"}[d])+'</button>').join("")+'</div>':'<button class="halloween-action" data-halloween-next>PROSEGUI</button>')+'<p><button data-halloween-abandon>ABBANDONA PARTITA</button></p></div></div>';
+      const actorVisual=opponentActor?'<div class="halloween-match-actor"><div class="'+escape(global.GameEvents?.hook?.(EVENT_ID,"classes",opponentActor,"actor")||'')+'"><img src="'+escape(opponentActor.fullbodyUrl||opponentActor.portraitUrl||'')+'" alt="'+escape(opponentActor.name||'')+'"></div><strong>'+escape(opponentActor.name||'')+'</strong></div>':'';
+      return '<div class="halloween-graveyard"><div class="halloween-match-card"><div class="halloween-match-brand"><img class="halloween-crest '+escape(global.GameEvents?.hook?.(EVENT_ID,"classes",null,"crest")||"")+'" src="'+escape(LOGO_URL)+'" alt=""><div><h2>'+status+'</h2><p>'+escape(TEAM_NAME)+'</p></div></div><h1>'+escape(m.score?.user||0)+' – '+escape(m.score?.opponent||0)+'</h1><div class="halloween-original-fields"><div class="halloween-pitch"><h3>LA TUA SQUADRA</h3>'+matchPitch(m,"user")+'</div><div class="halloween-pitch halloween-pitch--opponent"><h3>OCCULT HALLOWEEN</h3>'+matchPitch(m,"opponent")+'</div></div><p>'+escape(info?.kind||"")+' · '+escape(info?.userKind||"")+'</p>'+actorVisual+ (info?'<div class="halloween-choices"><button class="halloween-action" data-halloween-choice="base">AZIONE BASE</button>'+options.map((move,i)=>'<button data-halloween-choice="move:'+i+'">'+escape(move.name||move.moveId||"Tecnica")+' · PT '+escape(move.ptCost||move.power||0)+'</button>').join("")+'</div>':m.status==="halftime"?'<button class="halloween-action" data-halloween-halftime>RIPRENDI SECONDO TEMPO</button>':m.status==="penalties"?'<div class="halloween-choices">'+["left","center","right"].map(d=>'<button data-halloween-penalty="'+d+'">'+({left:"SINISTRA",center:"CENTRO",right:"DESTRA"}[d])+'</button>').join("")+'</div>':'<button class="halloween-action" data-halloween-next>PROSEGUI</button>')+'<p><button data-halloween-abandon>ABBANDONA PARTITA</button></p></div></div>';
     }
     function findNativeMatchPlayer(side,key){
       const team=side==="opponent"?match?.opponentSquad:match?.userSquad;
@@ -969,7 +980,7 @@
     }
     function openNativeCoachPower(){
       // Clear the player-only modal skin before opening native coach UI.
-      deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
+      deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native");setModalExtraClass(null);
       const ui=global.RoadToGloryCoachSquadPowerUi;
       if(match||!ui?.open)return;
       // Refresh the underlying OVR and requirements AFTER the coach modal
@@ -1027,7 +1038,7 @@
     function openCoaches() {
       // The player detail modal root is reused. Its Halloween-only class
       // must never leak to coaches from normal Seasons.
-      deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
+      deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native");setModalExtraClass(null);
       const view=global.RoadToGloryCoachesView;
       if(!deps.openModal||!view?.markup)return notify("Catalogo allenatori RTG non disponibile","error");
       function openCollection(){

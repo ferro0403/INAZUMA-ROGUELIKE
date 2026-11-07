@@ -81,11 +81,61 @@
         need(/^#[0-9a-fA-F]{6}$/.test(manifest.theme?.colors?.[key] || ""), `theme.colors.${key} deve essere #RRGGBB`);
       }
     }
+    need(manifest.extensions === undefined || (Array.isArray(manifest.extensions) && manifest.extensions.every((src) =>
+      typeof src === "string" && /^js\/events\/[a-z0-9_-]+\/[a-z0-9_-]+\.js$/.test(src))), "extensions non valido");
     for (const coach of manifest.coaches || []) {
       need(isText(coach.id) && isText(coach.name), "allenatore senza id o name");
       need(isText(coach.power?.type) && isObject(coach.power?.params), `allenatore ${coach.id}: potere non valido`);
     }
     return errors;
+  }
+
+  // Passo 3.6d: pezzi aggiuntivi di un evento. Un evento puo' elencare nel suo file (extensions) dei piccoli file di
+  // codice suoi; il gioco li carica con l'evento e loro si agganciano con extend(id, {...}) a punti fissi:
+  //   classes(player, place) -> classi in piu' per una carta dell'evento (place: "card", "detail-visual",
+  //     "detail-modal", "match-card", "duel", "event-card", "actor");
+  //   homeSection(context)   -> markup di un riquadro in piu' nella home dell'evento.
+  // Un errore in un pezzo aggiuntivo non ferma il gioco: quel pezzo non aggiunge niente.
+  const extensions = new Map();
+  function extend(eventId, hooks) {
+    extensions.set(String(eventId), Object.freeze({ ...hooks }));
+  }
+  function hook(eventId, name, ...args) {
+    const fn = extensions.get(String(eventId || ""))?.[name];
+    if (typeof fn !== "function") return undefined;
+    try {
+      return fn(...args);
+    } catch (error) {
+      global.console?.warn?.(`[eventi] pezzo aggiuntivo di ${eventId} (${name}) non riuscito`, error);
+      return undefined;
+    }
+  }
+  const eventIdOf = (player) => {
+    const legacy = String(player?.legacySeasonId || "");
+    if (listed.has(legacy)) return legacy;
+    const cardId = String(player?.cardId || "");
+    const cut = cardId.indexOf("::");
+    return cut > 0 && listed.has(cardId.slice(0, cut)) ? cardId.slice(0, cut) : "";
+  };
+  const extraClasses = (player, place) => {
+    const eventId = eventIdOf(player);
+    return eventId ? String(hook(eventId, "classes", player, place) || "") : "";
+  };
+  // Carica (una volta) i file dei pezzi aggiuntivi di un evento, nella pagina.
+  const loadedExtensions = new Map();
+  function loadExtensions(manifest) {
+    const doc = global.document;
+    if (!doc?.createElement) return Promise.resolve();
+    return Promise.all((manifest.extensions || []).map((src) => {
+      if (!loadedExtensions.has(src)) loadedExtensions.set(src, new Promise((resolve) => {
+        const script = doc.createElement("script");
+        script.src = src;
+        script.onload = () => resolve(true);
+        script.onerror = () => { global.console?.warn?.(`[eventi] pezzo aggiuntivo ${src} non caricato`); resolve(false); };
+        doc.head?.appendChild?.(script);
+      }));
+      return loadedExtensions.get(src);
+    }));
   }
 
   // Evento finto scelto per questa sessione (solo con ?dev=1&evento=<id>): sostituisce gli eventi a capsule veri.
@@ -164,7 +214,7 @@
         try {
           const file = await fetcher(`data/events/dev/${devEventId}.json`, { cache: "no-store" });
           if (!file.ok) throw new Error(`HTTP ${file.status}`);
-          register(await file.json(), { dev: true });
+          await loadExtensions(register(await file.json(), { dev: true }));
         } catch (error) {
           global.console?.warn?.(`[eventi] evento finto ${devEventId} non caricato`, error);
         }
@@ -177,7 +227,9 @@
         try {
           const file = await fetcher(`data/events/${eventId}.json`, { cache: "no-store" });
           if (!file.ok) throw new Error(`HTTP ${file.status}`);
-          return register(await file.json());
+          const manifest = register(await file.json());
+          await loadExtensions(manifest);
+          return manifest;
         } catch (error) {
           global.console?.warn?.(`[eventi] ${eventId} non caricato`, error);
           return null;
@@ -300,5 +352,6 @@
   const endMs = (eventId) => Date.parse(get(eventId)?.window?.end || "");
 
   global.GameEvents = Object.freeze({ INDEX_PATH, validate, register, onLoad, onAnyLoad, load, get, all, startMs, endMs,
-    isEvent, isEventCard, isActive, forCardId, THEME_COLORS, themeVars, themeStyle, applyTheme, clearTheme, eventClasses, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
+    isEvent, isEventCard, isActive, forCardId, THEME_COLORS, themeVars, themeStyle, applyTheme, clearTheme, eventClasses,
+    extend, hook, extraClasses, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
 })(globalThis);

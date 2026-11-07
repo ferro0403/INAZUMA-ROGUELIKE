@@ -54,7 +54,7 @@
   "currency": {
     "id": "gettoni_prova",
     "name": "Gettoni prova",
-    "icon": "assets/icons/icon-512.png",
+    "icon": "assets/events/prova_dev/gettone.webp",
     "unit": "gettoni",
     "unitUpper": "GETTONI",
     "iconAlt": "Gettone di prova"
@@ -68,7 +68,7 @@
   "team": {
     "teamId": "prova-angeli",
     "name": "Angeli di prova",
-    "logo": "assets/icons/icon-512.png",
+    "logo": "assets/events/prova_dev/stemma.webp",
     "files": {
       "players": "data/events/dev/prova_dev/prova-angeli-players.json",
       "lineup": "data/events/dev/prova_dev/prova-angeli-lineup.json",
@@ -172,6 +172,13 @@
       "ink": "#0b1424",
       "surface": "#13233d",
       "background": "#060b16"
+    },
+    "coin": {
+      "shape": "round",
+      "blend": "normal"
     }
-  }
+  },
+  "extensions": [
+    "js/events/prova_dev/pezzo-di-prova.js"
+  ]
 }

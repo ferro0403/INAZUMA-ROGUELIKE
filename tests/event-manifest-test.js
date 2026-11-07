@@ -181,6 +181,21 @@ const fixedVending = vendingRules.filter((rule) => !/player-|card|legacy|badge|r
 assert.deepStrictEqual(fixedVending, [], `distributore con colori fissi: ${fixedVending.join(" | ").slice(0, 300)}`);
 assert.match(vendingCss, /border-radius:var\(--event-coin-radius\);object-fit:cover;mix-blend-mode:var\(--event-coin-blend\)/);
 assert.strictEqual(reg.themeVars("halloween2026")["--event-coin-blend"], "screen", "la zucca resta fusa con lo sfondo");
+// Passo 3.6d: pezzi aggiuntivi. I vampiri sono il pezzo di Halloween; la parte comune non decide piu' "vampiro".
+const { loadEvents: loadWithExtensions } = require("./helpers/events");
+const ext = loadWithExtensions({ console }).GameEvents;
+assert.strictEqual(ext.extraClasses({ legacySeasonId: "halloween2026", halloweenVampire: true }, "card"), "halloween-vampire-player");
+assert.strictEqual(ext.extraClasses({ legacySeasonId: "halloween2026", halloweenVampire: false }, "card"), "", "le 2 speciali no");
+assert.strictEqual(ext.extraClasses({ cardId: "halloween2026::38", halloweenVampire: true }, "duel"), "halloween-vampiro");
+assert.strictEqual(ext.extraClasses({ legacySeasonId: "ie1", halloweenVampire: true }, "card"), "", "carte normali: niente");
+for (const file of ["js/player/player-view.js", "js/road-to-glory/rtg-match-view.js", "js/road-to-glory/rtg-halloween-event.js"]) {
+  const source = fs.readFileSync(file, "utf8");
+  assert.doesNotMatch(source, /halloween-vampir|halloween-detail-vampire/, `${file}: l'aspetto vampiro sta nel pezzo di Halloween`);
+}
+for (const m of capsuleEvents) for (const src of m.extensions || []) {
+  assert(fs.existsSync(src), `${m.id}: pezzo aggiuntivo ${src} mancante`);
+  assert(src.startsWith(`js/events/${m.id}/`), `${m.id}: un pezzo aggiuntivo sta nella cartella del suo evento`);
+}
 const primaries = capsuleEvents.map((m) => m.theme.colors.primary.toLowerCase());
 assert.strictEqual(new Set(primaries).size, primaries.length, "ogni evento ha il suo colore principale");
 // Le schermate degli eventi prendono i colori dall'evento: nelle regole comuni non restano gli sfondi di Halloween.

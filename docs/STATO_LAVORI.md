@@ -87,7 +87,7 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
   - `!important`: 8.852 all'inizio → 7.402 dopo 1c → 6.464 dopo 1e → 4.804 dopo 1f → 4.371 dopo 1i.
     Dopo le correzioni del 5 nov (regole e `!important` rimessi): **4.504** nella PR finale; file CSS 50 → 27.
 
-## Passo 3.6 — Aspetto degli eventi come dati (approvato il 7 nov 2026, in corso)
+## Passo 3.6 — Aspetto degli eventi come dati (approvato il 7 nov 2026, fatto il 7 nov)
 
 Obiettivo: per un evento nuovo non si ricrea niente di condiviso. Squadra, Allenatori e Collezione restano comuni; le
 carte normali non cambiano; le carte dell'evento hanno la base comune (striscia della rarita' uguale) e cornice, sfondo,
@@ -101,7 +101,7 @@ sulla preview, poi la successiva. Fuori: Passo 2, Passo 5, 3.7.
 | 3.6a | Grafica comune degli eventi: 7 colori base in `theme.colors` del file; schermate, ingresso e finestre dell'evento li usano | 3-4 h | fatta (#573), vista dall'utente |
 | 3.6b | Carte, schede e allenatori dell'evento: pelle base con i colori dell'evento, oppure la pelle nominata nel file (`theme.skin`, Halloween); carte Halloween e Hekyll identici in 8 schermate (stile di ogni elemento); 10 schermate interne di Halloween cambiano solo nello sfondo | 3-4 h | fatta (#574), ~2,5 h |
 | 3.6c | Distributore e moneta: le 25 regole del distributore dell'evento (macchina, capsule, portafoglio, apertura) usano i colori base; moneta con forma e fusione dal file (`theme.coin`); carte Halloween identiche (8 schermate); distributori delle stagioni identici | 2 h | fatta (#575), ~1,5 h |
-| 3.6d | Pezzi aggiuntivi per evento (i vampiri come pezzo di Halloween); evento di prova con aspetto completo suo | 3 h | da fare |
+| 3.6d | Pezzi aggiuntivi: un evento elenca i suoi file (`extensions`, in `js/events/<id>/`) che si agganciano a punti fissi (classi in piu' sulle carte, riquadro nella home); i vampiri sono il pezzo di Halloween (carte identiche in 8 schermate); evento di prova con aspetto completo suo (colori, sfondi, gettone e stemma propri, distributore, carte blu) e un riquadro di esempio | 3 h | fatta (#576), ~3 h |
 
 Foto: oltre alle 88 schermate di prima, 5 nuove con le carte Halloween nelle schermate RTG comuni (97-101: collezione
 nell'album, scheda dall'album, cambio giocatore RTG, allenatori RTG, album allenatori), con un account che possiede le

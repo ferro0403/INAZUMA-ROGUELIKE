@@ -316,6 +316,12 @@ export const tests = [
       // 11 avversari al loro posto (Angeli di prova in 4-2-4; prima se ne vedevano 9 nel 4-4-2 fisso).
       assert.equal(await g.page.evaluate(() => document.querySelectorAll(".halloween-opponent-preview-field .tactical-player-card").length), 11, "11 titolari avversari nell'evento di prova");
       assert.match(await g.text("#app .brand"), /^PROVA$/, "l'evento di prova ha il suo titolo");
+      // Passo 3.6d: aspetto completo e diverso da Halloween, e il suo pezzo aggiuntivo nella home.
+      assert.ok(await g.page.locator("[data-event-extra=prova_dev]").count(), "riquadro del pezzo aggiuntivo di prova");
+      assert.equal(await g.page.evaluate(() => getComputedStyle(document.querySelector("#app")).getPropertyValue("--event-primary").trim()),
+        "#4fb3ff", "colori dell'evento di prova");
+      assert.match(await g.page.locator("#app .halloween-currency img").first().getAttribute("src"), /prova_dev\/gettone\.webp$/,
+        "moneta dell'evento di prova");
       await g.devHalloweenPumpkins();
       await g.click("[data-halloween-open-vending]");
       assert.match(await g.text("#app .rtg-vending-wallet-chip"), /GETTONI PROVA/, "valuta dell'evento di prova");
@@ -347,6 +353,7 @@ export const tests = [
       await g.waitText("#app", /Formazione valida/i);
       assert.match(await g.text(".halloween-wallet"), /^\s*0\s*$/, "Halloween mostra le sue zucche (0), non i gettoni di prova");
       assert.match(await g.text("#app .brand"), /^HALLOWEEN$/, "Halloween resta con il suo titolo");
+      assert.equal(await g.page.locator("[data-event-extra]").count(), 0, "il pezzo aggiuntivo di prova non compare in Halloween");
       assert.deepEqual((await g.readRtgRecords([REAL]))[REAL] ?? null, before[REAL] ?? null, "account vero ancora invariato");
       assert.ok(!(after[DEV].coachOwnedIds || []).includes("halloween-coach-54") ||
         (before[REAL]?.coachOwnedIds || []).includes("halloween-coach-54"), "Hekyll non arriva dall'evento finto");

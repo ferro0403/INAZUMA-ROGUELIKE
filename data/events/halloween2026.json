@@ -341,5 +341,8 @@
       "shape": "round",
       "blend": "screen"
     }
-  }
+  },
+  "extensions": [
+    "js/events/halloween2026/vampiri.js"
+  ]
 }
