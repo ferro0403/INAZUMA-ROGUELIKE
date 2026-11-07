@@ -70,6 +70,9 @@
       need(manifest.save?.storagePrefix === undefined, "save.storagePrefix solo per gli eventi finti");
     }
     // Passo 3.6: aspetto dell'evento (colori base). Tutto il resto dei colori si ricava da questi.
+    for (const [kind, name] of Object.entries(manifest.theme?.skin || {})) {
+      need(["card", "detail", "coach"].includes(kind) && /^[a-z][a-z0-9-]*$/.test(String(name)), `theme.skin.${kind} non valido`);
+    }
     if (manifest.kind === "capsuleEvent") {
       for (const key of THEME_COLORS) {
         need(/^#[0-9a-fA-F]{6}$/.test(manifest.theme?.colors?.[key] || ""), `theme.colors.${key} deve essere #RRGGBB`);
@@ -119,6 +122,7 @@
     const frozen = deepFreeze(JSON.parse(JSON.stringify(manifest)));
     manifests.set(frozen.id, frozen);
     listed.add(frozen.id);
+    injectThemeRule(frozen);
     for (const install of waiting.get(frozen.id) || []) install(frozen);
     waiting.delete(frozen.id);
     for (const install of anyWaiting) install(frozen);
@@ -234,6 +238,29 @@
   }
   const themeStyle = (eventId) => Object.entries(themeVars(eventId)).map(([key, value]) => `${key}:${value}`).join(";")
     .replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  // Passo 3.6b: classi di una carta ("card"), scheda ("detail") o allenatore ("coach") di un evento. Ogni pezzo
+  // ha la classe comune (rtg-event-card...), quella dell'evento (rtg-event--<id>, che porta i suoi colori) e la sua
+  // pelle: quella nominata nel file dell'evento (theme.skin, es. Halloween) oppure la pelle base comune.
+  const SKIN_KINDS = Object.freeze(["card", "detail", "coach"]);
+  function eventClasses(eventId, kind) {
+    const manifest = get(eventId);
+    if (!manifest || !SKIN_KINDS.includes(kind)) return "";
+    const skin = manifest.theme?.skin?.[kind] || `rtg-event-${kind}-base`;
+    return `rtg-event-${kind} rtg-event--${manifest.id} ${skin}`;
+  }
+  // I colori di ogni evento come regola della pagina (.rtg-event--<id>), cosi' una carta li ha ovunque compaia.
+  function injectThemeRule(manifest) {
+    const doc = global.document;
+    if (!doc?.createElement || !manifest?.theme?.colors) return;
+    let style = doc.getElementById?.("rtg-event-themes");
+    if (!style) {
+      style = doc.createElement("style");
+      style.id = "rtg-event-themes";
+      doc.head?.appendChild?.(style);
+    }
+    const vars = Object.entries(themeVars(manifest.id)).map(([key, value]) => `${key}:${value}`).join(";");
+    style.textContent += `.rtg-event--${manifest.id}{${vars}}\n`;
+  }
   function applyTheme(element, eventId) {
     if (typeof element?.style?.setProperty !== "function") return;
     clearTheme(element);
@@ -265,5 +292,5 @@
   const endMs = (eventId) => Date.parse(get(eventId)?.window?.end || "");
 
   global.GameEvents = Object.freeze({ INDEX_PATH, validate, register, onLoad, onAnyLoad, load, get, all, startMs, endMs,
-    isEvent, isEventCard, isActive, forCardId, THEME_COLORS, themeVars, themeStyle, applyTheme, clearTheme, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
+    isEvent, isEventCard, isActive, forCardId, THEME_COLORS, themeVars, themeStyle, applyTheme, clearTheme, eventClasses, registerModule, module, moduleForCard, modules: moduleList, setEventTime, now, eventTimeShifted, badge, label, ledgerPath, ledger, withLedger });
 })(globalThis);

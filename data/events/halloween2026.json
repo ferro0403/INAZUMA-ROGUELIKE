@@ -331,6 +331,11 @@
       "ink": "#140c0b",
       "surface": "#21111a",
       "background": "#08090d"
+    },
+    "skin": {
+      "card": "halloween-event-card",
+      "detail": "halloween-event-detail",
+      "coach": "rtg-coach-halloween"
     }
   }
 }

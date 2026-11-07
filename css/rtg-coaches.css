@@ -879,6 +879,29 @@
   .rtg-coach-prematch-config .rtg-match-squad-field-shell .pitch{min-height:390px!important}
 }
 
+/* Passo 3.6b: pelle BASE dell'allenatore di un evento (eventi senza theme.skin.coach), con i colori dell'evento. */
+.player-card.rtg-event-coach.rtg-event-coach-base{
+  --rarity-color:var(--event-primary);--rarity-accent:var(--event-primary);
+  --accent:var(--event-primary);--card-accent:var(--event-primary);
+  background:linear-gradient(145deg,var(--event-surface) 0%,color-mix(in srgb,var(--event-secondary) 55%,var(--event-ink)) 72%,var(--event-primary) 100%);
+  border-color:var(--event-primary);color:var(--event-text)}
+.player-card.rtg-event-coach.rtg-event-coach-base .player-portrait-wrap{
+  background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--event-secondary) 53%,transparent),var(--event-background) 77%)}
+.player-card.rtg-event-coach.rtg-event-coach-base .player-info{background:var(--event-surface);color:var(--event-text)}
+.player-card.rtg-event-coach.rtg-event-coach-base .player-title strong,
+.player-card.rtg-event-coach.rtg-event-coach-base .player-meta{color:var(--event-text)}
+.player-card.rtg-event-coach.rtg-event-coach-base .player-corner.player-overall{
+  background:var(--event-ink);color:var(--event-accent);border-color:var(--event-primary)}
+.player-card.rtg-event-coach.rtg-event-coach-base .player-corner.player-role{background:var(--event-text);color:var(--event-ink)}
+.player-detail-layout.rtg-event-coach.rtg-event-coach-base{
+  --rarity-color:var(--event-primary);--rarity-accent:var(--event-primary);--accent:var(--event-primary);--detail-accent:var(--event-primary)}
+.player-detail-layout.rtg-event-coach.rtg-event-coach-base .player-detail-hero{
+  background:linear-gradient(127deg,var(--event-surface),var(--event-secondary) 66%,var(--event-primary))}
+.player-detail-layout.rtg-event-coach.rtg-event-coach-base .player-detail-visual{
+  background:radial-gradient(circle at 60% 40%,color-mix(in srgb,var(--event-secondary) 53%,transparent),var(--event-background) 78%)}
+.rtg-coach-squad-slot.rtg-event-coach.rtg-event-coach-base{
+  border-color:var(--event-primary);background:var(--event-surface);color:var(--event-text)}
+
 /* The event coach reuses the exact existing RTG coach cards and detail.
    Only HW colours change; native coach functionality and geometry remain. */
 .rtg-coach-card.rtg-coach-halloween.player-card,
