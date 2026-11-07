@@ -902,6 +902,20 @@
 .rtg-coach-squad-slot.rtg-event-coach.rtg-event-coach-base{
   border-color:var(--event-primary);background:var(--event-surface);color:var(--event-text)}
 
+/* Passo 3.6e: finestra "Nuovo allenatore" di un allenatore di evento con la pelle base: colori dell'evento.
+   !important solo dove batte le regole !important di .rtg-coaches-reward e .rtg-coaches-reward-art qui sopra. */
+.rtg-coaches-reward.rtg-paper-modal.rtg-event-coach-base{
+  background:radial-gradient(circle at 50% 36%,color-mix(in srgb,var(--event-accent) 35%,var(--ir-paper)),var(--ir-paper) 64%)!important}
+.rtg-coaches-reward.rtg-event-coach-base .rtg-coaches-reward-heading b{background:var(--event-primary);color:var(--event-ink)}
+.rtg-coaches-reward.rtg-event-coach-base .rtg-pull-rarity{background:var(--event-primary)!important}
+.rtg-coaches-reward.rtg-event-coach-base .rtg-coaches-reward-art .rtg-coach-card.player-card{
+  background:linear-gradient(145deg,color-mix(in srgb,var(--event-text) 70%,var(--ir-white)) 0 64%,var(--event-secondary) 64%)!important;
+  border-color:var(--event-primary)!important}
+.rtg-coaches-reward.rtg-event-coach-base .rtg-coaches-reward-info small{color:var(--event-secondary)}
+.rtg-coaches-reward.rtg-event-coach-base .rtg-coaches-reward-art .rtg-coach-card .player-title strong{color:var(--event-ink)}
+.rtg-coaches-reward.rtg-event-coach-base .rtg-coaches-reward-unlocked{
+  background:color-mix(in srgb,var(--event-accent) 25%,var(--ir-white));color:var(--event-ink)}
+
 /* The event coach reuses the exact existing RTG coach cards and detail.
    Only HW colours change; native coach functionality and geometry remain. */
 .rtg-coach-card.rtg-coach-halloween.player-card,
