@@ -254,6 +254,30 @@ export class Game {
       return JSON.parse(JSON.stringify(await storage.readMany(names)));
     }, keys);
   }
+  // Carte Halloween gia' possedute (come un giocatore che ha finito l'evento): le 18 carte, Hekyll e lo stato
+  // dell'evento nel salvataggio, poi ricarica. Serve alle foto delle carte Halloween nelle schermate RTG comuni.
+  async giveHalloweenCollection() {
+    await this.page.evaluate(async () => {
+      const manifest = window.GameEvents.get("halloween2026");
+      const storage = window.RoadToGloryStorage.create();
+      await storage.updateMany(["shared:account"], (records) => {
+        const account = JSON.parse(JSON.stringify(records["shared:account"] || {}));
+        account.tokens = account.tokens || 0;
+        account.developmentByCardId = account.developmentByCardId || {};
+        account.gachaAcquiredCards = account.gachaAcquiredCards || [];
+        const have = new Set(account.gachaAcquiredCards.map((card) => card.cardId));
+        for (const card of manifest.cards) {
+          const meta = window.RoadToGloryCardIdentity.record({ playerId: card.playerId, legacySeasonId: manifest.id });
+          if (!have.has(meta.cardId)) account.gachaAcquiredCards.push(JSON.parse(JSON.stringify(meta)));
+        }
+        account.coachOwnedIds = [...new Set([...(account.coachOwnedIds || []), manifest.coaches[0].id])];
+        const ids = manifest.cards.map((card) => card.playerId);
+        account.halloween = { pumpkins: 0, ownedIds: ids, pullCount: ids.length, completedIds: [], luckyWins: 0 };
+        return { writes: { "shared:account": account }, value: true };
+      });
+    });
+    await this.reload();
+  }
   async devHalloweenPumpkins() {
     await this.page.waitForFunction(() => document.querySelector("[data-halloween-dev-pumpkins]"));
     await this.page.evaluate(() => document.querySelector("[data-halloween-dev-pumpkins]").click());
