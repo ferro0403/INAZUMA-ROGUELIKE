@@ -6,7 +6,8 @@ Piano completo: Parte B delle istruzioni (Passi 0-7). Regole permanenti: `CLAUDE
 ## Dove siamo
 
 - **7 novembre 2026:** Passo 1 (CSS) chiuso; Passo 3 (eventi come dati), Passo 4 (due eventi attivi insieme) e
-  Passo 3.6 (aspetto degli eventi come dati) fatti. Tutto e' nella PR finale #577 (`release/passo-1-3-6` -> `main`),
+  Passo 3.6 (aspetto degli eventi come dati) fatti; l'8 nov le correzioni dopo la preview e la Parte 2 (eventi molto
+  diversi). Tutto e' nella PR finale #584 (`release/passo-1-3-6-p2` -> `main`),
   da unire dopo le verifiche: vedi "Ordine di unione definitivo" qui sotto. Fuori: Passo 2, Passo 5 e la 3.7 (immagini
   locali di Halloween).
 - **Passo 0 — Rete di sicurezza: chiuso il 3 novembre 2026** (branch `chore/safety-net`, PR in bozza
@@ -151,25 +152,48 @@ Rischi e controlli:
 Come tornare indietro: ogni passo e' una PR separata a catena; non unendola si resta al passo prima. Nessuna migrazione
 del salvataggio.
 
-## Ordine di unione definitivo (aggiornato il 7 nov 2026, dopo il Passo 3.6)
+### Parte 2: risultato (8 nov 2026)
 
-**Da unire in `main`: una sola PR, la finale `release/passo-1-3-6` -> `main` (#577).** Sostituisce la #572 e la #566.
-Contiene, controllato commit per commit:
-1. Passo 0 e Passo 1 (CSS): #540-#559, con #550 e #551;
-2. Passo 3, eventi come dati: #560-#565 (gia' nella vecchia finale #566);
-3. Passo 4, due eventi attivi insieme: #567-#571 (gia' nella finale #572);
-4. Passo 3.6, aspetto degli eventi come dati: #573 (3.6a), #574 (3.6b), #575 (3.6c), #576 (3.6d);
-5. questo documento.
+| PR | Cosa | Stima | Tempo |
+|---|---|---|---|
+| #581 (a) | Piu' squadre e monete: `teams`, `currencies`, `cards[].teamId`, `economy.*Currency`; evento di prova con Angeli + Orchi di prova e Gettoni + Stelle | 4-5 h | ~3 h |
+| #582 (b) | Home e schermate proprie (pezzo aggiuntivo `home` e `screens`) con strumenti comuni e pulsanti `data-event-action`; home rotta -> home comune; dati propri dell'evento (`extra`) anche nel cloud; evento di prova con home sua e Laboratorio | 5-6 h | ~3 h |
+| #583 (c) | Carte di altri eventi: `uses.cardsFrom`, in sola lettura (viste e schierabili, mai consumate; poteri, stato e salvataggio restano di ogni evento) | 2-3 h | ~1,5 h |
+
+Controlli dopo ogni PR (tutti verdi): parita' dei poteri 1.861 casi; salvataggio vecchio anche con due eventi; `npm test`
+con gli stessi 39 falliti (477-478 test); prove nel browser 16-18/18; stile delle carte Halloween identico in 5 schermate
+(negli allenatori restano solo le 2 proprieta' della 3.6g, che non cambiano l'aspetto); foto: 10 schermate interne di
+Halloween come dalla 3.6a, tutto il resto identico (carte normali, squadra, allenatori, collezione, Campagne,
+distributori delle stagioni).
+
+Scelte prese da me (Parte 2), con pro, contro e come tornare indietro:
+- **Prima squadra e prima moneta restano `team` e `currency`.** Pro: Halloween e i file di oggi valgono senza modifiche.
+  Contro: due modi di scrivere la stessa cosa (un elenco che parte dal campo singolo). Indietro: non unire la #581.
+- **Strumenti comuni invece di pagine scritte nel codice comune.** Pro: un evento nuovo non tocca la parte comune.
+  Contro: chi scrive una home deve usare `tools` e i pulsanti `data-event-action`. Indietro: non unire la #582
+  (gli eventi tornano alla home comune).
+- **Scambio di carte (consuma e crea).** Pro: meccaniche nuove senza toccare la parte comune. Contro: oggi l'unione
+  dei salvataggi del cloud somma le carte possedute, quindi in un evento vero una carta consumata potrebbe tornare
+  dopo una sincronizzazione: da sistemare prima di usarlo in un evento vero (nell'evento di prova succede solo nella
+  sua copia locale). Indietro: non usare `exchangeCards` negli eventi veri.
+- **Carte di altri eventi in sola lettura.** Pro: nessun evento puo' rovinare un altro. Contro: un evento non puo'
+  "consumare" carte di un altro. Indietro: togliere `uses` dal file dell'evento.
+
+## Ordine di unione definitivo (aggiornato l'8 nov 2026, dopo la Parte 2)
+
+**Da unire in `main`: una sola PR, la finale `release/passo-1-3-6-p2` -> `main` (#584).** Sostituisce la #577 (e le
+vecchie #572 e #566). Contiene, controllato commit per commit:
+1. Passo 0 e 1 (CSS): #540-#559;
+2. Passo 3 (eventi come dati): #560-#565;
+3. Passo 4 (due eventi insieme): #567-#571;
+4. Passo 3.6 (aspetto degli eventi): #573-#576, e la vecchia finale #577;
+5. correzioni dopo la preview della #577: #578 (finestre), #579 (carte evento nelle run RTG), #580 (immagini allenatori);
+6. Parte 2 (eventi molto diversi): #581 (squadre e monete), #582 (home e schermate proprie), #583 (carte di altri eventi);
+7. questo documento.
 
 `main` e' antenato del ramo finale: nessun conflitto.
 
-**Da chiudere senza unire, dopo aver unito la #577** (il loro contenuto e' gia' in `main`): #540-#576, comprese le
-vecchie PR finali #566 e #572.
-
-Prima di unire, controllare nell'anteprima della #577:
-- `?dev=1&oraEvento=2026-11-07`: Halloween e' concluso;
-- `?dev=1&evento=prova_dev`: due eventi, ognuno con il suo aspetto;
-- carte Halloween (squadra, album, collezione, Hekyll, vampiri) identiche.
+**Da chiudere senza unire, dopo aver unito la #584:** #540-#583, comprese le vecchie finali #566, #572 e #577.
 
 ## Passo 3 — Eventi come dati (approvato il 5 nov 2026)
 
