@@ -104,9 +104,52 @@ sulla preview, poi la successiva. Fuori: Passo 2, Passo 5, 3.7.
 | 3.6c | Distributore e moneta: le 25 regole del distributore dell'evento (macchina, capsule, portafoglio, apertura) usano i colori base; moneta con forma e fusione dal file (`theme.coin`); carte Halloween identiche (8 schermate); distributori delle stagioni identici | 2 h | fatta (#575), ~1,5 h |
 | 3.6d | Pezzi aggiuntivi: un evento elenca i suoi file (`extensions`, in `js/events/<id>/`) che si agganciano a punti fissi (classi in piu' sulle carte, riquadro nella home); i vampiri sono il pezzo di Halloween (carte identiche in 8 schermate); evento di prova con aspetto completo suo (colori, sfondi, gettone e stemma propri, distributore, carte blu) e un riquadro di esempio | 3 h | fatta (#576), ~3 h |
 
+### Correzioni dopo la preview della #577 (Parte 1, 7-8 nov 2026)
+
+| PR | Problema | Causa (in breve) | Correzione |
+|---|---|---|---|
+| 3.6e | Finestre di sblocco con l'arancio di Halloween | 16 regole delle finestre dell'evento escluse dalla 3.6c perche' il loro nome conteneva "card"/"reveal"; la finestra "Nuovo allenatore" usa l'arancio comune RTG | colori base dell'evento; "Nuovo allenatore" degli allenatori con pelle base nei colori dell'evento; test: nessuna finestra dell'evento con colori fissi |
+| 3.6f | "0 di 0" con il filtro "Prova" nelle run RTG | Le carte dell'evento di prova stanno solo nel suo salvataggio locale `dev:` (mai nell'account vero, come deciso); le run RTG leggono l'account vero. Per gli eventi veri la regola funziona gia' | test: carte evento giocabili in tutte e 5 le Season RTG (resolver vero) e prova nel browser in entrambe le campagne |
+| 3.6g | Allenatori senza immagine (David Arrows, Mister Yi) | Immagini e collegamento giusti; Safari non disegna un ritratto bloccato (filtro grigio) fuori dalla parte visibile della finestra che scorre: sono le carte piu' in basso | ogni ritratto bloccato su un suo livello di disegno, aspetto identico; test |
+
+Scelta aperta della 3.6g (presa da me, come richiesto):
+- **Scelta:** livello di disegno proprio per ogni ritratto bloccato (`transform:translateZ(0)`), rimedio abituale per questo
+  difetto di Safari. **Pro:** nessun cambio di aspetto (foto identiche). **Contro:** non verificabile qui (il container non
+  ha WebKit): va controllato sul telefono. **Se non basta:** estendere a tutti gli allenatori bloccati la tela gia' usata
+  per René Gadé (provata sul telefono), che pero' cambia un poco il grigio dei ritratti bloccati.
+  **Come tornare indietro:** non unire la 3.6g o togliere la regola in `css/rtg-coaches.css` (commento "7 nov 2026").
+- **Run classiche (non RTG):** non usano le carte degli eventi in nessun modo (nessun codice delle run classiche legge le
+  carte acquisite RTG): non c'e' una regola da cambiare.
+
 Foto: oltre alle 88 schermate di prima, 5 nuove con le carte Halloween nelle schermate RTG comuni (97-101: collezione
 nell'album, scheda dall'album, cambio giocatore RTG, allenatori RTG, album allenatori), con un account che possiede le
 18 carte e Hekyll. Dal 7 nov Halloween e' concluso davvero: test e foto usano l'ora degli eventi del 3 nov.
+
+## Parte 2 — Eventi molto diversi tra loro (piano dell'8 nov 2026, approvato in anticipo dall'utente)
+
+Obiettivo: aggiungere in futuro eventi diversi senza rifare le parti comuni.
+- **Comune per tutti (solo alcuni colori dall'evento):** sezione Squadra (carte, grafica, schede), partita, distributore
+  (stessa meccanica; colori per distributore, premi, finestre di sblocco).
+- **Libero per ogni evento:** home e schermate proprie, numero di squadre e di monete, meccaniche nuove (es. una schermata
+  che consuma carte e ne crea altre), uso di carte di un altro evento senza rompere l'isolamento.
+
+| PR | Cosa cambia | Stima |
+|---|---|---|
+| (a) | Piu' squadre e piu' monete in un evento. Nel file: `teams` (elenco) accanto a `team`, `currencies` accanto a `currency`; ogni carta dice la sua squadra; prezzi e premi dicono la loro moneta. Il saldo di ogni moneta sta nello stato dell'evento (`shared.events.<id>`), un campo per moneta. Halloween resta con una squadra e una moneta, identico | 4-5 h |
+| (b) | Home e schermate proprie: il pezzo aggiuntivo di un evento puo' dare la sua home (`home`) e le sue schermate (`screens`). La parte comune offre solo strumenti: saldo, carte possedute, pesca (il distributore comune), aprire la squadra (la sezione Squadra comune), avviare una partita contro una squadra, salvare dati propri dell'evento, consumare/dare carte del proprio evento. L'evento di prova li usa tutti: home diversa da Halloween, due squadre, due monete, e una schermata "Laboratorio" che consuma 2 carte dell'evento e ne crea un'altra | 5-6 h |
+| (c) | Carte di un evento usabili da un altro: nel file `uses.cardsFrom` (es. l'evento di prova usa le carte di Halloween). Si possono vedere e schierare; non si possono consumare ne' cambiare; poteri, stati e salvataggi restano separati | 2-3 h |
+
+**Totale: circa 11-14 ore.**
+
+Rischi e controlli:
+- **Il modulo eventi e' grande (1.500 righe):** passare da "una squadra, una moneta" a "piu' squadre e monete" tocca molti
+  punti. Controlli: Halloween identico (foto, stile delle carte elemento per elemento, test delle 18 carte e dei numeri).
+- **Salvataggio:** cambia solo per gli eventi che usano le novita' (campi aggiunti in `shared.events.<id>`); Halloween e
+  chi non le usa non vede nessun campo nuovo (test con un salvataggio vecchio, anche con due eventi).
+- **Codice dei pezzi aggiuntivi:** un errore nella home di un evento non deve fermare il gioco: si torna alla home comune.
+
+Come tornare indietro: ogni passo e' una PR separata a catena; non unendola si resta al passo prima. Nessuna migrazione
+del salvataggio.
 
 ## Ordine di unione definitivo (aggiornato il 7 nov 2026, dopo il Passo 3.6)
 
