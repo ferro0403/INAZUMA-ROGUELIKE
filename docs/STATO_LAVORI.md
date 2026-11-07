@@ -131,13 +131,13 @@ nell'album, scheda dall'album, cambio giocatore RTG, allenatori RTG, album allen
 Obiettivo: aggiungere in futuro eventi diversi senza rifare le parti comuni.
 - **Comune per tutti (solo alcuni colori dall'evento):** sezione Squadra (carte, grafica, schede), partita, distributore
   (stessa meccanica; colori per distributore, premi, finestre di sblocco).
-- **Libero per ogni evento:** home e schermate proprie, numero di squadre e di monete, meccaniche nuove (es. una schermata
-  che consuma carte e ne crea altre), uso di carte di un altro evento senza rompere l'isolamento.
+- **Libero per ogni evento:** home e schermate proprie, numero di squadre e di monete, meccaniche nuove proprie dell'evento,
+  uso di carte di un altro evento senza rompere l'isolamento.
 
 | PR | Cosa cambia | Stima |
 |---|---|---|
 | (a) | Piu' squadre e piu' monete in un evento. Nel file: `teams` (elenco) accanto a `team`, `currencies` accanto a `currency`; ogni carta dice la sua squadra; prezzi e premi dicono la loro moneta. Il saldo di ogni moneta sta nello stato dell'evento (`shared.events.<id>`), un campo per moneta. Halloween resta con una squadra e una moneta, identico | 4-5 h |
-| (b) | Home e schermate proprie: il pezzo aggiuntivo di un evento puo' dare la sua home (`home`) e le sue schermate (`screens`). La parte comune offre solo strumenti: saldo, carte possedute, pesca (il distributore comune), aprire la squadra (la sezione Squadra comune), avviare una partita contro una squadra, salvare dati propri dell'evento, consumare/dare carte del proprio evento. L'evento di prova li usa tutti: home diversa da Halloween, due squadre, due monete, e una schermata "Laboratorio" che consuma 2 carte dell'evento e ne crea un'altra | 5-6 h |
+| (b) | Home e schermate proprie: il pezzo aggiuntivo di un evento puo' dare la sua home (`home`) e le sue schermate (`screens`). La parte comune offre solo strumenti: saldo, carte possedute, pesca (il distributore comune), aprire la squadra (la sezione Squadra comune), avviare una partita contro una squadra, salvare dati propri dell'evento. L'evento di prova li usa tutti: home diversa da Halloween, due squadre, due monete, e una schermata di esempio ("Diario") che non consuma carte | 5-6 h |
 | (c) | Carte di un evento usabili da un altro: nel file `uses.cardsFrom` (es. l'evento di prova usa le carte di Halloween). Si possono vedere e schierare; non si possono consumare ne' cambiare; poteri, stati e salvataggi restano separati | 2-3 h |
 
 **Totale: circa 11-14 ore.**
@@ -157,8 +157,9 @@ del salvataggio.
 | PR | Cosa | Stima | Tempo |
 |---|---|---|---|
 | #581 (a) | Piu' squadre e monete: `teams`, `currencies`, `cards[].teamId`, `economy.*Currency`; evento di prova con Angeli + Orchi di prova e Gettoni + Stelle | 4-5 h | ~3 h |
-| #582 (b) | Home e schermate proprie (pezzo aggiuntivo `home` e `screens`) con strumenti comuni e pulsanti `data-event-action`; home rotta -> home comune; dati propri dell'evento (`extra`) anche nel cloud; evento di prova con home sua e Laboratorio | 5-6 h | ~3 h |
+| #582 (b) | Home e schermate proprie (pezzo aggiuntivo `home` e `screens`) con strumenti comuni e pulsanti `data-event-action`; home rotta -> home comune; dati propri dell'evento (`extra`) anche nel cloud; evento di prova con home sua (il Laboratorio di allora e' tolto nella #585) | 5-6 h | ~3 h |
 | #583 (c) | Carte di altri eventi: `uses.cardsFrom`, in sola lettura (viste e schierabili, mai consumate; poteri, stato e salvataggio restano di ogni evento) | 2-3 h | ~1,5 h |
+| #585 (d) | Tolti il Laboratorio dall'evento di prova e lo scambio di carte dalla parte comune (con gli strumenti usati solo da li': spendere/guadagnare monete, "carta in squadra"); al suo posto la schermata di esempio "Diario", che elenca le carte dell'evento e salva un dato proprio senza consumare carte | - | ~1 h |
 
 Controlli dopo ogni PR (tutti verdi): parita' dei poteri 1.861 casi; salvataggio vecchio anche con due eventi; `npm test`
 con gli stessi 39 falliti (477-478 test); prove nel browser 16-18/18; stile delle carte Halloween identico in 5 schermate
@@ -172,28 +173,33 @@ Scelte prese da me (Parte 2), con pro, contro e come tornare indietro:
 - **Strumenti comuni invece di pagine scritte nel codice comune.** Pro: un evento nuovo non tocca la parte comune.
   Contro: chi scrive una home deve usare `tools` e i pulsanti `data-event-action`. Indietro: non unire la #582
   (gli eventi tornano alla home comune).
-- **Scambio di carte (consuma e crea).** Pro: meccaniche nuove senza toccare la parte comune. Contro: oggi l'unione
-  dei salvataggi del cloud somma le carte possedute, quindi in un evento vero una carta consumata potrebbe tornare
-  dopo una sincronizzazione: da sistemare prima di usarlo in un evento vero (nell'evento di prova succede solo nella
-  sua copia locale). Indietro: non usare `exchangeCards` negli eventi veri.
 - **Carte di altri eventi in sola lettura.** Pro: nessun evento puo' rovinare un altro. Contro: un evento non puo'
   "consumare" carte di un altro. Indietro: togliere `uses` dal file dell'evento.
 
-## Ordine di unione definitivo (aggiornato l'8 nov 2026, dopo la Parte 2)
+### Ancora da fare: fusione di carte (miximax) con carte consumate
 
-**Da unire in `main`: una sola PR, la finale `release/passo-1-3-6-p2` -> `main` (#584).** Sostituisce la #577 (e le
-vecchie #572 e #566). Contiene, controllato commit per commit:
+Non e' fatta: lo scambio di carte provato nella Parte 2 e' stato tolto (#585). Prima di rifarla, **per prima cosa va
+risolto il problema del cloud**: oggi l'unione dei salvataggi del cloud somma le carte possedute dei due lati, quindi una
+carta consumata su un dispositivo tornerebbe dopo una sincronizzazione con un altro dispositivo (o con la copia nel
+cloud). Serve un modo per ricordare le carte consumate (ad esempio un elenco nello stato dell'evento che l'unione
+rispetta), con un test di due dispositivi. Solo dopo si scrive la fusione vera, in una PR dichiarata.
+
+## Ordine di unione definitivo (aggiornato l'8 nov 2026, dopo la Parte 2 e la #585)
+
+**Da unire in `main`: una sola PR, la finale `release/passo-1-3-6-p2b` -> `main` (#586).** Sostituisce la #584 (e le
+vecchie #577, #572 e #566). Contiene, controllato commit per commit:
 1. Passo 0 e 1 (CSS): #540-#559;
 2. Passo 3 (eventi come dati): #560-#565;
 3. Passo 4 (due eventi insieme): #567-#571;
 4. Passo 3.6 (aspetto degli eventi): #573-#576, e la vecchia finale #577;
 5. correzioni dopo la preview della #577: #578 (finestre), #579 (carte evento nelle run RTG), #580 (immagini allenatori);
 6. Parte 2 (eventi molto diversi): #581 (squadre e monete), #582 (home e schermate proprie), #583 (carte di altri eventi);
-7. questo documento.
+7. il riepilogo della Parte 2 (#584) e la rimozione di Laboratorio e scambio di carte (#585);
+8. questo documento.
 
 `main` e' antenato del ramo finale: nessun conflitto.
 
-**Da chiudere senza unire, dopo aver unito la #584:** #540-#583, comprese le vecchie finali #566, #572 e #577.
+**Da chiudere senza unire, dopo aver unito la #586:** #540-#585, comprese le vecchie finali #566, #572, #577 e #584.
 
 ## Passo 3 — Eventi come dati (approvato il 5 nov 2026)
 
