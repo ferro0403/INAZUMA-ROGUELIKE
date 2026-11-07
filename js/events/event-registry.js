@@ -73,6 +73,9 @@
     for (const [kind, name] of Object.entries(manifest.theme?.skin || {})) {
       need(["card", "detail", "coach"].includes(kind) && /^[a-z][a-z0-9-]*$/.test(String(name)), `theme.skin.${kind} non valido`);
     }
+    const coin = manifest.theme?.coin;
+    need(coin === undefined || ((coin.shape === undefined || ["round", "square"].includes(coin.shape)) &&
+      (coin.blend === undefined || ["normal", "screen"].includes(coin.blend))), "theme.coin non valido");
     if (manifest.kind === "capsuleEvent") {
       for (const key of THEME_COLORS) {
         need(/^#[0-9a-fA-F]{6}$/.test(manifest.theme?.colors?.[key] || ""), `theme.colors.${key} deve essere #RRGGBB`);
@@ -232,6 +235,10 @@
     const manifest = get(eventId);
     if (!manifest?.theme?.colors) return {};
     const vars = Object.fromEntries(THEME_COLORS.map((key) => [`--event-${key}`, manifest.theme.colors[key]]));
+    // Moneta (Passo 3.6c): forma "round" o "square", fusione con lo sfondo "normal" o "screen".
+    const coin = manifest.theme.coin || {};
+    vars["--event-coin-radius"] = coin.shape === "square" ? "6px" : "50%";
+    vars["--event-coin-blend"] = coin.blend === "screen" ? "screen" : "normal";
     const background = manifest.assets?.background;
     if (background) vars["--event-background-image"] = `url("${String(background).replace(/["\\]/g, "")}")`;
     return vars;
@@ -269,7 +276,8 @@
   }
   function clearTheme(element) {
     if (typeof element?.style?.removeProperty !== "function") return;
-    for (const key of [...THEME_COLORS.map((name) => `--event-${name}`), "--event-background-image"]) {
+    for (const key of [...THEME_COLORS.map((name) => `--event-${name}`), "--event-background-image",
+      "--event-coin-radius", "--event-coin-blend"]) {
       element.style.removeProperty(key);
     }
     if (element.dataset) delete element.dataset.eventTheme;

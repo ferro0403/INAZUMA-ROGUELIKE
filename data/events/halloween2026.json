@@ -336,6 +336,10 @@
       "card": "halloween-event-card",
       "detail": "halloween-event-detail",
       "coach": "rtg-coach-halloween"
+    },
+    "coin": {
+      "shape": "round",
+      "blend": "screen"
     }
   }
 }

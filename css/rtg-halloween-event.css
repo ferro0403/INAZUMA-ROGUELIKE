@@ -3,7 +3,8 @@
    Questi sono i valori neutri usati solo se un elemento si trova fuori da un evento. */
 :root{--event-primary:var(--ir-yellow);--event-secondary:var(--ir-yellow);--event-accent:var(--ir-yellow);
   --event-text:var(--ir-paper);--event-ink:var(--ir-ink-deep);--event-surface:var(--ir-ink-deep);
-  --event-background:var(--ir-black);--event-background-image:none}
+  --event-background:var(--ir-black);--event-background-image:none;
+  --event-coin-radius:50%;--event-coin-blend:normal}
 
 /* Passo 3.6b: pelle BASE delle carte di un evento (per gli eventi che non nominano una pelle propria in theme.skin).
    Stessa struttura della carta Halloween, con i colori base dell'evento (classe .rtg-event--<id> messa dal registro).
@@ -48,7 +49,8 @@
 .halloween-screen{color:var(--event-text);background:radial-gradient(ellipse at 52% 0,var(--event-surface) 0,var(--event-ink) 42%,var(--event-background) 100%);min-height:100dvh;padding:12px 12px 70px}
 .halloween-back{border:1px solid var(--event-secondary);border-radius:8px;background:var(--event-ink);color:var(--event-accent);padding:10px;cursor:pointer;white-space:nowrap}
 .halloween-currency{display:inline-flex;align-items:center;gap:5px;font-size:1.15rem;font-weight:1000;color:var(--event-text);vertical-align:middle}
-.halloween-currency img{display:inline-block;width:29px;height:29px;border-radius:50%;object-fit:cover;mix-blend-mode:screen}
+/* Moneta dell'evento: forma e fusione con lo sfondo dal file dell'evento (theme.coin). */
+.halloween-currency img{display:inline-block;width:29px;height:29px;border-radius:var(--event-coin-radius);object-fit:cover;mix-blend-mode:var(--event-coin-blend)}
 .halloween-graveyard{background:linear-gradient(180deg,color-mix(in srgb,var(--event-background) 72%,transparent),color-mix(in srgb,var(--event-ink) 90%,transparent)),var(--event-background-image) center center / cover;min-height:420px;padding:22px;display:flex;align-items:flex-start;justify-content:center}
 .halloween-match-card,.halloween-squad{background:linear-gradient(160deg,#120d14e8,#280f0be8);border:2px solid #f77f18;border-radius:10px;padding:20px;width:min(100%,750px);box-shadow:0 7px 25px #000b, inset 0 0 30px #fb5a0d16}
 .halloween-match-card:before,.halloween-vending:before,.halloween-album:before{content:"🕸";position:absolute;right:16px;top:8px;font-size:29px;opacity:.55;pointer-events:none}
@@ -71,7 +73,7 @@
 .halloween-player-card strong{font-size:clamp(.71rem,1vw,.92rem);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:5px 3px;background:#0f0b0ddf;z-index:2}
 .halloween-player-card small{z-index:2;position:absolute;top:5px;left:5px;color:#0e0a0a;background:#ffecd0;padding:3px;font-weight:1000}
 .halloween-player-card em{z-index:2;font-weight:900;font-size:.65rem;color:#162e18;background:#a6eec3;font-style:normal;padding:3px}
-.halloween-vending,.halloween-album{position:relative;min-height:480px;padding:25px 16px;text-align:center;background:radial-gradient(circle at 50% 30%,#5a230f 0,#21101a 48%,#09090d 100%)}
+.halloween-vending,.halloween-album{position:relative;min-height:480px;padding:25px 16px;text-align:center;background:radial-gradient(circle at 50% 30%,var(--event-surface) 0,var(--event-surface) 48%,var(--event-background) 100%)}
 @media(max-width:600px){.halloween-back{padding:8px}.halloween-wallet{width:100%;text-align:right}.halloween-graveyard{padding:9px}.halloween-match-card,.halloween-squad{padding:11px}.halloween-match-brand{gap:10px}.halloween-crest{width:70px;height:70px}.halloween-choices{grid-template-columns:1fr 1fr}}
 
 
@@ -79,23 +81,23 @@
 .rtg-halloween-album-collection .album-collection-title{color:var(--ir-paper)!important;text-shadow:0 2px 9px color-mix(in srgb,var(--event-background) 90%,transparent)}
 .rtg-halloween-album-collection .rtg-halloween-album-count{justify-content:flex-end}
 .halloween-vending-classic{width:min(100%,480px);margin:10px auto;padding:0!important;background:none}
-.halloween-vending-classic .rtg-vending-machine-v9{filter:drop-shadow(0 9px 20px #07060c)}
-.halloween-vending-classic .rtg-vending-head-v9{background:linear-gradient(#211013,#110e15);border-color:#fe821a;color:#ff9f24}
-.halloween-vending-classic .rtg-vending-body-v9{background:linear-gradient(160deg,#f57f11,#bd441b)}
-.halloween-vending-classic .rtg-vending-window-v9{background:radial-gradient(circle at 45% 30%,#3c101b,#0c0911)}
-.halloween-vending-classic .rtg-vending-capsule-v9[data-capsule-rarity="orange"]{background:radial-gradient(circle at 35% 30%,#ffcb52,#ff8812 67%,#7e2c0e);border-color:#ffbf67}
-.halloween-vending-classic .rtg-vending-capsule-v9[data-capsule-rarity="black"]{background:radial-gradient(circle at 35% 30%,#55505f,#1e1824 67%,#060509);border-color:#d3561c}
+.halloween-vending-classic .rtg-vending-machine-v9{filter:drop-shadow(0 9px 20px var(--event-background))}
+.halloween-vending-classic .rtg-vending-head-v9{background:linear-gradient(var(--event-surface),var(--event-ink));border-color:var(--event-primary);color:var(--event-primary)}
+.halloween-vending-classic .rtg-vending-body-v9{background:linear-gradient(160deg,var(--event-primary),var(--event-secondary))}
+.halloween-vending-classic .rtg-vending-window-v9{background:radial-gradient(circle at 45% 30%,var(--event-surface),var(--event-background))}
+.halloween-vending-classic .rtg-vending-capsule-v9[data-capsule-rarity="orange"]{background:radial-gradient(circle at 35% 30%,var(--event-accent),var(--event-primary) 67%,color-mix(in srgb,var(--event-secondary) 55%,var(--event-ink)));border-color:var(--event-accent)}
+.halloween-vending-classic .rtg-vending-capsule-v9[data-capsule-rarity="black"]{background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--event-surface) 60%,var(--ir-white)),var(--event-surface) 67%,var(--event-background));border-color:var(--event-secondary)}
 /* Same orange/black capsule shell in the outlet: never the default silver. */
 .halloween-vending-classic [data-halloween-prize-color="orange"] .rtg-vending-prize-v9{
-  background:radial-gradient(circle at 35% 30%,#ffcb52,#ff8812 67%,#7e2c0e)!important;
-  border-color:#ffbf67!important;
+  background:radial-gradient(circle at 35% 30%,var(--event-accent),var(--event-primary) 67%,var(--event-surface))!important;
+  border-color:var(--event-accent)!important;
 }
 .halloween-vending-classic [data-halloween-prize-color="black"] .rtg-vending-prize-v9{
-  background:radial-gradient(circle at 35% 30%,#55505f,#1e1824 67%,#060509)!important;
-  border-color:#d3561c!important;
+  background:radial-gradient(circle at 35% 30%,var(--event-surface),var(--event-surface) 67%,var(--event-background))!important;
+  border-color:var(--event-secondary)!important;
 }
-.halloween-vending-classic .rtg-vending-wallet-chip{background:#201013;color:#ffc574;border-color:#f7871c}
-.halloween-vending-classic .rtg-vending-wallet-chip .halloween-currency{color:#ffc574}
+.halloween-vending-classic .rtg-vending-wallet-chip{background:var(--event-surface);color:var(--event-accent);border-color:var(--event-primary)}
+.halloween-vending-classic .rtg-vending-wallet-chip .halloween-currency{color:var(--event-accent)}
 .halloween-match-actor{margin:14px auto;border:1px solid var(--event-primary);border-radius:5px;background:color-mix(in srgb,var(--event-ink) 81%,transparent);width:min(200px,50%);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;padding:6px}
 .halloween-match-actor>div{width:120px;height:120px;max-width:100%}
 .halloween-match-actor img{height:100%;width:100%;object-fit:contain}
@@ -349,7 +351,7 @@
 .player-card.halloween-event-card .player-portrait-wrap,
 .player-card.halloween-event-card .player-info{
  background-image:none!important}
-.halloween-vending-banner>.btn{background:#ff8d20!important;color:#141013!important}
+.halloween-vending-banner>.btn{background:var(--event-primary)!important;color:var(--event-ink)!important}
 .halloween-final-award{
  display:flex!important;flex-direction:column!important;align-items:center!important;
  justify-content:center!important;gap:5px!important;text-align:center!important;
@@ -389,14 +391,14 @@
 }
 .rtg-halloween-picker .squad-formation-option.active em{color:var(--event-secondary)!important}
 .rtg-halloween-pull-modal .rtg-pull-result{
- background:#1c1019!important;border:3px solid #ff8b2a!important;color:#ffedce!important
+ background:var(--event-surface)!important;border:3px solid var(--event-primary)!important;color:var(--event-text)!important
 }
-.rtg-halloween-pull-modal .rtg-pull-result-head{background:#31151d!important}
+.rtg-halloween-pull-modal .rtg-pull-result-head{background:var(--event-surface)!important}
 .rtg-halloween-pull-modal .rtg-pull-reveal-label{background:#ff9028!important;color:#120d13!important}
-.rtg-halloween-pull-modal .rtg-pull-result-copy h2{color:#fff0d0!important}
-.rtg-halloween-pull-modal .rtg-pull-continue{background:#ff9228!important;color:#120d13!important}
-.rtg-halloween-pull-modal .rtg-pull-balance{background:#25141c!important;color:#fff0d4!important}
-.rtg-halloween-pull-modal .rtg-pull-balance strong{color:#ffae41!important}
+.rtg-halloween-pull-modal .rtg-pull-result-copy h2{color:var(--event-text)!important}
+.rtg-halloween-pull-modal .rtg-pull-continue{background:var(--event-primary)!important;color:var(--event-ink)!important}
+.rtg-halloween-pull-modal .rtg-pull-balance{background:var(--event-surface)!important;color:var(--event-text)!important}
+.rtg-halloween-pull-modal .rtg-pull-balance strong{color:var(--event-primary)!important}
 .player-detail-layout.halloween-event-detail:has(.player-fullbody--portrait) .player-detail-visual{
  background:radial-gradient(circle at center 65%,#6f291f,#211018 78%)!important
 }
@@ -420,7 +422,7 @@
 .rtg-halloween-run-screen .halloween-wallet .halloween-currency img{
   display:block;position:static;width:34px;height:34px;
   flex:0 0 34px;max-width:none;
-  object-fit:cover!important;background:var(--ir-white);border-radius:50%;
+  object-fit:cover!important;background:var(--ir-white);border-radius:var(--event-coin-radius);
   mix-blend-mode:normal;opacity:1;filter:contrast(1.2) saturate(1.35)}
 /* Original player detail: the custom Nathan/Samford portrait PNG/WebP must float
    transparently like every RTG render, never inside the default paper rectangle. */
@@ -459,23 +461,23 @@
   color:#fff0db!important;opacity:1!important;text-shadow:0 1px 1px #140a11!important
 }
 .rtg-halloween-pull-modal .rtg-pull-result-head{
-  background:#30121c!important;color:#fff0dc!important
+  background:var(--event-surface)!important;color:var(--event-text)!important
 }
-.rtg-halloween-pull-modal .rtg-pull-result-body{background:#21121b!important;color:#fff0db!important}
+.rtg-halloween-pull-modal .rtg-pull-result-body{background:var(--event-surface)!important;color:var(--event-text)!important}
 .rtg-halloween-pull-modal .rtg-pull-balance{
-  background:#22101a!important;border:2px solid #ff882a!important;
-  color:#fff0dc!important
+  background:var(--event-surface)!important;border:2px solid var(--event-primary)!important;
+  color:var(--event-text)!important
 }
 .rtg-halloween-pull-modal .rtg-pull-balance strong,
 .rtg-halloween-pull-modal .rtg-pull-balance strong *{
-  color:#ffba59!important;opacity:1!important;filter:none!important
+  color:var(--event-accent)!important;opacity:1!important;filter:none!important
 }
 .rtg-halloween-pull-modal .rtg-pull-balance strong::before,
 .rtg-halloween-pull-modal .rtg-pull-balance strong::after{content:none!important;display:none!important}
 .rtg-halloween-pull-modal .halloween-reveal-currency-icon{
   display:inline-block!important;width:25px!important;height:25px!important;
   object-fit:cover!important;vertical-align:middle!important;
-  background:var(--ir-white)!important;border-radius:50%!important;
+  background:var(--ir-white)!important;border-radius:var(--event-coin-radius)!important;
   margin-right:5px!important
 }
 .rtg-halloween-pull-modal .rtg-pull-continue{
@@ -483,7 +485,7 @@
 }
 
 /* Halloween vending exit: keep it visible and tappable on mobile. */
-.halloween-vending .halloween-vending-close{position:relative;z-index:5;display:flex;align-items:center;justify-content:center;margin:0 0 2px auto;min-width:44px;min-height:44px;border:3px solid #161016;border-radius:4px;background:var(--ir-yellow);color:#171016;font-size:1.65rem;font-weight:900;box-shadow:4px 5px 0 #090709;cursor:pointer;touch-action:manipulation}
+.halloween-vending .halloween-vending-close{position:relative;z-index:5;display:flex;align-items:center;justify-content:center;margin:0 0 2px auto;min-width:44px;min-height:44px;border:3px solid var(--event-surface);border-radius:4px;background:var(--ir-yellow);color:var(--event-surface);font-size:1.65rem;font-weight:900;box-shadow:4px 5px 0 var(--event-background);cursor:pointer;touch-action:manipulation}
 .halloween-vending .halloween-vending-close:focus-visible{outline:3px solid var(--ir-white);outline-offset:3px}
 
 /* HW legacy badges: black on every Halloween card and native player detail. */
@@ -630,18 +632,18 @@
   align-items:center;gap:15px!important;
   min-height:0;margin:0 0 20px;
   padding:20px!important;
-  background:linear-gradient(125deg,#21131b 0%,#381a19 100%)!important;
-  border:2px solid #fc8e30!important;
-  box-shadow:6px 7px 0 #09080e!important;
+  background:linear-gradient(125deg,var(--event-surface) 0%,var(--event-surface) 100%)!important;
+  border:2px solid var(--event-primary)!important;
+  box-shadow:6px 7px 0 var(--event-background)!important;
 }
 .halloween-vending-teaser-copy .eyebrow{
   display:block;font-size:.64rem;letter-spacing:.14em;
-  color:#ffad62!important;margin:0 0 8px}
+  color:var(--event-accent)!important;margin:0 0 8px}
 .rtg-halloween-run-screen .halloween-vending-teaser-copy h2{
-  color:#fff0db;font-size:clamp(1.04rem,3.9vw,1.35rem)!important;
+  color:var(--event-text);font-size:clamp(1.04rem,3.9vw,1.35rem)!important;
   line-height:1.15;margin:0 0 8px}
 .rtg-halloween-run-screen .halloween-vending-teaser-copy p{
-  color:#ffbd75;font-size:.86rem;font-weight:850;margin:0}
+  color:var(--event-accent);font-size:.86rem;font-weight:850;margin:0}
 .rtg-halloween-run-screen .halloween-vending-teaser .rtg-vending-button{
   flex:0 0 auto!important;width:auto;max-width:100%!important;
   min-height:54px;padding:11px 14px;
