@@ -22,6 +22,7 @@
       <section class="event-page__panel event-page__hero"><span>Fine evento</span><strong>${tools.escape(tools.isOpen() ? tools.countdown() : "TERMINATO")}</strong>
         <small>Creazioni nel laboratorio: ${tools.escape(data.creations || 0)}</small></section>
       <section class="event-page__grid">${teams}</section>
+      ${guests(tools)}
       <nav class="event-page__actions" aria-label="Azioni dell'evento">
         <button type="button" class="btn" data-event-action="pull">DISTRIBUTORE</button>
         <button type="button" class="btn" data-event-action="squad">SQUADRA</button>
@@ -30,6 +31,15 @@
       </nav></main>`;
   }
 
+  // Parte 2 (c): carte di un altro evento (Halloween), permesse dal file (uses.cardsFrom): solo da vedere e schierare.
+  function guests(tools) {
+    const cards = tools.ownedCards({ from: "halloween2026" });
+    const names = cards.slice(0, 6).map((card) => tools.escape(card.player?.name || card.playerId)).join(", ");
+    return `<section class="event-page__panel" data-event-guests="halloween2026">
+      <strong>Carte da Halloween: ${tools.escape(cards.length)}</strong>
+      <small>${names || "Nessuna"}${cards.length > 6 ? "…" : ""} · si possono schierare in squadra, non si consumano nel laboratorio</small>
+    </section>`;
+  }
   function lab(tools) {
     const cards = tools.ownedCards().filter((card) => !tools.inSquad(card.playerId));
     const list = cards.map((card) => `<button type="button" class="event-page__chip ${picked.includes(card.playerId) ? "is-picked" : ""}"
