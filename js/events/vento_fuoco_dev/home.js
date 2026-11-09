@@ -1,55 +1,61 @@
-// Home Vento-Fuoco; classi delle carte per squadra. Nessun dato scritto su cloud.
-(function (global) {
+// Solo l'evento Vento-Fuoco: home, sfide e classi visuali per squadra.
+// Usa esclusivamente i dati del manifest e le API comuni; nessuna scrittura.
+(function(global) {
   "use strict";
-  const ID = "vento_fuoco_dev";
-  const manifest = global.GameEvents?.get?.(ID);
-  const teamByPlayer = new Map((manifest?.cards || []).map(card => [String(card.playerId), card.teamId]));
-  function playerClass(player) {
-    if (!player) return "";
-    const pid = String(player.playerId || player.id || "").trim() ||
-      String(player.cardId || "").split("::").at(-1);
-    const teamId = teamByPlayer.get(pid);
-    return teamId ? "rtg-element-" + teamId : "";
+  const ID="vento_fuoco_dev";
+  const event=global.GameEvents?.get?.(ID);
+  const byId=new Map((event?.cards||[]).map(card=>[String(card.playerId),card.teamId]));
+  const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+  function classes(player) {
+    if(!player)return "";
+    const pid=String(player.playerId||player.cardId?.split("::").at(-1)||"");
+    const team=byId.get(pid);
+    return team==="fire-team"?"rtg-element-fire-team":team==="blizzard-team"?"rtg-element-blizzard-team":"";
   }
-  const teamStyle = team => Object.entries(team.colors || {})
-    .filter(([key, value]) => /^[a-z]+$/.test(key) && /^#[0-9a-f]{6}$/i.test(value))
-    .map(([key, value]) => "--event-" + key + ":" + value).join(";");
   function home(tools) {
-    const teams = tools.teams();
-    const fire = teams.find(team => team.teamId === "fire-team");
-    const wind = teams.find(team => team.teamId === "blizzard-team");
-    if (!fire || !wind) return "";
-    const open = tools.isOpen();
-    const challenge = team => `<article class="event-page__panel event-page__team" style="${tools.escape(teamStyle(team))}">
-      <img src="${tools.escape(team.logo)}" alt="Stemma ${tools.escape(team.name)}" loading="lazy">
-      <div><strong>${tools.escape(team.name)}</strong><small>Vittoria: ${tools.coin(300,team.teamId==="fire-team"?"fuoco_stemmi":"vento_stemmi")}</small>
-        <small>Fortunata 20%: 600 stemmi</small></div>
-      <button type="button" class="btn event-page__cta" data-event-action="start" data-event-team="${tools.escape(team.teamId)}"
-        ${open?"":"disabled"}>SFIDA</button></article>`;
+    const teams=tools.teams();
+    const fire=teams.find(t=>t.teamId==="fire-team");
+    const ice=teams.find(t=>t.teamId==="blizzard-team");
+    if(!fire||!ice)return "";
+    const open=tools.isOpen();
+    const image=(id)=>tools.player(id)?.frontFullbodyUrl||tools.player(id)?.fullbodyUrl||"";
+    const rival=(team,kind)=>{
+      const coin=kind==="fire"?"fuoco_stemmi":"vento_stemmi";
+      return `<article class="vf-rival vf-rival--${kind}">
+        <div class="vf-rival__crest"><img src="${esc(team.logo)}" alt="" loading="lazy"></div>
+        <div class="vf-rival__copy"><h2>${esc(team.name)}</h2>
+          <p>Vittoria: <strong>${tools.coin(300,coin)}</strong></p>
+          <p>Fortunata 20%: <strong>600 stemmi</strong></p></div>
+        <button type="button" class="vf-rival__challenge" data-event-action="start"
+          data-event-team="${esc(team.teamId)}" ${open?"":"disabled"}>SFIDA</button>
+      </article>`;
+    };
     return `<main class="screen event-page event-page--vento-fuoco" data-event-extra="${ID}">
-      <header class="event-page__top"><button type="button" class="btn event-page__back" data-event-action="exit"
-        aria-label="Esci dall'evento">←</button>
-        <div class="event-page__titles"><small>EVENTO LIMITATO · DEV</small><h1>Vento e Fuoco</h1></div>
-        <div class="event-page__wallet">${tools.wallet()}</div></header>
-      <section class="event-page__panel vf-clash" aria-label="Scontro tra Vento e Fuoco">
-        <small>GLI ELEMENTI SI SCONTRANO</small><strong>🔥 FUOCO <span>VS</span> ❄️ VENTO</strong>
-        <small>${open?"TEMPO RIMASTO · "+tools.escape(tools.countdown()):"EVENTO NON DISPONIBILE"}</small>
+      <header class="vf-header">
+        <button type="button" class="vf-back" data-event-action="exit" aria-label="Torna alle campagne">←</button>
+        <div class="vf-heading"><small>EVENTO LIMITATO · DEV</small><h1>Vento e Fuoco</h1></div>
+        <div class="vf-wallet" aria-label="Stemmi Fuoco e Vento">${tools.wallet()}</div>
+      </header>
+      <section class="vf-duel" aria-label="Fuoco contro Vento e Ghiaccio">
+        <span class="vf-duel__tag">GLI ELEMENTI SI SCONTRANO</span>
+        <div class="vf-duel__hot">
+          <span class="vf-duel__element" aria-hidden="true">🔥</span>
+          ${image("1105")?'<img class="vf-duel__fighter vf-duel__fighter--hot" src="'+esc(image("1105"))+'" alt="" loading="lazy">':""}
+        </div>
+        <div class="vf-duel__cold">
+          <span class="vf-duel__element" aria-hidden="true">❄</span>
+          ${image("4538")?'<img class="vf-duel__fighter vf-duel__fighter--cold" src="'+esc(image("4538"))+'" alt="" loading="lazy">':""}
+        </div>
+        <div class="vf-duel__title"><strong>FUOCO</strong><em>VS</em><strong>VENTO</strong></div>
+        <div class="vf-duel__timer" data-halloween-countdown>${open?"TEMPO RIMASTO · "+esc(tools.countdown()):"EVENTO TERMINATO"}</div>
       </section>
-      <section class="event-page__grid" aria-label="Sfide evento">${challenge(fire)}${challenge(wind)}</section>
-      <nav class="event-page__actions" aria-label="Azioni evento">
-        <button type="button" class="btn event-page__cta" data-event-action="pull" ${open?"":"disabled"}>🎰 DISTRIBUTORI</button>
-        <button type="button" class="btn" data-event-action="squad">⚽ SQUADRA</button>
-        <button type="button" class="btn" data-event-action="album">📖 ALBUM EVENTO</button>
-      </nav>
-      <section class="event-page__panel"><small>1 ESTRAZIONE · 200 STEMMI</small>
-        <p>Due distributori: ciascuno usa soltanto i propri stemmi e contiene 19 giocatori.
-          Aiden, Torch, Shawn e Gazelle hanno peso 1, gli altri peso 3.</p>
-        <p>Allenatori 4818 e 4602: poteri in definizione. Miximax arriverà dopo.</p>
+      <section class="vf-rivals" aria-label="Seleziona squadra avversaria">
+        ${rival(fire,"fire")}${rival(ice,"ice")}
       </section>
+      <button type="button" class="vf-distributors" data-event-action="pull" ${open?"":"disabled"}>
+        <span aria-hidden="true">▤</span> DISTRIBUTORI
+      </button>
     </main>`;
   }
-  global.GameEvents?.extend?.(ID, {
-    classes: playerClass,
-    home: { render: home }
-  });
+  global.GameEvents?.extend?.(ID,{classes,home:{render:home}});
 })(globalThis);
