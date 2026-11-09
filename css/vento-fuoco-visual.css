@@ -1,0 +1,238 @@
+/* Vento-Fuoco · veste grafica isolata. Non altera rarità, gameplay, Halloween o Season. */
+[data-event-theme="vento_fuoco_dev"] { --vf-ink:#071323; --vf-paper:#fffaf1; --vf-gold:#ffd21f; }
+.event-page--vento-fuoco {
+  background-image:
+    linear-gradient(155deg,rgba(4,17,38,.90),rgba(10,26,56,.72) 40%,rgba(46,12,29,.84)),
+    url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ4docu4pCKgUNZ2fs-bhLizkbbUEEQopSCQju2-RVSCw&s=10");
+  background-position:center,center top;
+  background-size:cover;
+  background-repeat:no-repeat;
+  background-attachment:scroll;
+}
+.vf-home-shell { background:linear-gradient(125deg,#092a4c,#0b1830 50%,#531b2c); }
+.vf-strength {
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(54px,1.35fr) minmax(0,1fr);
+  gap:10px;align-items:center;padding:10px 12px;border:3px solid #071323;
+  box-shadow:4px 5px 0 #030811;background:linear-gradient(100deg,#e9f7ff 0%,#f8fdff 48%,#fff2dc);
+  color:#061728;font-variant-numeric:tabular-nums;
+}
+.vf-strength>div:not(.vf-strength__meter){display:grid;gap:2px}
+.vf-strength>div:last-child{text-align:right}
+.vf-strength small{font-size:clamp(.53rem,2.1vw,.72rem);font-weight:1000;letter-spacing:.07em}
+.vf-strength strong{font-size:clamp(1.65rem,6vw,2.5rem);font-weight:1000;line-height:1}
+.vf-strength__meter{height:12px;overflow:hidden;border:2px solid #071323;background:#d9e2e8}
+.vf-strength__meter span{display:block;height:100%;background:linear-gradient(90deg,#00c6eb 0%,#167ccb 54%,#ff9b3d 84%,#e74235 100%);transition:width .2s}
+.vf-strength.is-over-limit { border-color:#c42e24; }
+.vf-strength.is-over-limit .vf-strength__meter span{background:#e33e2e}
+.vf-rival__limit { margin-top:4px!important;color:#f8faff!important;font-size:.7rem!important; }
+.vf-rival__lineup { grid-column:1/-1;z-index:2;width:100%;margin-top:5px;border-top:2px solid rgba(255,255,255,.34);color:#fff; }
+.vf-rival__lineup summary { display:flex;align-items:center;justify-content:space-between;gap:7px;min-height:38px;padding:7px 1px;
+  cursor:pointer;font-size:clamp(.62rem,2.8vw,.78rem);font-weight:950;letter-spacing:.02em;list-style:none; }
+.vf-rival__lineup summary::-webkit-details-marker{display:none}
+.vf-rival__lineup summary:after{content:"+";font-size:1.2rem;color:#ffd21f}
+.vf-rival__lineup[open] summary:after{content:"−"}
+.vf-rival__lineup summary b{margin-left:auto;font-size:.65rem;color:#ffd21f;white-space:nowrap}
+.vf-lineup-grid {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin:6px 0 3px;}
+.vf-lineup-player {position:relative;min-width:0;min-height:78px;padding:2px;display:flex;flex-direction:column;align-items:center;
+  border:1px solid rgba(255,255,255,.35);background:#08223b;color:#fff;overflow:hidden}
+.vf-rival--fire .vf-lineup-player{background:linear-gradient(155deg,#922922,#230d16)}
+.vf-rival--ice .vf-lineup-player{background:linear-gradient(155deg,#12629d,#081c3c)}
+.vf-lineup-player__portrait{height:46px;width:100%;display:flex;align-items:end;justify-content:center}
+.vf-lineup-player__portrait img{display:block;width:100%;height:100%;object-fit:contain;object-position:bottom;filter:none}
+.vf-lineup-player small{position:absolute;top:2px;left:2px;padding:1px 2px;background:#fff;color:#061323;font-size:.48rem;font-weight:1000}
+.vf-lineup-player strong{width:100%;margin-top:auto;font-size:clamp(.48rem,1.7vw,.62rem);line-height:1.1;
+  text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:370px){.vf-lineup-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(min-width:680px){.vf-lineup-grid{grid-template-columns:repeat(11,minmax(0,1fr))}}
+
+/* Contenitori Squadra: alternanza blu/rosso con verde campo preservato. */
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-shell {
+  background:linear-gradient(115deg,#103e6d 0%,#0b213c 42%,#551f2c 100%)!important;color:#f5faff!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-content{
+  background:linear-gradient(120deg,#0d355b,#0d2342 48%,#502033)!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-topbar {
+  background:linear-gradient(100deg,#07172c 0%,#164c7e 60%,#a3323e 100%)!important;
+  border-bottom-color:#00c8ed!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slots,
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-field-panel,
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-bench-panel,
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-management-panel{
+  background:linear-gradient(135deg,#153c65,#0b213a 55%,#522432)!important;
+  border-color:#58b9eb!important;color:#fff!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-section-head{
+  background:linear-gradient(90deg,#071627,#16385c 65%,#842f36)!important;
+  border-color:#00bff3!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slot-buttons,
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slot{
+  background:#0e3050!important;color:#fff!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slot.active,
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-live-overall{
+  background:#ffd21f!important;color:#071323!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-change-trigger{
+  background:#f5fbff!important;color:#08182b!important;border-color:#092746!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-bottom-nav{background:#0b2038!important;border-color:#22bfe9!important}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-bottom-nav button.active{background:#ffd21f!important;color:#061323!important}
+.vf-squad-strength{max-width:1000px;margin:0 auto;padding:10px 12px 0;background:#0c2543}
+.vf-squad-strength .vf-strength{margin:0}
+.vf-prematch-strength{max-width:970px;margin:12px auto 0;padding:0 12px}
+
+/* Carte: anatomia invariata, nuova illustrazione con cornice glaciale/ardente. */
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-fire-team,
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team {
+  --vf-card:#00d9fc;--vf-card-deep:#04498d;--vf-card-glow:#c3f9ff;
+  isolation:isolate;position:relative;overflow:hidden;border-radius:7px!important;
+  border:3px solid var(--vf-card)!important;outline:2px solid #091321;outline-offset:-1px;
+  aspect-ratio:.79;min-height:0;box-shadow:inset 0 0 0 2px var(--vf-card-glow),0 4px 0 #040c1c,0 0 12px var(--vf-card)!important;
+  background:linear-gradient(155deg,#001b43,#007dcc 58%,#031e53)!important;
+  color:#fff!important;transform-origin:center;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-fire-team {
+  --vf-card:#ff592a;--vf-card-deep:#700b0b;--vf-card-glow:#ffd067;
+  background:linear-gradient(155deg,#4e0208,#b51b16 55%,#32050d)!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team {
+  background:
+    repeating-linear-gradient(132deg,transparent 0 12%,#bafaff30 13% 14%,transparent 15% 26%),
+    linear-gradient(155deg,#00376c,#00b2f4 60%,#062351)!important;
+}
+.player-card.rtg-event--vento_fuoco_dev .player-portrait-wrap{
+  position:relative;isolation:isolate;width:100%;height:77%;aspect-ratio:auto!important;
+  padding:22% 3% 0!important;display:flex!important;align-items:end!important;justify-content:center!important;
+  background:transparent!important;overflow:hidden;
+}
+.player-card.rtg-event--vento_fuoco_dev .player-portrait-wrap:before {
+  content:"";position:absolute;inset:9% -20% -12%;z-index:-1;pointer-events:none;
+  background:conic-gradient(from 215deg at 50% 115%,transparent 0 12deg,#8ff8ffcc 12deg 22deg,
+    transparent 22deg 40deg,#ecffffaa 40deg 49deg,transparent 49deg 63deg,
+    #0ab7ffff 63deg 75deg,transparent 75deg 91deg,#b1f8ffdd 91deg 103deg,
+    transparent 103deg 120deg);
+  clip-path:polygon(0 100%,7% 33%,20% 81%,29% 1%,46% 75%,67% 12%,76% 80%,100% 27%,100% 100%);
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-fire-team .player-portrait-wrap:before {
+  background:conic-gradient(from 205deg at 50% 115%,transparent 0 10deg,#ffd52a 10deg 23deg,transparent 23deg 38deg,
+    #ff850b 38deg 53deg,transparent 53deg 69deg,#f63c0a 69deg 84deg,transparent 84deg 97deg,#fff084 97deg 108deg,transparent 108deg 122deg);
+  clip-path:polygon(0 100%,5% 45%,14% 70%,23% 9%,38% 74%,53% 1%,63% 80%,82% 16%,89% 76%,100% 41%,100% 100%);
+}
+.player-card.rtg-event--vento_fuoco_dev .player-portrait-wrap img.player-portrait{
+  position:relative;z-index:1;display:block;width:100%!important;height:100%!important;max-width:none;
+  object-fit:contain!important;object-position:center bottom!important;
+  filter:drop-shadow(0 2px 2px #030c19);
+}
+.player-card.rtg-event--vento_fuoco_dev .player-info{
+  position:absolute;z-index:2;bottom:0;left:0;right:0;height:25%;min-height:0;
+  display:flex;justify-content:center;align-items:center;padding:3px 3px 7px!important;
+  background:linear-gradient(180deg,#020f27,#010b1d)!important;color:#fff!important;
+  border-top:2px solid var(--vf-card)!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-fire-team .player-info{background:linear-gradient(180deg,#581008,#22060a)!important}
+.player-card.rtg-event--vento_fuoco_dev .player-title{width:100%;min-width:0}
+.player-card.rtg-event--vento_fuoco_dev .player-title strong{
+  display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  white-space:normal!important;overflow:hidden!important;text-overflow:ellipsis;
+  font-size:clamp(.56rem,2vw,.8rem)!important;line-height:1.07!important;
+  color:#fff!important;text-align:center;text-shadow:1px 1px 1px #03050c!important;
+}
+.player-card.rtg-event--vento_fuoco_dev .player-meta{display:none!important}
+.player-card.rtg-event--vento_fuoco_dev .player-corner.player-level{display:none!important}
+.player-card.rtg-event--vento_fuoco_dev .player-corner.player-role,
+.player-card.rtg-event--vento_fuoco_dev .player-corner.player-overall{
+  z-index:4;top:3px!important;border-radius:3px!important;min-height:23px!important;
+  border:2px solid #050d19!important;box-shadow:2px 2px 0 #050d19!important;
+  padding:3px!important;font-size:clamp(.56rem,2vw,.8rem)!important;font-weight:1000!important;
+}
+.player-card.rtg-event--vento_fuoco_dev .player-corner.player-role{left:3px!important;background:#f7fcff!important;color:#061727!important}
+.player-card.rtg-event--vento_fuoco_dev .player-corner.player-overall{right:3px!important;background:#ffd21f!important;color:#061727!important;min-width:30px!important}
+.player-card.rtg-event--vento_fuoco_dev .rtg-legacy-badge{
+  z-index:5!important;bottom:0!important;right:0!important;background:#ffd21f!important;color:#061727!important;border:2px solid #061727!important
+}
+.player-card.rtg-event--vento_fuoco_dev:focus-visible{outline:3px solid #ffd21f!important;outline-offset:3px}
+
+/* Schede giocatore: carta tecnica avorio, fascia elementale, contrasti forti. */
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team{
+  --vf-detail-primary:#d32a14;--vf-detail-secondary:#ffb017;--vf-detail-bg:#a50f1b;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team{
+  --vf-detail-primary:#056bc4;--vf-detail-secondary:#2cdbff;--vf-detail-bg:#044c99;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev{
+  --pd-paper:#fffaf0;--pd-cream:#fff7e9;--pd-ink:#09111a;
+  color:#07101a!important;background:#fffaf0!important;
+  border:5px solid #07111e!important;box-shadow:inset 0 0 0 3px #fff,0 0 0 3px var(--vf-detail-primary,#056bc4)!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-hero{
+  background:linear-gradient(107deg,#fffdf6 0 47%,var(--vf-detail-bg,#044c99) 47% 100%)!important;
+  border-bottom:5px solid #07111e!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-hero:before{
+  content:"";position:absolute;right:0;top:0;bottom:0;width:54%;z-index:0;pointer-events:none;
+  background:repeating-linear-gradient(135deg,transparent 0 32px,#ffffff2c 34px 42px,transparent 44px 85px),
+    radial-gradient(circle at 90% 20%,var(--vf-detail-secondary,#2cdbff),transparent 28%);
+  clip-path:polygon(28% 0,100% 0,100% 100%,0 100%,43% 52%);
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-identity{color:#07111e!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-name{
+  color:#050d16!important;text-shadow:none!important;font-size:clamp(2rem,6vw,4.1rem)!important;
+  letter-spacing:-.055em!important;line-height:.91!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-heading .eyebrow,
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-heading span{color:var(--vf-detail-primary,#056bc4)!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-team{background:#fff!important;color:#061321!important;border:2px solid #09111e!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-team strong{color:#071321!important;text-shadow:none!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-team img{filter:none!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-tags .role-chip{
+  background:#fffdfa!important;color:#08131c!important;border:2px solid #06121e!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .overall-comparison>div{
+  background:#fffdf8!important;border:3px solid #07111e!important;color:#08131e!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .overall-comparison>div:first-child{background:#ffd21f!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .overall-comparison span,
+.player-detail-layout.rtg-event--vento_fuoco_dev .overall-comparison strong{color:#06121e!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-category{
+  background:#fffdf6!important;color:#07131e!important;border:3px solid #07111e!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-category *{color:#07131e!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual{
+  background:linear-gradient(150deg,transparent 0%,var(--vf-detail-primary,#0474d1) 95%)!important;
+  overflow:hidden!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual:before{
+  background:conic-gradient(from 190deg at 55% 110%,transparent 0 12deg,var(--vf-detail-secondary,#2cdbff) 12deg 26deg,
+   transparent 26deg 48deg,#ffffffd9 48deg 57deg,transparent 57deg 80deg,var(--vf-detail-primary,#0574d1) 80deg 95deg,transparent 95deg 118deg)!important;
+  clip-path:polygon(0 100%,10% 27%,22% 78%,38% 5%,55% 68%,74% 12%,83% 77%,100% 25%,100% 100%)!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual:after{
+  background:radial-gradient(circle at 72% 55%,#ffffff70,transparent 58%)!important;opacity:1!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-fullbody{filter:drop-shadow(0 6px 8px #06132388);object-fit:contain!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-content{
+  background:linear-gradient(180deg,#f9fdff,#fffbf4)!important;color:#07111e!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-section>h3{color:#07111e!important;border-color:#07111e!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-section>h3:after{background:linear-gradient(90deg,var(--vf-detail-primary,#056bc4),var(--vf-detail-secondary,#2cdbff))!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-content .detail-stat{
+  background:#fff!important;color:#07111e!important;border:2px solid #07111e!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-content .detail-stat *{color:#07111e!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-stat-track{background:#ced8e0!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-stat-track i{background:var(--vf-detail-primary,#056bc4)!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-rtg-legacy-badge{
+  background:#ffd21f!important;color:#07111e!important;border-color:#07111e!important
+}
+/* Con questi override gli stemmi originali non ricevono il filtro Halloween. */
+[data-event-theme="vento_fuoco_dev"] .halloween-native-match .rtg-matchup-team--opponent img,
+[data-event-theme="vento_fuoco_dev"] .halloween-native-match .rtg-prematch-top-team--opponent img,
+[data-event-theme="vento_fuoco_dev"] .halloween-native-match .rtg-score-team--opponent img{filter:none!important}
+@media(max-width:440px){
+  .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-name{font-size:clamp(1.7rem,8.5vw,2.4rem)!important}
+  .vf-strength{gap:6px;padding:9px 7px}
+  .vf-lineup-player{min-height:72px}
+}
