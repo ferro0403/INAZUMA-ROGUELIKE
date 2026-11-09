@@ -18,18 +18,21 @@
       '<div class="vf-strength__meter" aria-hidden="true"><span style="width:'+ratio+'%"></span></div>'+
       '<div><small>FORZA MASSIMA</small><strong>'+(Number.isFinite(max)?esc(max):'—')+'</strong></div></section>';
   }
+
+  // Read-only snapshot from the native Squadra pitch renderer, not a second roster.
   function lineupMarkup(team,tools) {
     const preview=tools.matchPreview?.(team.teamId);
     if(!preview?.lineup?.length)return "";
-    const cards=preview.lineup.map(p=>{
-      const portrait=p?.portraitUrl||p?.fullbodyUrl||"";
-      return '<div class="vf-lineup-player" title="'+esc(p?.name||'Giocatore')+'">'+
-        '<span class="vf-lineup-player__portrait">'+(portrait?'<img src="'+esc(portrait)+'" alt="" loading="lazy">':'')+'</span>'+
-        '<small>'+esc(p?.position||'—')+'</small><strong>'+esc(p?.name||'—')+'</strong></div>';
-    }).join("");
-    return '<details class="vf-rival__lineup" open><summary><span>FORMAZIONE '+esc(preview.formationId||'—')+
-      ' · OVR '+esc(preview.overall??'—')+'</span><b>VEDI 11 TITOLARI</b></summary>'+
-      '<div class="vf-lineup-grid" aria-label="Titolari '+esc(team.name)+'">'+cards+'</div></details>';
+    const pitch=String(preview.pitchMarkup||"");
+    return '<details class="vf-rival__lineup" data-vf-lineup="'+esc(team.teamId)+'">'+
+      '<summary><span class="vf-rival__lineup-label"><small>FORMAZIONE '+esc(preview.formationId||"—")+
+      ' · OVR '+esc(preview.overall??"—")+'</small><strong>GLI 11 TITOLARI</strong></span>'+
+      '<span class="vf-rival__lineup-toggle"><b>VEDI 11 IN CAMPO</b><b>CHIUDI CAMPO</b><i aria-hidden="true">⌄</i></span></summary>'+
+      '<div class="vf-rival__field"><div class="vf-rival__field-head"><span>DISPOSIZIONE TATTICA · '+esc(preview.formationId||"—")+'</span>'+
+      '<span>11 TITOLARI</span></div>'+
+      '<div class="vf-mini-pitch" aria-label="Formazione su campo di '+esc(team.name)+'">'+
+      (pitch||'<p class="vf-rival__unavailable">Anteprima campo non disponibile.</p>')+
+      '</div></div></details>';
   }
   function classes(player) {
     if(!player)return "";
@@ -44,7 +47,6 @@
     if(!fire||!ice)return "";
     const open=tools.isOpen();
     const strength=tools.squadStrength?.()||null;
-    const image=(id)=>tools.player(id)?.frontFullbodyUrl||tools.player(id)?.fullbodyUrl||"";
     const rival=(team,kind)=>{
       const coin=kind==="fire"?"fuoco_stemmi":"vento_stemmi";
       return `<article class="vf-rival vf-rival--${kind}">
@@ -65,18 +67,20 @@
         <div class="vf-wallet" aria-label="Stemmi Fuoco e Vento">${tools.wallet()}</div>
       </header>
       ${strengthBanner(strength)}
-      <section class="vf-duel" aria-label="Fuoco contro Vento e Ghiaccio">
-        <span class="vf-duel__tag">GLI ELEMENTI SI SCONTRANO</span>
-        <div class="vf-duel__hot">
-          <span class="vf-duel__element" aria-hidden="true">🔥</span>
-          ${image("1105")?'<img class="vf-duel__fighter vf-duel__fighter--hot" src="'+esc(image("1105"))+'" alt="" loading="lazy">':""}
+      <section class="vf-duel" aria-label="Sfida elementale Fire Team contro Blizzard Team">
+        <div class="vf-duel__top"><span>ROAD TO GLORY <i></i> EVENTO ELEMENTALE</span><strong>EDIZIONE SPECIALE</strong></div>
+        <div class="vf-duel__main">
+          <div class="vf-duel__team vf-duel__team--fire">
+            <div class="vf-duel__team-emblem"><img src="${esc(fire.logo)}" alt="Stemma ${esc(fire.name)}" loading="eager"></div>
+            <div class="vf-duel__team-name"><strong>FUOCO</strong><small>FIRE TEAM</small></div>
+          </div>
+          <div class="vf-duel__versus" aria-hidden="true"><span>VS</span></div>
+          <div class="vf-duel__team vf-duel__team--ice">
+            <div class="vf-duel__team-emblem"><img src="${esc(ice.logo)}" alt="Stemma ${esc(ice.name)}" loading="eager"></div>
+            <div class="vf-duel__team-name"><strong>GHIACCIO</strong><small>BLIZZARD TEAM</small></div>
+          </div>
         </div>
-        <div class="vf-duel__cold">
-          <span class="vf-duel__element" aria-hidden="true">❄</span>
-          ${image("4538")?'<img class="vf-duel__fighter vf-duel__fighter--cold" src="'+esc(image("4538"))+'" alt="" loading="lazy">':""}
-        </div>
-        <div class="vf-duel__title"><strong>FUOCO</strong><em>VS</em><strong>VENTO</strong></div>
-        <div class="vf-duel__timer" data-halloween-countdown>${open?"TEMPO RIMASTO · "+esc(tools.countdown()):"EVENTO TERMINATO"}</div>
+        <div class="vf-duel__bottom"><span>DUE SQUADRE <b>•</b> DUE SFIDE</span><strong data-halloween-countdown>${open?"SCADENZA · "+esc(tools.countdown()):"EVENTO TERMINATO"}</strong></div>
       </section>
       <section class="vf-rivals" aria-label="Le due partite e le formazioni avversarie">
         ${rival(fire,"fire")}${rival(ice,"ice")}
