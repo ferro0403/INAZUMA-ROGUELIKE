@@ -381,88 +381,173 @@
   background:linear-gradient(110deg,#08192c88,#0713234d);
 }
 
-/* Fire / Ice portrait patches v4 — keep the original RTG Squadra card.
- *
- * No custom card frame, dimensions, rarity stripe, portrait geometry,
- * footer, typography, or corner badge. The native PlayerView card and
- * game.css Squadra styles are authoritative. Only undo the event's generic
- * dark skin and paint TRANSPARENT illustrations behind the player PNG.
- * Applies identically to Squadra, opponent formation, and pull result.
+/* Vento-Fuoco v5: THE HALLOWEEN EVENT CARD ANATOMY.
+ * Preserve the real compact PlayerView / Squadra component: portrait, OVR,
+ * role, name, real rarity, badge and interactions. The EVENT skin is deliberately
+ * as saturated as Halloween, with a dark nameplate and strong elemental frame.
+ * This is not the neutral card and not a transparent patch.
  */
 .player-card.rtg-event--vento_fuoco_dev.rtg-element-fire-team,
 .player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team{
-  background:linear-gradient(165deg,var(--ir-white) 0 70%,#eee9dc 70%)!important;
-  color:var(--squad-ink,#102238)!important;
-}
-/* The real native rarity border/shadow (including the thin top cut) is kept.
- * Restore its variable-based colors from the pre-event Squadra component. */
-:is(.squad-screen,.development-squad-card-scope)
-.squad-player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team){
-  border-color:var(--rarity-border,var(--ir-grey))!important;
-  border-left-width:4px!important;
-  border-radius:4px!important;
-  box-shadow:4px 5px 0 rgba(5,18,12,.48),0 0 13px var(--rarity-glow,transparent),
-    inset 0 -4px 0 var(--rarity-border,var(--ir-grey))!important;
-}
-.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team) .player-info{
-  background:transparent!important;
-  color:var(--squad-ink,#102238)!important;
-}
-.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
-.player-title strong{
-  color:var(--squad-ink,#102238)!important;
-  text-shadow:none!important;
-}
-/* Keep the original light role and yellow OVR counters, without changing
- * their dimensions, position, padding or font sizes. */
-:is(.squad-screen,.development-squad-card-scope)
-.squad-player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
-.player-role{
-  background:var(--ir-white)!important;
-  color:var(--squad-ink,#102238)!important;
-  border-color:var(--squad-ink,#102238)!important;
-}
-:is(.squad-screen,.development-squad-card-scope)
-.squad-player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
-.player-overall{
-  background:var(--squad-yellow,var(--ir-yellow))!important;
-  color:var(--squad-ink,#102238)!important;
-  border-color:var(--squad-ink,#102238)!important;
-}
-/* Same standard portrait paper and the canonical rarity-color side slash.
- * ::before is a new transparent event decoration; ::after stays native. */
-.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
-.player-portrait-wrap{
+  --vf-card-edge:#ff7130;
+  --vf-card-light:#ffbb47;
+  --vf-card-shade:#670b18;
+  --vf-card-glow:rgba(255,97,24,.44);
   position:relative;
   isolation:isolate;
-  background:linear-gradient(160deg,
-    color-mix(in srgb,var(--rarity-border,var(--ir-grey)) 9%,var(--ir-white)),
-    #ddd7c8)!important;
+  overflow:visible;
+  background:linear-gradient(152deg,#661021,#270b18 68%,#100e1d)!important;
+  border-color:var(--vf-card-edge)!important;
+  color:#fff9ed!important;
+  box-shadow:3px 4px 0 #07121f,0 0 13px var(--vf-card-glow),
+    inset 0 0 0 1px var(--vf-card-light)!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team{
+  --vf-card-edge:#23c8ff;
+  --vf-card-light:#d6fcff;
+  --vf-card-shade:#073a79;
+  --vf-card-glow:rgba(46,207,255,.42);
+  background:linear-gradient(152deg,#075aa7,#062956 68%,#061427)!important;
+}
+:is(.squad-screen,.development-squad-card-scope)
+.squad-player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team){
+  border:3px solid var(--vf-card-edge)!important;
+  border-left-width:3px!important;
+  border-radius:4px!important;
+  box-shadow:3px 4px 0 #07121f,0 0 13px var(--vf-card-glow),
+    inset 0 0 0 1px var(--vf-card-light)!important;
+}
+/* No double rarity strips: original selected indicator is preserved, but
+ * the redundant rarity-colored slash in the portrait is replaced by art. */
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
+.player-portrait-wrap{
+  background:#8d1921 url("../assets/events/vento-fuoco/fire-event-v5.svg") center bottom / cover no-repeat!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team .player-portrait-wrap{
+  background:#086bc2 url("../assets/events/vento-fuoco/ice-event-v5.svg") center bottom / cover no-repeat!important;
 }
 .player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
-.player-portrait-wrap::before{
-  content:"";display:block;
-  position:absolute;inset:0;z-index:0;
-  pointer-events:none;
-  background-repeat:no-repeat;
-  background-position:center;
-  background-size:100% 100%;
-}
-.player-card.rtg-event--vento_fuoco_dev.rtg-element-fire-team
-.player-portrait-wrap::before{
-  background-image:url("../assets/events/vento-fuoco/fire-portrait-patch.svg");
-}
-.player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team
-.player-portrait-wrap::before{
-  background-image:url("../assets/events/vento-fuoco/ice-portrait-patch.svg");
+.player-portrait-wrap::before,
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
+.player-portrait-wrap::after,
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
+.player-info::before,
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
+.player-info::after{
+  display:none!important;content:none!important;
 }
 .player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
 .player-portrait-wrap img.player-portrait{
+  display:block;
   position:relative;
-  z-index:1;
+  z-index:2;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  filter:drop-shadow(0 2px 2px rgba(5,11,26,.52));
 }
-/* Native right-hand rarity slash is ::after (z-index:2), intentionally
- * untouched; native card ::before and selected ::after are untouched too. */
+/* Exactly as the Halloween event: black/dark plate, crisp white name. */
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
+.player-info{
+  background:linear-gradient(180deg,#1a1726,#090f1d)!important;
+  color:#fff9ef!important;
+  border-top:2px solid var(--vf-card-edge)!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team .player-info{
+  background:linear-gradient(180deg,#093151,#06182c)!important;
+}
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
+.player-info .player-title,
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
+.player-info .player-title strong,
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
+.player-meta,
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
+.player-meta span{
+  color:#fff8ed!important;
+  text-shadow:0 1px 2px #0009!important;
+}
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
+.player-info .player-title strong{
+  /* Unlike the old truncated event cards, long names get 2 readable lines. */
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  white-space:normal!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  overflow-wrap:break-word;
+  line-height:1.1!important;
+  text-align:center!important;
+}
+/* Role and OVR retain RTG's original top corners and the normal OVR value. */
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
+.player-corner.player-role{
+  background:#fffaf1!important;
+  color:#0c1a29!important;
+  border-color:#081726!important;
+}
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)
+.player-corner.player-overall{
+  background:#ffd226!important;
+  color:#0b1929!important;
+  border-color:#081726!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-fire-team > .rtg-legacy-badge{
+  background:#12131d!important;color:#fff7e7!important;
+  border:2px solid #f68731!important;box-shadow:2px 2px 0 #06121d!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team > .rtg-legacy-badge{
+  background:#071927!important;color:#e9fdff!important;
+  border:2px solid #38d8ff!important;box-shadow:2px 2px 0 #06121d!important;
+}
+/* Compact lineups use the SAME full event card, no special washed-out skin. */
+.vf-mini-pitch .player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team){
+  border-color:var(--vf-card-edge)!important;
+}
+
+
+/* v5 player sheet — same native white technical sheet, fully illustrated
+ * elemental hero like the supplied Fire / Ice reference screens. */
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team
+.player-detail-hero::before{
+  background:
+    linear-gradient(180deg,transparent 0 49%,#7111242a 100%),
+    url("../assets/events/vento-fuoco/fire-event-v5.svg") center / cover no-repeat!important;
+  clip-path:polygon(35% 0,100% 0,100% 100%,0 100%,37% 52%)!important;
+  opacity:1!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team
+.player-detail-hero::before{
+  background:
+    linear-gradient(180deg,transparent 0 49%,#07296331 100%),
+    url("../assets/events/vento-fuoco/ice-event-v5.svg") center / cover no-repeat!important;
+  clip-path:polygon(35% 0,100% 0,100% 100%,0 100%,37% 52%)!important;
+  opacity:1!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team
+.player-detail-visual{
+  background:
+    linear-gradient(90deg,#76142237,#6e07160a),
+    url("../assets/events/vento-fuoco/fire-event-v5.svg") center / cover no-repeat!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team
+.player-detail-visual{
+  background:
+    linear-gradient(90deg,#045c9f30,#06214a0a),
+    url("../assets/events/vento-fuoco/ice-event-v5.svg") center / cover no-repeat!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev
+.player-detail-visual::before,
+.player-detail-layout.rtg-event--vento_fuoco_dev
+.player-detail-visual::after{
+  content:none!important;display:none!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team{
+  box-shadow:inset 0 0 0 3px #fff,0 0 0 3px #ff7339!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team{
+  box-shadow:inset 0 0 0 3px #fff,0 0 0 3px #27caff!important;
+}
 
 /* In the pull reveal the exact same native card gets room to breathe, without
  * a second card anatomy or a fake diagonal paper ticket behind it. */
@@ -492,7 +577,7 @@
   font-size:.72rem!important;
 }
 .rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
-.rtg-pull-card-stage .rtg-legacy-badge{display:none!important}
+.rtg-pull-card-stage .rtg-legacy-badge{display:grid!important}
 
 /* Native RTG reveal, re-skinned in the same navy/ivory/yellow language as Squadra.
  * Rarity is still correctly displayed once, in the header; it is never changed.
