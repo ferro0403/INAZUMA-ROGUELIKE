@@ -45,3 +45,24 @@ questo passo non cambia gameplay, schermate, salvataggi o cloud.
    in PR finale verificata dal proprietario.
 
 Verifiche del passo corrente: `node tests/vento-fuoco-data-test.js`.
+
+## Passo 1B — Preview in sviluppo (PR successiva)
+- Il manifest `data/events/dev/vento_fuoco_dev.json` è **solo DEV**:
+  `?dev=1&evento=vento_fuoco_dev`. I salvataggi restano in
+  `dev:vento_fuoco_dev:*`, senza scrittura cloud.
+- Sfide separate Fire / Blizzard; premi 300 o 600 con fortuna 20% nella
+  moneta della squadra sfidata. Due distributori con switch e pool di 19
+  giocatori ciascuno, spin 200 della valuta corrispondente.
+- Quattro carte speciali: peso 1 contro 3 di tutte le altre; estrazioni
+  senza duplicati finché la collezione del distributore non è completa.
+- Due squadre nell'album evento. Colori della carta e dei distributori
+  da `teams[].theme.colors` e `classes` dell'estensione.
+- Home temporanea con pannelli contrapposti; immagini finali, allenatori
+  e miximax **ancora da aggiungere**.
+- In preview si usano gli stemmi contenuti negli export del proprietario:
+  URL esterni provvisori. Prima del rilascio sostituire con asset forniti
+  e controllati dal proprietario.
+
+Verifica: `node tests/vento-fuoco-dev-test.js`, poi `npm test`,
+Playwright e preview su iPhone. Il risultato dei test va documentato, non
+presunto.

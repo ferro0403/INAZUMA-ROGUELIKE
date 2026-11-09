@@ -1,0 +1,411 @@
+{
+  "schemaVersion": 1,
+  "id": "vento_fuoco_dev",
+  "kind": "capsuleEvent",
+  "dev": true,
+  "name": "Vento e Fuoco · DEV",
+  "labels": {
+    "badge": "VF",
+    "collection": "Vento e Fuoco",
+    "filter": "Vento e Fuoco",
+    "source": "Evento Vento e Fuoco",
+    "ui": {
+      "entryEyebrow": "EVENTO VENTO E FUOCO · DEV",
+      "entryTitle": "🔥 VENTO CONTRO FUOCO",
+      "entrySubtitle": "FIRE TEAM · BLIZZARD TEAM",
+      "completionTitle": "EVENTO VENTO E FUOCO",
+      "short": "Vento e Fuoco",
+      "appAria": "Road to Glory Vento e Fuoco",
+      "brand": "VENTO × FUOCO",
+      "nextMatchAria": "Prossima partita Vento-Fuoco",
+      "challengeEyebrow": "SFIDA EVENTO · VENTO E FUOCO",
+      "challengeTitle": [
+        "VENTO",
+        "E FUOCO"
+      ],
+      "capsuleEyebrow": "DUE DISTRIBUTORI · DUE VALUTE",
+      "vendingTitle": "DISTRIBUTORI ELEMENTALI",
+      "vendingTitleLong": "DISTRIBUTORI VENTO E FUOCO",
+      "vendingStation": "CAPSULE STATION · ELEMENTI",
+      "vendingAria": "Distributore Vento-Fuoco",
+      "icon": "⚡",
+      "walletTitle": "STEMMI ELEMENTALI",
+      "tag": "EVENTO · VENTO E FUOCO",
+      "albumPath": "ALBUM → VENTO E FUOCO",
+      "prizeCredited": "PREMIO ELEMENTALE ACCREDITATO",
+      "devTitle": "DEV VENTO E FUOCO"
+    }
+  },
+  "window": {
+    "start": "2026-11-09T18:29:26+01:00",
+    "end": "2026-11-16T18:29:26+01:00"
+  },
+  "baseSeasonId": "ie1",
+  "save": {
+    "storagePrefix": "dev:vento_fuoco_dev:",
+    "cardIdPrefix": "vento_fuoco_dev::",
+    "matchKey": "dev:vento_fuoco_dev:match",
+    "squadKey": "dev:vento_fuoco_dev:squad",
+    "currencyField": "fireBadges",
+    "ownedIdPattern": "^[0-9]+$",
+    "matchIdPrefix": "vento-fuoco-dev:",
+    "matchNodeId": "event:vento-fuoco-dev"
+  },
+  "currency": {
+    "id": "fuoco_stemmi",
+    "name": "Stemmi Fuoco",
+    "icon": "https://static.wikia.nocookie.net/inazuma-eleven/images/2/20/Team_Fire_emblem_%28SD%29.png/revision/latest/scale-to-width-down/173?cb=20250513214059",
+    "unit": "stemmi Fuoco",
+    "unitUpper": "STEMMI FUOCO",
+    "iconAlt": "Stemma squadra Fuoco"
+  },
+  "economy": {
+    "pullPrice": 200,
+    "winPrize": 300,
+    "luckyPrize": 600,
+    "luckyChancePercent": 20,
+    "pullCurrency": "fuoco_stemmi",
+    "winCurrency": "fuoco_stemmi"
+  },
+  "team": {
+    "teamId": "fire-team",
+    "name": "Fire team",
+    "logo": "https://static.wikia.nocookie.net/inazuma-eleven/images/2/20/Team_Fire_emblem_%28SD%29.png/revision/latest/scale-to-width-down/173?cb=20250513214059",
+    "currencyId": "fuoco_stemmi",
+    "theme": {
+      "colors": {
+        "primary": "#ff653c",
+        "secondary": "#b92122",
+        "accent": "#ffc57a",
+        "text": "#fff4eb",
+        "ink": "#240b12",
+        "surface": "#3c1520",
+        "background": "#160910"
+      }
+    },
+    "files": {
+      "players": "data/events/vento_fuoco/fire-team-players.json",
+      "lineup": "data/events/vento_fuoco/fire-team-lineup.json",
+      "moves": "data/events/vento_fuoco/fire-team-moves.json"
+    },
+    "rosterSize": 19,
+    "startersSize": 11
+  },
+  "teams": [
+    {
+      "teamId": "fire-team",
+      "name": "Fire team",
+      "logo": "https://static.wikia.nocookie.net/inazuma-eleven/images/2/20/Team_Fire_emblem_%28SD%29.png/revision/latest/scale-to-width-down/173?cb=20250513214059",
+      "currencyId": "fuoco_stemmi",
+      "theme": {
+        "colors": {
+          "primary": "#ff653c",
+          "secondary": "#b92122",
+          "accent": "#ffc57a",
+          "text": "#fff4eb",
+          "ink": "#240b12",
+          "surface": "#3c1520",
+          "background": "#160910"
+        }
+      },
+      "files": {
+        "players": "data/events/vento_fuoco/fire-team-players.json",
+        "lineup": "data/events/vento_fuoco/fire-team-lineup.json",
+        "moves": "data/events/vento_fuoco/fire-team-moves.json"
+      },
+      "rosterSize": 19,
+      "startersSize": 11
+    },
+    {
+      "teamId": "blizzard-team",
+      "name": "Blizzard Team",
+      "logo": "https://static.wikia.nocookie.net/inazuma-eleven/images/1/12/Team_Blizzard_emblem_%28SD%29.png/revision/latest/scale-to-width-down/169?cb=20250513214057",
+      "currencyId": "vento_stemmi",
+      "theme": {
+        "colors": {
+          "primary": "#8ce3fb",
+          "secondary": "#377bc4",
+          "accent": "#e1faff",
+          "text": "#edfaff",
+          "ink": "#0a1d2f",
+          "surface": "#122f4c",
+          "background": "#071522"
+        }
+      },
+      "files": {
+        "players": "data/events/vento_fuoco/blizzard-team-players.json",
+        "lineup": "data/events/vento_fuoco/blizzard-team-lineup.json",
+        "moves": "data/events/vento_fuoco/blizzard-team-moves.json"
+      },
+      "rosterSize": 19,
+      "startersSize": 11
+    }
+  ],
+  "currencies": [
+    {
+      "id": "fuoco_stemmi"
+    },
+    {
+      "id": "vento_stemmi",
+      "name": "Stemmi Vento",
+      "unit": "stemmi Vento",
+      "unitUpper": "STEMMI VENTO",
+      "icon": "https://static.wikia.nocookie.net/inazuma-eleven/images/1/12/Team_Blizzard_emblem_%28SD%29.png/revision/latest/scale-to-width-down/169?cb=20250513214057",
+      "iconAlt": "Stemma squadra Vento",
+      "field": "windBadges"
+    }
+  ],
+  "cards": [
+    {
+      "playerId": "4539",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 1
+    },
+    {
+      "playerId": "2008",
+      "teamId": "fire-team",
+      "rarity": "Elite",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1098",
+      "teamId": "fire-team",
+      "rarity": "Elite",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1202",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1829",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1915",
+      "teamId": "fire-team",
+      "rarity": "Elite",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1092",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "178",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1193",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1127",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1102",
+      "teamId": "fire-team",
+      "rarity": "Elite",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "160",
+      "teamId": "fire-team",
+      "rarity": "Elite",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "4527",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1943",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1762",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1270",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1104",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1105",
+      "teamId": "fire-team",
+      "rarity": "Mondiale",
+      "pullWeight": 1
+    },
+    {
+      "playerId": "1807",
+      "teamId": "fire-team",
+      "rarity": "Elite",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1912",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1857",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1134",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1111",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1060",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "180",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1788",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1122",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 1
+    },
+    {
+      "playerId": "4519",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1115",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "266",
+      "teamId": "blizzard-team",
+      "rarity": "Elite",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1078",
+      "teamId": "blizzard-team",
+      "rarity": "Elite",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1156",
+      "teamId": "blizzard-team",
+      "rarity": "Elite",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1125",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1119",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "4538",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 1
+    },
+    {
+      "playerId": "1759",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1908",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    },
+    {
+      "playerId": "1146",
+      "teamId": "blizzard-team",
+      "rarity": "Mondiale",
+      "pullWeight": 3
+    }
+  ],
+  "coaches": [],
+  "assets": {
+    "banner": "assets/rtg/rtg-season2-route-map-user.webp",
+    "background": "assets/rtg/rtg-season3-route-map-user.webp"
+  },
+  "theme": {
+    "colors": {
+      "primary": "#a56dff",
+      "secondary": "#c74c50",
+      "accent": "#9fddff",
+      "text": "#f5f7ff",
+      "ink": "#101021",
+      "surface": "#1a1732",
+      "background": "#080b18"
+    },
+    "coin": {
+      "shape": "round",
+      "blend": "normal"
+    }
+  },
+  "extensions": [
+    "js/events/vento_fuoco_dev/home.js"
+  ]
+}
