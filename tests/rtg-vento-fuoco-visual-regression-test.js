@@ -86,7 +86,7 @@ const fetcher=async url=>({
   assert.match(runtime,/deps\.squadView\?\.matchPitchMarkup\?\./);
   assert.match(runtime,/mode:"preview"/);
   assert.match(runtime,/vf-reward-balance-value/,"only event reward has structured balance");
-  assert.match(css,/transparent fire\/ice patches/i,"event uses additive transparent overlays");
+  assert.match(css,/Fire \/ Ice portrait patches v4/i,"event uses additive transparent overlays");
   assert.match(css,/fire-portrait-patch\.svg/);
   assert.match(css,/ice-portrait-patch\.svg/);
   assert.match(css,/border-left-width:4px!important/,"native rarity stripe geometry is preserved");
