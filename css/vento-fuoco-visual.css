@@ -355,6 +355,36 @@
 .vf-rival__unavailable{padding:16px;color:#f0f6f9;text-align:center;font-size:.8rem}
 
 
+/* Event opponent panels use the same palette as the native skins, but keep
+ * the original RTG frame and readable white-on-dark challenge information. */
+.event-page--vento-fuoco .vf-rival--fire{
+  border-color:#ef8857!important;
+  background:
+    radial-gradient(ellipse at 91% 6%,#ed663b56,transparent 48%),
+    linear-gradient(118deg,transparent 0 76%,#fd783d1b 76% 77%,transparent 77% 83%,#ff9d3911 83% 84%,transparent 84%),
+    linear-gradient(125deg,#4d1b21,#251826 56%,#0a1828)!important;
+  box-shadow:inset 4px 0 0 #f0803b78,0 8px 18px #030b16a1!important;
+}
+.event-page--vento-fuoco .vf-rival--ice{
+  border-color:#74d8f7!important;
+  background:
+    radial-gradient(ellipse at 91% 4%,#9decff45,transparent 50%),
+    linear-gradient(120deg,transparent 0 71%,#90eaff1b 71% 72%,transparent 72% 81%,#57b4ef23 81% 83%,transparent 83%),
+    linear-gradient(125deg,#153d61,#10253d 58%,#091727)!important;
+  box-shadow:inset 4px 0 0 #72d9ff8c,0 8px 18px #030b16a1!important;
+}
+.event-page--vento-fuoco .vf-rival--fire .vf-rival__field{
+  border-left:3px solid #ef905f;
+  background:linear-gradient(125deg,#122339,#0b1c2f)!important;
+}
+.event-page--vento-fuoco .vf-rival--ice .vf-rival__field{
+  border-left:3px solid #89ddf4;
+  background:linear-gradient(125deg,#112f4c,#091e35)!important;
+}
+.event-page--vento-fuoco .vf-rival__lineup summary{
+  background:linear-gradient(110deg,#08192c88,#0713234d);
+}
+
 /* Fire + Ice / native RTG card skin v3.
  * Keep the actual PlayerView/Squadra card DOM, dimensions, role/OVR badges and
  * their text. Only the event's paper, portrait illustration and accents vary.
