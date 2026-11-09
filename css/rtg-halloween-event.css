@@ -32,6 +32,22 @@
   background:var(--event-surface);color:var(--event-text);font-weight:800}
 .event-page__chip small{color:var(--event-accent);font-size:10px}
 
+/* Vento-Fuoco usa i token delle due squadre dichiarati dal manifest.
+   Il CSS non fissa colori, e non modifica Halloween o i distributori RTG. */
+.event-page--vento-fuoco .vf-clash{text-align:center;align-items:center;justify-content:center;
+  background:linear-gradient(112deg,color-mix(in srgb,var(--event-secondary) 32%,var(--event-surface)),var(--event-background) 49%,
+    color-mix(in srgb,var(--event-accent) 32%,var(--event-surface)));min-height:150px}
+.event-page--vento-fuoco .vf-clash strong{font-size:clamp(25px,8vw,38px);letter-spacing:.08em;line-height:1.05}
+.event-page--vento-fuoco .vf-clash span{font-size:15px;color:var(--event-text)}
+.event-page--vento-fuoco .event-page__team{border-radius:12px;min-height:100px}
+.event-page--vento-fuoco .event-page__actions .btn{min-height:52px}
+.event-vending-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+.event-vending-switch button{padding:12px 8px;background:var(--event-background);
+  border:2px solid var(--event-primary);color:var(--event-text);font-weight:900}
+.event-vending-switch button.active{background:var(--event-primary);color:var(--event-ink)}
+.player-card.rtg-event-card-base.rtg-element-fire-team{border-color:var(--event-primary)}
+.player-card.rtg-event-card-base.rtg-element-blizzard-team{border-color:var(--event-primary)}
+
 /* Passo 3.6d: riquadro in piu' che un pezzo aggiuntivo mette nella home del suo evento (hook "homeSection"). */
 .event-extra-section{background:var(--event-surface);color:var(--event-text);border:3px solid var(--event-primary);padding:16px;margin:12px 0}
 .event-extra-section .eyebrow{color:var(--event-accent)}
