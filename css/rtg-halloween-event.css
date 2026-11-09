@@ -172,7 +172,7 @@
 .rtg-halloween-run-screen .rtg-journey-summary{background:var(--event-ink)!important;border:3px solid var(--event-primary)!important;box-shadow:7px 9px 0 var(--event-secondary)!important;color:var(--event-text)}
 .rtg-halloween-run-screen .rtg-journey-copy h1{font-size:clamp(1.55rem,6vw,2.7rem);color:var(--event-text)!important}
 .rtg-halloween-run-screen .rtg-journey-copy p{color:var(--event-text)!important}
-.rtg-halloween-run-screen .rtg-journey-opponent img{width:90px;height:90px;object-fit:contain;filter:brightness(.8) drop-shadow(0 0 8px var(--event-secondary))}
+[data-event-theme="halloween2026"] .rtg-halloween-run-screen .rtg-journey-opponent img{width:90px;height:90px;object-fit:contain;filter:brightness(.8) drop-shadow(0 0 8px var(--event-secondary))}
 .rtg-halloween-run-screen .btn-yellow{background:var(--event-primary)!important;color:var(--event-ink)!important;border-color:var(--event-secondary)!important;box-shadow:5px 6px 0 var(--event-background)!important;font-weight:1000}
 .rtg-halloween-run-screen .rtg-journey-progress{background:var(--event-surface)!important}
 .rtg-halloween-run-screen .rtg-journey-progress span{background:var(--event-primary)!important}
@@ -716,7 +716,7 @@
 
 /* Event-only Occult emblem treatment: match the original dark Halloween badge
    in the home hero, team collection and roster header. */
-.rtg-halloween-run-screen .halloween-event-hero-crest,
+[data-event-theme="halloween2026"] .rtg-halloween-run-screen .halloween-event-hero-crest,
 [data-event-theme="halloween2026"] .halloween-event-album-teams .album-team-card__logo img,
 [data-event-theme="halloween2026"] .halloween-event-album-teams .album-team-card__watermark img,
 [data-event-theme="halloween2026"] .halloween-event-album-roster .album-roster-hero__logo img{
@@ -1163,3 +1163,22 @@
 [data-event-theme="vento_fuoco_dev"] .halloween-dev-quick-tools{
   top:auto;bottom:calc(env(safe-area-inset-bottom, 0px) + 12px);
   right:calc(env(safe-area-inset-right, 0px) + 10px)}
+
+/* Squadre evento: stesse tile native dell'album generale, cromie elementali. */
+.album-team-card.vf-album-fire .album-team-card__stage{
+  background:radial-gradient(circle at 30% 70%,color-mix(in srgb,var(--event-primary) 80%,transparent),transparent 55%),
+  repeating-conic-gradient(from 35deg at 50% 120%,var(--event-background) 0 19deg,var(--event-secondary) 19deg 27deg),
+  linear-gradient(125deg,var(--event-secondary),var(--event-background))}
+.album-team-card.vf-album-ice .album-team-card__stage{
+  background:radial-gradient(circle at 50% 100%,color-mix(in srgb,var(--event-accent) 75%,transparent),transparent 59%),
+  repeating-conic-gradient(from 22deg at 50% 130%,var(--event-surface) 0 25deg,var(--event-accent) 25deg 29deg),
+  linear-gradient(135deg,var(--event-surface),var(--event-background))}
+.album-team-card.vf-album-fire .album-team-card__logo img,
+.album-team-card.vf-album-ice .album-team-card__logo img,
+.album-team-card.vf-album-fire .album-team-card__watermark img,
+.album-team-card.vf-album-ice .album-team-card__watermark img{
+  object-fit:contain;filter:none}
+.album-team-card.vf-album-fire .album-team-card__footer{
+  border-top:3px solid var(--event-secondary)}
+.album-team-card.vf-album-ice .album-team-card__footer{
+  border-top:3px solid var(--event-accent)}
