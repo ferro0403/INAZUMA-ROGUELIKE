@@ -1697,9 +1697,36 @@
     }
     return Object.freeze({open,render,dispose,getState:()=>({shared:shared&&clone(shared),match:match&&clone(match)})});
   }
+  // Read-only event album projection. Never writes event or cloud state.
+  // Native album can show every registered team in one shared collection.
+  async function albumTeamsSnapshot(storage=global.RoadToGloryStorage.create()) {
+    await prepare();
+    const records=await storage.readMany([SHARED_KEY]);
+    const account=records[SHARED_KEY]||(
+      SANDBOX?(await storage.readMany([REAL_SHARED_KEY]))[REAL_SHARED_KEY]:null)||{};
+    const owned=new Set(eventState(ledger(account)).ownedIds||[]);
+    const bonus=manifest.completionReward&&global.RoadToGloryHalloweenCompletion;
+    const hasBonus=bonus?.owns?.(account)===true;
+    return (assets.teams||[]).map((entry,index)=>{
+      const roster=(entry.team.players||[]).map(raw=>player(raw.playerId)).filter(Boolean);
+      if(index===0&&hasBonus) {
+        const extra=bonus.player?.();
+        if(extra&&!roster.some(p=>p.playerId===extra.playerId))roster.push(extra);
+      }
+      const isUnlocked=p=>owned.has(asId(p.playerId))||
+        (hasBonus&&p.playerId===bonus?.PLAYER_ID);
+      return {
+        eventId:EVENT_ID,originTeamId:entry.config.teamId,
+        teamId:EVENT_ID+"::"+entry.config.teamId,isEventTeam:true,
+        teamName:entry.config.name,logoUrl:entry.config.logo||LOGO_URL,
+        total:roster.length,unlocked:roster.filter(isUnlocked).length,
+        roster,entries:roster.filter(isUnlocked)
+      };
+    });
+  }
   const api = Object.freeze({
     EVENT_ID,TEAM_ID,EVENT_END_MS,PRICE,PRIZE,LUCKY_PRIZE,LABELS:manifest.labels,isOpen,countdown,eventCard,prepare,
-    eventPlayer:player,eventState,opponentOverall,weightedPick,pullFieldForTeam,rewardFieldForTeam,create
+    eventPlayer:player,eventState,opponentOverall,weightedPick,pullFieldForTeam,rewardFieldForTeam,albumTeamsSnapshot,create
   });
   // Passo 4.3: un'istanza per ogni evento attivo, registrata nel registro eventi (GameEvents.module/moduleForCard).
   // RoadToGloryHalloween resta il nome dell'istanza dell'evento vero, come prima: chi lo usa non cambia.
