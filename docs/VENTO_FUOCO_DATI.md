@@ -22,8 +22,8 @@ questo passo non cambia gameplay, schermate, salvataggi o cloud.
 - Due distributori con pool separati e switch nella stessa schermata,
   skin fuoco/vento; entrambe le squadre nell'album Giocatori evento.
 - Carte speciali più difficili: Aiden Froste (`4539`), Torch (`1105`),
-  Shawn Froste (`4538`), Gazelle (`1122`). Pesi numerici da definire
-  prima dell'attivazione; rarità Mondiale e OVR restano quelli consegnati.
+  Shawn Froste (`4538`), Gazelle (`1122`). Pesi di estrazione
+  prima dell'attivazione: peso 1 per ciascuna delle 4 carte speciali, peso 3 per ciascuna altra carta nello stesso distributore (probabilità individuale 3 volte inferiore). Rarità Mondiale e OVR restano quelli consegnati.
 - Allenatori indicati dal proprietario: zukan 4818 Fuoco, 4602 Vento.
   **Poteri e dati di catalogo ancora da definire:** non creare poteri fittizi.
 - Finestra richiesta: 2026-11-09 18:29:26 → 2026-11-16 18:29:26 Europe/Rome.
