@@ -569,6 +569,51 @@
        '<div class="status-strip"><span class="status-pill halloween-wallet">'+walletPills()+'</span></div></header>'+
        '<div class="content narrow rtg-run-content halloween-original-content">'+body+'</div>'+footer("run")+'</main>';
     }
+
+    // Read-only view projection: never changes the eligibility check or saved player OVR.
+    function visualSquadStrength(){
+      const line=resolvedPowerRoster(localSquad).lineup;
+      return {
+        current:line.length===11&&line.every(Boolean)?ovr(line,eventOverallDiscount()):null,
+        max:opponentOverall(challengeTeamId)+1,
+        maxByTeam:Object.fromEntries(TEAMS.map(team=>[team.teamId,opponentOverall(team.teamId)+1]))
+      };
+    }
+    function strengthStrip(strength){
+      const current=strength?.current,max=Number(strength?.max);
+      const valid=current!=null&&Number.isFinite(Number(current))&&Number.isFinite(max);
+      const width=valid&&max>0?Math.min(100,Math.max(0,Number(current)/max*100)):0;
+      return '<section class="vf-strength '+(valid&&current>max?'is-over-limit':'')+'" aria-label="Forza attuale e limite formazione">'+
+        '<div><small>FORZA ATTUALE</small><strong>'+(current==null?'—':escape(current))+'</strong></div>'+
+        '<div class="vf-strength__meter" aria-hidden="true"><span style="width:'+width+'%"></span></div>'+
+        '<div><small>FORZA MASSIMA</small><strong>'+(Number.isFinite(max)?escape(max):'—')+'</strong></div></section>';
+    }
+    // The native prematch renderer is shared. In the DEV event the manifest's
+    // exact Fire/Blizzard crest is authoritative, including after team switches.
+    function restoreEventOpponentCrests(){
+      if(!TEAM_VENDING||!match?.opponentSquad?.logoUrl||!app?.querySelectorAll)return;
+      const url=String(match.opponentSquad.logoUrl);
+      const name=String(match.opponentSquad.name||"Squadra avversaria");
+      const selectors=[
+        ".rtg-prematch-top-team--opponent",
+        ".rtg-matchup-team--opponent .rtg-matchup-emblem",
+        ".rtg-score-team--opponent",
+        ".rtg-halftime-score-emblem--opponent"
+      ];
+      for(const selector of selectors)for(const container of app.querySelectorAll(selector)){
+        let image=container.querySelector("img");
+        if(!image){
+          const holder=container.querySelector(".rtg-team-fallback")||container.querySelector(".rtg-prematch-top-emblem")||container;
+          image=global.document?.createElement?.("img");
+          if(!image)continue;
+          if(holder===container)container.appendChild(image);
+          else holder.replaceWith(image);
+        }
+        image.src=url;image.alt="Stemma "+name;
+        image.loading="lazy";image.decoding="async";
+        image.referrerPolicy="no-referrer";
+      }
+    }
     function matchSection() {
       const target=opponentOverall(),ours=resolvedUser(),own=ovr(ours?.lineup,eventOverallDiscount()),limit=target+1;
       const eligible=Boolean(ours&&own!==null&&own<=limit),active=Boolean(match),open=isOpen();
@@ -621,9 +666,11 @@
           freeAgentsDb:data.freeAgents,playerResolver:{resolveAtLevel20:cardId=>resolveCard(cardId)}}));
       const meta=deps.getUserTeamMeta?.()||{};
       const name=meta.name||"La tua squadra";
-      const squadOvr=ovr(resolvedUser()?.lineup,eventOverallDiscount());
+      const strength=visualSquadStrength();
+      const squadOvr=strength.current;
       const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · '+escape(manifest.labels.source)+'</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div></div>';
       return '<div class="rtg-halloween-mode halloween-squad-mode">'+
+        (TEAM_VENDING?'<div class="vf-squad-strength">'+strengthStrip(strength)+'</div>':'')+
         view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
           coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(
             activeEventSquad(),localSquad.coachId,
@@ -742,8 +789,15 @@
         const result=v.resultMarkup(match,null).replace(/(<button[^>]*data-rtg-result-continue)/,rewardHtml+'$1');
         return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+result+'</div></main>';
       }
-      if(match.presentation?.preMatchSeen===false)
-        return v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
+      if(match.presentation?.preMatchSeen===false) {
+        const native=v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
+        if(!TEAM_VENDING)return native;
+        // Requirement discount is a preview only; never edit the match snapshot.
+        const current=visualSquadStrength();
+        const next={...current,max:opponentOverall(match.opponentSquad?.teamId)+1};
+        return native.replace('<div class="content rtg-prematch-content">',
+          '<div class="vf-prematch-strength">'+strengthStrip(next)+'</div><div class="content rtg-prematch-content">');
+      }
       const presented=lastResolution&&["halftime","penalties","completed","completed-draw"].includes(match.status)?{...match,status:"active"}:match;
       return v.matchMarkup(presented).replace('<main class="screen','<main class="screen halloween-native-match');
     }
@@ -1090,11 +1144,22 @@
           })||null;
         },
         previewSquadOverall:selection=>{
-          // Use the same canonical card IDs as the power selection.
+          // UI-only: compute the proposed Halloween discount from the *saved
+          // lineup IDs*, not from the resolver's possibly different cardId.
+          // The actual requirement/match engine is deliberately untouched.
           const line=resolvedPowerRoster(localSquad).lineup;
-          return {before:ovr(line),after:ovr(line,
-            localSquad.coachId===HALLOWEEN_COACH_ID&&selection?.cardIds?.length===1
-              ?{cardId:selection.cardIds[0],amount:15}:eventOverallDiscount())};
+          if(line.length!==11||line.some(p=>!p))return null;
+          const before=ovr(line);
+          if(localSquad.coachId===HALLOWEEN_COACH_ID){
+            const id=asId(selection?.cardIds?.[0]);
+            const index=(localSquad.lineup||[]).findIndex(key=>asId(key)===id);
+            if(!id||index<0||selection?.cardIds?.length!==1)return null;
+            const original=Number(line[index]?.overall??line[index]?.finalOverall??0);
+            const amount=Math.min(Math.max(0,original),15);
+            const sum=line.reduce((total,p)=>total+Number(p.overall??p.finalOverall??0),0);
+            return {before,after:Math.round(((sum-amount)/11)*10)/10};
+          }
+          return {before,after:ovr(line,eventOverallDiscount())};
         }
       });
     }
@@ -1157,6 +1222,13 @@
       coin:(amount,currencyId)=>currency(amount,curOf(fieldOf(currencyId))),
       wallet:()=>walletPills(),
       teams:()=>TEAMS.map(t=>({teamId:t.teamId,name:t.name,logo:t.logo||LOGO_URL,colors:t.theme?.colors||null})),
+      squadStrength:visualSquadStrength,
+      matchPreview:teamId=>{
+        const entry=assets?.teams?.find(t=>t.config?.teamId===teamId);
+        if(!entry)return null;
+        return {formationId:entry.setup?.bossFormation,overall:opponentOverall(teamId),
+          lineup:(entry.setup?.startingXI||[]).map(pid=>player(asId(pid))).filter(Boolean)};
+      },
       player:pid=>player(asId(pid)),
       // Carte possedute di questo evento; con {from:"<id>"} quelle di un altro evento, solo se il file lo permette
       // (uses.cardsFrom). Le carte di un altro evento sono in sola lettura: niente poteri o stato di quell'evento.
@@ -1226,6 +1298,7 @@
       else if(view==="vending"&&TEAM_VENDING)app.innerHTML='<main class="screen vf-vending-screen">'+vendingSection()+'</main>';
       else app.innerHTML=shell(view==="vending"?vendingSection():match?pendingSection():matchSection());
       if(devMode)app.innerHTML+=devToolsMarkup();
+      restoreEventOpponentCrests();
       bindEventActions();
       if(customMarkup!==null)bindCustomPage(customName);
       if(devMode)app.querySelector?.("[data-halloween-dev-pumpkins]")?.addEventListener("click",event=>{
