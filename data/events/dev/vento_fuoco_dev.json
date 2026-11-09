@@ -29,7 +29,7 @@
       "vendingStation": "CAPSULE STATION · ELEMENTI",
       "vendingAria": "Distributore Vento-Fuoco",
       "icon": "⚡",
-      "walletTitle": "STEMMI ELEMENTALI",
+      "walletTitle": "STEMMI",
       "tag": "EVENTO · VENTO E FUOCO",
       "albumPath": "ALBUM → VENTO E FUOCO",
       "prizeCredited": "PREMIO ELEMENTALE ACCREDITATO",
@@ -392,13 +392,13 @@
   },
   "theme": {
     "colors": {
-      "primary": "#a56dff",
-      "secondary": "#c74c50",
-      "accent": "#9fddff",
-      "text": "#f5f7ff",
-      "ink": "#101021",
-      "surface": "#1a1732",
-      "background": "#080b18"
+      "primary": "#ff952d",
+      "secondary": "#e84724",
+      "accent": "#81e5ff",
+      "text": "#f5f9ff",
+      "ink": "#071a2c",
+      "surface": "#11293b",
+      "background": "#061321"
     },
     "coin": {
       "shape": "round",
