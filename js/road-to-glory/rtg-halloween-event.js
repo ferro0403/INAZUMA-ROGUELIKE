@@ -1389,6 +1389,19 @@
             .replace(/(<div class="rtg-pull-balance">[\s\S]*?<strong>)[\s\S]*?(<\/strong>)/,
                (_all,before,after)=>before+'<img class="halloween-reveal-currency-icon" src="'+escape(curOf(pullFieldForTeam(selectedVendingTeamId)).icon||PUMPKIN_URL)+'" alt="'+escape(curOf(pullFieldForTeam(selectedVendingTeamId)).iconAlt||CUR.iconAlt)+'"> '+escape(drawn.result.balanceAfter)+' '+escape(curOf(pullFieldForTeam(selectedVendingTeamId)).unitUpper)+after)
             .replace(/ROAD TO GLORY · LEGACY [^<]*/,UI.tag);
+          // Only Vento-Fuoco: divide the already-committed balance into an
+          // icon, numeric amount and small currency caption. Pure markup:
+          // no debit/reward logic, no new state and no effect on Halloween.
+          if(!isCoach&&TEAM_VENDING){
+            const badgeCurrency=curOf(pullFieldForTeam(selectedVendingTeamId));
+            markup=markup.replace(/(<div class="rtg-pull-balance">[\s\S]*?<strong>)[\s\S]*?(<\/strong>)/,
+              (_full,prefix,suffix)=>prefix+
+                '<span class="vf-reward-balance-value">'+
+                  '<img src="'+escape(badgeCurrency.icon||PUMPKIN_URL)+'" alt="" class="halloween-reveal-currency-icon">'+
+                  '<b>'+escape(drawn.result.balanceAfter)+'</b>'+
+                  '<small>'+escape(badgeCurrency.unitUpper)+'</small>'+
+                '</span>'+suffix);
+          }
           const rewardStyle=TEAM_VENDING
             ?(drawn.player?.teamId==="blizzard-team"?" vf-reward-ice":" vf-reward-fire"):"";
           deps.openModal(markup,{className:"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"+rewardStyle});
