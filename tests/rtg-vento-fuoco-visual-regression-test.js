@@ -16,7 +16,7 @@ const fetcher=async url=>({
   await loadEventsWithDev(context,"vento_fuoco_dev");
   const manifest=context.GameEvents.get("vento_fuoco_dev");
   assert.equal(context.GameEvents.validate(manifest).length,0,"manifest paths remain valid");
-  assert.equal(manifest.extensionCacheVersion,"20261109-vf-visual-1");
+  assert.equal(manifest.extensionCacheVersion,"20261109-vf-visual-2");
   const api=context.GameEvents.module("vento_fuoco_dev");
   const part=context.GameEvents.extensionPart("vento_fuoco_dev","home");
   assert.ok(part?.render,"Home extension loaded through versioned manifest");
@@ -55,8 +55,8 @@ const fetcher=async url=>({
   assert.match(css,/player-detail-layout\.rtg-event--vento_fuoco_dev/);
   assert.match(css,/halloween-squad-mode/);
   assert.match(css,/ANd9GcQ4docu4pCKgUNZ2fs/);
-  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261109-vf-visual-1"));
-  assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261109-vf-visual-1"));
+  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261109-vf-visual-2"));
+  assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261109-vf-visual-2"));
   const runtime=read("js/road-to-glory/rtg-halloween-event.js");
   assert.match(runtime,/function restoreEventOpponentCrests/);
   assert.match(runtime,/function visualSquadStrength/);
