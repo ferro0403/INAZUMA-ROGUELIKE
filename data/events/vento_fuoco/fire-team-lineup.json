@@ -1,0 +1,34 @@
+{
+  "exportType": "inazuma_roguelike_lineup_config",
+  "version": 2,
+  "selectionMode": {
+    "bossFormation": "manual",
+    "startingXI": "manual",
+    "bossLevel": "manual",
+    "rewardPool": "all_team_players"
+  },
+  "teams": [
+    {
+      "teamId": "fire-team",
+      "teamName": "Fire team",
+      "sourceFile": "data/events/vento_fuoco/fire-team-players.json",
+      "bossFormation": "3-4-3",
+      "bossLevel": 20,
+      "startingXI": [
+        "4539",
+        "1104",
+        "1105",
+        "1098",
+        "1829",
+        "1202",
+        "1270",
+        "1762",
+        "1943",
+        "178",
+        "1193"
+      ],
+      "rewardPool": "all_team_players"
+    }
+  ],
+  "warnings": []
+}
