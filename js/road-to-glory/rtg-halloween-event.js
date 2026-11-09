@@ -1226,8 +1226,16 @@
       matchPreview:teamId=>{
         const entry=assets?.teams?.find(t=>t.config?.teamId===teamId);
         if(!entry)return null;
-        return {formationId:entry.setup?.bossFormation,overall:opponentOverall(teamId),
-          lineup:(entry.setup?.startingXI||[]).map(pid=>player(asId(pid))).filter(Boolean)};
+        const lineup=(entry.setup?.startingXI||[]).map(pid=>player(asId(pid))).filter(Boolean);
+        const formationId=entry.setup?.bossFormation||"3-4-3";
+        // The native Squadra component owns the role positions and card art.
+        // This view has no save/draft path and is purely read-only.
+        const pitch=deps.squadView?.matchPitchMarkup?.(
+          {formationId,lineup},{side:"opponent",mode:"preview"}
+        )||"";
+        // No Home detail handler: keep buttons informational and unfocusable.
+        const pitchMarkup=String(pitch).replace(/<button\b/g,'<button tabindex="-1"');
+        return {formationId,overall:opponentOverall(teamId),lineup,pitchMarkup};
       },
       player:pid=>player(asId(pid)),
       // Carte possedute di questo evento; con {from:"<id>"} quelle di un altro evento, solo se il file lo permette
