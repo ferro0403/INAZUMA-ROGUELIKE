@@ -146,6 +146,27 @@
     return {pumpkins:value.pumpkins,ownedIds,pullCount:value.pullCount,
       completedIds,luckyWins:value.luckyWins};
   }
+  // Passo 3.4: stato degli eventi nuovi in shared.events.<id> (campo aggiunto, assente nei salvataggi vecchi).
+  // Ogni stato contiene solo contatori e liste di id; un valore diverso e' un salvataggio rovinato, non si ripara.
+  function eventsData(value) {
+    if (!object(value)) throw failure("rtg-cloud-invalid-events");
+    return Object.fromEntries(Object.entries(value).map(([eventId, ledger]) => {
+      if (!/^[a-z0-9_-]+$/.test(eventId) || !object(ledger)) throw failure("rtg-cloud-invalid-events", eventId);
+      return [eventId, Object.fromEntries(Object.entries(ledger).map(([key, entry]) => {
+        if (!identifier(key)) throw failure("rtg-cloud-invalid-events", eventId);
+        if (count(entry)) return [key, entry];
+        // Parte 2 (b): dati propri di un evento (schermate e meccaniche sue), solo dati semplici e piccoli.
+        if (key === "extra") {
+          const text = object(entry) ? JSON.stringify(entry) : "";
+          if (!text || text.length > 8000) throw failure("rtg-cloud-invalid-events", eventId);
+          return [key, JSON.parse(text)];
+        }
+        const list = ids(entry, `events.${eventId}.${key}`);
+        if (list.length > 500 || list.some((id) => id.length > 120)) throw failure("rtg-cloud-invalid-events", eventId);
+        return [key, list];
+      }))];
+    }));
+  }
   function sharedData(source, campaigns) {
     if (source == null) {
       if (campaigns.some(Boolean)) throw failure("rtg-cloud-shared-missing");
@@ -195,6 +216,7 @@
       developmentByCardId: development,
       coachOwnedIds: coachIds,
       ...(owns(source,"halloween") ? {halloween:halloweenData(source.halloween)} : {}),
+      ...(owns(source,"events") ? {events:eventsData(source.events)} : {}),
     };
   }
   function albumData(source) {

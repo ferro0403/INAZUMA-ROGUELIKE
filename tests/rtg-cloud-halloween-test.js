@@ -1,4 +1,5 @@
 "use strict";
+const { loadCoachPowerData } = require("./helpers/coach-powers");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
@@ -102,7 +103,7 @@ const context={
 };
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-entitlements.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches.js","utf8"),context);
-vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-runtime.js","utf8"),context);
+loadCoachPowerData(context);vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-runtime.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-preview.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-squad-ui.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches-view.js","utf8"),context);
@@ -110,6 +111,9 @@ vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-encounter-runtime.js","
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-halloween-completion-reward.js","utf8"),context);
+// Dal Passo 3 il modulo riceve i dati dal manifest dell'evento tramite il registro eventi.
+vm.runInNewContext(fs.readFileSync("js/events/event-registry.js","utf8"),context);
+context.GameEvents.register(JSON.parse(fs.readFileSync("data/events/halloween2026.json","utf8")));
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-cloud-snapshot.js","utf8"),context);
 const squadView={
@@ -194,6 +198,9 @@ async function main() {
   } finally {
     Date.now=realNow;
   }
+  // Dal 7 nov 2026 Halloween e' concluso davvero: il resto del test gioca l'evento all'ora degli eventi del
+  // 3 nov (come le prove nel browser), con il comando ?oraEvento= del Passo 4.1. Il controllo della chiusura e' sopra.
+  context.GameEvents.setEventTime("2026-11-03T13:00:00+01:00");
   assert.equal(E.weightedPick(["custom_0002","custom_0001"],0),"custom_0002");
   assert.throws(()=>E.eventState({pumpkins:-1,ownedIds:[],completedIds:[],pullCount:0,luckyWins:0}),/halloween-invalid-account/);
   const controller=E.create({app,storage,toast:()=>{},squadView,runView:nativeRunView,
@@ -857,7 +864,7 @@ async function main() {
   // parked, so this test inspects the actual kickoff snapshot atomically.
   context.RoadToGloryRng.float=()=>.5;
   vm.runInNewContext(fs.readFileSync("js/roguelike_progression.js","utf8"),context);
-  vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-prematch.js","utf8"),context);
+  loadCoachPowerData(context);vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coach-powers-prematch.js","utf8"),context);
   context.RtgFourMovesRuntime={ready:Promise.resolve(true),isReady:()=>true,error:()=>null,
     ptBreakdown:()=>({base:150,bonus:0,total:150}),movesFor:()=>[]};
   vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-pt-runtime.js","utf8"),context);

@@ -1,0 +1,1425 @@
+/* match.css: proprietario unico (unione dei file elencati sotto, nello stesso ordine di caricamento). */
+
+/* ===== (unito da match-ui-cleanup.css il 4 nov 2026) ===== */
+/* Match result cleanup: keep the result panel focused on the score and status text. */
+.boss-match-result-panel .boss-match-score-teams,
+.boss-match-result-panel .result-badges {
+  display: none;
+}
+
+/* ===== (unito da five-simulation-polish.css il 4 nov 2026) ===== */
+/* 5v5 simulation modal polish: compact team lockups without touching match logic. */
+
+.five-simulation-score .five-match-result-row > strong {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 5px 3px 7px;
+  border-bottom: 3px solid var(--ir-yellow);
+  color: var(--ir-ink);
+  font-size: clamp(.72rem, 3.1vw, .88rem);
+  font-weight: 950;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.five-simulation-score .five-simulation-emblem {
+  flex: 0 0 auto;
+  display: block;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+
+.five-simulation-score .boss-match-score {
+  min-width: 92px;
+  color: var(--ir-ink);
+  letter-spacing: -.045em;
+}
+
+@media (max-width: 390px) {
+  .five-simulation-score .five-match-result-row > strong {
+    gap: 5px;
+    font-size: .7rem;
+  }
+
+  .five-simulation-score .five-simulation-emblem {
+    width: 27px;
+    height: 27px;
+  }
+
+  .five-simulation-score .boss-match-score {
+    min-width: 82px;
+  }
+}
+
+/* ===== (unito da five-match-reference-polish.css il 4 nov 2026) ===== */
+/* 5v5 reference polish: matchup banner + action-panel fidelity pass only. */
+
+/* Dynamic matchup banner: equal team columns around one fixed-width separator. */
+.five-match-screen .five-match-vs {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
+  align-items: stretch;
+  min-height: 138px;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  border: 3px solid var(--ir-ink);
+  background: var(--ir-paper-cream);
+  box-shadow: 5px 5px 0 var(--ir-ink-a18);
+}
+
+.five-match-screen .five-match-vs .five-match-team {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: minmax(2.2em, auto) 82px;
+  place-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 132px;
+  margin: 0;
+  padding: 12px 10px 10px;
+  border: 0;
+  border-radius: 0;
+  background: var(--ir-yellow);
+  box-shadow: none;
+  text-align: center;
+}
+
+.five-match-screen .five-match-vs .five-match-team:last-child {
+  background: var(--ir-paper-cream);
+}
+
+.five-match-screen .five-match-vs .five-match-team small { display: none; }
+
+.five-match-screen .five-match-vs .five-match-team strong {
+  align-self: center;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--ir-ink);
+  font-size: clamp(.9rem, 3.1vw, 1.35rem);
+  font-weight: 1000;
+  letter-spacing: -.025em;
+  line-height: 1.05;
+  overflow-wrap: normal;
+  white-space: normal;
+}
+
+.five-match-screen .five-match-vs .five-match-logo {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 80px;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid var(--ir-ink-a14);
+  background: rgba(255, 255, 255, .38);
+  filter: drop-shadow(3px 4px 0 var(--ir-ink-a18));
+}
+
+.five-match-screen .five-match-vs .five-match-emblem {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.five-match-screen .five-match-vs .five-match-vs-badge {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: transparent;
+  color: var(--ir-yellow);
+  box-shadow: 5px 5px 0 var(--ir-ink-a20);
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  font-style: italic;
+  font-weight: 1000;
+  letter-spacing: -.05em;
+}
+
+.five-match-screen .five-match-vs .five-match-vs-badge::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -8px 7px;
+  background: var(--ir-ink);
+  transform: skew(-8deg);
+}
+
+/* ACTION PANEL ------------------------------------------------------- */
+
+/* Make the two real actions read like the approved generated mockup. */
+.five-match-screen .five-match-controls .five-match-action-cta {
+  grid-template-columns: 92px minmax(0, 1fr) 34px;
+  min-height: 88px;
+  padding-right: 14px;
+  border: 3px solid var(--ir-ink);
+  border-radius: 0;
+  box-shadow: 5px 6px 0 rgba(255, 255, 255, .15);
+}
+
+
+
+/* Ball + speed lines, positioned as a low-contrast texture instead of a plain circle. */
+.five-match-screen .five-match-controls .five-match-action-cta--primary::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  right: -2px;
+  width: min(44%, 250px);
+  height: 112px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  opacity: .18;
+  transform: translateY(-50%);
+  background: right center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 250 112'%3E%3Cg stroke='%23111216' fill='none' stroke-linecap='round'%3E%3Cpath d='M5 71h78M22 57h70M39 43h63' stroke-width='4' opacity='.35'/%3E%3Ccircle cx='177' cy='56' r='49' stroke-width='5'/%3E%3Cpath d='m177 30 15 11-6 18h-18l-6-18Z' fill='%23111216' stroke='none'/%3E%3Cpath d='m177 30 1-19M192 41l19-8M186 59l13 17M168 59l-13 17M162 41l-19-8M178 11l18 8 15 14 9 20-6 22-15 1M143 33l-9 20 6 22 15 1M155 76l22 18 22-18M177 94v14' stroke-width='4'/%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+
+
+.five-match-screen .five-match-controls .five-match-action-copy {
+  z-index: 2;
+  gap: 4px;
+}
+
+.five-match-screen .five-match-controls .five-match-action-copy strong {
+  font-size: clamp(1.15rem, 2.6vw, 1.7rem);
+  letter-spacing: -.045em;
+}
+
+.five-match-screen .five-match-controls .five-match-action-copy small {
+  font-size: .78rem;
+  font-weight: 760;
+}
+
+.five-match-screen .five-match-controls .five-match-action-mark {
+  z-index: 2;
+  font-size: 2.2rem;
+}
+
+/* Secondary action: clean ivory body + tactical board icon + pitch watermark. */
+
+
+.five-match-screen .five-match-controls .five-match-tactics-icon {
+  width: 54px;
+  height: 60px;
+  border: 0;
+  color: transparent;
+  font-size: 0;
+  transform: rotate(-4deg);
+  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 62 68'%3E%3Cpath d='M16 8h30l4 6h6v47H6V14h6Z' fill='%23111216' stroke='%23fffdf7' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M23 8V3h16v5M12 34h38M31 15v39' fill='none' stroke='%23fffdf7' stroke-width='2.3'/%3E%3Ccircle cx='21' cy='25' r='3' fill='%23ffd21f'/%3E%3Ccircle cx='42' cy='44' r='3' fill='%23ffd21f'/%3E%3Ccircle cx='40' cy='22' r='2.5' fill='%23fffdf7'/%3E%3Cpath d='m16 49 11-9 9 7 10-15M17 21l9 6 7-7 11 6' fill='none' stroke='%23fffdf7' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+
+/* Mobile fidelity pass. */
+@media (max-width: 780px) {
+
+
+
+
+
+  .five-match-screen .five-match-controls .five-match-action-cta--primary::after {
+    right: -10px;
+    width: 45%;
+    height: 96px;
+  }
+
+
+
+}
+
+@media (max-width: 390px) {
+
+  .five-match-screen .five-match-controls .five-match-action-cta {
+    grid-template-columns: 70px minmax(0, 1fr) 22px;
+  }
+}
+
+@media (max-width: 780px) {
+  .five-match-screen .five-match-vs { grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr); min-height: 126px; box-shadow: 3px 3px 0 var(--ir-ink-a18); }
+  .five-match-screen .five-match-vs .five-match-team { grid-template-rows: minmax(2.2em, auto) 68px; min-height: 120px; padding: 9px 6px 8px; }
+  .five-match-screen .five-match-vs .five-match-logo { width: 58px; height: 66px; }
+  .five-match-screen .five-match-vs .five-match-team strong { font-size: clamp(.78rem, 3.7vw, 1rem); }
+  .five-match-screen .five-match-vs .five-match-vs-badge { font-size: 1.45rem; }
+}
+
+@media (max-width: 390px) {
+  .five-match-screen .five-match-vs .five-match-team strong { font-size: clamp(.72rem, 3.65vw, .9rem); }
+  .five-match-screen .five-match-vs .five-match-logo { width: 54px; height: 62px; }
+}
+
+/* ===== (unito da five-match-action-assets.css il 4 nov 2026) ===== */
+/* 5v5 action artwork — intentionally isolated from the matchup banner. */
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta {
+  isolation: isolate;
+}
+
+/* SIMULA PARTITA: professional ball geometry, customised as a quiet watermark. */
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary {
+  grid-template-columns: 104px minmax(0, 1fr) 34px;
+  min-height: 94px;
+  padding-right: 14px;
+  background: linear-gradient(105deg, #ffc91b 0%, #ffda32 58%, #ffc91b 100%);
+}
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary::before,
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary::before {
+  top: 50%;
+  right: -43px;
+  width: 178px;
+  height: 178px;
+  opacity: .72;
+  transform: translateY(-50%) rotate(-8deg);
+  background: center / contain no-repeat url("../assets/ui/5v5/action-soccer-ball.svg");
+}
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary::after {
+  inset: 9px 100px 9px 132px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+  background: center right / 330px 100% no-repeat url("../assets/ui/5v5/action-motion-lines.svg");
+}
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary .five-match-action-icon {
+  z-index: 2;
+  min-height: 88px;
+  margin-right: 16px;
+  border-right: 0;
+  background: var(--ir-ink);
+  clip-path: polygon(0 0, 74% 0, 100% 50%, 74% 100%, 0 100%);
+}
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary .five-match-play-icon {
+  margin-left: -8px;
+  border-top-width: 16px;
+  border-bottom-width: 16px;
+  border-left-width: 25px;
+  filter: drop-shadow(3px 3px 0 rgba(255,255,255,.14));
+}
+
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary .five-match-action-copy strong {
+  font-size: clamp(1.2rem, 2.6vw, 1.62rem);
+}
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary .five-match-action-copy small {
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+/* MODIFICA SQUADRA: dedicated coach-board icon + actual pitch watermark. */
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary {
+  grid-template-columns: 104px minmax(0, 1fr) 34px;
+  min-height: 94px;
+  padding-right: 14px;
+  background: linear-gradient(108deg, var(--ir-paper-warm) 0%, var(--ir-paper-warm) 67%, #eee8dc 100%);
+}
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 6px;
+  right: 8px;
+  bottom: 6px;
+  left: 54%;
+  opacity: 1;
+  clip-path: none;
+  background: center right / 260px auto no-repeat url("../assets/ui/5v5/action-tactics-pitch.svg");
+  pointer-events: none;
+}
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary .five-match-action-icon {
+  z-index: 2;
+  min-height: 88px;
+  margin-right: 16px;
+  border-right: 0;
+  background: var(--ir-ink);
+  color: var(--ir-paper-warm);
+  clip-path: polygon(0 0, 74% 0, 100% 50%, 74% 100%, 0 100%);
+}
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-tactics-icon {
+  width: 62px;
+  height: 68px;
+  border: 0;
+  color: transparent;
+  font-size: 0;
+  transform: rotate(-4deg);
+  background: center / contain no-repeat url("../assets/ui/5v5/action-tactics-board.svg");
+}
+
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary .five-match-action-copy strong {
+  font-size: clamp(1.2rem, 2.6vw, 1.62rem);
+}
+
+:is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary .five-match-action-copy small {
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+@media (max-width: 780px) {
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary,
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary {
+    grid-template-columns: 82px minmax(0, 1fr) 25px;
+    min-height: 80px;
+    padding-right: 8px;
+  }
+
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary .five-match-action-icon,
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary .five-match-action-icon {
+    min-height: 74px;
+    margin-right: 12px;
+  }
+
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary::before {
+    right: -38px;
+    width: 146px;
+    height: 146px;
+  }
+
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary::after {
+    inset: 8px 68px 8px 98px;
+    background-size: 250px 100%;
+  }
+
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary::after {
+    left: 56%;
+    background-size: 205px auto;
+  }
+
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-tactics-icon {
+    width: 52px;
+    height: 58px;
+  }
+
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary .five-match-play-icon {
+    border-top-width: 13px;
+    border-bottom-width: 13px;
+    border-left-width: 21px;
+  }
+
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary .five-match-action-copy strong,
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary .five-match-action-copy strong {
+    font-size: clamp(1rem, 4.6vw, 1.28rem);
+  }
+
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary .five-match-action-copy small,
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary .five-match-action-copy small {
+    font-size: .66rem;
+  }
+}
+
+@media (max-width: 390px) {
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary,
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary {
+    grid-template-columns: 74px minmax(0, 1fr) 22px;
+    min-height: 76px;
+  }
+
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary::before {
+    right: -42px;
+    width: 136px;
+    height: 136px;
+  }
+
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--primary::after {
+    left: 86px;
+  }
+
+  :is(.five-match-screen .five-match-controls, .boss-match-screen .boss-match-controls) .five-match-action-cta--secondary::after {
+    left: 59%;
+    background-size: 180px auto;
+  }
+}
+
+/* ===== (unito da five-match-banner-clean.css il 4 nov 2026) ===== */
+/* Clean 5v5 matchup component rebuilt from the approved screen-2 composition.
+   It intentionally uses unique classes so legacy .five-match-vs/.five-match-team rules cannot affect it. */
+
+.five-match-screen .five-match-versus-card {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px minmax(0, 1fr);
+  min-height: 102px;
+  overflow: hidden;
+  border: 3px solid var(--ir-ink);
+  background: linear-gradient(90deg, var(--ir-yellow) 0 50%, var(--ir-paper-cream) 50% 100%);
+  box-shadow: 5px 5px 0 var(--ir-ink-a18);
+}
+
+.five-match-screen .five-match-versus-side {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 96px;
+}
+
+/* The clean opponent panel must not inherit decorative trims from older banners. */
+.five-match-screen .five-match-versus-side--opponent::before,
+.five-match-screen .five-match-versus-side--opponent::after {
+  content: none;
+  display: none;
+}
+
+.five-match-screen .five-match-versus-name {
+  position: absolute;
+  top: 16px;
+  z-index: 3;
+  max-width: calc(100% - 22px);
+  color: var(--ir-ink);
+  font-size: clamp(1rem, 4.3vw, 1.25rem);
+  font-weight: 1000;
+  letter-spacing: -.045em;
+  line-height: .96;
+  text-wrap: balance;
+}
+
+.five-match-screen .five-match-versus-side--user .five-match-versus-name {
+  right: 14px;
+  text-align: right;
+}
+
+.five-match-screen .five-match-versus-side--opponent .five-match-versus-name {
+  left: 14px;
+  text-align: left;
+}
+
+.five-match-screen .five-match-versus-emblem {
+  position: absolute;
+  bottom: 9px;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 72px;
+  z-index: 3;
+}
+
+.five-match-screen .five-match-versus-side--user .five-match-versus-emblem {
+  left: 13px;
+}
+
+.five-match-screen .five-match-versus-side--opponent .five-match-versus-emblem {
+  right: 13px;
+}
+
+.five-match-screen .five-match-versus-emblem-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(3px 4px 0 var(--ir-ink-a16));
+}
+
+.five-match-screen .five-match-versus-center {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  margin-inline: -8px;
+  overflow: visible;
+  color: var(--ir-yellow);
+  font-style: italic;
+  font-weight: 1000;
+  font-size: clamp(2rem, 7vw, 2.55rem);
+  letter-spacing: -.08em;
+}
+
+.five-match-screen .five-match-versus-center::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: linear-gradient(145deg, #17191b, #070809);
+  clip-path: polygon(20% 0, 100% 0, 80% 100%, 0 100%);
+}
+
+.five-match-screen .five-match-versus-center::after {
+  content: "";
+  position: absolute;
+  inset: 0 10px;
+  z-index: -1;
+  border-left: 2px solid rgba(255, 250, 240, .95);
+  border-right: 2px solid rgba(255, 250, 240, .95);
+  transform: skewX(-10deg);
+  pointer-events: none;
+}
+
+.five-match-screen .five-match-versus-center span {
+  position: relative;
+  z-index: 2;
+  transform: translateY(1px);
+}
+
+@media (max-width: 780px) {
+  .five-match-screen .five-match-versus-card {
+    grid-template-columns: minmax(0, 1fr) 86px minmax(0, 1fr);
+    min-height: 100px;
+    box-shadow: var(--ir-shadow-soft-3-4-a18);
+  }
+
+  .five-match-screen .five-match-versus-side {
+    min-height: 94px;
+  }
+
+  .five-match-screen .five-match-versus-name {
+    top: 14px;
+    max-width: calc(100% - 18px);
+    font-size: clamp(.94rem, 4.65vw, 1.08rem);
+  }
+
+  .five-match-screen .five-match-versus-side--user .five-match-versus-name { right: 11px; }
+  .five-match-screen .five-match-versus-side--opponent .five-match-versus-name { left: 11px; }
+
+  .five-match-screen .five-match-versus-emblem {
+    bottom: 8px;
+    width: 58px;
+    height: 68px;
+  }
+
+  .five-match-screen .five-match-versus-side--user .five-match-versus-emblem { left: 10px; }
+  .five-match-screen .five-match-versus-side--opponent .five-match-versus-emblem { right: 10px; }
+
+  .five-match-screen .five-match-versus-center {
+    margin-inline: -7px;
+    font-size: 2.05rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .five-match-screen .five-match-versus-card {
+    grid-template-columns: minmax(0, 1fr) 82px minmax(0, 1fr);
+    min-height: 98px;
+  }
+
+  .five-match-screen .five-match-versus-side {
+    min-height: 92px;
+  }
+
+  .five-match-screen .five-match-versus-name {
+    top: 13px;
+    font-size: .94rem;
+  }
+
+  .five-match-screen .five-match-versus-emblem {
+    width: 56px;
+    height: 66px;
+  }
+
+  .five-match-screen .five-match-versus-center {
+    margin-inline: -6px;
+    font-size: 1.95rem;
+  }
+}
+
+/* ===== (unito da five-match-rounded-rarity.css il 4 nov 2026) ===== */
+/* 5v5 half-card rarity accent: keep the rarity colour inside the rounded card silhouette. */
+
+.five-match-screen .five-match-card,
+.five-match-screen .five-match-card[class*="rarity-"] {
+  position: relative;
+  overflow: hidden;
+  border-left: 1px solid rgba(17, 18, 22, .88);
+}
+
+/* Keep the small Inazuma-style diagonal accent, but clip it through the card radius. */
+.five-match-screen .five-match-card::before {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 31%;
+  height: 5px;
+  background: var(--rarity-border, var(--ir-grey-blue));
+  clip-path: polygon(0 0, 100% 0, 84% 100%, 0 100%);
+  pointer-events: none;
+}
+
+/* The vertical rarity edge now terminates inside the rounded top/bottom corners. */
+.five-match-screen .five-match-card::after {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 5px;
+  border-radius: 8px 0 0 8px;
+  background: var(--rarity-border, var(--ir-grey-blue));
+  pointer-events: none;
+}
+
+/* Selection remains a separate yellow state; rarity colour stays on the inner accent. */
+.five-match-screen .five-match-card.is-active {
+  border-color: var(--ir-yellow);
+}
+
+@media (max-width: 780px) {
+  .five-match-screen .five-match-card::before {
+    width: 30%;
+    height: 4px;
+  }
+
+  .five-match-screen .five-match-card::after {
+    width: 4px;
+    border-radius: 7px 0 0 7px;
+  }
+}
+
+/* ===== (unito da five-formation-floating-picker.css il 4 nov 2026) ===== */
+/* 5v5 formation editor: contextual player picker.
+   The existing .five-selector is moved over the pitch by JS so the page no longer
+   grows below SALVA FORMAZIONE. Keep this file scoped to .five-screen. */
+
+.five-screen.five-floating-picker-enabled .five-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Hide the legacy in-flow selector before the bridge moves it into the field. */
+.five-screen.five-floating-picker-enabled .five-layout > .five-selector {
+  display: none !important;
+}
+
+.five-screen.five-floating-picker-enabled .five-field-panel {
+  position: relative;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating {
+  position: absolute;
+  z-index: 28;
+  top: 62px;
+  left: 14px;
+  width: min(420px, calc(100% - 28px));
+  max-height: min(520px, calc(100% - 82px));
+  margin: 0;
+  padding: 16px;
+  display: none !important;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 11px;
+  overflow: visible;
+  border: 3px solid var(--ir-ink);
+  border-radius: 0;
+  background: var(--ir-paper);
+  color: var(--ir-ink);
+  box-shadow: 8px 9px 0 var(--ir-ink-a22);
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating.is-open {
+  display: grid !important;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 84px;
+  right: -19px;
+  width: 0;
+  height: 0;
+  border-top: 16px solid transparent;
+  border-bottom: 16px solid transparent;
+  border-left: 19px solid var(--ir-ink);
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 88px;
+  right: -13px;
+  width: 0;
+  height: 0;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-left: 14px solid var(--ir-paper);
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact {
+  margin: 0;
+  padding: 0 52px 10px 0;
+  border-bottom: 2px solid var(--ir-ink);
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact .eyebrow {
+  color: #8f6b06;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact h3 {
+  margin: 2px 0 2px;
+  color: var(--ir-ink);
+  font-size: clamp(1rem, 4vw, 1.28rem);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact .muted {
+  margin: 0;
+  color: #68645c;
+}
+
+.five-floating-picker-close {
+  position: absolute;
+  z-index: 4;
+  top: -13px;
+  right: -13px;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 3px solid var(--ir-ink);
+  border-radius: 50%;
+  background: var(--ir-yellow);
+  color: var(--ir-ink);
+  box-shadow: var(--ir-shadow-soft-3-4-a18);
+  font-size: 1.75rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.five-floating-picker-close:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 2px 0 var(--ir-ink-a18);
+}
+
+/* The slot already determines compatibility: these legacy controls are redundant
+   in the contextual picker and removal is intentionally not exposed here. */
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .role-filter-bar,
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating #clear-five-slot {
+  display: none;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-list {
+  min-height: 0;
+  max-height: min(360px, 46vh);
+  padding: 1px 4px 4px 1px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card {
+  min-height: 76px;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card.current-starter {
+  border-color: var(--ir-ink);
+  background: #fff3b5;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card.current-starter:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-state {
+  background: var(--ir-ink);
+  color: var(--ir-paper);
+}
+
+@media (max-width: 780px) {
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating {
+    top: 56px;
+    left: 10px;
+    width: calc(100% - 30px);
+    max-height: min(440px, calc(100% - 72px));
+    padding: 12px;
+    border-width: 2px;
+    box-shadow: var(--ir-shadow-soft-5-6-a20);
+  }
+
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::after {
+    top: 76px;
+    right: -16px;
+    border-top-width: 13px;
+    border-bottom-width: 13px;
+    border-left-width: 16px;
+  }
+
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::before {
+    top: 79px;
+    right: -11px;
+    border-top-width: 10px;
+    border-bottom-width: 10px;
+    border-left-width: 12px;
+  }
+
+  .five-floating-picker-close {
+    top: -12px;
+    right: -11px;
+    width: 43px;
+    height: 43px;
+    border-width: 2px;
+    font-size: 1.55rem;
+  }
+
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact {
+    padding-right: 42px;
+  }
+
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact .muted {
+    font-size: .62rem;
+  }
+
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-list {
+    grid-template-columns: 1fr;
+    max-height: min(300px, 38vh);
+  }
+}
+
+@media (max-width: 390px) {
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating {
+    top: 52px;
+    left: 8px;
+    width: calc(100% - 25px);
+    padding: 10px;
+  }
+
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-list {
+    max-height: min(280px, 36vh);
+  }
+}
+
+/* ===== (unito da five-match-picker-tuning.css il 4 nov 2026) ===== */
+/* Prematch-only tuning for the shared 5v5 player picker.
+   The formation editor remains untouched: every rule here is scoped to .five-match-screen. */
+
+/* The JS bridge writes --five-picker-panel-height from the number of candidates.
+   One/two cards keep the panel compact; three cards are the visible cap; extra cards scroll. */
+.five-match-screen.five-player-picker-open .five-match-field {
+  min-height: calc(var(--five-picker-panel-height, 260px) + 16px);
+  overflow: visible;
+}
+
+.five-match-screen.five-player-picker-open .five-match-mobile-field {
+  height: calc(var(--five-picker-panel-height, 260px) + 16px);
+  min-height: calc(var(--five-picker-panel-height, 260px) + 16px);
+}
+
+.five-match-screen .five-selector.five-selector-floating {
+  top: 8px;
+  left: 18px;
+  width: calc(100% - 42px);
+  height: var(--five-picker-panel-height, 260px);
+  max-height: var(--five-picker-panel-height, 260px);
+  padding: 12px;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.five-match-screen .five-selector.five-selector-floating .section-head.compact {
+  padding-bottom: 7px;
+}
+
+/* The role is already clear from the slot header. */
+.five-match-screen .five-selector.five-selector-floating .section-head.compact .muted {
+  display: none !important;
+}
+
+.five-match-screen .five-selector.five-selector-floating .five-roster-list {
+  min-height: 0;
+  height: 100%;
+  max-height: none;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 8px;
+  padding: 4px 5px 10px 1px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.five-match-screen .five-selector.five-selector-floating .five-roster-card {
+  --five-roster-bg: var(--rarity-bg, var(--ir-white));
+  --five-roster-border: var(--rarity-border, #747474);
+  --five-roster-text: var(--rarity-text, var(--ir-ink));
+  width: 100%;
+  min-height: 74px;
+  height: 74px;
+  max-height: 74px;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-rows: 1fr;
+  align-items: center;
+  align-self: start;
+  gap: 9px;
+  padding: 5px 10px 5px 7px;
+  background: var(--five-roster-bg) !important;
+  border-color: var(--five-roster-border) !important;
+  color: var(--five-roster-text) !important;
+  border-radius: 0 !important;
+  overflow: hidden;
+  box-shadow: 3px 4px 0 rgba(17, 18, 22, .15);
+}
+
+/* Keep rarity accents rectangular too: no inherited rounded corners from shared roster styles. */
+.five-match-screen .five-selector.five-selector-floating .five-roster-card::before,
+.five-match-screen .five-selector.five-selector-floating .five-roster-card::after {
+  border-radius: 0 !important;
+}
+
+/* The whole candidate card is the tap target. */
+.five-match-screen .five-selector.five-selector-floating .five-roster-state {
+  display: none !important;
+}
+
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-common,
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-base {
+  --five-roster-bg: #f4f4ef;
+  --five-roster-border: #8d9499;
+  --five-roster-text: var(--ir-ink);
+}
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-uncommon,
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-pregiato {
+  --five-roster-bg: #e4f6e8;
+  --five-roster-border: #46b96f;
+  --five-roster-text: var(--ir-ink);
+}
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-rare,
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-prestigio {
+  --five-roster-bg: #e6f0ff;
+  --five-roster-border: #4d8fd8;
+  --five-roster-text: var(--ir-ink);
+}
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-epic {
+  --five-roster-bg: #f0e7ff;
+  --five-roster-border: #8b61d4;
+  --five-roster-text: var(--ir-ink);
+}
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-legendary {
+  --five-roster-bg: #fff0c8;
+  --five-roster-border: #d99a16;
+  --five-roster-text: var(--ir-ink);
+}
+
+.five-match-screen .five-selector.five-selector-floating .five-roster-portrait {
+  grid-row: 1;
+  width: 54px;
+  height: 62px;
+  min-width: 54px;
+  min-height: 62px;
+  overflow: hidden;
+  place-items: end center;
+}
+
+.five-match-screen .five-selector.five-selector-floating .five-roster-portrait img {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain !important;
+  object-position: center bottom !important;
+}
+
+.five-match-screen .five-selector.five-selector-floating .five-roster-copy strong,
+.five-match-screen .five-selector.five-selector-floating .five-roster-copy small {
+  color: var(--five-roster-text) !important;
+}
+.five-match-screen .five-selector.five-selector-floating .five-roster-copy strong { font-size: .82rem; }
+.five-match-screen .five-selector.five-selector-floating .five-roster-copy small { font-size: .63rem; }
+
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter {
+  background: #fff3b5 !important;
+  border-color: var(--ir-ink) !important;
+  color: var(--ir-ink) !important;
+}
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-copy strong,
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-copy small {
+  color: var(--ir-ink) !important;
+}
+
+@media (max-width: 780px) {
+  .five-match-screen.five-player-picker-open .five-match-field {
+    min-height: calc(var(--five-picker-panel-height, 250px) + 14px);
+  }
+
+  .five-match-screen.five-player-picker-open .five-match-mobile-field {
+    height: calc(var(--five-picker-panel-height, 250px) + 14px);
+    min-height: calc(var(--five-picker-panel-height, 250px) + 14px);
+  }
+
+  .five-match-screen .five-selector.five-selector-floating {
+    top: 7px;
+    left: 12px;
+    width: calc(100% - 30px);
+    height: var(--five-picker-panel-height, 250px);
+    max-height: var(--five-picker-panel-height, 250px);
+    padding: 10px;
+  }
+
+  .five-match-screen .five-selector.five-selector-floating .section-head.compact {
+    padding-right: 38px;
+    padding-bottom: 6px;
+  }
+
+  .five-match-screen .five-selector.five-selector-floating .five-roster-list {
+    grid-auto-rows: max-content;
+    align-content: start;
+    gap: 8px;
+  }
+
+  .five-match-screen .five-selector.five-selector-floating .five-roster-card {
+    min-height: 72px;
+    height: 72px;
+    max-height: 72px;
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 8px;
+    padding: 5px 9px 5px 6px;
+    border-radius: 0 !important;
+  }
+
+  .five-match-screen .five-selector.five-selector-floating .five-roster-portrait {
+    width: 52px;
+    height: 60px;
+    min-width: 52px;
+    min-height: 60px;
+  }
+}
+
+@media (max-width: 390px) {
+  .five-match-screen.five-player-picker-open .five-match-field {
+    min-height: calc(var(--five-picker-panel-height, 244px) + 12px);
+  }
+
+  .five-match-screen.five-player-picker-open .five-match-mobile-field {
+    height: calc(var(--five-picker-panel-height, 244px) + 12px);
+    min-height: calc(var(--five-picker-panel-height, 244px) + 12px);
+  }
+
+  .five-match-screen .five-selector.five-selector-floating {
+    top: 6px;
+    left: 10px;
+    width: calc(100% - 24px);
+    height: var(--five-picker-panel-height, 244px);
+    max-height: var(--five-picker-panel-height, 244px);
+    padding: 9px;
+  }
+
+  .five-match-screen .five-selector.five-selector-floating .five-roster-card {
+    min-height: 70px;
+    height: 70px;
+    max-height: 70px;
+    grid-template-columns: 52px minmax(0, 1fr);
+    border-radius: 0 !important;
+  }
+
+  .five-match-screen .five-selector.five-selector-floating .five-roster-portrait {
+    width: 50px;
+    height: 58px;
+    min-width: 50px;
+    min-height: 58px;
+  }
+}
+
+/* ===== (unito da boss-match-prematch-restyle.css il 4 nov 2026) ===== */
+/* Boss / special 11v11 preparation, phase 1. Every rule is scoped to this screen. */
+.boss-match-screen {
+  --boss-pre-ink: var(--ir-ink);
+  --boss-pre-paper: var(--ir-paper-warm);
+  --boss-pre-cream: #f1eadc;
+  --boss-pre-yellow: var(--ir-yellow);
+  --boss-pre-gold: var(--ir-gold-dark);
+}
+.boss-match-screen .boss-match-content { gap: 12px; }
+.boss-match-screen .boss-match-hero {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 9px; padding: 12px;
+  overflow: hidden; border: 3px solid var(--boss-pre-ink); border-radius: 2px;
+  background: var(--boss-pre-paper); color: var(--boss-pre-ink); box-shadow: 6px 7px 0 var(--ir-ink-a20);
+}
+.boss-match-screen .boss-match-hero-band { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 3px solid var(--boss-pre-ink); }
+.boss-match-screen .boss-match-heading { display: block; }
+.boss-match-screen .boss-match-heading .eyebrow { margin: 0 0 2px; color: var(--boss-pre-gold); }
+.boss-match-screen .boss-match-heading h2 { margin: 0; color: var(--boss-pre-ink); font-size: clamp(1.35rem, 5vw, 2rem); line-height: .95; text-transform: uppercase; }
+.boss-match-screen .boss-match-duration { display: inline-flex; align-items: baseline; gap: 4px; flex: 0 0 auto; padding: 5px 8px; border: 2px solid var(--boss-pre-ink); background: var(--boss-pre-yellow); font-weight: 1000; }
+.boss-match-screen .boss-match-duration small { font-size: .57rem; letter-spacing: .06em; text-transform: uppercase; }
+.boss-match-screen .boss-match-vs { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 7px; }
+.boss-match-screen .boss-match-team { display: grid; grid-template-columns: 48px minmax(0,1fr); grid-template-areas: "logo name" "logo meta"; align-items: center; gap: 0 8px; min-width: 0; padding: 4px; }
+.boss-match-screen .boss-match-team--boss { grid-template-columns: minmax(0,1fr) 48px; grid-template-areas: "name logo" "meta logo"; text-align: right; }
+.boss-match-screen .boss-match-logo { grid-area: logo; display: grid; place-items: center; width: 46px; height: 46px; padding: 3px; overflow: hidden; border: 2px solid var(--boss-pre-ink); border-radius: 50%; background: var(--ir-white); }
+.boss-match-screen .boss-match-logo img,
+.boss-match-screen .boss-match-logo .team-emblem,
+.boss-match-screen .boss-match-logo .boss-match-emblem { width: 100%; height: 100%; object-fit: contain; }
+.boss-match-screen .boss-match-team strong { grid-area: name; min-width: 0; overflow-wrap: anywhere; color: var(--boss-pre-ink); font-size: clamp(.8rem, 3.4vw, 1.05rem); line-height: 1; }
+.boss-match-screen .boss-match-team small { grid-area: meta; color: #625c52; font-size: .62rem; }
+.boss-match-screen .boss-match-vs-badge { display: grid; place-items: center; width: 36px; height: 36px; border: 2px solid var(--boss-pre-ink); border-radius: 1px; background: var(--boss-pre-yellow); color: var(--boss-pre-ink); box-shadow: 3px 3px 0 var(--boss-pre-ink); font-size: .85rem; transform: rotate(-3deg); }
+.boss-match-screen .boss-match-pitch-panel { padding: 11px; }
+.boss-match-screen .boss-match-section-head { margin-bottom: 8px; }
+.boss-match-screen .boss-match-summary { gap: 8px; }
+.boss-match-screen .boss-match-reward-note { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 7px 10px; border: 2px solid var(--boss-pre-ink); border-radius: 1px; background: var(--boss-pre-yellow); color: var(--boss-pre-ink); }
+.boss-match-screen .boss-match-reward-note span { flex: 0 0 auto; color: var(--boss-pre-ink); font-size: .67rem; font-weight: 1000; letter-spacing: .06em; text-transform: uppercase; }
+.boss-match-screen .boss-match-reward-note span::after { content: " →"; }
+.boss-match-screen .boss-match-reward-note strong { color: var(--boss-pre-ink); font-size: .78rem; line-height: 1.15; text-transform: uppercase; }
+.boss-match-screen [hidden] { display: none; }
+.boss-match-screen .boss-match-controls { position: relative; display: grid; grid-template-columns: 1fr; gap: 10px; padding: 12px; overflow: hidden; border: 3px solid var(--boss-pre-ink); border-radius: 1px; background: linear-gradient(145deg,#17191b,#090a0c 72%); box-shadow: 7px 8px 0 var(--ir-ink-a28); }
+.boss-match-screen .boss-match-controls::before { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(255,210,31,.82); pointer-events: none; }
+.boss-match-screen .boss-match-test-tools { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 9px; border: 1px dashed #8b877e; color: #d8d2c7; }
+.boss-match-screen .boss-match-test-tools > span { font-size: .65rem; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+.boss-match-screen .boss-match-test-tools > div { display: flex; gap: 7px; }
+.boss-match-screen .boss-match-test-tools .btn { min-height: 34px; padding: 6px 10px; border-color: #77736b; background: #25272a; color: #eee8dc; font-size: .68rem; }
+@media (max-width: 780px) {
+  .boss-match-screen { padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+  .boss-match-screen .boss-match-hero { padding: 9px; }
+  .boss-match-screen .boss-match-pitch-panel { padding: 8px; }
+  .boss-match-screen .boss-match-test-tools { align-items: stretch; flex-direction: column; }
+  .boss-match-screen .boss-match-test-tools > div { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .boss-match-screen .boss-match-test-tools > div .btn:only-child { grid-column: 1/-1; }
+}
+@media (max-width: 370px) {
+  .boss-match-screen .boss-match-team { grid-template-columns: 40px minmax(0,1fr); }
+  .boss-match-screen .boss-match-team--boss { grid-template-columns: minmax(0,1fr) 40px; }
+  .boss-match-screen .boss-match-logo { width: 38px; height: 38px; }
+}
+
+/* 11v11-only portrait field: generous four-line spacing on narrow phones. */
+.boss-match-screen .boss-match-field {
+  min-height: clamp(660px, 112vw, 760px);
+  background: #087044 url("../assets/ui/11v11/boss-tactical-pitch.svg") center / 100% 100% no-repeat;
+}
+.boss-match-screen .boss-match-field > .boss-match-field-side {
+  min-height: clamp(598px, 102vw, 700px);
+  padding-block: 16px;
+}
+.boss-match-screen .boss-match-line { padding-inline: clamp(3px, 1.4vw, 10px); }
+
+@media (max-width: 780px) {
+  .boss-match-screen .boss-match-field { min-height: 660px; }
+  .boss-match-screen .boss-match-field-side--mobile {
+    height: 660px;
+    padding: 34px 7px 30px;
+    gap: 12px;
+  }
+  .boss-match-screen .boss-match-line { gap: clamp(7px, 2vw, 11px); }
+}
+
+@media (max-width: 370px) {
+  .boss-match-screen .boss-match-field { min-height: 640px; }
+  .boss-match-screen .boss-match-field-side--mobile { height: 640px; padding-inline: 5px; }
+}
+
+/* ===== (unito da boss-match-action-parity-fit.css il 4 nov 2026) ===== */
+/* 11v11 Boss: exact 5v5 action-deck structure + mobile line-fit tuning.
+   Loaded after boss-match-prematch-restyle.css so it only neutralises the
+   11v11-specific structural drift without changing gameplay. */
+
+/* ---------------------------------------------------------------
+   ACTIONS — use the same five-match classes/assets as the 5v5 deck.
+   Artwork remains owned by five-match-action-assets.css; these rules
+   provide the structural CSS that was previously scoped to .five-match-screen.
+   --------------------------------------------------------------- */
+.boss-match-screen .boss-match-controls {
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 9px;
+}
+
+.boss-match-screen .boss-match-controls .five-match-actions-heading {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #f5efe3;
+}
+
+
+.boss-match-screen .boss-match-controls .five-match-actions-heading i {
+  width: 92px;
+  height: 7px;
+  background: repeating-linear-gradient(120deg, var(--ir-yellow) 0 9px, transparent 10px 14px);
+  transform: skewX(-10deg);
+}
+
+.boss-match-screen .boss-match-controls .five-match-primary-actions {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.boss-match-screen .boss-match-controls .five-match-action-cta {
+  position: relative;
+  display: grid;
+  align-items: center;
+  width: 100%;
+  padding-left: 0;
+  overflow: hidden;
+  border: 3px solid var(--ir-ink);
+  border-radius: 2px;
+  color: var(--ir-ink);
+  text-align: left;
+  text-transform: none;
+  box-shadow: 5px 6px 0 rgba(255,255,255,.15);
+  isolation: isolate;
+}
+
+.boss-match-screen .boss-match-controls .five-match-action-icon,
+.boss-match-screen .boss-match-controls .five-match-action-copy,
+.boss-match-screen .boss-match-controls .five-match-action-mark {
+  position: relative;
+  z-index: 2;
+}
+
+
+/* Do not let the obsolete 11v11 action classes leak geometry into the
+   shared five-match buttons. */
+
+@media (max-width: 780px) {
+  .boss-match-screen .boss-match-controls {
+    padding: 9px;
+    gap: 8px;
+    box-shadow: 4px 5px 0 var(--ir-ink-a28);
+  }
+
+  .boss-match-screen .boss-match-controls .five-match-actions-heading i {
+    width: 68px;
+  }
+
+  /* five-match-action-assets.css supplies the exact 5v5 82/1fr/25
+     columns and 80px CTA height. We only ensure the button is a grid. */
+}
+
+/* ---------------------------------------------------------------
+   PITCH FIT — keep the new portrait pitch, but reclaim horizontal room.
+   Five-player lines receive a purpose-built narrow-card presentation
+   rather than letting the generic layout squeeze them unpredictably.
+   --------------------------------------------------------------- */
+@media (max-width: 780px) {
+  .boss-match-screen .boss-match-content {
+    padding-inline: 4px;
+  }
+
+  .boss-match-screen .boss-match-pitch-panel {
+    padding-inline: 5px;
+  }
+
+  .boss-match-screen .boss-match-field-side--mobile {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .boss-match-screen .boss-match-line[data-row-count="5"] {
+    --boss-mobile-card-width: clamp(61px, 17vw, 68px);
+    gap: 2px;
+    padding-inline: 0;
+  }
+
+  .boss-match-screen .boss-match-line[data-row-count="4"] {
+    gap: 4px;
+    padding-inline: 1px;
+  }
+
+  .boss-match-screen .boss-match-line[data-row-count="5"] .boss-match-card.run-tactical-card {
+    min-height: 86px;
+  }
+
+  .boss-match-screen .boss-match-line[data-row-count="5"] .boss-match-card.run-tactical-card .player-portrait-wrap {
+    min-height: 59px;
+    height: 59px;
+    padding: 4px 1px 0;
+  }
+
+  .boss-match-screen .boss-match-line[data-row-count="5"] .boss-match-card.run-tactical-card .player-info {
+    padding: 4px 2px 5px;
+  }
+
+  .boss-match-screen .boss-match-line[data-row-count="5"] .boss-match-card.run-tactical-card .player-title strong {
+    font-size: .5rem;
+    letter-spacing: -.015em;
+  }
+
+  .boss-match-screen .boss-match-line[data-row-count="5"] .boss-match-card.run-tactical-card .player-role,
+  .boss-match-screen .boss-match-line[data-row-count="5"] .boss-match-card.run-tactical-card .player-overall {
+    transform: scale(.9);
+  }
+
+  .boss-match-screen .boss-match-line[data-row-count="5"] .boss-match-card.run-tactical-card .player-role {
+    transform-origin: top left;
+  }
+
+  .boss-match-screen .boss-match-line[data-row-count="5"] .boss-match-card.run-tactical-card .player-overall {
+    transform-origin: top right;
+  }
+}
+
+@media (max-width: 370px) {
+  .boss-match-screen .boss-match-content {
+    padding-inline: 2px;
+  }
+
+  .boss-match-screen .boss-match-pitch-panel {
+    padding-inline: 4px;
+  }
+
+  .boss-match-screen .boss-match-line[data-row-count="5"] {
+    --boss-mobile-card-width: clamp(58px, 17vw, 62px);
+    gap: 2px;
+  }
+}
+
+/* ===== (unito da boss-match-simulation-modal-bridge.css il 4 nov 2026) ===== */
+/* Boss 11v11 simulation uses the existing 5v5 cabin component.
+   Keep the old inline playback/result regions out of the page: the runtime
+   bridge moves their live DOM nodes into .five-simulation-modal. */
+
+/* No alternate visual language here: the 11v11 modal deliberately inherits
+   the exact .five-simulation-* presentation already used by Partita 5v5. */
+.boss-simulation-modal .five-simulation-head h2 {
+  white-space: nowrap;
+}
+
+/* Keep team names anchored from their first character. Long names shrink
+   inside their lockup and are truncated only at the end, before the emblem. */
+.boss-simulation-modal .five-simulation-team-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  direction: ltr;
+  text-align: left;
+}
+
+@media (max-width: 390px) {
+  .boss-simulation-modal .five-simulation-head h2 {
+    font-size: 1.05rem;
+  }
+}

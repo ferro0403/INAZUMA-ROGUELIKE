@@ -21,10 +21,18 @@ const activeCore=fs.readFileSync("css/rtg-theme-core.css","utf8");
 assert(activeTheme.includes('./rtg-theme-core.css'),"Theme import chain must remain connected");
 assert(activeCore.includes('./rtg-theme-base.css'),"Base theme must remain connected");
 assert(activeTheme.includes('./rtg-run.css'),"RTG route owner must be imported");
-for(const stylesheet of [
-  "rtg-foundation.css","rtg-shell.css","rtg-run.css","rtg-squad.css",
-  "rtg-match.css","rtg-vending.css","rtg-economy.css"
-]) assert(fs.existsSync("css/"+stylesheet), "Target RTG CSS owner is missing: "+stylesheet);
+// Ogni file in css/ deve essere caricato dal gioco: da index.html, da un @import di un altro CSS o da un file JS.
+// (Fino al 3 novembre 2026 sette file "proprietari" RTG esistevano senza essere mai caricati: modificarli non
+// aveva alcun effetto. Sono stati rimossi; questo controllo impedisce che ricapiti.)
+{
+  const jsText=(function walk(dir){return fs.readdirSync(dir,{withFileTypes:true}).map(e=>e.isDirectory()?walk(dir+"/"+e.name):(e.name.endsWith(".js")?fs.readFileSync(dir+"/"+e.name,"utf8"):"")).join("\n");})("js");
+  const cssFiles=fs.readdirSync("css").filter(name=>name.endsWith(".css"));
+  const imports=cssFiles.map(name=>fs.readFileSync("css/"+name,"utf8")).join("\n");
+  for(const name of cssFiles){
+    const loaded=index.includes("css/"+name)||imports.includes("./"+name)||jsText.includes("css/"+name);
+    assert(loaded,"CSS file is never loaded by the game: css/"+name);
+  }
+}
 
 for(const script of["rtg-run-view.js","rtg-squad-view.js","rtg-match-view.js","rtg-controller.js"]) assert(index.includes(script), script);
 for(const bootstrap of[

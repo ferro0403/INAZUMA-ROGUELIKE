@@ -179,7 +179,8 @@ for (const [role, playerId, target] of compactCases) {
     ["Forte", 80, 84, 75],
     ["Elite", 85, 89, 80],
     ["Mondiale", 90, 94, 85],
-    ["Leggenda", 95, 99, 94],
+    ["Leggenda", 95, 98, 94],
+    ["Aurico", 99, 99, 98],
   ];
   for (const [rarity, minimum, maximum, invalid] of bands) {
     assert.equal(DevelopmentV3.validate(stateFor(rarity, minimum)).valid, true, `${rarity} accepts lower boundary ${minimum}`);

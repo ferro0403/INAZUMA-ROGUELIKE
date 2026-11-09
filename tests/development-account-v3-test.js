@@ -97,7 +97,7 @@ environment(JSON.stringify(legacy({ coins: 10000, cupsBySeason: { ie1: 20, ie2: 
   Account.ensureMigrated(options); const player = base("Scarso"); let selection = {};
   let result = Account.evolve({ ...input(player), cupSelection: selection }, { ...options, timestamp: "2026-08-28T00:00:00.000Z" });
   assert(result.ok); assert.equal(result.target, "Normale"); assert.deepStrictEqual(result.receipt, { coinsConsumed: 100, cupsConsumed: 0, cupsConsumedBySource: {}, projectsConsumed: 0 });
-  assert(Account.read(options).players[player.playerId].legacyNormale); assert.deepStrictEqual(Account.slotUsage(Account.read(options)), { Buono: 0, Forte: 0, Elite: 0, Mondiale: 0, Leggenda: 0 });
+  assert(Account.read(options).players[player.playerId].legacyNormale); assert.deepStrictEqual(Account.slotUsage(Account.read(options)), { Buono: 0, Forte: 0, Elite: 0, Mondiale: 0, Leggenda: 0, Aurico: 0 });
   for (const [index, target] of ["Buono", "Forte", "Elite", "Mondiale", "Leggenda"].entries()) {
     const cost = V2.COSTS[target]; selection = cost.cups ? { ie1: Math.min(cost.cups, 20), ie2: Math.max(0, cost.cups - 20) } : {};
     result = Account.evolve({ ...input(player), cupSelection: selection }, { ...options, timestamp: `2026-08-28T00:00:0${index + 1}.000Z` }); assert(result.ok, result.reason); assert.equal(result.target, target); assert.equal(result.targetPotential, V2.threshold(target)); assert.equal(result.receipt.coinsConsumed, cost.coins); assert.equal(result.receipt.projectsConsumed, cost.projects); assert.deepStrictEqual(result.receipt.cupsConsumedBySource, Object.fromEntries(Object.entries(selection).filter(([, amount]) => amount > 0)));
@@ -185,7 +185,7 @@ environment(JSON.stringify(legacy({ coins: 999 })), ({ storage, counts }) => {
 
 // Capacity is derived solely from each chain's last coloured step. Full target
 // capacity rejects before solver/resource/persistence; over-cap states read.
-assert.deepStrictEqual(Account.SLOT_CAPACITIES, { Buono: 50, Forte: 20, Elite: 15, Mondiale: 10, Leggenda: 5 });
+assert.deepStrictEqual(Account.SLOT_CAPACITIES, { Buono: 50, Forte: 20, Elite: 15, Mondiale: 10, Leggenda: 5, Aurico: 1 });
 environment(null, ({ storage, counts }) => {
   const state = V3.empty(), forteBase = base("Buono"), profile = V3.materializeProfile({ basePlayer: forteBase, targetPotential: 80, category: "Forte", database, progression });
   for (let index = 0; index < 21; index += 1) state.players[`capacity-${index}`] = { legacyNormale: null, steps: [{ stepId: `s-${index}`, rarity: "Forte", fromRarity: "Buono", fromPotential: 75, toPotential: 80, profile, receipt: { coinsConsumed: 0, cupsConsumed: 0, cupsConsumedBySource: {}, projectsConsumed: 0 } }] };

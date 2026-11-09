@@ -1,9 +1,10 @@
+const { cssSection, stylesheetLoaded, loadsAfter } = require("./helpers/css-sections");
 const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const css = fs.readFileSync(path.join(root, 'css', 'five-match-action-assets.css'), 'utf8');
+const css = cssSection('five-match-action-assets');
 
 const assets = [
   'action-soccer-ball.svg',
@@ -19,7 +20,7 @@ const retiredAssets = [
   'tactics-pitch.svg',
 ];
 
-if (!index.includes('css/five-match-action-assets.css')) {
+if (!stylesheetLoaded(index, 'five-match-action-assets')) {
   throw new Error('index.html must load five-match-action-assets.css');
 }
 

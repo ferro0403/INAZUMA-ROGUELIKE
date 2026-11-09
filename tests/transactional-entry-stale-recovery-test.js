@@ -20,7 +20,7 @@ function harness(node, valid = true) {
   c.RecruitmentPoolRuntime.eligible = () => true;
   c.DraftEngine.shuffle = values => values.slice();
   c.RoguelikeRules.unlockedPullLevel = () => 1;
-  c.FiveVFive = { formations: [formation], formationById: () => formation, ensure: () => {}, validate: () => ({ valid, formation, assignedCount: valid ? 5 : 0, messages: valid ? [] : ["incomplete"] }) };
+  Object.assign(c.FiveVFive, { formations: [formation], formationById: () => formation, ensure: () => {}, validate: () => ({ valid, formation, assignedCount: valid ? 5 : 0, messages: valid ? [] : ["incomplete"] }) });
   c.RunStatistics.createStableMatchId = () => "stable";
   c.RunStatistics.ACTIONS = { REROLL_USED: "REROLL_USED", LUCKY_CHARM_USED: "LUCKY_CHARM_USED" };
   return { rt, c, storage };

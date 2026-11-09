@@ -1,4 +1,5 @@
 "use strict";
+const { loadCoachPowerData } = require("./helpers/coach-powers");
 const assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm");
 const test=require("node:test");
 const read=p=>fs.readFileSync(p,"utf8");
@@ -25,6 +26,7 @@ sandbox.RtgFourMovesRuntime={
   })),
 };
 sandbox.RoadToGloryCoaches={owned:s=>new Set(s.coachOwnedIds||[])};
+loadCoachPowerData(sandbox);
 for(const path of [
   "js/road-to-glory/rtg-coach-powers-runtime.js",
   "js/road-to-glory/rtg-match-pt-runtime.js",
@@ -181,7 +183,7 @@ test("David real progression upgrades a player from Elite to Mondiale, stats and
 
 
 test("Nerina borrowed substitute survives the actual match halftime/resume engine",()=>{
-  vm.runInContext(read("js/road-to-glory/rtg-coach-powers-prematch.js"),sandbox);
+  loadCoachPowerData(sandbox);vm.runInContext(read("js/road-to-glory/rtg-coach-powers-prematch.js"),sandbox);
   const power=sandbox.RoadToGloryCoachPreMatchRuntime;
   const original=create(),loan=original.opponentSquad.bench[1].cardId;
   const displaced=original.userSquad.bench[1].cardId;
@@ -203,7 +205,8 @@ test("Nerina borrowed substitute survives the actual match halftime/resume engin
   delete next.bench[1].tacticalRole;
   const resumed=E.confirmHalftime(live,next,{validateHalftime:()=>{
     const controller=read("js/road-to-glory/rtg-controller.js");
-    assert.match(controller,/match\.preMatchCoachEffect\?\.coachId==="1225"/);
+    // Dal Passo 3.3 il controller riconosce il prestito dal tipo del potere (dati), non dall'id di Nerina.
+    assert.match(controller,/typeOf\?\.\(match\.preMatchCoachEffect\?\.coachId\)==="borrowOpponentReserve"/);
     return{eligible:true,reasons:[]};
   }});
   assert.notEqual(resumed.status,"halftime");

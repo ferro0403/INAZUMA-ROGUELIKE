@@ -1,0 +1,34 @@
+{
+  "exportType": "inazuma_roguelike_lineup_config",
+  "version": 2,
+  "selectionMode": {
+    "bossFormation": "manual",
+    "startingXI": "manual",
+    "bossLevel": "manual",
+    "rewardPool": "all_team_players"
+  },
+  "teams": [
+    {
+      "teamId": "prova_orchi",
+      "teamName": "Orchi di prova",
+      "sourceFile": "data/IE1_S3_season_compact.json (team_ogre)",
+      "bossFormation": "4-3-3",
+      "bossLevel": 0,
+      "startingXI": [
+        "2080",
+        "2074",
+        "2076",
+        "2079",
+        "2081",
+        "2082",
+        "2072",
+        "2073",
+        "2077",
+        "2075",
+        "2078"
+      ],
+      "rewardPool": "all_team_players"
+    }
+  ],
+  "warnings": []
+}

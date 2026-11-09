@@ -1,0 +1,458 @@
+{
+  "schemaVersion": 1,
+  "seasonId": "prova_dev",
+  "maxMovesPerPlayer": 4,
+  "players": {
+    "2072": {
+      "primaryMoveId": "2072_1",
+      "moves": [
+        {
+          "moveId": "2072_1",
+          "name": "High Voltage",
+          "type": "save",
+          "element": "Wind",
+          "power": 110,
+          "tension": 110,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2072_2",
+          "name": "Needle Hammer",
+          "type": "save",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2072_3",
+          "name": "Electric Trap",
+          "type": "save",
+          "element": "Wind",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2072_4",
+          "name": "Gravity Point",
+          "type": "save",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2073": {
+      "primaryMoveId": "2073_1",
+      "moves": [
+        {
+          "moveId": "2073_1",
+          "name": "Diabolical Cut",
+          "type": "defense",
+          "element": "Forest",
+          "power": 75,
+          "tension": 75,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2073_2",
+          "name": "Harvest",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2073_3",
+          "name": "Volcano Cut",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2073_4",
+          "name": "Pincer Pinch",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2074": {
+      "primaryMoveId": "2074_1",
+      "moves": [
+        {
+          "moveId": "2074_1",
+          "name": "Sigma Zone",
+          "type": "defense",
+          "element": "Forest",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2074_2",
+          "name": "Mega Quake",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2074_3",
+          "name": "Asteroid Belt",
+          "type": "defense",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2074_4",
+          "name": "Photon Crash",
+          "type": "defense",
+          "element": "Fire",
+          "power": 80,
+          "tension": 80,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2075": {
+      "primaryMoveId": "2075_1",
+      "moves": [
+        {
+          "moveId": "2075_1",
+          "name": "Foul Offence 3",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2075_2",
+          "name": "Illusory Ball",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2075_3",
+          "name": "Gravitation",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2075_4",
+          "name": "Doom Spear",
+          "type": "shot",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2076": {
+      "primaryMoveId": "2076_1",
+      "moves": [
+        {
+          "moveId": "2076_1",
+          "name": "Southern Cross",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2076_2",
+          "name": "Sigma Zone",
+          "type": "defense",
+          "element": "Forest",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2076_3",
+          "name": "Hurricane Arrows",
+          "type": "defense",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2076_4",
+          "name": "No Escape",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2077": {
+      "primaryMoveId": "2077_1",
+      "moves": [
+        {
+          "moveId": "2077_1",
+          "name": "Doom Spear",
+          "type": "shot",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2077_2",
+          "name": "Doom Rain",
+          "type": "shot",
+          "element": "Fire",
+          "power": 75,
+          "tension": 75,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2077_3",
+          "name": "Devil Ball",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2077_4",
+          "name": "Ball Lightning",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2078": {
+      "primaryMoveId": "2078_1",
+      "moves": [
+        {
+          "moveId": "2078_1",
+          "name": "Volcano Cut",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2078_2",
+          "name": "Harvest",
+          "type": "defense",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2078_3",
+          "name": "Air Ride",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2078_4",
+          "name": "Electric Trap",
+          "type": "save",
+          "element": "Wind",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2079": {
+      "primaryMoveId": "2079_1",
+      "moves": [
+        {
+          "moveId": "2079_1",
+          "name": "Doom Rain",
+          "type": "shot",
+          "element": "Fire",
+          "power": 75,
+          "tension": 75,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2079_2",
+          "name": "Doom Spear",
+          "type": "shot",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2079_3",
+          "name": "Heavenly Drive",
+          "type": "shot",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2079_4",
+          "name": "Angel Ball",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2080": {
+      "primaryMoveId": "2080_1",
+      "moves": [
+        {
+          "moveId": "2080_1",
+          "name": "Doom Break",
+          "type": "shot",
+          "element": "Mountain",
+          "power": 105,
+          "tension": 105,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2080_2",
+          "name": "Doom Spear",
+          "type": "shot",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2080_3",
+          "name": "Foul Offence 3",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2080_4",
+          "name": "Field of Force",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2081": {
+      "primaryMoveId": "2081_1",
+      "moves": [
+        {
+          "moveId": "2081_1",
+          "name": "Field of Force",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 85,
+          "tension": 85,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2081_2",
+          "name": "Heel Drop",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2081_3",
+          "name": "Gravitation",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2081_4",
+          "name": "Doom Rain",
+          "type": "shot",
+          "element": "Fire",
+          "power": 75,
+          "tension": 75,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    },
+    "2082": {
+      "primaryMoveId": "2082_1",
+      "moves": [
+        {
+          "moveId": "2082_1",
+          "name": "Volcano Cut",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2082_2",
+          "name": "Power Charge",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2082_3",
+          "name": "Illusory Ball",
+          "type": "dribble",
+          "element": "Forest",
+          "power": 60,
+          "tension": 60,
+          "source": "rtg-four-moves:ie1_s3"
+        },
+        {
+          "moveId": "2082_4",
+          "name": "Zigzag Spark",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 50,
+          "tension": 50,
+          "source": "rtg-four-moves:ie1_s3"
+        }
+      ]
+    }
+  }
+}

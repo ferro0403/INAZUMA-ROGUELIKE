@@ -1,5 +1,6 @@
 "use strict";
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const { loadEvents } = require("./helpers/events");
 const c={globalThis:null,window:null,Object,Array,String,Number,Math,Set,Map,JSON,Date,Error,TypeError,
   SeasonRegistry:{normalizeSeasonId:v=>String(v),canonicalPlayerId:(_s,p)=>String(p),player:()=>null},
   ProfiledSeasonRuntime:{canonicalPlayerId:(_s,p)=>String(p)},
@@ -9,6 +10,8 @@ const c={globalThis:null,window:null,Object,Array,String,Number,Math,Set,Map,JSO
   }
 };
 c.globalThis=c;c.window=c;vm.createContext(c);
+// Eventi dal file dati (data/events/), come nel gioco.
+loadEvents(c);
 for(const file of["js/road-to-glory/rtg-card-identity.js","js/road-to-glory/rtg-economy.js","js/road-to-glory/rtg-config.js"])vm.runInContext(fs.readFileSync(file,"utf8"),c,{filename:file});
 const E=c.RoadToGloryEconomy,C=c.RoadToGloryConfig;
 assert.deepStrictEqual(JSON.parse(JSON.stringify(E.PROJECT_PRICES)),{Buono:150,Forte:300,Elite:550,Mondiale:850,Leggenda:1300,Aurico:2000});

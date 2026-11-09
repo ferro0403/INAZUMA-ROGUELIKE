@@ -8,6 +8,7 @@ const DevelopmentV3 = require("../js/development-v3.js");
 require("../js/development-v3-migration.js");
 const Runtime = require("../js/development-runtime.js");
 const AlbumCatalog = require("../js/album-catalog.js");
+require("../js/recruitment/player-identity.js");
 require("../js/recruitment-pool.js");
 const RecruitmentPool = global.RecruitmentPoolRuntime;
 const database = require("../data/FREE_AGENTS_compact.json");
