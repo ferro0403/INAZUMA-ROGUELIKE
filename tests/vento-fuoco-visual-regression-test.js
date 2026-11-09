@@ -29,7 +29,7 @@ const fetcher=async url=>({
     matchPreview:teamId=>{
       const entry=manifest.teams.find(t=>t.teamId===teamId);
       const key=teamId==="fire-team"?"fire":"blizzard";
-      const setup=JSON.parse(read("data/events/vento_fuoco/"+key+"-team-lineup.json"));
+      const setup=JSON.parse(read("data/events/vento_fuoco/"+key+"-team-lineup.json")).teams.find(t=>t.teamId===teamId);
       return {formationId:setup.bossFormation,overall:api.opponentOverall(teamId),
         lineup:setup.startingXI.map(id=>api.eventPlayer(id))};
     },
