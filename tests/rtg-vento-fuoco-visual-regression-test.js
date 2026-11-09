@@ -78,7 +78,7 @@ const fetcher=async url=>({
   assert.match(css,/ANd9GcQ4docu4pCKgUNZ2fs/);
   assert.match(css,/duel-hero-v2\.svg/);
   assert.match(css,/\.vf-mini-pitch \.rtg-squad-pitch-main/);
-  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261109-vf-visual-5"));
+  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261109-vf-visual-6"));
   assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261109-vf-visual-3"));
   const runtime=read("js/road-to-glory/rtg-halloween-event.js");
   assert.match(runtime,/function restoreEventOpponentCrests/);
@@ -87,8 +87,8 @@ const fetcher=async url=>({
   assert.match(runtime,/mode:"preview"/);
   assert.match(runtime,/vf-reward-balance-value/,"only event reward has structured balance");
   assert.match(css,/Vento-Fuoco v5: THE HALLOWEEN EVENT CARD ANATOMY/);
-  assert.match(css,/fire-event-v5\.svg/);
-  assert.match(css,/ice-event-v5\.svg/);
+  assert.match(css,/fire-event-v6\.svg/);
+  assert.match(css,/ice-event-v6\.svg/);
   assert.match(css,/player-card\.rtg-event--vento_fuoco_dev\.rtg-element-fire-team/);
   assert.match(css,/player-card\.rtg-event--vento_fuoco_dev\.rtg-element-blizzard-team/);
   assert.match(css,/border:3px solid var\(--vf-card-edge\)!important/,"bold event frame in native Squadra cards");
@@ -98,12 +98,19 @@ const fetcher=async url=>({
   assert.match(css,/player-detail-hero::before/,"full-body player sheet is elemental");
   assert.match(css,/player-detail-visual/);
   assert.doesNotMatch(css,/Fire \/ Ice portrait patches v4/,"washed-out overlay skin superseded");
-  const fireV5=read("assets/events/vento-fuoco/fire-event-v5.svg");
-  const iceV5=read("assets/events/vento-fuoco/ice-event-v5.svg");
-  assert.match(fireV5,/id="outerFire"/);
-  assert.match(fireV5,/id="innerFire"/);
-  assert.match(iceV5,/id="crystal"/);
-  assert.match(iceV5,/id="blueFlame"/);
+  const fireV6=read("assets/events/vento-fuoco/fire-event-v6.svg");
+  const iceV6=read("assets/events/vento-fuoco/ice-event-v6.svg");
+  assert.match(fireV6,/id="flameV6"/);
+  assert.match(fireV6,/id="flameCoreV6"/);
+  assert.match(iceV6,/id="shardV6"/);
+  assert.match(iceV6,/id="snowGlowV6"/);
+  assert.match(css,/isolation:auto!important/,"VF badges must escape isolated card stacking");
+  assert.match(css,/overflow:visible!important/,"badge must not be clipped by native pitch style");
+  assert.match(css,/bottom:-15px!important/,"VF badge overlaps the Cambia control edge");
+  assert.match(css,/z-index:70!important/,"VF badge is above Cambia button");
+  assert.match(css,/--rtg-legacy-color:#dc2938!important/,"Fire VF badge must be red");
+  assert.match(css,/--rtg-legacy-color:#1679dc!important/,"Blizzard VF badge must be blue");
+  assert.match(css,/\.player-detail-rtg-legacy-badge\)/,"VF colour also reaches native player sheet");
   assert.match(css,/vf-reward-balance-value/,"existing reward modal preserved");
   assert.match(css,/rtg-pull-card-stage \.rtg-legacy-badge\{display:grid!important\}/,
     "VF identity badge visible in pull reveal as on Halloween cards");
@@ -112,5 +119,5 @@ const fetcher=async url=>({
   const halloween=context.GameEvents.module("halloween2026");
   assert.equal(halloween.pullFieldForTeam("occult-2"),"pumpkins");
   assert.equal(halloween.rewardFieldForTeam("occult-2"),"pumpkins");
-  console.log("vento-fuoco-visual-regression-test: PASS (2 pitch Squadra, 22 titolari, event-skin v5, cap 92, cache, Halloween)");
+  console.log("vento-fuoco-visual-regression-test: PASS (2 pitch Squadra, 22 titolari, event-skin v6 with VF red/blue tags, cap 92, cache, Halloween)");
 })().catch(error=>{console.error(error);process.exitCode=1;});
