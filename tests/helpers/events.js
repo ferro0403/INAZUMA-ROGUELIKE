@@ -19,7 +19,7 @@ function loadEvents(context) {
 }
 // Pezzi aggiuntivi degli eventi (Passo 3.6d): nel gioco li carica il registro nella pagina, qui si eseguono nella sandbox.
 function runExtensions(context, manifest) {
-  for (const src of manifest?.extensions || []) vm.runInContext(read(src.split("?")[0]), context, { filename: src });
+  for (const src of manifest?.extensions || []) vm.runInContext(read(src), context, { filename: src });
 }
 
 // Come il gioco con ?dev=1&evento=<id>: carica l'indice, gli eventi veri e l'evento finto (data/events/dev/<id>.json).
