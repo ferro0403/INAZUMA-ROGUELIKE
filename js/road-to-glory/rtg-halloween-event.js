@@ -658,7 +658,7 @@
         '<div class="rtg-vending-head-v9"><span>CAPSULE STATION</span><strong>'+(TEAM_VENDING?escape(team.name):uiText("entrySubtitle"))+'</strong></div>'+
         '<div class="rtg-vending-window-v9">'+capsules+'<span class="rtg-vending-funnel-v10"></span><span class="rtg-vending-window-glare-v9"></span></div>'+
         '<div class="rtg-vending-body-v9"><div class="rtg-vending-info-v9"><small>1 CAPSULA</small><strong>'+PRICE+'</strong></div>'+
-        '<div class="rtg-vending-crank-v9"><span></span></div><div class="rtg-vending-chute-v9"><span class="rtg-vending-chute-well-v9"></span><span class="rtg-vending-chute-flap-v10"></span><div class="rtg-vending-prize-track-v9"><span class="rtg-vending-prize-v9"></span></div></div><div class="rtg-vending-brand-v9">'+uiText("icon")+'</div></div></div>'+
+        '<div class="rtg-vending-crank-v9"><span></span></div><div class="rtg-vending-chute-v9"><span class="rtg-vending-chute-well-v9"></span><span class="rtg-vending-chute-flap-v10"></span><div class="rtg-vending-prize-track-v9"><span class="rtg-vending-prize-v9"></span></div></div><div class="rtg-vending-brand-v9">'+(TEAM_VENDING?'<img src="'+escape(team.logo||LOGO_URL)+'" alt="">':uiText("icon"))+'</div></div></div>'+
         '<button class="btn btn-yellow rtg-vending-pull halloween-action" data-halloween-pull '+(!isOpen()||!enough||available.length===0?"disabled":"")+'>GIRA · '+currency(PRICE,coin)+'</button>'+
         (TEAM_VENDING?'':'<div class="rtg-vending-wallet-chip"><span>'+uiText("walletTitle")+'</span><strong>'+currency(ledger(shared)[field],coin)+'</strong></div>')+'</div></div>'+
         '</div>';
@@ -1090,7 +1090,8 @@
           })||null;
         },
         previewSquadOverall:selection=>{
-          const line=resolvedUser()?.lineup;
+          // Use the same canonical card IDs as the power selection.
+          const line=resolvedPowerRoster(localSquad).lineup;
           return {before:ovr(line),after:ovr(line,
             localSquad.coachId===HALLOWEEN_COACH_ID&&selection?.cardIds?.length===1
               ?{cardId:selection.cardIds[0],amount:15}:eventOverallDiscount())};
@@ -1301,11 +1302,13 @@
             ?global.RoadToGloryCoachesView?.result?.(drawn.coach)?.replace("ROAD TO GLORY · STAFF",UI.tag)
             :deps.runView.pullResultMarkup(drawn.result,drawn.player,{teams:TEAMS.map(entry=>({teamId:entry.teamId,teamName:entry.name,logoUrl:entry.logo||LOGO_URL}))});
           if(!markup)return;
-          if(!isCoach)markup=markup.replace("SALDO RTG",()=>uiText("walletTitle"))
+          if(!isCoach)markup=markup.replace("SALDO RTG",()=>TEAM_VENDING?"STEMMI RIMASTI":uiText("walletTitle"))
             .replace(/(<div class="rtg-pull-balance">[\s\S]*?<strong>)[\s\S]*?(<\/strong>)/,
-               (_all,before,after)=>before+'<img class="halloween-reveal-currency-icon" src="'+escape(curOf(PULL_FIELD).icon||PUMPKIN_URL)+'" alt="'+escape(curOf(PULL_FIELD).iconAlt||CUR.iconAlt)+'"> '+escape(drawn.result.balanceAfter)+' '+escape(CUR.unitUpper)+after)
+               (_all,before,after)=>before+'<img class="halloween-reveal-currency-icon" src="'+escape(curOf(pullFieldForTeam(selectedVendingTeamId)).icon||PUMPKIN_URL)+'" alt="'+escape(curOf(pullFieldForTeam(selectedVendingTeamId)).iconAlt||CUR.iconAlt)+'"> '+escape(drawn.result.balanceAfter)+' '+escape(curOf(pullFieldForTeam(selectedVendingTeamId)).unitUpper)+after)
             .replace(/ROAD TO GLORY · LEGACY [^<]*/,UI.tag);
-          deps.openModal(markup,{className:"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"});
+          const rewardStyle=TEAM_VENDING
+            ?(drawn.player?.teamId==="blizzard-team"?" vf-reward-ice":" vf-reward-fire"):"";
+          deps.openModal(markup,{className:"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"+rewardStyle});
           modalRoot()?.querySelectorAll?.("[data-rtg-pull-continue],[data-rtg-coaches-collection]")?.forEach(btn=>btn.addEventListener("click",()=>deps.closeModal?.()));
           modalRoot()?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",()=>openNativeDetail(drawn.result.cardId));
           if(isCoach)modalRoot()?.querySelector?.("[data-rtg-coach-detail]")?.addEventListener("click",()=>{
