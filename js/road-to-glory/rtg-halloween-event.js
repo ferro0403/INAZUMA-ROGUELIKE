@@ -22,6 +22,7 @@
   // Parte 2 (a): un evento puo' avere piu' squadre (la prima e' team) e piu' monete (la prima e' currency).
   const TEAMS = global.GameEvents?.teamsOf?.(manifest) || [manifest.team];
   const ROSTER_SIZE = TEAMS.reduce((sum, entry) => sum + Number(entry.rosterSize || 0), 0);
+  const TEAM_VENDING = TEAMS.length > 1 && TEAMS.every(t => !!t.currencyId);
   const STARTERS_SIZE = manifest.team.startersSize;
   const BANNER_URL = manifest.assets.banner;
   const GRAVEYARD_URL = manifest.assets.background;
@@ -638,21 +639,28 @@
       const teamStyle=["primary","secondary","accent","text","ink","surface","background"]
         .filter(key=>/^#[0-9a-fA-F]{6}$/.test(colors[key]||""))
         .map(key=>`--event-${key}:${colors[key]}`).join(";");
-      const switchMarkup=TEAMS.length>1&&TEAMS.some(entry=>entry.currencyId)
+      const switchMarkup=TEAM_VENDING
         ?'<div class="event-vending-switch" role="group" aria-label="Scegli distributore">'+
           TEAMS.map(entry=>'<button type="button" data-event-vending-team="'+escape(entry.teamId)+'" '+
             'aria-pressed="'+(entry.teamId===selectedVendingTeamId?'true':'false')+'" '+
             (entry.teamId===selectedVendingTeamId?'class="active"':'')+'>'+escape(entry.name)+'</button>').join("")+'</div>'
         :"";
       const capsules=Array.from({length:12},(_,i)=>'<div class="rtg-vending-capsule-v9 c'+(i%6+1)+'" data-capsule-rarity="'+(i%2?"orange":"black")+'"></div>').join("");
-      return '<div class="halloween-vending" style="'+escape(teamStyle)+'"><button type="button" class="halloween-vending-close" data-halloween-close-vending aria-label="Chiudi distributore">×</button><p class="eyebrow">'+uiText("vendingStation")+'</p><h2>'+uiText("vendingTitleLong")+'</h2>'+switchMarkup+
+      const teamBalance=TEAM_VENDING
+        ?'<div class="vf-vending-balance"><img src="'+escape(coin.icon)+'" alt="">'+
+          '<span>'+escape(coin.unitUpper)+'<small>SALDO DISPONIBILE</small></span>'+
+          '<strong>'+escape(ledger(shared)[field])+'</strong></div>':'';
+      const eventHeader=TEAM_VENDING
+        ?'<header class="vf-vending-top"><div><small>EVENTO · DUE ELEMENTI</small><strong>'+escape(manifest.name)+'</strong></div>'+
+          '<div class="vf-wallet">'+walletPills()+'</div></header>':'';
+      return '<div class="halloween-vending '+(TEAM_VENDING?'vf-vending':'')+'" style="'+escape(teamStyle)+'">'+eventHeader+'<button type="button" class="halloween-vending-close" data-halloween-close-vending aria-label="Chiudi distributore">×</button><p class="eyebrow">'+uiText("vendingStation")+'</p><h2>'+uiText("vendingTitleLong")+'</h2>'+switchMarkup+teamBalance+
         '<div class="rtg-vending halloween-vending-classic"><div class="rtg-vending-stage"><div class="rtg-vending-machine-v9 rtg-vending-machine-v12" data-rtg-vending-machine aria-label="'+uiText("vendingAria")+'">'+
-        '<div class="rtg-vending-head-v9"><span>CAPSULE STATION</span><strong>'+uiText("entrySubtitle")+'</strong></div>'+
+        '<div class="rtg-vending-head-v9"><span>CAPSULE STATION</span><strong>'+(TEAM_VENDING?escape(team.name):uiText("entrySubtitle"))+'</strong></div>'+
         '<div class="rtg-vending-window-v9">'+capsules+'<span class="rtg-vending-funnel-v10"></span><span class="rtg-vending-window-glare-v9"></span></div>'+
         '<div class="rtg-vending-body-v9"><div class="rtg-vending-info-v9"><small>1 CAPSULA</small><strong>'+PRICE+'</strong></div>'+
         '<div class="rtg-vending-crank-v9"><span></span></div><div class="rtg-vending-chute-v9"><span class="rtg-vending-chute-well-v9"></span><span class="rtg-vending-chute-flap-v10"></span><div class="rtg-vending-prize-track-v9"><span class="rtg-vending-prize-v9"></span></div></div><div class="rtg-vending-brand-v9">'+uiText("icon")+'</div></div></div>'+
         '<button class="btn btn-yellow rtg-vending-pull halloween-action" data-halloween-pull '+(!isOpen()||!enough||available.length===0?"disabled":"")+'>GIRA · '+currency(PRICE,coin)+'</button>'+
-        '<div class="rtg-vending-wallet-chip"><span>'+uiText("walletTitle")+'</span><strong>'+currency(ledger(shared)[field],coin)+'</strong></div></div></div>'+
+        (TEAM_VENDING?'':'<div class="rtg-vending-wallet-chip"><span>'+uiText("walletTitle")+'</span><strong>'+currency(ledger(shared)[field],coin)+'</strong></div>')+'</div></div>'+
         '</div>';
     }
     function eventAlbumTeams() {
@@ -1207,11 +1215,12 @@
       const customName=view.startsWith("screen:")?view.slice(7):(view==="match"&&!match&&!customHomeFailed?"home":"");
       const customMarkup=customName?customPageMarkup(customName):null;
       if(customName==="home"&&customMarkup===null&&customPart("home"))customHomeFailed=true;
-      if(customMarkup!==null)app.innerHTML=customMarkup;
+      if(customMarkup!==null)app.innerHTML=customMarkup+(customName==="home"&&TEAM_VENDING?footer("run"):"");
       else if(view.startsWith("screen:")){view="match";return render();}
       else if(view==="squad")app.innerHTML=squadSection();
       else if(view==="album"||view==="album-roster")app.innerHTML=albumSection();
       else if(match&&view==="match"&&deps.matchView)app.innerHTML=nativeMatchMarkup();
+      else if(view==="vending"&&TEAM_VENDING)app.innerHTML='<main class="screen vf-vending-screen">'+vendingSection()+'</main>';
       else app.innerHTML=shell(view==="vending"?vendingSection():match?pendingSection():matchSection());
       if(devMode)app.innerHTML+=devToolsMarkup();
       bindEventActions();
