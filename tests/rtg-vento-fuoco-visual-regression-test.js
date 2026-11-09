@@ -23,7 +23,7 @@ const fetcher=async url=>({
   await api.prepare(fetcher);
   const teams=manifest.teams.map(team=>({teamId:team.teamId,name:team.name,logo:team.logo}));
   const previews=manifest.teams.map(team=>({teamId:team.teamId,overall:api.opponentOverall(team.teamId)}));
-  assert.deepEqual(previews.map(item=>item.overall),[91,91]);
+  assert.deepEqual(Array.from(previews,item=>item.overall),[91,91]);
   const initial={current:90.6,max:92,maxByTeam:{"fire-team":92,"blizzard-team":92}};
   // Exercise the production Squadra pitch renderer with the event's
   // canonical 3-4-3 roster, instead of accepting a synthetic thumbnail grid.
@@ -78,13 +78,20 @@ const fetcher=async url=>({
   assert.match(css,/ANd9GcQ4docu4pCKgUNZ2fs/);
   assert.match(css,/duel-hero-v2\.svg/);
   assert.match(css,/\.vf-mini-pitch \.rtg-squad-pitch-main/);
-  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261109-vf-visual-2"));
-  assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261109-vf-visual-2"));
+  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261109-vf-visual-3"));
+  assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261109-vf-visual-3"));
   const runtime=read("js/road-to-glory/rtg-halloween-event.js");
   assert.match(runtime,/function restoreEventOpponentCrests/);
   assert.match(runtime,/function visualSquadStrength/);
   assert.match(runtime,/deps\.squadView\?\.matchPitchMarkup\?\./);
   assert.match(runtime,/mode:"preview"/);
+  assert.match(runtime,/vf-reward-balance-value/,"only event reward has structured balance");
+  assert.match(css,/card skin v3/,"native card theme is documented and scoped");
+  assert.match(css,/rtg-event--vento_fuoco_dev::before/,"extra rarity stripe removed only in event");
+  assert.match(css,/player-portrait-wrap::after/,"side rarity stripe removed only in event");
+  assert.match(css,/vf-reward-balance-value/,"reward balance caption has dedicated layout");
+  assert.ok(read("assets/events/vento-fuoco/fire-card-bg.svg").includes("#fffaf0"));
+  assert.ok(read("assets/events/vento-fuoco/ice-card-bg.svg").includes("#f9fcff"));
   assert.match(runtime,/\(localSquad\.lineup\|\|\[\]\)\.findIndex/);
   assert.match(runtime,/Math\.round\(\(\(sum-amount\)\/11\)\*10\)\/10/);
   const halloween=context.GameEvents.module("halloween2026");
