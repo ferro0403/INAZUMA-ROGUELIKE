@@ -406,6 +406,7 @@
     }
   },
   "extensions": [
-    "js/events/vento_fuoco_dev/home.js?v=20261109-vf-visual-1"
-  ]
+    "js/events/vento_fuoco_dev/home.js"
+  ],
+  "extensionCacheVersion": "20261109-vf-visual-1"
 }
