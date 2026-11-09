@@ -1,0 +1,34 @@
+{
+  "exportType": "inazuma_roguelike_lineup_config",
+  "version": 2,
+  "selectionMode": {
+    "bossFormation": "manual",
+    "startingXI": "manual",
+    "bossLevel": "manual",
+    "rewardPool": "all_team_players"
+  },
+  "teams": [
+    {
+      "teamId": "blizzard-team",
+      "teamName": "Blizzard Team",
+      "sourceFile": "data/events/vento_fuoco/blizzard-team-players.json",
+      "bossFormation": "3-4-3",
+      "bossLevel": 20,
+      "startingXI": [
+        "1122",
+        "1759",
+        "4538",
+        "1788",
+        "1134",
+        "1146",
+        "1912",
+        "1857",
+        "1060",
+        "4519",
+        "1125"
+      ],
+      "rewardPool": "all_team_players"
+    }
+  ],
+  "warnings": []
+}
