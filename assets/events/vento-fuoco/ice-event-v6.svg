@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="700" viewBox="0 0 480 700" fill="none" aria-hidden="true">
+<defs>
+<linearGradient id="bg" x1="24" y1="0" x2="456" y2="700" gradientUnits="userSpaceOnUse"><stop stop-color="#03417C"/><stop offset=".36" stop-color="#0477CA"/><stop offset=".73" stop-color="#0B63AD"/><stop offset="1" stop-color="#052456"/></linearGradient>
+<radialGradient id="iceLight" cx="0" cy="0" r="1" gradientTransform="translate(244 440) rotate(-90) scale(390 311)" gradientUnits="userSpaceOnUse"><stop stop-color="#D8FCFF" stop-opacity=".85"/><stop offset=".33" stop-color="#63DFFF" stop-opacity=".45"/><stop offset="1" stop-color="#0B7EC5" stop-opacity="0"/></radialGradient>
+<linearGradient id="crystal" x1="383" y1="143" x2="183" y2="700" gradientUnits="userSpaceOnUse"><stop stop-color="#F5FFFF"/><stop offset=".32" stop-color="#B4F7FF"/><stop offset=".61" stop-color="#4DD5FF"/><stop offset="1" stop-color="#087CCB"/></linearGradient>
+<linearGradient id="blueFlame" x1="228" y1="700" x2="228" y2="277" gradientUnits="userSpaceOnUse"><stop stop-color="#0677DC"/><stop offset=".41" stop-color="#42D8FF"/><stop offset=".76" stop-color="#B6FCFF"/><stop offset="1" stop-color="#B6FCFF" stop-opacity="0"/></linearGradient>
+
+<linearGradient id="shardV6" x1="63" y1="405" x2="205" y2="695" gradientUnits="userSpaceOnUse">
+<stop stop-color="#E5FFFF"/><stop offset=".38" stop-color="#8AEEFF"/><stop offset=".72" stop-color="#26BAEC"/><stop offset="1" stop-color="#086ABB"/>
+</linearGradient>
+<linearGradient id="glacierV6" x1="480" y1="400" x2="267" y2="680" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FFFFFF"/><stop offset=".28" stop-color="#CCFFFF"/><stop offset=".6" stop-color="#57CAFA"/><stop offset="1" stop-color="#0966B2"/>
+</linearGradient>
+<radialGradient id="snowGlowV6" cx="0" cy="0" r="1" gradientTransform="translate(236 520) rotate(-90) scale(265 220)" gradientUnits="userSpaceOnUse">
+<stop stop-color="#ECFFFF" stop-opacity=".67"/><stop offset=".45" stop-color="#6DDAFF" stop-opacity=".27"/><stop offset="1" stop-color="#3AB7F2" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<rect width="480" height="700" fill="url(#bg)"/>
+<rect width="480" height="700" fill="url(#iceLight)"/>
+<!-- crystalline shards and glacial lightning frame the character -->
+<path d="M480 0H358L162 288 480 101V0Z" fill="#A7F0FF" opacity=".34"/>
+<path d="M0 0h108l161 263L0 117V0Z" fill="#C0FBFF" opacity=".21"/>
+<path d="M0 700V171l73 236 73-327 60 323 41-170 13 467H0Z" fill="url(#crystal)" opacity=".79"/>
+<path d="M480 700V108l-71 270-80-288-54 363-64-180-25 427h294Z" fill="url(#crystal)" opacity=".88"/>
+<path d="m0 536 87-203-19 264 81-199 24 302H0Zm480-81-69-169 14 274-88-213-41 353h184V455Z" fill="#E3FFFF" opacity=".49"/>
+<path d="M0 700V468c54 63 53 121 62 164 51-93 61-130 82-213 64 113 31 161 49 219 30-67 41-103 59-134 47 83 26 121 52 196H0Z" fill="url(#blueFlame)" opacity=".89"/>
+<path d="M480 700V427c-63 82-63 147-73 194-57-83-58-139-79-185-49 114-27 162-58 264h210Z" fill="url(#blueFlame)" opacity=".97"/>
+<path d="m0 700 62-107 23 63 82-136 23 180H0Zm480 0-66-113-30 74-75-139-24 178h195Z" fill="#DFFAFF" opacity=".76"/>
+<path d="m43 191 70-151M367 30l72 175M16 480l115-202M468 481 351 253M10 650l158-163M471 632 312 466" stroke="#E0FFFF" stroke-width="6" stroke-opacity=".78" stroke-linecap="round"/>
+<!-- six-armed elegant snowflakes -->
+<g stroke="#ECFFFF" stroke-width="6" stroke-linecap="round" opacity=".94">
+<g transform="translate(391 120)"><path d="M0-32V32M-32 0H32M-22-22 22 22M-22 22 22-22"/></g>
+<g transform="translate(72 180) scale(.65)"><path d="M0-32V32M-32 0H32M-22-22 22 22M-22 22 22-22"/></g>
+<g transform="translate(410 415) scale(.5)"><path d="M0-32V32M-32 0H32M-22-22 22 22M-22 22 22-22"/></g>
+</g>
+<g fill="#F3FFFF" opacity=".92"><circle cx="141" cy="99" r="4"/><circle cx="327" cy="65" r="3"/><circle cx="97" cy="333" r="3"/><circle cx="447" cy="337" r="3"/><circle cx="31" cy="421" r="4"/><circle cx="285" cy="118" r="2"/><circle cx="394" cy="517" r="4"/></g>
+
+<!-- v6: glacial crystal spires, facets, frost veining and glowing snow -->
+<rect x="0" y="310" width="480" height="390" fill="url(#snowGlowV6)"/>
+<path d="M-12 700 39 396 88 554l37-203 54 349H-12Z" fill="url(#shardV6)" opacity=".93"/>
+<path d="M492 700 447 372 390 534l-46-190-64 356h212Z" fill="url(#glacierV6)" opacity=".93"/>
+<path d="m33 697 18-217 27 160 29-125 30 182H33Z" fill="#F7FFFF" opacity=".54"/>
+<path d="m456 697-22-228-37 170-20-138-40 196h119Z" fill="#F9FFFF" opacity=".55"/>
+<path d="m117 700 48-241 49 241h-97Zm180 0 35-248 48 248h-83Z" fill="#8CEBFF" opacity=".65"/>
+<path d="M39 396 88 554m0 0 37-203M447 372l-57 162-46-190M165 459l49 241m118-248-35 248" stroke="#F4FFFF" stroke-width="8" opacity=".82"/>
+<path d="m39 396 21 187 28-29 12 124M447 372l-25 221-32-59-15 158" stroke="#166BB5" stroke-width="7" opacity=".6"/>
+<path d="m0 595 121-184-39 169 99-94m299 87-124-188 37 181-91-93" stroke="#CFFAFF" stroke-width="5" opacity=".65"/>
+<g stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity=".92">
+  <g transform="translate(52 477)"><path d="M0-34V34M-34 0H34M-24-24 24 24M-24 24 24-24"/><path d="M0-34l-9 10m9-10 9 10M0 34l-9-10m9 10 9-10M-34 0l10-9m-10 9 10 9M34 0l-10-9m10 9-10 9"/></g>
+  <g transform="translate(420 505) scale(.94)"><path d="M0-34V34M-34 0H34M-24-24 24 24M-24 24 24-24"/><path d="M0-34l-9 10m9-10 9 10M0 34l-9-10m9 10 9-10M-34 0l10-9m-10 9 10 9M34 0l-10-9m10 9-10 9"/></g>
+</g>
+<g fill="#F7FFFF" opacity=".88"><circle cx="32" cy="369" r="4"/><circle cx="456" cy="423" r="4"/><circle cx="99" cy="447" r="3"/><circle cx="368" cy="450" r="4"/><circle cx="65" cy="624" r="4"/><circle cx="401" cy="635" r="3"/><circle cx="255" cy="359" r="2"/></g>
+<path d="M0 0h480v700H0z" stroke="#B2F8FF" stroke-opacity=".52" stroke-width="9"/>
+</svg>
