@@ -1,0 +1,8 @@
+# Netlify is only used for GitHub pull-request previews of Inazuma Roguelike.
+# Production deploys are intentionally skipped even when main receives merges.
+# Netlify 'ignore' exit code 0 skips a build; exit code 1 allows it.
+[context.production]
+  ignore = "exit 0"
+
+[context.deploy-preview]
+  ignore = "exit 1"
