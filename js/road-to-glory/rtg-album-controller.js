@@ -20,6 +20,7 @@
     let albumNavigationEpoch=0;
     let cachedCollections=null;
     let cachedCollectionsForCards=null;
+    let cachedEventTeams=null;
     function readRtgAlbum(){
       try{
         const raw=deps.localStorage?.getItem?.(RTG_ALBUM_STORAGE_KEY);
@@ -169,15 +170,62 @@
       }
       return deps.renderHome?.({initialPage:"rtg"});
     }
+    // Display all active event teams in the SAME native album collection.
+    // Event modules read their own account or isolated dev record; no writes.
+    async function readEventAlbumTeams(){
+      const modules=global.GameEvents?.modules?.()||[];
+      const results=await Promise.all(modules.filter(m=>m?.albumTeamsSnapshot)
+        .map(m=>m.albumTeamsSnapshot().catch(error=>{
+          global.console?.warn?.("[RTG] Album evento "+m.EVENT_ID,error);
+          return [];
+        })));
+      return results.flat();
+    }
+    async function renderEventAlbumTeams(){
+      assertCurrent();
+      const epoch=++albumNavigationEpoch;
+      cachedEventTeams=await readEventAlbumTeams();
+      assertCurrent();
+      if(epoch!==albumNavigationEpoch)return;
+      deps.renderHtml(deps.runView.albumTeamsMarkup({
+        state:{activeSeasonId:"events"},seasonId:"events",teams:cachedEventTeams
+      }));
+      deps.app?.querySelector?.("[data-rtg-album-collection-back]")?.addEventListener("click",
+        ()=>renderAlbum({preserveOrigin:true}));
+      deps.app?.querySelectorAll?.("[data-rtg-album-team]")?.forEach(button=>
+        button.addEventListener("click",()=>renderEventAlbumRoster(button.dataset.rtgAlbumTeam)));
+      deps.mountDevQuickTools();
+    }
+    async function renderEventAlbumRoster(teamId){
+      assertCurrent();
+      const epoch=++albumNavigationEpoch;
+      if(!cachedEventTeams)cachedEventTeams=await readEventAlbumTeams();
+      assertCurrent();
+      if(epoch!==albumNavigationEpoch)return;
+      const team=cachedEventTeams.find(t=>t.teamId===teamId);
+      if(!team)return renderEventAlbumTeams();
+      deps.renderHtml(deps.runView.albumRosterMarkup({
+        state:{activeSeasonId:team.eventId},seasonId:team.eventId,
+        team,entries:team.entries,allEntries:team.roster,database:{players:team.roster}
+      }));
+      deps.app?.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",renderEventAlbumTeams);
+      const albumRoster=deps.app?.querySelector?.("[data-rtg-album-roster]");
+      albumRoster?.addEventListener("click",event=>{
+        const target=event.target?.closest?.("[data-rtg-album-player-entry]");
+        const id=target?.dataset?.rtgAlbumPlayerEntry;
+        if(!id)return;
+        event.preventDefault?.();
+        deps.openPlayerDetails(id,"",{mode:"album",albumUnlocked:
+          team.entries.some(player=>String(player.cardId)===id)});
+      });
+      deps.mountDevQuickTools();
+    }
     function showAlbumCollections(campaign,collections,preserveScroll=false){
-      deps.renderHtml(deps.runView.albumCollectionMarkup({state:campaign,collections}),{preserveScroll});
+      deps.renderHtml(deps.runView.albumCollectionMarkup({state:campaign,collections,eventTeams:cachedEventTeams}),{preserveScroll});
       deps.app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",leaveAlbum);
       deps.app?.querySelectorAll?.("[data-rtg-album-collection]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumTeams(button.dataset.rtgAlbumCollection)));
       deps.app?.querySelector?.("[data-rtg-album-coaches-open]")?.addEventListener("click",renderAlbumCoaches);
-      deps.app?.querySelector?.("[data-rtg-album-halloween]")?.addEventListener("click",()=>{
-        ++albumNavigationEpoch;
-        global.RoadToGloryHalloween?.create?.({app:deps.app,toast:deps.toast,runView:deps.runView,openPlayerDetails:deps.openPlayerDetails,showPlayerDetailsFor:deps.showPlayerDetailsFor,getModalRoot:deps.getModalRoot,onReturn:()=>renderAlbum({preserveOrigin:true})}).open("album").catch(error=>{global.console?.error?.("[Halloween Album]",error);renderAlbum({preserveOrigin:true});});
-      });
+      deps.app?.querySelector?.("[data-rtg-album-halloween]")?.addEventListener("click",renderEventAlbumTeams);
       deps.mountDevQuickTools();
     }
     async function renderAlbum(options={}){
@@ -192,12 +240,15 @@
       const campaign=deps.getCampaign();
       const seasonIds=deps.config.SEASON_IDS||["ie1"];
       const initialCollections=cachedCollections||seasonIds.map(seasonId=>({seasonId,pending:true}));
+      const initialEventTeams=cachedEventTeams;
       // Paint synchronously BEFORE loading Season databases: no exposed route behind the modal.
       showAlbumCollections(campaign,initialCollections);
       try{
         await deps.ensureData();
         assertCurrent();
         syncCurrentPullsIntoAlbum();
+        cachedEventTeams=await readEventAlbumTeams();
+        assertCurrent();
         const cardKey=JSON.stringify(readRtgAlbum().cardIds);
         if(!cachedCollections||cachedCollectionsForCards!==cardKey){
           const collections=await Promise.all((deps.config.SEASON_IDS||["ie1"]).map(albumCollectionSummary));
@@ -206,7 +257,7 @@
           cachedCollectionsForCards=cardKey;
         }
         // A slow Season response must not replace a team view or a closed Album.
-        if(epoch===albumNavigationEpoch&&deps.app?.querySelector?.(".rtg-album-collections-screen")&&initialCollections!==cachedCollections){
+        if(epoch===albumNavigationEpoch&&deps.app?.querySelector?.(".rtg-album-collections-screen")&&(initialCollections!==cachedCollections||initialEventTeams!==cachedEventTeams)){
           showAlbumCollections(campaign,cachedCollections,true);
         }
       }catch(error){
