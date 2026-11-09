@@ -15,6 +15,8 @@ const fetcher=async url=>({
     "js/road-to-glory/rtg-halloween-event.js"])vm.runInContext(read(file),context,{filename:file});
   await loadEventsWithDev(context,"vento_fuoco_dev");
   const manifest=context.GameEvents.get("vento_fuoco_dev");
+  assert.equal(context.GameEvents.validate(manifest).length,0,"manifest paths remain valid");
+  assert.equal(manifest.extensionCacheVersion,"20261109-vf-visual-1");
   const api=context.GameEvents.module("vento_fuoco_dev");
   const part=context.GameEvents.extensionPart("vento_fuoco_dev","home");
   assert.ok(part?.render,"Home extension loaded through versioned manifest");
@@ -42,6 +44,7 @@ const fetcher=async url=>({
   assert.match(html,/<strong>90\.6<\/strong>/);
   assert.match(html,/<strong>92<\/strong>/);
   assert.equal((html.match(/class="vf-rival__lineup" open/g)||[]).length,2);
+  assert.equal((html.match(/<summary><span>FORMAZIONE/g)||[]).length,2,"valid native details markup");
   assert.equal((html.match(/class="vf-lineup-player"/g)||[]).length,22);
   assert.equal((html.match(/data-event-action="start"/g)||[]).length,2);
   assert.ok(html.includes(teams[0].logo)&&html.includes(teams[1].logo),"real team crests");
