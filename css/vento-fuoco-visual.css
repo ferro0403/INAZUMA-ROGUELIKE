@@ -96,12 +96,10 @@
 }
 .player-card.rtg-event--vento_fuoco_dev.rtg-element-fire-team {
   --vf-card:#ff592a;--vf-card-deep:#700b0b;--vf-card-glow:#ffd067;
-  background:linear-gradient(155deg,#4e0208,#b51b16 55%,#32050d)!important;
+  background:linear-gradient(180deg,rgba(38,2,8,.05),rgba(30,2,7,.38)),url("../assets/events/vento-fuoco/fire-card-bg.svg") center / cover no-repeat!important;
 }
 .player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team {
-  background:
-    repeating-linear-gradient(132deg,transparent 0 12%,#bafaff30 13% 14%,transparent 15% 26%),
-    linear-gradient(155deg,#00376c,#00b2f4 60%,#062351)!important;
+  background:linear-gradient(180deg,rgba(3,15,49,.05),rgba(4,24,59,.28)),url("../assets/events/vento-fuoco/ice-card-bg.svg") center / cover no-repeat!important;
 }
 .player-card.rtg-event--vento_fuoco_dev .player-portrait-wrap{
   position:relative;isolation:isolate;width:100%;height:77%;aspect-ratio:auto!important;
@@ -227,6 +225,16 @@
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-rtg-legacy-badge{
   background:#ffd21f!important;color:#07111e!important;border-color:#07111e!important
 }
+
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team .player-detail-visual{
+  background:linear-gradient(160deg,rgba(124,14,19,.16),rgba(72,7,17,.2)),
+    url("../assets/events/vento-fuoco/fire-card-bg.svg") center / cover no-repeat!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team .player-detail-visual{
+  background:linear-gradient(160deg,rgba(12,67,143,.1),rgba(3,27,71,.16)),
+    url("../assets/events/vento-fuoco/ice-card-bg.svg") center / cover no-repeat!important;
+}
+
 /* Con questi override gli stemmi originali non ricevono il filtro Halloween. */
 [data-event-theme="vento_fuoco_dev"] .halloween-native-match .rtg-matchup-team--opponent img,
 [data-event-theme="vento_fuoco_dev"] .halloween-native-match .rtg-prematch-top-team--opponent img,
