@@ -27,7 +27,7 @@
         '<span class="vf-lineup-player__portrait">'+(portrait?'<img src="'+esc(portrait)+'" alt="" loading="lazy">':'')+'</span>'+
         '<small>'+esc(p?.position||'—')+'</small><strong>'+esc(p?.name||'—')+'</strong></div>';
     }).join("");
-    return '<details class="vf-rival__lineup"><summary><span>FORMAZIONE '+esc(preview.formationId||'—')+
+    return '<details class="vf-rival__lineup" open><summary<span>FORMAZIONE '+esc(preview.formationId||'—')+
       ' · OVR '+esc(preview.overall??'—')+'</span><b>VEDI 11 TITOLARI</b></summary>'+
       '<div class="vf-lineup-grid" aria-label="Titolari '+esc(team.name)+'">'+cards+'</div></details>';
   }
