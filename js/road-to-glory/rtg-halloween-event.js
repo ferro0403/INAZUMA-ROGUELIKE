@@ -631,16 +631,28 @@
           requirementsMarkup:requirement,nextTeamName:TEAM_NAME,dirty:false})+'</div>';
     }
     function vendingSection() {
-      const available=halloweenPrizeIds(shared),enough=ledger(shared)[PULL_FIELD]>=PRICE;
+      const team=TEAMS.find(entry=>entry.teamId===selectedVendingTeamId)||TEAMS[0];
+      const field=pullFieldForTeam(selectedVendingTeamId),coin=curOf(field);
+      const available=halloweenPrizeIds(shared),enough=ledger(shared)[field]>=PRICE;
+      const colors=team.theme?.colors||{};
+      const teamStyle=["primary","secondary","accent","text","ink","surface","background"]
+        .filter(key=>/^#[0-9a-fA-F]{6}$/.test(colors[key]||""))
+        .map(key=>`--event-${key}:${colors[key]}`).join(";");
+      const switchMarkup=TEAMS.length>1&&TEAMS.some(entry=>entry.currencyId)
+        ?'<div class="event-vending-switch" role="group" aria-label="Scegli distributore">'+
+          TEAMS.map(entry=>'<button type="button" data-event-vending-team="'+escape(entry.teamId)+'" '+
+            'aria-pressed="'+(entry.teamId===selectedVendingTeamId?'true':'false')+'" '+
+            (entry.teamId===selectedVendingTeamId?'class="active"':'')+'>'+escape(entry.name)+'</button>').join("")+'</div>'
+        :"";
       const capsules=Array.from({length:12},(_,i)=>'<div class="rtg-vending-capsule-v9 c'+(i%6+1)+'" data-capsule-rarity="'+(i%2?"orange":"black")+'"></div>').join("");
-      return '<div class="halloween-vending"><button type="button" class="halloween-vending-close" data-halloween-close-vending aria-label="Chiudi distributore">×</button><p class="eyebrow">'+uiText("vendingStation")+'</p><h2>'+uiText("vendingTitleLong")+'</h2>'+
+      return '<div class="halloween-vending" style="'+escape(teamStyle)+'"><button type="button" class="halloween-vending-close" data-halloween-close-vending aria-label="Chiudi distributore">×</button><p class="eyebrow">'+uiText("vendingStation")+'</p><h2>'+uiText("vendingTitleLong")+'</h2>'+switchMarkup+
         '<div class="rtg-vending halloween-vending-classic"><div class="rtg-vending-stage"><div class="rtg-vending-machine-v9 rtg-vending-machine-v12" data-rtg-vending-machine aria-label="'+uiText("vendingAria")+'">'+
         '<div class="rtg-vending-head-v9"><span>CAPSULE STATION</span><strong>'+uiText("entrySubtitle")+'</strong></div>'+
         '<div class="rtg-vending-window-v9">'+capsules+'<span class="rtg-vending-funnel-v10"></span><span class="rtg-vending-window-glare-v9"></span></div>'+
         '<div class="rtg-vending-body-v9"><div class="rtg-vending-info-v9"><small>1 CAPSULA</small><strong>'+PRICE+'</strong></div>'+
         '<div class="rtg-vending-crank-v9"><span></span></div><div class="rtg-vending-chute-v9"><span class="rtg-vending-chute-well-v9"></span><span class="rtg-vending-chute-flap-v10"></span><div class="rtg-vending-prize-track-v9"><span class="rtg-vending-prize-v9"></span></div></div><div class="rtg-vending-brand-v9">'+uiText("icon")+'</div></div></div>'+
-        '<button class="btn btn-yellow rtg-vending-pull halloween-action" data-halloween-pull '+(!isOpen()||!enough||available.length===0?"disabled":"")+'>GIRA · '+currency(PRICE,curOf(PULL_FIELD))+'</button>'+
-        '<div class="rtg-vending-wallet-chip"><span>'+uiText("walletTitle")+'</span><strong>'+currency(ledger(shared)[PULL_FIELD],curOf(PULL_FIELD))+'</strong></div></div></div>'+
+        '<button class="btn btn-yellow rtg-vending-pull halloween-action" data-halloween-pull '+(!isOpen()||!enough||available.length===0?"disabled":"")+'>GIRA · '+currency(PRICE,coin)+'</button>'+
+        '<div class="rtg-vending-wallet-chip"><span>'+uiText("walletTitle")+'</span><strong>'+currency(ledger(shared)[field],coin)+'</strong></div></div></div>'+
         '</div>';
     }
     function eventAlbumTeams() {
@@ -715,9 +727,10 @@
       if(["completed","completed-draw","abandoned"].includes(match.status)&&!lastResolution){
         const award=Number.isInteger(match.halloweenAward)?match.halloweenAward:0;
         const won=match.status!=="abandoned"&&match.result?.winner==="user";
+        const rewardCurrency=curOf(rewardFieldForTeam(match.opponentSquad?.teamId));
         const rewardHtml='<div class="halloween-final-award" role="status"><span>'+
           (match.status==="abandoned"?"PARTITA ABBANDONATA · NESSUN PREMIO":won?uiText("prizeCredited"):"SCONFITTA O PAREGGIO · NESSUN PREMIO")+
-          '</span><strong>'+(won&&award>0?"+"+escape(award):"0")+' '+escape(CUR.unitUpper)+'</strong></div>';
+          '</span><strong>'+(won&&award>0?"+"+escape(award):"0")+' '+escape(rewardCurrency.unitUpper)+'</strong></div>';
         const result=v.resultMarkup(match,null).replace(/(<button[^>]*data-rtg-result-continue)/,rewardHtml+'$1');
         return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+result+'</div></main>';
       }
@@ -1134,7 +1147,7 @@
       balance:currencyId=>Number(ledger(shared)?.[fieldOf(currencyId)]||0),
       coin:(amount,currencyId)=>currency(amount,curOf(fieldOf(currencyId))),
       wallet:()=>walletPills(),
-      teams:()=>TEAMS.map(t=>({teamId:t.teamId,name:t.name,logo:t.logo||LOGO_URL})),
+      teams:()=>TEAMS.map(t=>({teamId:t.teamId,name:t.name,logo:t.logo||LOGO_URL,colors:t.theme?.colors||null})),
       player:pid=>player(asId(pid)),
       // Carte possedute di questo evento; con {from:"<id>"} quelle di un altro evento, solo se il file lo permette
       // (uses.cardsFrom). Le carte di un altro evento sono in sola lettura: niente poteri o stato di quell'evento.
@@ -1159,7 +1172,7 @@
       go:name=>{view=name==="home"?"match":"screen:"+name;render();},
       openSquad:()=>{view="squad";render();},
       openAlbum:()=>{view="album";render();},
-      openVending:()=>{view="vending";render();},
+      openVending:teamId=>{if(TEAMS.some(t=>t.teamId===teamId))selectedVendingTeamId=teamId;view="vending";render();},
       startMatch:teamId=>{if(TEAMS.some(t=>t.teamId===teamId))challengeTeamId=teamId;return perform(startMatch);},
       exit:()=>{dispose();deps.onReturn?.();},
     });
@@ -1176,7 +1189,7 @@
     function bindEventActions(){
       app.querySelectorAll?.("[data-event-action]")?.forEach(el=>el.addEventListener("click",()=>{
         const action=el.dataset.eventAction;
-        if(action==="pull")tools.openVending();
+        if(action==="pull")tools.openVending(el.dataset.eventTeam);
         else if(action==="squad")tools.openSquad();
         else if(action==="album")tools.openAlbum();
         else if(action==="start")tools.startMatch(el.dataset.eventTeam||TEAM_ID);
@@ -1243,6 +1256,13 @@
       app.querySelectorAll?.("[data-halloween-penalty]")?.forEach(el=>el.addEventListener("click",()=>perform(()=>stepMatch("penalty:"+el.dataset.halloweenPenalty))));
       app.querySelector?.("[data-halloween-abandon]")?.addEventListener("click",()=>perform(abandonMatch));
       app.querySelector?.("[data-halloween-close-result]")?.addEventListener("click",()=>perform(closeResult));
+      app.querySelectorAll?.("[data-event-vending-team]")?.forEach(button=>button.addEventListener("click",()=>{
+        if(busy||actionPending||match)return;
+        const id=button.dataset.eventVendingTeam;
+        if(id!==selectedVendingTeamId&&TEAMS.some(t=>t.teamId===id)){
+          selectedVendingTeamId=id;render();
+        }
+      }));
       if(view==="vending")vendingMotion=global.RoadToGloryVendingMotion?.mount?.(app.querySelector?.("[data-rtg-vending-machine]"))||null;
       app.querySelector?.("[data-halloween-pull]")?.addEventListener("click",event=>{
         const button=event.currentTarget;
