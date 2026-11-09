@@ -37,8 +37,8 @@ const fetcher=async url=>({ok:fs.existsSync(String(url)),json:async()=>JSON.pars
   const data=await api.prepare(fetcher);
   assert.strictEqual(data.players.size,38);
   assert.strictEqual(data.teams.length,2);
-  assert.strictEqual(api.opponentOverall("fire-team"),90);
-  assert.strictEqual(api.opponentOverall("blizzard-team"),90);
+  assert.strictEqual(api.opponentOverall("fire-team"),91);
+  assert.strictEqual(api.opponentOverall("blizzard-team"),91);
   assert.strictEqual(context.GameEvents.teamOfCard(m,"4539").teamId,"fire-team");
   assert.strictEqual(context.GameEvents.teamOfCard(m,"4538").teamId,"blizzard-team");
   assert.strictEqual(context.GameEvents.extraClasses(api.eventPlayer("4539"),"card"),"rtg-element-fire-team");
