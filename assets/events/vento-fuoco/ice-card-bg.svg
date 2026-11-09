@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="850" viewBox="0 0 600 850" aria-hidden="true">
+<defs>
+  <linearGradient id="night" x1="0" x2=".9" y1=".2" y2="1"><stop stop-color="#073069"/><stop offset=".46" stop-color="#007fd6"/><stop offset="1" stop-color="#071f51"/></linearGradient>
+  <linearGradient id="glass" x1="0" x2=".7" y1="0" y2="1"><stop stop-color="#f3ffff"/><stop offset=".3" stop-color="#80eaff"/><stop offset=".75" stop-color="#0caef7"/><stop offset="1" stop-color="#064ca0"/></linearGradient>
+  <radialGradient id="shine"><stop stop-color="#b9fcff" stop-opacity=".87"/><stop offset=".6" stop-color="#14baff" stop-opacity=".3"/><stop offset="1" stop-color="#14baff" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="600" height="850" fill="url(#night)"/>
+<circle cx="315" cy="600" r="430" fill="url(#shine)"/>
+<path d="M0 0h125L0 360zM330 0h200L150 480z" fill="#b4f7ff" opacity=".23"/>
+<path d="M600 180L422 545l178-149zM0 420l190 280L0 790z" fill="#f0ffff" opacity=".29"/>
+<path d="M-25 850 16 328l65 330 65-431 87 532 73-338 48 340 75-516 40 372 115-299 20 532z" fill="url(#glass)" opacity=".95"/>
+<path d="M0 850 80 516l25 272 87-300 36 280 100-348 26 332 106-218 22 316z" fill="#d9fdff" opacity=".43"/>
+<path d="m0 720 135-174-30 198m75 0 105-273-37 273m167 0 116-260-31 260" fill="none" stroke="#e5ffff" stroke-width="6" opacity=".8"/>
+<path d="M135 0 45 270 264 46 176 355 370 103" fill="none" stroke="#82edff" stroke-width="15" opacity=".32"/>
+<g stroke="#eaffff" stroke-width="7" stroke-linecap="round" opacity=".94">
+  <g transform="translate(500 133) scale(1.15)"><path d="M0-39V39M-39 0H39M-28-28 28 28M-28 28 28-28"/><path d="M0-39l-9 10m9-10 9 10M39 0l-10-9m10 9-10 9M0 39l-9-10m9 10 9-10M-39 0l10-9m-10 9 10 9"/></g>
+  <g transform="translate(98 145) scale(.57)"><path d="M0-39V39M-39 0H39M-28-28 28 28M-28 28 28-28"/></g>
+  <g transform="translate(514 416) scale(.48)"><path d="M0-39V39M-39 0H39M-28-28 28 28M-28 28 28-28"/></g>
+</g>
+<g fill="#ddfeff" opacity=".83"><circle cx="184" cy="172" r="4"/><circle cx="415" cy="248" r="5"/><circle cx="339" cy="91" r="3"/><circle cx="55" cy="436" r="4"/><circle cx="522" cy="562" r="3"/></g>
+</svg>
