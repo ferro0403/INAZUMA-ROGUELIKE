@@ -1216,7 +1216,9 @@
       const customName=view.startsWith("screen:")?view.slice(7):(view==="match"&&!match&&!customHomeFailed?"home":"");
       const customMarkup=customName?customPageMarkup(customName):null;
       if(customName==="home"&&customMarkup===null&&customPart("home"))customHomeFailed=true;
-      if(customMarkup!==null)app.innerHTML=customMarkup+(customName==="home"&&TEAM_VENDING?footer("run"):"");
+      if(customMarkup!==null)app.innerHTML=customName==="home"&&TEAM_VENDING
+        ?'<div class="rtg-halloween-run-screen vf-home-shell">'+customMarkup+footer("run")+'</div>'
+        :customMarkup;
       else if(view.startsWith("screen:")){view="match";return render();}
       else if(view==="squad")app.innerHTML=squadSection();
       else if(view==="album"||view==="album-roster")app.innerHTML=albumSection();
