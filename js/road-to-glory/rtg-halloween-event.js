@@ -944,18 +944,14 @@
       if(!v?.replacementPickerMarkup||!deps.openModal)return;
       const current=resolveCard(cardId);
       if(!current)return;
-      const roster=new Set([...(localSquad.lineup||[]),...(localSquad.bench||[])]);
       const quick=(localSquad.lineup.includes(cardId)?localSquad.bench:[]).map(id=>({
         cardId:id,playerId:id,source:id.startsWith("free_agents::")?"Svincolato":"RTG",player:resolveCard(id)
       })).filter(e=>e.player);
-      // Include owned cards already assigned to a different starting position.
-      // The canonical replace mutation swaps roster entries atomically.
-      // Previously excluding the entire roster hid Nathan (or any other
-      // event card) from the picker in one saved slot but not another.
-      // Bench cards are shortcuts, NOT excluded from the full owned-card list.
-      // Previously a Vento-Fuoco player moved to bench in slot 1 vanished
-      // from regular "Cambia" results but appeared in slot 2.
-      const all=userCards().filter(id=>id!==cardId).map(id=>{
+      // Like the canonical RTG card picker, include EVERY owned card:
+      // the selected card itself, other starting XI cards and bench cards.
+      // The existing atomic replace operation handles swapping occupied
+      // slots; selecting the current card is a harmless no-op.
+      const all=userCards().map(id=>{
         const p=resolveCard(id),sid=id.split("::")[0];
         return p?{cardId:id,playerId:id,source:sid==="free_agents"?"Svincolato":"RTG",seasonId:sid,player:p,
           role:String(p.normalizedRole||p.position||"").toUpperCase(),
@@ -970,20 +966,18 @@
       const rarityOrder=["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"];
       const rarityRank=value=>{const n=rarityOrder.findIndex(v=>v.toLocaleLowerCase("it")===asId(value).toLocaleLowerCase("it"));return n<0?rarityOrder.length:n;};
       const rarities=Array.from(new Set(all.map(e=>e.rarity))).sort((a,b)=>rarityRank(a)-rarityRank(b)||a.localeCompare(b,"it"));
-      let query="",sourceFilter="all",roleFilter="all",rarityFilter="all",seasonFilter="all",teamFilter="all",descending=true,visibleCount=12,eventOnly=false;
+      let query="",sourceFilter="all",roleFilter="all",rarityFilter="all",seasonFilter="all",teamFilter="all",descending=true,visibleCount=12;
       const teams=()=>Array.from(new Set(all.filter(e=>seasonFilter==="all"||e.seasonId===seasonFilter).flatMap(e=>e.teams))).sort((a,b)=>a.localeCompare(b,"it")).map(t=>({value:t,label:t}));
-      const filtered=()=>all.filter(e=>eventOnly
-        ?e.seasonId===EVENT_ID
-        :(!query||e.player.name?.toLocaleLowerCase("it").includes(query.toLocaleLowerCase("it")))
-          &&(sourceFilter==="all"||(sourceFilter==="free"?e.source==="Svincolato":e.source==="RTG"))
-          &&(roleFilter==="all"||e.role===roleFilter)
-          &&(rarityFilter==="all"||e.rarity===rarityFilter)
-          &&(seasonFilter==="all"||e.seasonId===seasonFilter)
-          &&(teamFilter==="all"||e.teams.includes(teamFilter)))
+      const filtered=()=>all.filter(e=>(!query||e.player.name?.toLocaleLowerCase("it").includes(query.toLocaleLowerCase("it")))
+        &&(sourceFilter==="all"||(sourceFilter==="free"?e.source==="Svincolato":e.source==="RTG"))
+        &&(roleFilter==="all"||e.role===roleFilter)
+        &&(rarityFilter==="all"||e.rarity===rarityFilter)
+        &&(seasonFilter==="all"||e.seasonId===seasonFilter)
+        &&(teamFilter==="all"||e.teams.includes(teamFilter)))
         .sort((a,b)=>(descending?b.overall-a.overall:a.overall-b.overall)||a.player.name.localeCompare(b.player.name,"it"));
-      // The dedicated event view always exposes EVERY owned event card:
-      // never hide them behind pagination, stale filters or active squad slot.
-      const shown=list=>eventOnly?list:list.slice(0,visibleCount);
+      // Keep the canonical progressive "MOSTRA ALTRI" behaviour for large
+      // accounts; changing squads/slots never changes the eligible pool.
+      const shown=list=>list.slice(0,visibleCount);
       let selecting=false;
       function select(id){
         if(selecting||busy||squadEditPending||actionPending)return;
@@ -1000,29 +994,18 @@
       function paint(){
         const list=filtered(),target=modalRoot()?.querySelector?.("[data-rtg-picker-results]");
         if(target){target.innerHTML=v.replacementPickerResultsMarkup({entries:shown(list),total:list.length,visibleCount});wireResults();}
-        const eventToggle=modalRoot()?.querySelector?.("[data-vf-picker-event-only]");
-        if(eventToggle){eventToggle.setAttribute("aria-pressed",eventOnly?"true":"false");eventToggle.classList.toggle("active",eventOnly);}
         modalRoot()?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(b=>b.classList?.toggle("active",b.dataset.rtgPickerSource===sourceFilter));
         modalRoot()?.querySelector?.("[data-rtg-picker-sort]")?.setAttribute?.("aria-pressed",descending?"true":"false");
         const arrow=modalRoot()?.querySelector?.("[data-rtg-picker-sort-arrow]");if(arrow)arrow.textContent=descending?"↓":"↑";
       }
       const list=filtered();
-      const canonicalPicker=v.replacementPickerMarkup({
+      deps.openModal(v.replacementPickerMarkup({
         target:{cardId,playerId:cardId,source:cardId.startsWith("free_agents::")?"Svincolato":"RTG",player:current},
         role:String(current.normalizedRole||current.position||""),allowAnyRole:true,quickEntries:quick,
         entries:shown(list),total:list.length,visibleCount,rarityOptions:rarities,
         seasonOptions:seasons,teamOptions:teams()
-      });
-      const ownedEventCount=all.filter(entry=>entry.seasonId===EVENT_ID).length;
-      const pickerMarkup=TEAM_VENDING&&ownedEventCount
-        ?canonicalPicker.replace('<div data-rtg-picker-results>',
-          '<div class="vf-picker-event-filter"><button type="button" data-vf-picker-event-only aria-pressed="false">❄︎ GIOCATORI VENTO · FUOCO 🔥 <span>'+ownedEventCount+'</span></button></div><div data-rtg-picker-results>')
-        :canonicalPicker;
-      deps.openModal(pickerMarkup,{className:"rtg-modal rtg-squad-picker-modal rtg-halloween-picker"});
+      }),{className:"rtg-modal rtg-squad-picker-modal rtg-halloween-picker"});
       wireResults();
-      modalRoot()?.querySelector?.("[data-vf-picker-event-only]")?.addEventListener("click",()=>{
-        eventOnly=!eventOnly;paint();
-      });
       modalRoot()?.querySelectorAll?.(".rtg-picker-quick-bench [data-rtg-picker-player]")?.forEach(b=>b.addEventListener("click",()=>select(b.dataset.rtgPickerPlayer)));
       modalRoot()?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",e=>{query=e.target.value.trim();visibleCount=12;paint();});
       modalRoot()?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(b=>b.addEventListener("click",()=>{sourceFilter=b.dataset.rtgPickerSource;visibleCount=12;paint();}));
