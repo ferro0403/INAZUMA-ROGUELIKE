@@ -931,6 +931,21 @@
   object-fit:contain!important;object-position:center bottom!important;
   transform:translateX(-50%) scale(1)!important;transform-origin:center bottom!important;
 }
+/* Shaiden's tall PNG contains more transparent side-padding than Chaos.
+ * Scale the artwork alone: keep the approved Nathan-style grounded fullbody,
+ * all sheet labels and stats, and Chaos sizing unchanged. */
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-detail-visual
+  img.player-fullbody--fullbody[src$="shaiden-fullbody.webp"]{
+  left:57%!important;
+  bottom:2%!important;
+  width:148%!important;
+  max-width:none!important;
+  height:93%!important;
+  max-height:93%!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  transform:translateX(-50%) scale(1)!important;
+}
 @media(min-width:650px){
   .event-page--vento-fuoco .vf-miximax-banner{min-height:190px}
   .vf-miximax-banner__copy{min-height:188px}
