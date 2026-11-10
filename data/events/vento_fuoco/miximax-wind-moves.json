@@ -12,7 +12,7 @@
           "jpName": "ファイアブリザード",
           "type": "shot",
           "element": "Wind",
-          "power": 85,
+          "power": 90,
           "tension": 80,
           "source": "manual"
         },
@@ -22,7 +22,7 @@
           "jpName": "氷結のグングニル",
           "type": "shot",
           "element": "Wind",
-          "power": 0,
+          "power": 105,
           "tension": 0,
           "source": "manual"
         },
@@ -42,7 +42,7 @@
           "jpName": "フローズンスティール",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 70,
           "tension": 60,
           "source": "manual"
         }
@@ -67,7 +67,7 @@
           "jpName": "アイスグランド",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 85,
           "tension": 60,
           "source": "manual"
         },
@@ -87,7 +87,7 @@
           "jpName": "トリプルブリザード",
           "type": "shot",
           "element": "Wind",
-          "power": 0,
+          "power": 105,
           "tension": 0,
           "source": "manual"
         }
