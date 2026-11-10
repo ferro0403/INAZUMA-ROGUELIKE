@@ -1324,6 +1324,23 @@
         openNativeDetail(EVENT_ID+"::"+pid,isOwned(pid),true);
       },
       player:pid=>player(asId(pid)),
+      // Reuse exactly the Squadra component (playerCard), including native
+      // role/OVR badges, rarity, picture, level and event-specific art.
+      // The Miximax screen is only a read-only projection of these cards.
+      fusionCard:p=>{
+        if(!p?.cardId||typeof deps.squadView?.playerCard!=="function")return "";
+        return deps.squadView.playerCard({
+          cardId:p.cardId,playerId:p.playerId,player:p,source:"RTG"
+        },"bench",{readOnly:true,extraClass:"vf-miximax-native-squad-card"});
+      },
+      openFusionPlayer:cardId=>{
+        const raw=asId(cardId);
+        const pid=raw.startsWith(EVENT_ID+"::")?raw.slice(EVENT_ID.length+2):raw;
+        const authorized=(manifest.fusions?.recipes||[]).some(recipe=>
+          recipe.inputs.includes(pid)||recipe.resultId===pid);
+        if(!authorized)return;
+        openNativeDetail(EVENT_ID+"::"+pid,isOwned(pid),true);
+      },
       fusionRecipes:()=> (manifest.fusions?.recipes||[]).map(recipe=>{
         const inputs=recipe.inputs.map(pid=>({playerId:pid,player:player(pid),owned:isOwned(pid)}));
         const result=player(recipe.resultId),owned=isOwned(recipe.resultId);
