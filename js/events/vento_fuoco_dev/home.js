@@ -52,9 +52,8 @@
       return `<article class="vf-rival vf-rival--${kind}">
         <div class="vf-rival__crest"><img src="${esc(team.logo)}" alt="" loading="lazy"></div>
         <div class="vf-rival__copy"><h2>${esc(team.name)}</h2>
-          <p>Vittoria: <strong>${tools.coin(300,coin)}</strong></p>
-          <p>Fortunata 20%: <strong>600 stemmi</strong></p>
-          ${Number.isFinite(Number(strength?.maxByTeam?.[team.teamId]))?`<p class="vf-rival__limit">Limite formazione: <b>OVR ${esc(strength.maxByTeam[team.teamId])}</b></p>`:""}</div>
+          <p class="vf-rival__reward"><span>Vittoria:</span><strong>${tools.coin(300,coin)}</strong></p>
+          <p class="vf-rival__reward"><span>Vittoria fortunata:</span><strong>${tools.coin(600,coin)} <small>gettoni</small></strong></p></div>
         <button type="button" class="vf-rival__challenge" data-event-action="start"
           data-event-team="${esc(team.teamId)}" ${open?"":"disabled"}>SFIDA</button>
         ${lineupMarkup(team,tools)}
