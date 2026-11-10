@@ -1343,7 +1343,9 @@
       },
       fusionRecipes:()=> (manifest.fusions?.recipes||[]).map(recipe=>{
         const inputs=recipe.inputs.map(pid=>({playerId:pid,player:player(pid),owned:isOwned(pid)}));
-        const result=player(recipe.resultId),owned=isOwned(recipe.resultId);
+        const owned=isOwned(recipe.resultId);
+        const result=owned?(resolveCard(EVENT_ID+"::"+recipe.resultId)||player(recipe.resultId)):
+          player(recipe.resultId);
         return {id:recipe.id,inputs,result,owned,available:isOpen()&&!match&&!owned&&
           inputs.every(entry=>entry.owned)};
       }),
@@ -1353,7 +1355,9 @@
       ownedCards:({from=EVENT_ID}={})=>{
         if(from===EVENT_ID)return [...manifest.cards.map(card=>card.playerId),
           ...(manifest.fusions?.recipes||[]).map(recipe=>recipe.resultId)].filter(pid=>isOwned(pid))
-          .map(pid=>({playerId:pid,cardId:EVENT_ID+"::"+pid,player:player(pid)}));
+          .map(pid=>({playerId:pid,cardId:EVENT_ID+"::"+pid,
+            player:assets?.fusionPlayers?.has(asId(pid))
+              ?resolveCard(EVENT_ID+"::"+pid):player(pid)}));
         if(!global.GameEvents?.canUseCardsFrom?.(EVENT_ID,from))return [];
         const other=global.GameEvents.get(from),module=global.GameEvents.module?.(from);
         const prefix=other?.save?.cardIdPrefix||"";
@@ -1949,7 +1953,7 @@
   // Native album can show every registered team in one shared collection.
   async function albumTeamsSnapshot(storage=global.RoadToGloryStorage.create()) {
     await prepare();
-    const records=await storage.readMany([SHARED_KEY]);
+    const records=await storage.readMany([SHARED_KEY,SQUAD_KEY]);
     const account=records[SHARED_KEY]||(
       SANDBOX?(await storage.readMany([REAL_SHARED_KEY]))[REAL_SHARED_KEY]:null)||{};
     const owned=new Set(eventState(ledger(account)).ownedIds||[]);
@@ -1957,8 +1961,13 @@
     const hasBonus=bonus?.owns?.(account)===true;
     // Shared read-only album projection: one Chaos and one Shaiden in EACH
     // original squad. The same player IDs are not duplicate owned cards.
+    const rawSquad=records[SQUAD_KEY]||null;
+    const activeSlot=String(rawSquad?.activeSquadSlot||1);
+    const displayedSquad=rawSquad?.slots?.[activeSlot]||rawSquad;
+    const activeVariants=displayedSquad?.activeRoleVariantByCardId||{};
     const fusionRoster=assets.fusionPlayers?.size
-      ?Array.from(assets.fusionPlayers.keys()).map(pid=>player(pid)).filter(Boolean)
+      ?Array.from(assets.fusionPlayers.keys()).map(pid=>
+        player(pid,activeVariants[EVENT_ID+"::"+pid]||"fire")).filter(Boolean)
       :[];
     const teams=(assets.teams||[]).map((entry,index)=>{
       const roster=[...(entry.team.players||[]).map(raw=>player(raw.playerId)).filter(Boolean),...fusionRoster];
