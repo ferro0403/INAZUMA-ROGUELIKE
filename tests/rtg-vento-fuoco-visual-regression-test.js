@@ -78,14 +78,23 @@ const fetcher=async url=>({
   assert.match(css,/ANd9GcQ4docu4pCKgUNZ2fs/);
   assert.match(css,/duel-hero-v2\.svg/);
   assert.match(css,/\.vf-mini-pitch\.rtg-squad-shell \.rtg-squad-pitch-main/);
-  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-fullhero-3"));
-  assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261110-vf-artwork-final-1"));
+  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-native-reveal-4"));
+  assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261110-vf-native-reveal-4"));
   const runtime=read("js/road-to-glory/rtg-halloween-event.js");
   assert.match(runtime,/function restoreEventOpponentCrests/);
   assert.match(runtime,/function visualSquadStrength/);
   assert.match(runtime,/deps\.squadView\?\.matchPitchMarkup\?\./);
   assert.match(runtime,/mode:"preview"/);
-  assert.match(runtime,/vf-reward-balance-value/,"only event reward has structured balance");
+  assert.match(runtime,/deps\.runView\.pullResultMarkup\(drawn\.result,drawn\.player/,
+    "Vento-Fuoco must use the canonical RTG result renderer");
+  assert.match(runtime,/const rewardClass=TEAM_VENDING&&!isCoach/,
+    "event reward must use the ordinary RTG modal instead of Halloween");
+  assert.doesNotMatch(runtime,/vf-reward-balance-value/,
+    "do not reconstruct the canonical balance/card markup");
+  assert.doesNotMatch(runtime,/vf-squad-strength|vf-prematch-strength|strengthStrip\(/,
+    "no additional strength banner in Squadra or pre-partita");
+  assert.match(runtime,/function visualSquadStrength\(/,
+    "OVR projections and eligibility must remain intact");
   // HD assets are distinct source crops: small card vs tall player sheet.
   const files=[
     ["fire-card-hd.avif",1024,768],["ice-card-hd.avif",1024,768],
@@ -125,6 +134,34 @@ const fetcher=async url=>({
   assert.match(css,/\.player-detail-content\{[\s\S]*?background:linear-gradient\(180deg,#f9fdff,#fffbf4\)!important/,"statistics keep a separate clean paper background");
   assert.match(css,/\.overall-comparison>div\{[\s\S]*?background:#fffdf8!important/,"OVR and potential remain legible");
   assert.match(css,/\.detail-category\{[\s\S]*?background:#fffdf6!important/,"rarity remains legible");
+  // Same tier-based rarity colours as the normal detail sheet, not Fire/Ice
+  // team colours. Element chips are independently themed.
+  const detailCss=read("css/player-detail.css");
+  for(const tier of ["scarso","debole","normale","buono","forte","elite","mondiale","leggenda"]){
+    assert.match(detailCss,new RegExp("\\.player-detail-layout\\.rarity-"+tier+"\\b"),
+      "canonical rarity variable absent: "+tier);
+  }
+  assert.match(css,/border-left:9px solid var\(--detail-rarity-accent\)!important/,
+    "Mondiale red and every other rarity retain the native stripe colour");
+  assert.match(css,/\.detail-category span\{\s*color:var\(--detail-rarity-accent\)!important/,
+    "native rarity-coloured star restored");
+  assert.match(css,/\.rtg-element-fire-team \.detail-element-chip\{/);
+  assert.match(css,/border-color:#bc2634!important/,"Fire element chip is red");
+  assert.match(css,/\.rtg-element-blizzard-team \.detail-element-chip\{/);
+  assert.match(css,/border-color:#168acb!important/,"Wind/Blizzard chip is blue");
+  assert.doesNotMatch(css,/\.detail-category \*\{color:#07131e!important\}/,
+    "do not override rarity colours to black");
+  const nativeResult=read("js/road-to-glory/rtg-run-view.js");
+  assert.match(nativeResult,/function pullResultMarkup\(/,
+    "normal RTG prize renderer must remain source of truth");
+  assert.match(nativeResult,/rtg-pull-result-head/);
+  assert.match(nativeResult,/rtg-pull-result-body/);
+  assert.match(nativeResult,/rtg-pull-balance/);
+  assert.doesNotMatch(css,/\.vf-squad-strength|\.vf-prematch-strength/,
+    "unused top banners must not have event-specific styles");
+  assert.doesNotMatch(read("css/rtg-halloween-event.css"),/\.rtg-halloween-pull-modal\.vf-reward-/,
+    "obsolete rebuilt VF reward styles must be removed from shared Halloween CSS");
+
   assert.match(css,/\.player-detail-visual > \.player-fullbody\{[\s\S]*?visibility:visible!important;opacity:1!important/,"fullbody stays visible");
   assert.match(css,/overflow-wrap:anywhere!important/,"long player names stay inside the white panel");
   assert.match(css,/\.vf-mini-pitch\.rtg-squad-shell\{[\s\S]*?min-height:0!important;[\s\S]*?background-image:none!important;/,
@@ -144,7 +181,11 @@ const fetcher=async url=>({
   assert.match(css,/--rtg-legacy-color:#df2e42!important/,"red Fire badge");
   assert.match(css,/--rtg-legacy-color:#1978d8!important/,"blue Ice badge");
   assert.match(css,/::before\{\s*content:none!important;display:none!important/,"rarity stripe is removed only on event cards");
-  assert.match(css,/vf-reward-balance-value/,"existing reward balance preserved");
+  assert.match(css,/A skin on the ORIGINAL RoadToGloryRunView\.pullResultMarkup/);
+  assert.match(css,/\.modal\.rtg-modal\.rtg-pull-modal\.vf-reward-fire/);
+  assert.match(css,/\.modal\.rtg-modal\.rtg-pull-modal\.vf-reward-ice/);
+  assert.doesNotMatch(css,/vf-reward-balance-value|grid-template-columns:132px minmax\(0,1fr\)!important/,
+    "original RTG result dimensions/markup must not be recreated");
   assert.match(css,/vf-reward-return/,"reward detail has explicit return UI");
   assert.match(runtime,/data-vf-return-to-reward/,"detail can return to committed reward");
   assert.match(runtime,/const showReward=\(\)=>/,"return does not run a second pull");
@@ -165,5 +206,5 @@ const fetcher=async url=>({
   const halloween=context.GameEvents.module("halloween2026");
   assert.equal(halloween.pullFieldForTeam("occult-2"),"pumpkins");
   assert.equal(halloween.rewardFieldForTeam("occult-2"),"pumpkins");
-  console.log("vento-fuoco-visual-regression-test: PASS (HD card/detail AVIF, native Squadra XI, clean technical sheet, 22 players, cap 92, reward-back, no old art)");
+  console.log("vento-fuoco-visual-regression-test: PASS (canonical rarity/element colours, native RTG rewards, no squad/prematch strength bars, HD art, native XI, 22 players, reward-back)");
 })().catch(error=>{console.error(error);process.exitCode=1;});
