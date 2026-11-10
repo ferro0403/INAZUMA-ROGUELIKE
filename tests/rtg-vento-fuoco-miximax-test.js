@@ -8,7 +8,14 @@ const fire=JSON.parse(fs.readFileSync(path.join(root,"data/events/vento_fuoco/mi
 const wind=JSON.parse(fs.readFileSync(path.join(root,"data/events/vento_fuoco/miximax-wind-moves.json"),"utf8")).players;
 assert.equal(players.length,2);for(const p of players){assert.equal(p.overall,96);assert.equal(p.roleSwitchEnabled,true);
  assert.equal(fire[p.playerId].moves.length,4);assert.equal(wind[p.playerId].moves.length,4);
- assert.ok(p.portraitUrl.startsWith("data:image/webp;base64,"));assert.equal(p.frontFullbodyUrl,undefined);}
+ assert.ok(p.portraitUrl.startsWith("data:image/webp;base64,"));
+ assert.equal(p.frontFullbodyUrl,"assets/events/vento-fuoco/"+p.name.toLowerCase()+"-fullbody.webp");
+ assert.equal(p.fullbodyUrl,p.frontFullbodyUrl,"fullbody and portrait are separate assets");
+ const binary=fs.readFileSync(path.join(root,p.frontFullbodyUrl));
+ assert.equal(binary.toString("ascii",0,4),"RIFF");
+ assert.equal(binary.toString("ascii",8,12),"WEBP");
+ assert.ok(binary.length>50000,"fullbody render is high-resolution, not a thumbnail");
+}
 assert.equal(players.find(p=>p.name==="Chaos").variants.wind.position,"FW");
 assert.equal(players.find(p=>p.name==="Shaiden").variants.wind.position,"DF");
 for(const recipe of recipes){
@@ -40,3 +47,49 @@ for(const recipe of recipes){
  assert.deepEqual(shortage,original);
 }
 console.log("Miximax: dati, varianti, mosse, consumi e tre slot atomici OK");
+
+/* Miximax screen consumes only the genuine native Squadra playerCard HTML. */
+const manifest=JSON.parse(fs.readFileSync(path.join(root,"data/events/dev/vento_fuoco_dev.json"),"utf8"));
+let hooks=null, nativeCalls=0, opened="";
+const ui={GameEvents:{get:()=>manifest,extend:(id,extra)=>{
+ assert.equal(id,"vento_fuoco_dev");hooks=extra;
+}}};ui.globalThis=ui;
+vm.runInNewContext(fs.readFileSync(path.join(root,"js/events/vento_fuoco_dev/home.js"),"utf8"),ui);
+const card=(pid,name)=>({playerId:String(pid),cardId:"vento_fuoco_dev::"+pid,name,position:"FW",overall:96});
+const show=hooks.screens.miximax.render({
+ fusionRecipes:()=>[
+  {id:"shaiden",inputs:[{player:card(4539,"Aiden"),owned:true},{player:card(4538,"Shawn"),owned:true}],
+   result:card(9900002,"Shaiden"),owned:false,available:true},
+  {id:"chaos",inputs:[{player:card(1122,"Gazelle"),owned:false},{player:card(1105,"Torch"),owned:false}],
+   result:card(9900001,"Chaos"),owned:false,available:false}
+ ],
+ fusionCard:p=>{nativeCalls++;return '<div class="rtg-squad-card-slot rtg-squad-card-slot--readonly">'+
+  '<button type="button" class="player-card rtg-squad-player-card" data-rtg-squad-player="'+p.cardId+'">'+p.name+'</button></div>';}
+});
+assert.equal(nativeCalls,6,"both recipes display six real Squadra cards");
+assert.equal((show.match(/class="player-card rtg-squad-player-card"/g)||[]).length,6);
+assert.match(show,/class="vf-miximax-pair development-squad-card-scope rtg-squad-shell"/);
+assert.match(show,/data-rtg-squad-player="vento_fuoco_dev::9900001"/);
+assert.doesNotMatch(show,/vf-miximax-face|vf-miximax-result[^"]*">\s*<img/);
+assert.match(show,/btn btn-yellow vf-miximax-fuse/);
+assert.match(show,/data-vf-fuse-run="shaiden"/);
+let cardClick=null;
+hooks.screens.miximax.bind({querySelectorAll:selector=>
+ selector===".vf-miximax-pair [data-rtg-squad-player]"?[{
+ dataset:{rtgSquadPlayer:"vento_fuoco_dev::9900001"},
+ addEventListener:(name,fn)=>{assert.equal(name,"click");cardClick=fn;}
+ }]:[]},{openFusionPlayer:id=>{opened=id;}});
+assert.ok(cardClick,"native card click is bound");
+cardClick({stopPropagation(){}});
+assert.equal(opened,"vento_fuoco_dev::9900001");
+const runtime=fs.readFileSync(path.join(root,"js/road-to-glory/rtg-halloween-event.js"),"utf8");
+assert.match(runtime,/fusionCard:p=>\{/);
+assert.match(runtime,/deps\.squadView\.playerCard\(/);
+assert.match(runtime,/readOnly:true,extraClass:"vf-miximax-native-squad-card"/);
+const css=fs.readFileSync(path.join(root,"css/vento-fuoco-visual.css"),"utf8");
+assert.match(css,/chaos-fullbody\.webp/);
+assert.match(css,/shaiden-fullbody\.webp/);
+assert.match(css,/height:69%!important/, "Nathan Halloween fullbody proportions");
+assert.doesNotMatch(css,/\.vf-miximax-face\{/);
+console.log("Miximax: sei card Squadra native, immagini HD e pulsanti RTG verificati");
+
