@@ -25,12 +25,25 @@ const fetcher=async url=>({ok:fs.existsSync(String(url)),status:fs.existsSync(St
     key,key==="dev:vento_fuoco_dev:shared:account"?account:null
   ]))};
   const teams=await module.albumTeamsSnapshot(storage);
-  assert.equal(teams.length,3);
+  assert.equal(teams.length,2);
   assert.deepEqual(Array.from(teams.map(t=>t.teamId)),
-    ["vento_fuoco_dev::fire-team","vento_fuoco_dev::blizzard-team","vento_fuoco_dev::miximax"]);
-  assert.deepEqual(Array.from(teams.map(t=>[t.unlocked,t.total])),[[1,19],[1,19],[0,2]]);
+    ["vento_fuoco_dev::fire-team","vento_fuoco_dev::blizzard-team"]);
+  assert.deepEqual(Array.from(teams.map(t=>[t.unlocked,t.total])),[[1,21],[1,21]]);
   assert.equal(teams[0].entries[0].playerId,"4539");
   assert.equal(teams[1].entries[0].playerId,"4538");
+  for(const team of teams){
+    for(const fusionId of ["9900001","9900002"]){
+      assert.equal(team.roster.filter(p=>p.playerId===fusionId).length,1,
+        "both fusion players must appear once in each existing team");
+    }
+  }
+  // Both Miximax cards in both teams is a display-only album projection;
+  // owning one card never creates a second collectible/copy.
+  account.events.vento_fuoco_dev.ownedIds.push("9900001","9900002");
+  const withFusions=await module.albumTeamsSnapshot(storage);
+  assert.equal(withFusions.length,2);
+  assert.deepEqual(Array.from(withFusions.map(t=>[t.unlocked,t.total])),[[3,21],[3,21]]);
+  account.events.vento_fuoco_dev.ownedIds.splice(-2,2);
   const view=context.RoadToGloryAlbumView.create({
     escapeHtml:s=>String(s??"").replaceAll("&","&amp;").replaceAll('"',"&quot;"),
     seasonNumber:()=>1,teamEmblemMarkup:()=>"",albumRarityClass:()=>"",
@@ -45,7 +58,7 @@ const fetcher=async url=>({ok:fs.existsSync(String(url)),status:fs.existsSync(St
     collections:[{seasonId:"ie1",total:10,unlocked:0}],eventTeams:teams
   });
   assert.match(nativeCollections,/GIOCATORI EVENTO/);
-  assert.match(nativeCollections,/2 \/ 40 giocatori sbloccati/);
+  assert.match(nativeCollections,/2 \/ 42 giocatori sbloccati/);
   assert.match(nativeCollections,/5%/);
   const html=context.GameEvents.extensionPart("vento_fuoco_dev","home").render({
     teams:()=>teams.map(t=>({teamId:t.originTeamId,name:t.teamName,logo:t.logoUrl})),
