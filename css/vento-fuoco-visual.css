@@ -709,3 +709,114 @@
   .vf-rival__lineup-toggle i,
   .player-card.rtg-event--vento_fuoco_dev{transition:none!important}
 }
+
+
+/* MIXIMAX — isolated Vento/Fuoco event extension. No global player-card geometry changes. */
+.event-page--vento-fuoco .vf-miximax-banner{
+  position:relative;isolation:isolate;display:block;overflow:hidden;width:100%;min-height:152px;
+  margin:14px 0 22px;padding:0;text-align:left;cursor:pointer;color:#fff;
+  border:4px solid #07182b;border-radius:12px;background:
+  linear-gradient(105deg,#0a4282 0%,#123f8c 43%,#aa2c1c 65%,#fa802a 100%);
+  box-shadow:0 0 0 2px #fff2c8,0 7px 0 #07111c,0 14px 24px #030c1b72;
+}
+.vf-miximax-banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 45%;z-index:-2}
+.vf-miximax-banner::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#021b38df,#051b37a6 35%,#061c3566 63%,#6420104f)}
+.vf-miximax-banner__copy{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:148px;padding:20px 22px;text-shadow:0 3px 3px #000d}
+.vf-miximax-banner__copy small{font-size:.68rem;font-weight:900;letter-spacing:.14em;color:#bff5ff}
+.vf-miximax-banner__copy strong{font-size:clamp(2.1rem,8vw,3.6rem);font-weight:1000;line-height:1.05;letter-spacing:.025em;
+  color:#fff9ea;-webkit-text-stroke:1px #0b1d37;filter:drop-shadow(3px 3px 0 #071325)}
+.vf-miximax-banner__copy em{font-style:normal;font-size:.8rem;font-weight:900;letter-spacing:.1em;color:#ffe59c}
+.vf-miximax-banner__copy b{padding-left:12px;font-size:1.55rem;vertical-align:middle;color:#fff}
+.vf-miximax-banner:focus-visible,.vf-miximax-return:focus-visible,.vf-miximax-fuse:focus-visible{
+  outline:3px solid #ffe76e;outline-offset:4px
+}
+.vf-miximax-page{display:block!important;min-height:100dvh;padding:10px 12px 75px!important;
+  background:linear-gradient(125deg,#031e42,#0a1730 46%,#521a16 100%)!important;color:#fff!important}
+.vf-miximax-header{display:flex;align-items:center;gap:12px;margin:0 auto 15px;max-width:1080px}
+.vf-miximax-header .vf-back{flex:none;position:static}
+.vf-miximax-header small{font-size:.65rem;color:#a8e7ff;font-weight:900;letter-spacing:.09em}
+.vf-miximax-header h1{margin:2px 0 0;font-size:clamp(1.6rem,6vw,2.7rem);color:#fff7de;letter-spacing:.07em}
+.vf-miximax-intro,.vf-miximax-list,.vf-miximax-warning,.vf-miximax-return{max-width:1080px;margin-left:auto!important;margin-right:auto!important}
+.vf-miximax-intro{position:relative;isolation:isolate;display:flex;align-items:flex-end;min-height:200px;
+  overflow:hidden;border:3px solid #a9f1ff;border-radius:13px;background:#0a3e6d;margin-bottom:15px;
+  box-shadow:0 0 18px #2297d65e,inset 0 0 30px #0008}
+.vf-miximax-intro>img{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover}
+.vf-miximax-intro::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,#031326f5,transparent 93%)}
+.vf-miximax-intro>div{padding:17px 18px}
+.vf-miximax-intro small{font-size:.65rem;font-weight:1000;color:#ffe7aa;letter-spacing:.1em}
+.vf-miximax-intro h2{margin:4px 0;font-size:clamp(1.1rem,4.1vw,1.8rem);color:#fff}
+.vf-miximax-intro p{margin:0;font-size:.76rem;line-height:1.5;color:#e0f6ff}
+.vf-miximax-list{display:grid;gap:15px}
+.vf-miximax-recipe{position:relative;overflow:hidden;padding:12px;border:3px solid #81e9ff;border-radius:12px;
+  background:linear-gradient(105deg,#093964,#07182f 45%,#511d18 100%);box-shadow:0 6px 0 #06121d,0 0 20px #0007}
+.vf-miximax-recipe:nth-child(2){border-color:#ffa24d}
+.vf-miximax-pair{display:flex;justify-content:center;align-items:center;gap:7px;min-height:120px}
+.vf-miximax-ingredient,.vf-miximax-result{min-width:0;flex:0 1 25%;display:grid;justify-items:center;align-content:start;text-align:center;
+  background:#06172db3;border:1px solid #93dafa66;border-radius:8px;padding:7px 4px;gap:3px}
+.vf-miximax-ingredient.is-missing{filter:saturate(.62);opacity:.7}
+.vf-miximax-result{flex:1 1 28%;border:2px solid #ffc267;background:linear-gradient(125deg,#0e4576,#782019);
+  box-shadow:inset 0 0 16px #fff2a226,0 0 12px #ffae4a44}
+.vf-miximax-face{height:78px;width:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 3px 3px #0009)}
+.vf-miximax-face.is-fusion{height:90px}
+.vf-miximax-ingredient strong,.vf-miximax-result strong{font-size:clamp(.62rem,2.25vw,.93rem);line-height:1.1;color:#fff}
+.vf-miximax-ingredient small,.vf-miximax-result small{font-size:.52rem;font-weight:900;letter-spacing:.03em;color:#b9e7f6}
+.vf-miximax-ingredient.is-missing small{color:#ffb5a3}
+.vf-miximax-plus,.vf-miximax-arrow{font-size:clamp(1rem,4vw,1.8rem);font-weight:1000;color:#fff3c7;flex:none}
+.vf-miximax-recipe__info{margin:10px 0;padding:10px 8px;background:#020d209a;border-radius:7px}
+.vf-miximax-recipe__info h2{margin:0 0 6px;font-size:1.3rem;color:#fff7e0}
+.vf-miximax-versions{display:flex;flex-wrap:wrap;gap:6px}
+.vf-miximax-versions span{padding:4px 8px;border:1px solid #fff8;border-radius:5px;font-size:.67rem;font-weight:900}
+.vf-miximax-versions .vf-fire{background:#9e271b;color:#fff0e4}
+.vf-miximax-versions .vf-wind{background:#125faa;color:#ecfaff}
+.vf-miximax-recipe__info p{margin:8px 0 0;font-size:.72rem;color:#d5e9f4}
+.vf-miximax-fuse,.vf-miximax-return,.vf-miximax-confirm__actions button{
+  display:block;width:100%;border:2px solid #081829;border-radius:7px;min-height:45px;cursor:pointer;
+  background:linear-gradient(180deg,#ffe6a0,#ffa743);color:#081829;font-size:.85rem;font-weight:1000;letter-spacing:.04em;
+  box-shadow:0 3px 0 #071623}
+.vf-miximax-fuse:disabled{opacity:.6;cursor:not-allowed;background:linear-gradient(#b2bcc7,#707b8a)}
+.vf-miximax-confirm{padding:10px;margin-top:9px;border:2px solid #ff9d57;border-radius:8px;background:#261420}
+.vf-miximax-confirm[hidden],.vf-miximax-fuse[hidden]{display:none!important}
+.vf-miximax-confirm p{font-size:.75rem;line-height:1.5;color:#fff0e2;margin:0 0 10px}
+.vf-miximax-confirm p strong{color:#ffe190}
+.vf-miximax-confirm__actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vf-miximax-confirm__actions button:first-child{background:#cee8fb}
+.vf-miximax-confirm__actions button:last-child{background:#ffad61}
+.vf-miximax-confirm__actions button:disabled{opacity:.55;cursor:wait}
+.vf-miximax-warning{margin-top:19px;padding:11px 14px;border:1px solid #ffcd75;border-radius:8px;
+  background:#451f20;color:#fff4dc;font-size:.77rem;line-height:1.5}
+.vf-miximax-return{margin-top:14px!important;max-width:400px;background:#a9eaff}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax{
+  --vf-event-art:url("../assets/events/vento-fuoco/miximax-collision.svg");
+  border:3px solid #ffe2a5!important;border-radius:4px!important;color:#fff!important;
+  background:#112040!important;box-shadow:3px 4px 0 #061525,0 0 14px #57cafe99,0 0 7px #ff924e!important}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax::before{display:none!important;content:none!important}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-portrait-wrap{
+  position:relative!important;overflow:hidden!important;background:#17365c var(--vf-event-art) center/cover no-repeat!important}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-portrait-wrap img.player-portrait{
+  position:relative!important;z-index:2;object-fit:contain!important;object-position:center bottom!important;
+  filter:drop-shadow(0 2px 3px #000a)}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-info{
+  background:linear-gradient(90deg,#133c69,#182b50 45%,#913726)!important;color:#fff!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax{
+  --vf-detail-primary:#df5a25;--vf-detail-secondary:#55cfff;--vf-detail-bg:#172a50;
+  --vf-detail-art:url("../assets/events/vento-fuoco/miximax-collision.svg");
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax .detail-element-chip{
+  color:#081523!important;background:linear-gradient(90deg,#ffcd9b,#91e8ff)!important;border-color:#071523!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-fullbody{
+  object-fit:contain!important;object-position:center bottom!important;filter:drop-shadow(0 6px 9px #061323a0)}
+@media(min-width:650px){
+  .event-page--vento-fuoco .vf-miximax-banner{min-height:190px}
+  .vf-miximax-banner__copy{min-height:188px}
+  .vf-miximax-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+  .vf-miximax-face{height:120px}.vf-miximax-face.is-fusion{height:140px}
+}
+@media(max-width:390px){
+  .vf-miximax-page{padding:8px 7px 65px!important}
+  .vf-miximax-recipe{padding:8px}
+  .vf-miximax-pair{gap:3px}
+  .vf-miximax-ingredient,.vf-miximax-result{padding:5px 2px}
+  .vf-miximax-face{height:67px}.vf-miximax-face.is-fusion{height:76px}
+  .vf-miximax-ingredient small,.vf-miximax-result small{font-size:.46rem}
+  .vf-miximax-banner__copy{padding:15px}
+}
