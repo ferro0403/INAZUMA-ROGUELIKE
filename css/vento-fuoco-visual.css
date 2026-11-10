@@ -73,7 +73,7 @@
 .vf-squad-strength .vf-strength{margin:0}
 .vf-prematch-strength{max-width:970px;margin:12px auto 0;padding:0 12px}
 
-/* Schede giocatore: carta tecnica avorio, fascia elementale, contrasti forti. */
+/* Schede giocatore: artwork full-bleed SOLO nell'hero, informazioni leggibili. */
 .player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team{
   --vf-detail-primary:#d32a14;--vf-detail-secondary:#ffb017;--vf-detail-bg:#a50f1b;
 }
@@ -85,8 +85,19 @@
   color:#07101a!important;background:#fffaf0!important;
   border:5px solid #07111e!important;box-shadow:inset 0 0 0 3px #fff,0 0 0 3px var(--vf-detail-primary,#056bc4)!important
 }
+/* A single continuous illustration fills the entire top of the sheet.
+ * The ivory veil softens ONLY the area under labels and numbers; the HD
+ * artwork remains visible behind name, role, OVR and rarity. Never under stats. */
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-hero{
-  background:#fffdf5!important;isolation:isolate;overflow:hidden!important;
+  position:relative!important;isolation:isolate;overflow:hidden!important;
+  background:
+    linear-gradient(90deg,
+      rgba(255,251,242,.93) 0%,
+      rgba(255,251,242,.86) 29%,
+      rgba(255,251,242,.74) 42%,
+      rgba(255,251,242,.36) 53%,
+      rgba(255,251,242,0) 66%),
+    var(--vf-detail-art) center center / cover no-repeat!important;
   border-bottom:5px solid #07111e!important;
 }
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-hero::before,
@@ -145,20 +156,24 @@
 .player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team{
   --vf-detail-art:url("../assets/events/vento-fuoco/ice-detail-hd.avif");
 }
+/* No opaque rectangular slab: illustration is continuous behind ALL hero
+ * information, while actual data cards keep their opaque native surfaces. */
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-identity{
   position:relative;z-index:2;min-width:0;max-width:100%;
-  background:#fffdf5!important;
+  background:transparent!important;
 }
 /* Native PlayerView puts its fullbody image in an ABSOLUTE-positioned
  * visual panel. Relative positioning collapses the image panel to zero height
  * because the character img is itself absolute. Preserve its native geometry. */
+/* Preserve the native absolute fullbody positioning but do not paint a
+ * separate image/vertical stripe: that caused the visible straight seam. */
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual{
   position:absolute!important;
   top:0!important;right:0!important;bottom:0!important;left:47%!important;
   width:auto!important;height:auto!important;min-width:0;
   z-index:1!important;display:block!important;overflow:hidden!important;
-  background:var(--vf-detail-art) center center / cover no-repeat!important;
-  border-left:3px solid var(--vf-detail-primary,#056bc4)!important;
+  background:none!important;
+  border:0!important;
 }
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual > .player-fullbody{
   display:block!important;visibility:visible!important;opacity:1!important;
