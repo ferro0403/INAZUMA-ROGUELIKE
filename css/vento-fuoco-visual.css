@@ -275,7 +275,7 @@
   --vf-ui-midnight:#081726;
   padding:13px 11px 108px;
   background:
-    linear-gradient(180deg,rgba(3,12,29,.89) 0%,rgba(7,21,39,.71) 44%,#061424 100%),
+    linear-gradient(112deg,rgba(57,12,30,.86) 0%,rgba(8,23,49,.78) 48%,rgba(4,44,78,.89) 100%),
     url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ4docu4pCKgUNZ2fs-bhLizkbbUEEQopSCQju2-RVSCw&s=10") center top / cover no-repeat;
 }
 .event-page--vento-fuoco .vf-duel {
@@ -614,7 +614,7 @@
 .modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
 .rtg-pull-result-head{
   background:
-    linear-gradient(90deg,#fffdf8fa 0%,#fffdf8f1 56%,#fffdf8b4 100%),
+    linear-gradient(90deg,#fffdf8fa 0%,#fffdf8ee 37%,#fffdf8b9 68%,#fffdf821 100%),
     var(--vf-pull-image) center center / cover no-repeat!important;
   border-bottom:3px solid var(--vf-pull-accent)!important;
 }
@@ -622,6 +622,34 @@
 .rtg-pull-balance{
   border-left-color:var(--vf-pull-accent)!important;
 }
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-result-body{
+  border-left:4px solid var(--vf-pull-accent)!important;
+}
+/* Only the Vento-Fuoco reward: the compact native Squadra card must use
+ * exactly the SAME 84px geometry as lineup/bench, including badge stacking.
+ * The original RTG result shell, typography and rarity remain untouched. */
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-card-stage>.rtg-squad-player-card{
+  width:84px!important;max-width:84px!important;min-width:0!important;
+  height:auto!important;min-height:0!important;
+  margin:0 auto!important;transform:none!important;
+}
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-card-stage>.rtg-squad-player-card .player-portrait-wrap{
+  height:62px!important;min-height:0!important;overflow:hidden!important;
+}
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-card-stage>.rtg-squad-player-card :is(.player-corner.player-role,.player-corner.player-overall){
+  position:absolute;z-index:10!important;
+}
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-result-head>.rtg-pull-series{
+  background:#fffaf0e8;
+  border:1px solid #071726;
+  padding:4px 6px;color:#12243a!important;
+}
+
 .modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
 .halloween-reveal-currency-icon{
   display:inline-block;width:22px;height:22px;
