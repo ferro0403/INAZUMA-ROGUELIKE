@@ -601,6 +601,13 @@
       const modal=deps.getModalRoot?.();
       modal?.classList?.toggle("halloween-detail-native",Boolean(p.halloweenMoves));
       setModalExtraClass(p);
+      if(p.halloweenFusion){
+        const toggle=modal?.querySelector?.("[data-detail-rtg-role-switch]");
+        if(toggle){
+          toggle.setAttribute("aria-label","Cambia versione di "+p.name);
+          const caption=toggle.querySelector("small");if(caption)caption.textContent="Versione";
+        }
+      }
     }
     function footer(active="run") {
       if(TEAM_VENDING){
@@ -1579,7 +1586,7 @@
       try {await op();render();}
       catch(error){
         global.console?.error?.("[RTG Halloween]",error);
-        const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento","halloween-coach-selection-invalid":"Selezione potere allenatore non valida: riconfiguralo in Squadra","halloween-coach-power-not-applied":"Il potere allenatore non è stato applicato: verifica i PT e riconfiguralo","halloween-squad-busy":"Cambio squadra già in corso"};
+        const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento","halloween-coach-selection-invalid":"Selezione potere allenatore non valida: riconfiguralo in Squadra","halloween-coach-power-not-applied":"Il potere allenatore non è stato applicato: verifica i PT e riconfiguralo","halloween-squad-busy":"Cambio squadra già in corso","miximax-unavailable":"Concludi prima la partita: Miximax è disponibile solo durante l’evento","miximax-not-ready":"Dati Miximax non disponibili: riapri l’evento","miximax-parents-missing":"Devi sbloccare entrambi i giocatori nei distributori dell’evento","miximax-already-owned":"Hai già creato questo Miximax","miximax-squad-insufficient":"Servono almeno 15 giocatori disponibili per completare le tre squadre dopo la fusione","miximax-switch-bench-only":"Per cambiare versione sposta il giocatore Miximax in panchina"};
         notify(reasons[error?.code]||("Operazione "+UI.short+" fallita: "+(error?.code||error?.message||"errore sconosciuto")),"error");
       } finally {actionPending=false;}
     }
