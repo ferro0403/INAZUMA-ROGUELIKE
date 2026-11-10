@@ -87,8 +87,8 @@ const fetcher=async url=>({
   assert.match(css,/ANd9GcQ4docu4pCKgUNZ2fs/);
   assert.match(css,/duel-hero-v2\.svg/);
   assert.match(css,/\.vf-mini-pitch\.rtg-squad-shell \.rtg-squad-pitch-main/);
-  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-ui-polish-5"));
-  assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261110-vf-ui-polish-5"));
+  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-picker-slotfix-6"));
+  assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261110-vf-picker-slotfix-6"));
   const runtime=read("js/road-to-glory/rtg-halloween-event.js");
   assert.match(runtime,/function restoreEventOpponentCrests/);
   assert.match(runtime,/function visualSquadStrength/);
