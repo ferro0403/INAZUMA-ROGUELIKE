@@ -579,15 +579,6 @@
         maxByTeam:Object.fromEntries(TEAMS.map(team=>[team.teamId,opponentOverall(team.teamId)+1]))
       };
     }
-    function strengthStrip(strength){
-      const current=strength?.current,max=Number(strength?.max);
-      const valid=current!=null&&Number.isFinite(Number(current))&&Number.isFinite(max);
-      const width=valid&&max>0?Math.min(100,Math.max(0,Number(current)/max*100)):0;
-      return '<section class="vf-strength '+(valid&&current>max?'is-over-limit':'')+'" aria-label="Forza attuale e limite formazione">'+
-        '<div><small>FORZA ATTUALE</small><strong>'+(current==null?'—':escape(current))+'</strong></div>'+
-        '<div class="vf-strength__meter" aria-hidden="true"><span style="width:'+width+'%"></span></div>'+
-        '<div><small>FORZA MASSIMA</small><strong>'+(Number.isFinite(max)?escape(max):'—')+'</strong></div></section>';
-    }
     // The native prematch renderer is shared. In the DEV event the manifest's
     // exact Fire/Blizzard crest is authoritative, including after team switches.
     function restoreEventOpponentCrests(){
@@ -670,7 +661,6 @@
       const squadOvr=strength.current;
       const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · '+escape(manifest.labels.source)+'</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div></div>';
       return '<div class="rtg-halloween-mode halloween-squad-mode">'+
-        (TEAM_VENDING?'<div class="vf-squad-strength">'+strengthStrip(strength)+'</div>':'')+
         view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
           coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(
             activeEventSquad(),localSquad.coachId,
@@ -790,13 +780,9 @@
         return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+result+'</div></main>';
       }
       if(match.presentation?.preMatchSeen===false) {
-        const native=v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
-        if(!TEAM_VENDING)return native;
-        // Requirement discount is a preview only; never edit the match snapshot.
-        const current=visualSquadStrength();
-        const next={...current,max:opponentOverall(match.opponentSquad?.teamId)+1};
-        return native.replace('<div class="content rtg-prematch-content">',
-          '<div class="vf-prematch-strength">'+strengthStrip(next)+'</div><div class="content rtg-prematch-content">');
+        // The original RTG pre-partita begins directly with its native preview.
+        // The event's OVR limit and coach discount are still checked as before.
+        return v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
       }
       const presented=lastResolution&&["halftime","penalties","completed","completed-draw"].includes(match.status)?{...match,status:"active"}:match;
       return v.matchMarkup(presented).replace('<main class="screen','<main class="screen halloween-native-match');
@@ -1399,25 +1385,19 @@
             .replace(/(<div class="rtg-pull-balance">[\s\S]*?<strong>)[\s\S]*?(<\/strong>)/,
                (_all,before,after)=>before+'<img class="halloween-reveal-currency-icon" src="'+escape(curOf(pullFieldForTeam(selectedVendingTeamId)).icon||PUMPKIN_URL)+'" alt="'+escape(curOf(pullFieldForTeam(selectedVendingTeamId)).iconAlt||CUR.iconAlt)+'"> '+escape(drawn.result.balanceAfter)+' '+escape(curOf(pullFieldForTeam(selectedVendingTeamId)).unitUpper)+after)
             .replace(/ROAD TO GLORY · LEGACY [^<]*/,UI.tag);
-          // Only Vento-Fuoco: divide the already-committed balance into an
-          // icon, numeric amount and small currency caption. Pure markup:
-          // no debit/reward logic, no new state and no effect on Halloween.
-          if(!isCoach&&TEAM_VENDING){
-            const badgeCurrency=curOf(pullFieldForTeam(selectedVendingTeamId));
-            markup=markup.replace(/(<div class="rtg-pull-balance">[\s\S]*?<strong>)[\s\S]*?(<\/strong>)/,
-              (_full,prefix,suffix)=>prefix+
-                '<span class="vf-reward-balance-value">'+
-                  '<img src="'+escape(badgeCurrency.icon||PUMPKIN_URL)+'" alt="" class="halloween-reveal-currency-icon">'+
-                  '<b>'+escape(drawn.result.balanceAfter)+'</b>'+
-                  '<small>'+escape(badgeCurrency.unitUpper)+'</small>'+
-                '</span>'+suffix);
-          }
+          // For Vento-Fuoco keep the native RoadToGloryRunView.pullResultMarkup
+          // untouched apart from the event currency/label above. The same
+          // original structure, rarity panels and card size render in all modes.
           const rewardStyle=TEAM_VENDING
             ?(drawn.player?.teamId==="blizzard-team"?" vf-reward-ice":" vf-reward-fire"):"";
           // Keep the committed reward view in memory while the player sheet
           // is open. Returning from the detail restores this SAME result,
           // never starts a new pull or touches the account state.
-          const rewardClass="rtg-modal rtg-pull-modal rtg-halloween-pull-modal"+rewardStyle;
+          // Vento-Fuoco player prizes use the STANDARD RTG modal, NOT the
+          // Halloween wrapper that restyles its component anatomy.
+          const rewardClass=TEAM_VENDING&&!isCoach
+            ?"rtg-modal rtg-pull-modal"+rewardStyle
+            :"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"+rewardStyle;
           const showReward=()=>{
             deps.openModal(markup,{className:rewardClass});
             modalRoot()?.querySelectorAll?.("[data-rtg-pull-continue],[data-rtg-coaches-collection]")
