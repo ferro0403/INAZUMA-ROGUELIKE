@@ -673,12 +673,10 @@
             localSquad.coachId===HALLOWEEN_COACH_ID&&!eventOverallDiscount()
               ?null:localSquad.coachPowerSelection)||"",
           requirementsMarkup:requirement,nextTeamName:TEAM_NAME,dirty:false});
-      // Preserve the original Squadra renderer. Only replace its bottom-nav
-      // with the same shared UI already used by the Vento-Fuoco Home.
-      const themedSquad=TEAM_VENDING
-        ?nativeSquad.replace(/<nav class="bottom-nav rtg-bottom-nav"[\s\S]*?<\/nav>/,footer("squad"))
-        :nativeSquad;
-      return '<div class="rtg-halloween-mode halloween-squad-mode">'+themedSquad+'</div>';
+      // Never rewrite the native Squadra HTML or card structure. The shared
+      // event navigation is mounted ONCE as an app child during render(), so
+      // it has identical CSS ancestry in the Home and Squadra screens.
+      return '<div class="rtg-halloween-mode halloween-squad-mode">'+nativeSquad+'</div>';
     }
     function vendingSection() {
       const team=TEAMS.find(entry=>entry.teamId===selectedVendingTeamId)||TEAMS[0];
@@ -954,8 +952,10 @@
       // The canonical replace mutation swaps roster entries atomically.
       // Previously excluding the entire roster hid Nathan (or any other
       // event card) from the picker in one saved slot but not another.
-      const quickIds=new Set(quick.map(entry=>entry.cardId));
-      const all=userCards().filter(id=>id!==cardId&&!quickIds.has(id)).map(id=>{
+      // Bench cards are shortcuts, NOT excluded from the full owned-card list.
+      // Previously a Vento-Fuoco player moved to bench in slot 1 vanished
+      // from regular "Cambia" results but appeared in slot 2.
+      const all=userCards().filter(id=>id!==cardId).map(id=>{
         const p=resolveCard(id),sid=id.split("::")[0];
         return p?{cardId:id,playerId:id,source:sid==="free_agents"?"Svincolato":"RTG",seasonId:sid,player:p,
           role:String(p.normalizedRole||p.position||"").toUpperCase(),
@@ -970,16 +970,20 @@
       const rarityOrder=["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"];
       const rarityRank=value=>{const n=rarityOrder.findIndex(v=>v.toLocaleLowerCase("it")===asId(value).toLocaleLowerCase("it"));return n<0?rarityOrder.length:n;};
       const rarities=Array.from(new Set(all.map(e=>e.rarity))).sort((a,b)=>rarityRank(a)-rarityRank(b)||a.localeCompare(b,"it"));
-      let query="",sourceFilter="all",roleFilter="all",rarityFilter="all",seasonFilter="all",teamFilter="all",descending=true,visibleCount=12;
+      let query="",sourceFilter="all",roleFilter="all",rarityFilter="all",seasonFilter="all",teamFilter="all",descending=true,visibleCount=12,eventOnly=false;
       const teams=()=>Array.from(new Set(all.filter(e=>seasonFilter==="all"||e.seasonId===seasonFilter).flatMap(e=>e.teams))).sort((a,b)=>a.localeCompare(b,"it")).map(t=>({value:t,label:t}));
-      const filtered=()=>all.filter(e=>(!query||e.player.name?.toLocaleLowerCase("it").includes(query.toLocaleLowerCase("it")))
-        &&(sourceFilter==="all"||(sourceFilter==="free"?e.source==="Svincolato":e.source==="RTG"))
-        &&(roleFilter==="all"||e.role===roleFilter)
-        &&(rarityFilter==="all"||e.rarity===rarityFilter)
-        &&(seasonFilter==="all"||e.seasonId===seasonFilter)
-        &&(teamFilter==="all"||e.teams.includes(teamFilter)))
+      const filtered=()=>all.filter(e=>eventOnly
+        ?e.seasonId===EVENT_ID
+        :(!query||e.player.name?.toLocaleLowerCase("it").includes(query.toLocaleLowerCase("it")))
+          &&(sourceFilter==="all"||(sourceFilter==="free"?e.source==="Svincolato":e.source==="RTG"))
+          &&(roleFilter==="all"||e.role===roleFilter)
+          &&(rarityFilter==="all"||e.rarity===rarityFilter)
+          &&(seasonFilter==="all"||e.seasonId===seasonFilter)
+          &&(teamFilter==="all"||e.teams.includes(teamFilter)))
         .sort((a,b)=>(descending?b.overall-a.overall:a.overall-b.overall)||a.player.name.localeCompare(b.player.name,"it"));
-      const shown=list=>list.slice(0,visibleCount);
+      // The dedicated event view always exposes EVERY owned event card:
+      // never hide them behind pagination, stale filters or active squad slot.
+      const shown=list=>eventOnly?list:list.slice(0,visibleCount);
       let selecting=false;
       function select(id){
         if(selecting||busy||squadEditPending||actionPending)return;
@@ -996,18 +1000,29 @@
       function paint(){
         const list=filtered(),target=modalRoot()?.querySelector?.("[data-rtg-picker-results]");
         if(target){target.innerHTML=v.replacementPickerResultsMarkup({entries:shown(list),total:list.length,visibleCount});wireResults();}
+        const eventToggle=modalRoot()?.querySelector?.("[data-vf-picker-event-only]");
+        if(eventToggle){eventToggle.setAttribute("aria-pressed",eventOnly?"true":"false");eventToggle.classList.toggle("active",eventOnly);}
         modalRoot()?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(b=>b.classList?.toggle("active",b.dataset.rtgPickerSource===sourceFilter));
         modalRoot()?.querySelector?.("[data-rtg-picker-sort]")?.setAttribute?.("aria-pressed",descending?"true":"false");
         const arrow=modalRoot()?.querySelector?.("[data-rtg-picker-sort-arrow]");if(arrow)arrow.textContent=descending?"↓":"↑";
       }
       const list=filtered();
-      deps.openModal(v.replacementPickerMarkup({
+      const canonicalPicker=v.replacementPickerMarkup({
         target:{cardId,playerId:cardId,source:cardId.startsWith("free_agents::")?"Svincolato":"RTG",player:current},
         role:String(current.normalizedRole||current.position||""),allowAnyRole:true,quickEntries:quick,
         entries:shown(list),total:list.length,visibleCount,rarityOptions:rarities,
         seasonOptions:seasons,teamOptions:teams()
-      }),{className:"rtg-modal rtg-squad-picker-modal rtg-halloween-picker"});
+      });
+      const ownedEventCount=all.filter(entry=>entry.seasonId===EVENT_ID).length;
+      const pickerMarkup=TEAM_VENDING&&ownedEventCount
+        ?canonicalPicker.replace('<div data-rtg-picker-results>',
+          '<div class="vf-picker-event-filter"><button type="button" data-vf-picker-event-only aria-pressed="false">❄︎ GIOCATORI VENTO · FUOCO 🔥 <span>'+ownedEventCount+'</span></button></div><div data-rtg-picker-results>')
+        :canonicalPicker;
+      deps.openModal(pickerMarkup,{className:"rtg-modal rtg-squad-picker-modal rtg-halloween-picker"});
       wireResults();
+      modalRoot()?.querySelector?.("[data-vf-picker-event-only]")?.addEventListener("click",()=>{
+        eventOnly=!eventOnly;paint();
+      });
       modalRoot()?.querySelectorAll?.(".rtg-picker-quick-bench [data-rtg-picker-player]")?.forEach(b=>b.addEventListener("click",()=>select(b.dataset.rtgPickerPlayer)));
       modalRoot()?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",e=>{query=e.target.value.trim();visibleCount=12;paint();});
       modalRoot()?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(b=>b.addEventListener("click",()=>{sourceFilter=b.dataset.rtgPickerSource;visibleCount=12;paint();}));
@@ -1305,7 +1320,7 @@
       const customMarkup=customName?customPageMarkup(customName):null;
       if(customName==="home"&&customMarkup===null&&customPart("home"))customHomeFailed=true;
       if(customMarkup!==null)app.innerHTML=customName==="home"&&TEAM_VENDING
-        ?'<div class="rtg-halloween-run-screen vf-home-shell">'+customMarkup+footer("run")+'</div>'
+        ?'<div class="rtg-halloween-run-screen vf-home-shell">'+customMarkup+'</div>'
         :customMarkup;
       else if(view.startsWith("screen:")){view="match";return render();}
       else if(view==="squad")app.innerHTML=squadSection();
@@ -1313,6 +1328,14 @@
       else if(match&&view==="match"&&deps.matchView)app.innerHTML=nativeMatchMarkup();
       else if(view==="vending"&&TEAM_VENDING)app.innerHTML='<main class="screen vf-vending-screen">'+vendingSection()+'</main>';
       else app.innerHTML=shell(view==="vending"?vendingSection():match?pendingSection():matchSection());
+      // Home and Squadra deliberately share the SAME nav element, appended
+      // at the SAME DOM level. Nested seasonal styles used to make them look
+      // different even though the buttons had matching class names.
+      if(TEAM_VENDING&&((customName==="home"&&customMarkup!==null)||view==="squad")){
+        app.querySelectorAll?.("nav.rtg-bottom-nav")?.forEach(nav=>nav.remove());
+        app.insertAdjacentHTML("beforeend",
+          '<div class="vf-nav-dock">'+footer(view==="squad"?"squad":"run")+'</div>');
+      }
       if(devMode)app.innerHTML+=devToolsMarkup();
       restoreEventOpponentCrests();
       bindEventActions();
@@ -1427,10 +1450,10 @@
               if(!TEAM_VENDING||!drawn.player)return;
               const root=modalRoot(),detail=root?.querySelector?.(".player-detail-layout");
               if(!root||!detail)return;
-              detail.insertAdjacentHTML?.("afterbegin",
-                '<button type="button" class="vf-reward-return" data-vf-return-to-reward>← TORNA AL PREMIO</button>');
+              // The native X is the only way back to the same reward.
+              // No extra yellow CTA inside the player detail sheet.
               const back=event=>{
-                const target=event.target?.closest?.("[data-vf-return-to-reward],.modal-close");
+                const target=event.target?.closest?.(".modal-close");
                 if(!target||!root.contains?.(target))return;
                 event.preventDefault?.();event.stopImmediatePropagation?.();
                 root.removeEventListener?.("click",back,true);
