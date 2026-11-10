@@ -25,7 +25,7 @@ test("Mobile RTG home: compact CTA and existing navigation contracts",()=>{
   assert(!index.includes("rtg-release-polish-20261030.css"),"No illegal finishing stylesheets");
   assert(index.includes("css/game.css?v=20261104-css-tokens-1"), "game.css cambiato il 4 nov 2026 (file uniti): nuova chiave anti-cache");
   assert(index.includes("css/rtg-theme.css?v=20261104-css-tokens-1"));
-  assert(index.includes("css/rtg-halloween-event.css?v=20261109-vf-fix-2"));
+  assert(index.includes("css/rtg-halloween-event.css?v=20261110-vf-artwork-final-1"));
   assert(index.includes("home-view.js?v=20260923-rtg-direct-paint-p1-compact-v1"),
     "Mobile home HTML must be cache-busted");
 });
