@@ -98,8 +98,16 @@ assert.match(css,/shaiden-fullbody\.webp/);
 assert.match(css,/height:69%!important/, "Nathan Halloween fullbody proportions");
 assert.match(css,/img\.player-fullbody--fullbody\[src\$="shaiden-fullbody\.webp"\]/,
   "Shaiden must have its own fullbody selector");
-assert.match(css,/width:148%!important/,
-  "Shaiden artwork must be enlarged without changing Chaos");
+assert.match(css,/width:127%!important/,
+  "Shaiden stays enlarged versus the old baseline but reduced from 148%");
+assert.match(css,/height:82%!important/,
+  "Shaiden detail uses the agreed intermediate 82% height, not 93% or 69%");
+assert.doesNotMatch(css,/width:148%!important|height:93%!important/,
+  "The previous oversized Shaiden detail has been removed");
+assert.match(css,/\.player-card\.rtg-event--vento_fuoco_dev\.rtg-element-miximax \.player-portrait-wrap img\.player-portrait\{[^}]*transform:scale\(1\.15\)!important/s,
+  "Only Miximax native cards zoom the portrait by 15%");
+assert.match(css,/transform-origin:center 52%!important/,
+  "Portrait zoom stays centered inside the existing card frame");
 assert.doesNotMatch(css,/\.vf-miximax-face\{/);
 assert.match(css,/\.rtg-element-miximax--fire/);
 assert.match(css,/\.rtg-element-miximax--wind/);
