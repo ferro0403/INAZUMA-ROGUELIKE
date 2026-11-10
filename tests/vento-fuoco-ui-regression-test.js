@@ -70,8 +70,15 @@ const fetcher=async url=>({ok:fs.existsSync(String(url)),status:fs.existsSync(St
     collections:[{seasonId:"ie1",total:10,unlocked:0}],eventTeams:teams
   });
   assert.match(nativeCollections,/GIOCATORI EVENTO/);
-  assert.match(nativeCollections,/2 \/ 42 giocatori sbloccati/);
+  assert.match(nativeCollections,/2 \/ 40 giocatori sbloccati/);
   assert.match(nativeCollections,/5%/);
+  const withFusionsCollection=view.albumCollectionMarkup({
+    state:{activeSeasonId:"ie1",gachaAcquiredCards:[]},
+    collections:[{seasonId:"ie1",total:10,unlocked:0}],eventTeams:withFusions
+  });
+  assert.match(withFusionsCollection,/4 \/ 40 giocatori sbloccati/,
+    "Each Miximax player counts once in the collection, despite two team appearances");
+  assert.match(withFusionsCollection,/10%/);
   const html=context.GameEvents.extensionPart("vento_fuoco_dev","home").render({
     teams:()=>teams.map(t=>({teamId:t.originTeamId,name:t.teamName,logo:t.logoUrl})),
     player:pid=>module.eventPlayer(pid),
