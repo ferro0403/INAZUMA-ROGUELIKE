@@ -30,7 +30,7 @@
       '<span class="vf-rival__lineup-toggle"><b>VEDI 11 IN CAMPO</b><b>CHIUDI CAMPO</b><i aria-hidden="true">⌄</i></span></summary>'+
       '<div class="vf-rival__field"><div class="vf-rival__field-head"><span>DISPOSIZIONE TATTICA · '+esc(preview.formationId||"—")+'</span>'+
       '<span>11 TITOLARI</span></div>'+
-      '<div class="vf-mini-pitch development-squad-card-scope" aria-label="Formazione su campo di '+esc(team.name)+'">'+
+      '<div class="vf-mini-pitch development-squad-card-scope rtg-squad-shell" aria-label="Formazione su campo di '+esc(team.name)+'">'+
       (pitch||'<p class="vf-rival__unavailable">Anteprima campo non disponibile.</p>')+
       '</div></div></details>';
   }
