@@ -92,4 +92,3 @@ assert.match(css,/shaiden-fullbody\.webp/);
 assert.match(css,/height:69%!important/, "Nathan Halloween fullbody proportions");
 assert.doesNotMatch(css,/\.vf-miximax-face\{/);
 console.log("Miximax: sei card Squadra native, immagini HD e pulsanti RTG verificati");
-
