@@ -17,6 +17,12 @@ const fetcher=async url=>({
   const manifest=context.GameEvents.get("vento_fuoco_dev");
   assert.equal(context.GameEvents.validate(manifest).length,0,"manifest paths remain valid");
   assert.equal(manifest.extensionCacheVersion,"20261110-vf-ui-polish-5");
+  assert.deepEqual(Array.from(manifest.uses.cardsFrom),["halloween2026"],
+    "Vento-Fuoco must explicitly preload Halloween owned-card dependencies");
+  assert.equal(context.GameEvents.canUseCardsFrom("vento_fuoco_dev","halloween2026"),true,
+    "cross-event Halloween cards must be authorized for this DEV squad picker");
+  assert.equal(context.GameEvents.canUseCardsFrom("halloween2026","vento_fuoco_dev"),false,
+    "the dependency is one-way: never grant DEV cards to Halloween");
   const api=context.GameEvents.module("vento_fuoco_dev");
   const part=context.GameEvents.extensionPart("vento_fuoco_dev","home");
   assert.ok(part?.render,"Home extension loaded through versioned manifest");
