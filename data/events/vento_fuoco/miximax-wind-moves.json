@@ -23,7 +23,7 @@
           "type": "shot",
           "element": "Wind",
           "power": 105,
-          "tension": 0,
+          "tension": 100,
           "source": "manual"
         },
         {
@@ -88,7 +88,7 @@
           "type": "shot",
           "element": "Wind",
           "power": 105,
-          "tension": 0,
+          "tension": 100,
           "source": "manual"
         }
       ]
