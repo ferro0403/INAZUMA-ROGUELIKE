@@ -37,7 +37,9 @@
           "overall": 96,
           "element": "Wind"
         }
-      }
+      },
+      "frontFullbodyUrl": "assets/events/vento-fuoco/chaos-fullbody.webp",
+      "fullbodyUrl": "assets/events/vento-fuoco/chaos-fullbody.webp"
     },
     {
       "playerId": "9900002",
@@ -74,7 +76,9 @@
           "overall": 96,
           "element": "Wind"
         }
-      }
+      },
+      "frontFullbodyUrl": "assets/events/vento-fuoco/shaiden-fullbody.webp",
+      "fullbodyUrl": "assets/events/vento-fuoco/shaiden-fullbody.webp"
     }
   ]
 }
