@@ -1233,9 +1233,19 @@
         const pitch=deps.squadView?.matchPitchMarkup?.(
           {formationId,lineup},{side:"opponent",mode:"preview"}
         )||"";
-        // No Home detail handler: keep buttons informational and unfocusable.
-        const pitchMarkup=String(pitch).replace(/<button\b/g,'<button tabindex="-1"');
+        // Same actual Squadra buttons as every other RTG formation.
+        // The home extension binds them to the canonical detail reader.
+        const pitchMarkup=String(pitch);
         return {formationId,overall:opponentOverall(teamId),lineup,pitchMarkup};
+      },
+      openPreviewPlayer:cardId=>{
+        if(!TEAM_VENDING)return;
+        const raw=asId(cardId);
+        const pid=raw.startsWith(EVENT_ID+"::")?raw.slice(EVENT_ID.length+2):raw;
+        const valid=(assets?.teams||[]).some(team=>
+          (team.setup?.startingXI||[]).some(id=>asId(id)===pid));
+        if(!valid)return;
+        openNativeDetail(EVENT_ID+"::"+pid,isOwned(pid),true);
       },
       player:pid=>player(asId(pid)),
       // Carte possedute di questo evento; con {from:"<id>"} quelle di un altro evento, solo se il file lo permette
