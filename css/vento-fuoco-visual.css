@@ -69,9 +69,8 @@
 }
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-bottom-nav{background:#0b2038!important;border-color:#22bfe9!important}
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-bottom-nav button.active{background:#ffd21f!important;color:#061323!important}
-.vf-squad-strength{max-width:1000px;margin:0 auto;padding:10px 12px 0;background:#0c2543}
-.vf-squad-strength .vf-strength{margin:0}
-.vf-prematch-strength{max-width:970px;margin:12px auto 0;padding:0 12px}
+/* Strength is still calculated for validation and available in the event Home.
+ * Squadra and pre-partita no longer inject a second top-of-page strip. */
 
 /* Schede giocatore: artwork full-bleed SOLO nell'hero, informazioni leggibili. */
 .player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team{
@@ -120,16 +119,42 @@
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-tags .role-chip{
   background:#fffdfa!important;color:#08131c!important;border:2px solid #06121e!important
 }
+/* Restore the real element label palette, as on canonical player sheets.
+ * Unlike the general role/level chips, Fire and Wind must NOT be black. */
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team .detail-element-chip{
+  background:#fff0eb!important;color:#b71f2d!important;
+  border-color:#bc2634!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team .detail-element-chip{
+  background:#ecf9ff!important;color:#0871bc!important;
+  border-color:#168acb!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-element-chip svg{
+  fill:currentColor!important;stroke:currentColor;
+}
 .player-detail-layout.rtg-event--vento_fuoco_dev .overall-comparison>div{
   background:#fffdf8!important;border:3px solid #07111e!important;color:#08131e!important
 }
 .player-detail-layout.rtg-event--vento_fuoco_dev .overall-comparison>div:first-child{background:#ffd21f!important}
 .player-detail-layout.rtg-event--vento_fuoco_dev .overall-comparison span,
 .player-detail-layout.rtg-event--vento_fuoco_dev .overall-comparison strong{color:#06121e!important}
+/* Rarity is a real PlayerView variable set by rarity-<tier>, not the
+ * Fire/Ice team colour. Mondiale stays red; Elite purple; all other tiers
+ * inherit their own canonical star and left stripe exactly as standard RTG. */
 .player-detail-layout.rtg-event--vento_fuoco_dev .detail-category{
-  background:#fffdf6!important;color:#07131e!important;border:3px solid #07111e!important
+  background:#fffdf6!important;color:#07131e!important;
+  border:3px solid #07111e!important;
+  border-left:9px solid var(--detail-rarity-accent)!important;
 }
-.player-detail-layout.rtg-event--vento_fuoco_dev .detail-category *{color:#07131e!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-category span{
+  color:var(--detail-rarity-accent)!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-category small{
+  color:#806719!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-category strong{
+  color:#07131e!important;
+}
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual{
   background:linear-gradient(150deg,transparent 0%,var(--vf-detail-primary,#0474d1) 95%)!important;
   overflow:hidden!important
