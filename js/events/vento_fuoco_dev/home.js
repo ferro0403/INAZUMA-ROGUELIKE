@@ -111,11 +111,17 @@
   function miximaxScreen(tools) {
     const recipes=tools.fusionRecipes?.()||[];
     const art=event?.fusions?.banner||"";
-    const img=(player,style)=>'<img class="vf-miximax-face '+style+'" src="'+esc(player?.portraitUrl||"")+
-      '" alt="'+esc(player?.name||"Giocatore")+'" loading="lazy">';
-    const pair=entry=>'<div class="vf-miximax-ingredient '+(entry.owned?'is-owned':'is-missing')+'">'+
-      img(entry.player,"")+'<strong>'+esc(entry.player?.name||"")+'</strong>'+
-      '<small>'+(entry.owned?'SBLOCCATO':'DA TROVARE')+'</small></div>';
+    // Identical card HTML from RoadToGlorySquadView.playerCard, not a
+    // hand-built <img> thumbnail. These cards are read-only and consultable.
+    const participant=(player,kind,owned,label)=>{
+      const card=String(tools.fusionCard?.(player)||"");
+      return '<div class="vf-miximax-entrant '+kind+' '+(owned?'is-owned':'is-missing')+'">'+
+        '<div class="vf-miximax-native-card">'+
+        (card||'<p class="vf-miximax-unavailable">Carta non disponibile</p>')+'</div>'+
+        '<small class="vf-miximax-card-state">'+esc(label)+'</small></div>';
+    };
+    const pair=entry=>participant(entry.player,"vf-miximax-ingredient",entry.owned,
+      entry.owned?"SBLOCCATO":"DA TROVARE");
     const recipeCard=recipe=>{
       const result=recipe.result||{};
       const versions=(result.roleVariants||[]).map(variant=>
@@ -126,19 +132,20 @@
         recipe.inputs.every(input=>input.owned)?"Puoi eseguire la fusione.":
         "Devi sbloccare entrambi i giocatori nei distributori dell’evento.";
       return '<article class="vf-miximax-recipe" data-vf-recipe="'+esc(recipe.id)+'">'+
-        '<div class="vf-miximax-pair">'+recipe.inputs.map(pair).join('<span class="vf-miximax-plus" aria-hidden="true">+</span>')+
+        '<div class="vf-miximax-pair development-squad-card-scope rtg-squad-shell" aria-label="Carte Squadra per '+esc(result.name)+'">'+
+        recipe.inputs.map(pair).join('<span class="vf-miximax-plus" aria-hidden="true">+</span>')+
         '<span class="vf-miximax-arrow" aria-hidden="true">➜</span>'+
-        '<div class="vf-miximax-result">'+img(result,"is-fusion")+
-        '<strong>'+esc(result.name)+'</strong><small>OVR '+esc(result.overall)+' · LEGGENDA</small></div></div>'+
+        participant(result,"vf-miximax-result",recipe.owned,recipe.owned?"NEL CLUB":"RISULTATO")+
+        '</div>'+
         '<div class="vf-miximax-recipe__info"><h2>'+esc(result.name)+'</h2>'+
         '<div class="vf-miximax-versions">'+versions+'</div><p>'+esc(status)+'</p></div>'+
-        '<button type="button" class="vf-miximax-fuse" data-vf-fuse-confirm="'+esc(recipe.id)+'" '+
+        '<button type="button" class="btn btn-yellow vf-miximax-fuse" data-vf-fuse-confirm="'+esc(recipe.id)+'" '+
           (recipe.available?'':'disabled')+'>'+label+'</button>'+
         '<div class="vf-miximax-confirm" data-vf-confirm-panel hidden>'+
           '<p><strong>FUSIONE IRREVERSIBILE</strong> · I due giocatori originali saranno consumati. Potrai ritrovarli solo nei distributori dell’evento.</p>'+
           '<div class="vf-miximax-confirm__actions">'+
-            '<button type="button" data-vf-fuse-cancel>ANNULLA</button>'+
-            '<button type="button" data-vf-fuse-run="'+esc(recipe.id)+'">CONFERMA FUSIONE</button></div>'+
+            '<button type="button" class="btn btn-ghost" data-vf-fuse-cancel>ANNULLA</button>'+
+            '<button type="button" class="btn btn-yellow" data-vf-fuse-run="'+esc(recipe.id)+'">CONFERMA FUSIONE</button></div>'+
         '</div></article>';
     };
     return '<main class="screen event-page event-page--vento-fuoco vf-miximax-page">'+
@@ -149,10 +156,17 @@
         '<p>Unisci gli sbloccati di Fuoco e Blizzard e ottieni due versioni intercambiabili.</p></div></div>'+
       '<section class="vf-miximax-list" aria-label="Ricette Miximax">'+recipes.map(recipeCard).join("")+'</section>'+
       '<p class="vf-miximax-warning"><strong>ATTENZIONE:</strong> i giocatori usati nella fusione scompaiono dalla tua collezione attiva. Puoi sbloccarli nuovamente nell’evento.</p>'+
-      '<button type="button" class="vf-miximax-return" data-event-action="home">TORNA ALL’EVENTO</button>'+
+      '<button type="button" class="btn btn-ghost vf-miximax-return" data-event-action="home">TORNA ALL’EVENTO</button>'+
       '</main>';
   }
   function bindMiximax(root,tools) {
+    // Native Squadra cards already contain the correct player/card identity;
+    // a click opens the existing read-only player sheet, not the squad editor.
+    root?.querySelectorAll?.(".vf-miximax-pair [data-rtg-squad-player]")?.forEach(card=>
+      card.addEventListener("click",event=>{
+        event.stopPropagation?.();
+        tools.openFusionPlayer?.(card.dataset.rtgSquadPlayer);
+      }));
     root?.querySelectorAll?.("[data-vf-fuse-confirm]")?.forEach(button=>button.addEventListener("click",()=>{
       const article=button.closest(".vf-miximax-recipe");
       const panel=article?.querySelector("[data-vf-confirm-panel]");
