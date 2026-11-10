@@ -869,6 +869,23 @@
   --rtg-legacy-color:#1978d8!important;--rtg-legacy-ink:#fff!important;
   background:#1978d8!important;
 }
+/* Some native Squadra/album readers do not emit .rtg-legacy-badge for
+ * non-season cards. Supply the same VF corner banner only in that case. */
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax:not(:has(>.rtg-legacy-badge))::after{
+  content:"VF"!important;display:grid!important;place-items:center!important;
+  position:absolute!important;z-index:24!important;right:-4px!important;left:auto!important;
+  top:auto!important;bottom:-11px!important;min-width:27px!important;width:auto!important;
+  height:16px!important;min-height:16px!important;padding:0 5px!important;
+  border:2px solid #071323!important;border-radius:0!important;
+  box-shadow:1px 2px 0 #071323!important;
+  color:#fff!important;font:1000 7px/1 system-ui,sans-serif!important;pointer-events:none!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire:not(:has(>.rtg-legacy-badge))::after{
+  background:#df2e42!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind:not(:has(>.rtg-legacy-badge))::after{
+  background:#1978d8!important;
+}
 .player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire{
   --vf-detail-primary:#df2e42;--vf-detail-secondary:#f98b49;--vf-detail-bg:#4a1c37;
   --vf-detail-art:url("../assets/events/vento-fuoco/miximax-fire-right-hd.webp");
