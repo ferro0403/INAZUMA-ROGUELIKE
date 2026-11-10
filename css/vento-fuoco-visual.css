@@ -467,6 +467,16 @@
   background:#1978d8!important;color:#fff!important;
 }
 
+/* Premio → scheda giocatore → premio: navigazione solo UI, senza pull ripetuti. */
+#modal-root .vf-reward-return{
+  display:block;width:calc(100% - 22px);margin:9px 11px 0;
+  padding:10px 12px;border:2px solid #071827;border-radius:3px;
+  background:#ffdc53;color:#071827;box-shadow:2px 3px 0 #061525;
+  font-size:.75rem;line-height:1.2;font-weight:1000;letter-spacing:.045em;
+  cursor:pointer;
+}
+#modal-root .vf-reward-return:focus-visible{outline:3px solid #35c4ff;outline-offset:2px}
+
 /* In the pull reveal the exact same native card gets room to breathe, without
  * a second card anatomy or a fake diagonal paper ticket behind it. */
 .rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-card-stage{
