@@ -25,10 +25,10 @@ const fetcher=async url=>({ok:fs.existsSync(String(url)),status:fs.existsSync(St
     key,key==="dev:vento_fuoco_dev:shared:account"?account:null
   ]))};
   const teams=await module.albumTeamsSnapshot(storage);
-  assert.equal(teams.length,2);
+  assert.equal(teams.length,3);
   assert.deepEqual(Array.from(teams.map(t=>t.teamId)),
-    ["vento_fuoco_dev::fire-team","vento_fuoco_dev::blizzard-team"]);
-  assert.deepEqual(Array.from(teams.map(t=>[t.unlocked,t.total])),[[1,19],[1,19]]);
+    ["vento_fuoco_dev::fire-team","vento_fuoco_dev::blizzard-team","vento_fuoco_dev::miximax"]);
+  assert.deepEqual(Array.from(teams.map(t=>[t.unlocked,t.total])),[[1,19],[1,19],[0,2]]);
   assert.equal(teams[0].entries[0].playerId,"4539");
   assert.equal(teams[1].entries[0].playerId,"4538");
   const view=context.RoadToGloryAlbumView.create({
