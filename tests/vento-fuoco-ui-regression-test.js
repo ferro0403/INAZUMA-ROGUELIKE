@@ -45,7 +45,7 @@ const fetcher=async url=>({ok:fs.existsSync(String(url)),status:fs.existsSync(St
     collections:[{seasonId:"ie1",total:10,unlocked:0}],eventTeams:teams
   });
   assert.match(nativeCollections,/GIOCATORI EVENTO/);
-  assert.match(nativeCollections,/2 \/ 38 giocatori sbloccati/);
+  assert.match(nativeCollections,/2 \/ 40 giocatori sbloccati/);
   assert.match(nativeCollections,/5%/);
   const html=context.GameEvents.extensionPart("vento_fuoco_dev","home").render({
     teams:()=>teams.map(t=>({teamId:t.originTeamId,name:t.teamName,logo:t.logoUrl})),
