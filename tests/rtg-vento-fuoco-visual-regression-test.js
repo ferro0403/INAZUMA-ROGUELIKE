@@ -16,7 +16,7 @@ const fetcher=async url=>({
   await loadEventsWithDev(context,"vento_fuoco_dev");
   const manifest=context.GameEvents.get("vento_fuoco_dev");
   assert.equal(context.GameEvents.validate(manifest).length,0,"manifest paths remain valid");
-  assert.equal(manifest.extensionCacheVersion,"20261110-vf-shaiden-move-power-5");
+  assert.equal(manifest.extensionCacheVersion,"20261110-vf-miximax-polish-6");
   assert.deepEqual(Array.from(manifest.uses.cardsFrom),["halloween2026"],
     "Vento-Fuoco must explicitly preload Halloween owned-card dependencies");
   assert.equal(context.GameEvents.canUseCardsFrom("vento_fuoco_dev","halloween2026"),true,
@@ -93,8 +93,8 @@ const fetcher=async url=>({
   assert.match(css,/ANd9GcQ4docu4pCKgUNZ2fs/);
   assert.match(css,/duel-hero-v2\.svg/);
   assert.match(css,/\.vf-mini-pitch\.rtg-squad-shell \.rtg-squad-pitch-main/);
-  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-shaiden-move-power-5"));
-  assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261110-vf-shaiden-move-power-5"));
+  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-miximax-polish-6"));
+  assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261110-vf-miximax-polish-6"));
   const runtime=read("js/road-to-glory/rtg-halloween-event.js");
   assert.match(runtime,/function restoreEventOpponentCrests/);
   assert.match(runtime,/function visualSquadStrength/);
