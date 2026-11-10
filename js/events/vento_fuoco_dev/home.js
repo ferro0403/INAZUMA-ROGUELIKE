@@ -37,6 +37,7 @@
   function classes(player) {
     if(!player)return "";
     const pid=String(player.playerId||player.cardId?.split("::").at(-1)||"");
+    if(player.halloweenFusion||["9900001","9900002"].includes(pid))return "rtg-element-miximax";
     const team=byId.get(pid);
     return team==="fire-team"?"rtg-element-fire-team":team==="blizzard-team"?"rtg-element-blizzard-team":"";
   }
@@ -87,6 +88,11 @@
       <button type="button" class="vf-distributors" data-event-action="pull" ${open?"":"disabled"}>
         <span aria-hidden="true">▤</span> DISTRIBUTORI
       </button>
+      <button type="button" class="vf-miximax-banner" data-event-action="screen" data-event-screen="miximax"
+        aria-label="Apri Miximax: fondi due giocatori sbloccati">
+        <img src="${esc(event?.fusions?.banner||"")}" alt="" loading="lazy" referrerpolicy="no-referrer">
+        <span class="vf-miximax-banner__copy"><small>FUSIONI ELEMENTALI</small><strong>MIXIMAX</strong><em>UNISCI I POTERI <b aria-hidden="true">›</b></em></span>
+      </button>
     </main>`;
   }
   // All 22 players use the actual native Squadra card and detail viewer.
@@ -101,5 +107,72 @@
       });
     });
   }
-  global.GameEvents?.extend?.(ID,{classes,home:{render:home,bind:bindHome}});
+  // Event-only view. All ownership and availability come from the committed ledger.
+  function miximaxScreen(tools) {
+    const recipes=tools.fusionRecipes?.()||[];
+    const art=event?.fusions?.banner||"";
+    const img=(player,style)=>'<img class="vf-miximax-face '+style+'" src="'+esc(player?.portraitUrl||"")+
+      '" alt="'+esc(player?.name||"Giocatore")+'" loading="lazy">';
+    const pair=entry=>'<div class="vf-miximax-ingredient '+(entry.owned?'is-owned':'is-missing')+'">'+
+      img(entry.player,"")+'<strong>'+esc(entry.player?.name||"")+'</strong>'+
+      '<small>'+(entry.owned?'SBLOCCATO':'DA TROVARE')+'</small></div>';
+    const recipeCard=recipe=>{
+      const result=recipe.result||{};
+      const versions=(result.roleVariants||[]).map(variant=>
+        '<span class="'+(variant.element==="Wind"?"vf-wind":"vf-fire")+'">'+
+        (variant.element==="Wind"?"VENTO":"FUOCO")+' · '+esc(variant.position)+'</span>').join("");
+      const label=recipe.owned?"GIÀ FUSO":recipe.available?"FONDI I GIOCATORI":"REQUISITI MANCANTI";
+      const status=recipe.owned?"La fusione è già nel tuo club.":
+        recipe.inputs.every(input=>input.owned)?"Puoi eseguire la fusione.":
+        "Devi sbloccare entrambi i giocatori nei distributori dell’evento.";
+      return '<article class="vf-miximax-recipe" data-vf-recipe="'+esc(recipe.id)+'">'+
+        '<div class="vf-miximax-pair">'+recipe.inputs.map(pair).join('<span class="vf-miximax-plus" aria-hidden="true">+</span>')+
+        '<span class="vf-miximax-arrow" aria-hidden="true">➜</span>'+
+        '<div class="vf-miximax-result">'+img(result,"is-fusion")+
+        '<strong>'+esc(result.name)+'</strong><small>OVR '+esc(result.overall)+' · LEGGENDA</small></div></div>'+
+        '<div class="vf-miximax-recipe__info"><h2>'+esc(result.name)+'</h2>'+
+        '<div class="vf-miximax-versions">'+versions+'</div><p>'+esc(status)+'</p></div>'+
+        '<button type="button" class="vf-miximax-fuse" data-vf-fuse-confirm="'+esc(recipe.id)+'" '+
+          (recipe.available?'':'disabled')+'>'+label+'</button>'+
+        '<div class="vf-miximax-confirm" data-vf-confirm-panel hidden>'+
+          '<p><strong>FUSIONE IRREVERSIBILE</strong> · I due giocatori originali saranno consumati. Potrai ritrovarli solo nei distributori dell’evento.</p>'+
+          '<div class="vf-miximax-confirm__actions">'+
+            '<button type="button" data-vf-fuse-cancel>ANNULLA</button>'+
+            '<button type="button" data-vf-fuse-run="'+esc(recipe.id)+'">CONFERMA FUSIONE</button></div>'+
+        '</div></article>';
+    };
+    return '<main class="screen event-page event-page--vento-fuoco vf-miximax-page">'+
+      '<header class="vf-miximax-header"><button type="button" data-event-action="home" class="vf-back" aria-label="Torna alla Home evento">←</button>'+
+      '<div><small>VENTO × FUOCO · EVENTO SPECIALE</small><h1>MIXIMAX</h1></div></header>'+
+      '<div class="vf-miximax-intro"><img src="'+esc(art)+'" alt="" referrerpolicy="no-referrer">'+
+        '<div><small>UNA NUOVA FORZA</small><h2>Due leggende. Un solo giocatore.</h2>'+
+        '<p>Unisci gli sbloccati di Fuoco e Blizzard e ottieni due versioni intercambiabili.</p></div></div>'+
+      '<section class="vf-miximax-list" aria-label="Ricette Miximax">'+recipes.map(recipeCard).join("")+'</section>'+
+      '<p class="vf-miximax-warning"><strong>ATTENZIONE:</strong> i giocatori usati nella fusione scompaiono dalla tua collezione attiva. Puoi sbloccarli nuovamente nell’evento.</p>'+
+      '<button type="button" class="vf-miximax-return" data-event-action="home">TORNA ALL’EVENTO</button>'+
+      '</main>';
+  }
+  function bindMiximax(root,tools) {
+    root?.querySelectorAll?.("[data-vf-fuse-confirm]")?.forEach(button=>button.addEventListener("click",()=>{
+      const article=button.closest(".vf-miximax-recipe");
+      const panel=article?.querySelector("[data-vf-confirm-panel]");
+      if(!panel||button.disabled)return;
+      button.hidden=true;panel.hidden=false;
+    }));
+    root?.querySelectorAll?.("[data-vf-fuse-cancel]")?.forEach(button=>button.addEventListener("click",()=>{
+      const article=button.closest(".vf-miximax-recipe");
+      const panel=article?.querySelector("[data-vf-confirm-panel]");
+      const trigger=article?.querySelector("[data-vf-fuse-confirm]");
+      if(panel)panel.hidden=true;
+      if(trigger){trigger.hidden=false;trigger.focus?.();}
+    }));
+    root?.querySelectorAll?.("[data-vf-fuse-run]")?.forEach(button=>button.addEventListener("click",()=>{
+      if(button.disabled)return;
+      button.disabled=true;tools.fuse?.(button.dataset.vfFuseRun);
+    }));
+  }
+  global.GameEvents?.extend?.(ID,{
+    classes,home:{render:home,bind:bindHome},
+    screens:{miximax:{render:miximaxScreen,bind:bindMiximax}}
+  });
 })(globalThis);
