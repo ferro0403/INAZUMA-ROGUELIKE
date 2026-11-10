@@ -8,7 +8,7 @@ const fire=JSON.parse(fs.readFileSync(path.join(root,"data/events/vento_fuoco/mi
 const wind=JSON.parse(fs.readFileSync(path.join(root,"data/events/vento_fuoco/miximax-wind-moves.json"),"utf8")).players;
 assert.equal(players.length,2);for(const p of players){assert.equal(p.overall,96);assert.equal(p.roleSwitchEnabled,true);
  assert.equal(fire[p.playerId].moves.length,4);assert.equal(wind[p.playerId].moves.length,4);
- assert.ok(p.portraitUrl.startsWith("data:image/webp;base64,"));assert.equal(p.frontFullbodyUrl,p.portraitUrl);}
+ assert.ok(p.portraitUrl.startsWith("data:image/webp;base64,"));assert.equal(p.frontFullbodyUrl,undefined);}
 assert.equal(players.find(p=>p.name==="Chaos").variants.wind.position,"FW");
 assert.equal(players.find(p=>p.name==="Shaiden").variants.wind.position,"DF");
 for(const recipe of recipes){
