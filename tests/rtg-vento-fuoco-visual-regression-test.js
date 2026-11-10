@@ -123,16 +123,14 @@ const fetcher=async url=>({
     "no additional strength banner in Squadra or pre-partita");
   assert.match(runtime,/function visualSquadStrength\(/,
     "OVR projections and eligibility must remain intact");
-  assert.match(runtime,/const all=userCards\(\)\.filter\(id=>id!==cardId\)\.map\(id=>\{/,
-    "event cards in bench remain in the full Cambia player list");
-  assert.doesNotMatch(runtime,/!quickIds\.has\(id\)/,
-    "quick bench must never exclude candidates from the full picker");
-  assert.match(runtime,/const shown=list=>eventOnly\?list:list\.slice\(0,visibleCount\)/,
-    "event players do not disappear behind pagination");
-  assert.match(runtime,/data-vf-picker-event-only/,
-    "native picker has a full Vento-Fuoco event collection shortcut");
-  assert.match(runtime,/e\.seasonId===EVENT_ID/,
-    "event-only filter selects the active event's actually owned cards");
+  assert.match(runtime,/const all=userCards\(\)\.map\(id=>\{/,
+    "the native Cambia includes every owned card, including the current card");
+  assert.doesNotMatch(runtime,/!quickIds\.has\(id\)|\.filter\(id=>id!==cardId\)/,
+    "neither starting XI, bench nor the selected player is filtered out");
+  assert.match(runtime,/const shown=list=>list\.slice\(0,visibleCount\)/,
+    "keep canonical progressive pagination instead of a parallel event-only view");
+  assert.doesNotMatch(runtime,/data-vf-picker-event-only|eventOnly|vf-picker-event-filter/,
+    "unrequested event players button and its logic are fully removed");
   // HD assets are distinct source crops: small card vs tall player sheet.
   const files=[
     ["fire-card-hd.avif",1024,768],["ice-card-hd.avif",1024,768],
@@ -234,12 +232,18 @@ const fetcher=async url=>({
     "one red/blue navigation in Home and Squadra");
   assert.match(css,/\.vf-nav-dock \.vf-nav-switch\.bottom-nav\.rtg-bottom-nav/,
     "both nav screens have identical parent-level layout geometry");
-  assert.match(css,/\.vf-picker-event-filter>button/,
-    "native Cambia has a visible event-only filter");
+  assert.doesNotMatch(css,/vf-picker-event-filter/,
+    "no unrequested event-only button or associated CSS");
   assert.match(css,/vf-nav-switch__home\.active/);
   assert.match(css,/vf-nav-switch__squad\.active/);
   assert.match(css,/\.halloween-squad-mode \.rtg-squad-head-stats \.squad-field-formation/,
     "formation badge no longer orange");
+  assert.match(css,/background:linear-gradient\(100deg,#952d44 0%,#6a263d 27%,#182944 57%,#12608a 100%\)/,
+    "Squadra header uses both Fire red and Ice blue");
+  assert.match(css,/\.halloween-squad-mode \.squad-field-panel\{[\s\S]*?border-left:5px solid #e64b56!important/,
+    "field frame has a red Fire edge");
+  assert.match(css,/\.halloween-squad-mode \.squad-bench-panel\{[\s\S]*?border-right:5px solid #e64b56!important/,
+    "bench frame balances Ice and Fire borders");
   assert.match(css,/\.vf-rival__reward \.halloween-currency img/,
     "matching small reward icons");
   assert.doesNotMatch(css,/vf-reward-balance-value|grid-template-columns:132px minmax\(0,1fr\)!important/,
