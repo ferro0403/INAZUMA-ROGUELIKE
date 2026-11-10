@@ -1414,9 +1414,32 @@
           }
           const rewardStyle=TEAM_VENDING
             ?(drawn.player?.teamId==="blizzard-team"?" vf-reward-ice":" vf-reward-fire"):"";
-          deps.openModal(markup,{className:"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"+rewardStyle});
-          modalRoot()?.querySelectorAll?.("[data-rtg-pull-continue],[data-rtg-coaches-collection]")?.forEach(btn=>btn.addEventListener("click",()=>deps.closeModal?.()));
-          modalRoot()?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",()=>openNativeDetail(drawn.result.cardId));
+          // Keep the committed reward view in memory while the player sheet
+          // is open. Returning from the detail restores this SAME result,
+          // never starts a new pull or touches the account state.
+          const rewardClass="rtg-modal rtg-pull-modal rtg-halloween-pull-modal"+rewardStyle;
+          const showReward=()=>{
+            deps.openModal(markup,{className:rewardClass});
+            modalRoot()?.querySelectorAll?.("[data-rtg-pull-continue],[data-rtg-coaches-collection]")
+              ?.forEach(btn=>btn.addEventListener("click",()=>deps.closeModal?.()));
+            modalRoot()?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",()=>{
+              openNativeDetail(drawn.result.cardId);
+              if(!TEAM_VENDING||!drawn.player)return;
+              const root=modalRoot(),detail=root?.querySelector?.(".player-detail-layout");
+              if(!root||!detail)return;
+              detail.insertAdjacentHTML?.("afterbegin",
+                '<button type="button" class="vf-reward-return" data-vf-return-to-reward>← TORNA AL PREMIO</button>');
+              const back=event=>{
+                const target=event.target?.closest?.("[data-vf-return-to-reward],.modal-close");
+                if(!target||!root.contains?.(target))return;
+                event.preventDefault?.();event.stopImmediatePropagation?.();
+                root.removeEventListener?.("click",back,true);
+                showReward();
+              };
+              root.addEventListener?.("click",back,true);
+            });
+          };
+          showReward();
           if(isCoach)modalRoot()?.querySelector?.("[data-rtg-coach-detail]")?.addEventListener("click",()=>{
             deps.openModal(global.RoadToGloryCoachesView.detail(activeEventSquad(),HALLOWEEN_COACH_ID,{equippedId:localSquad.coachId||""}),
               {className:"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"});
