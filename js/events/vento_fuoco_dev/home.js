@@ -37,7 +37,10 @@
   function classes(player) {
     if(!player)return "";
     const pid=String(player.playerId||player.cardId?.split("::").at(-1)||"");
-    if(player.halloweenFusion||["9900001","9900002"].includes(pid))return "rtg-element-miximax";
+    if(player.halloweenFusion||["9900001","9900002"].includes(pid)) {
+      const variant=String(player.roleVariantId||player.element||"fire").toLowerCase();
+      return "rtg-element-miximax rtg-element-miximax--"+(variant==="wind"?"wind":"fire");
+    }
     const team=byId.get(pid);
     return team==="fire-team"?"rtg-element-fire-team":team==="blizzard-team"?"rtg-element-blizzard-team":"";
   }
