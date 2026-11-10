@@ -294,45 +294,37 @@
   margin:0 0 8px;color:#e5f8fb;font-size:.58rem;letter-spacing:.08em;font-weight:1000;
 }
 .vf-rival__field-head>span:last-child{color:#ffe8a6;white-space:nowrap}
-.vf-mini-pitch{width:100%;overflow:hidden;border:2px solid #f2f9ee92;border-radius:11px;background:#14583d}
-.vf-mini-pitch .rtg-match-squad-field-shell{
-  width:100%;max-width:none;margin:0!important;padding:0!important;min-height:0!important;
-  background:transparent!important;border:0!important;box-shadow:none!important;
+/* Opponents reuse the same Squadra component and scope as the player's XI.
+ * Never restyle internal .player-card, .player-portrait-wrap, role/OVR or footer.
+ * Only fit the full native pitch into a narrower, read-only Home disclosure. */
+.vf-mini-pitch.rtg-squad-shell{
+  width:100%;min-width:0;overflow:visible;
+  border:2px solid #e2f8edb0;border-radius:9px;background:#285f39;
 }
-.vf-mini-pitch .rtg-squad-pitch-main{
-  position:relative;isolation:isolate;display:flex!important;flex-direction:column;
-  justify-content:space-around;gap:3px;min-height:464px!important;height:auto!important;
-  width:100%;margin:0!important;padding:18px 8px!important;border:0!important;border-radius:0!important;
-  background:repeating-linear-gradient(90deg,#206b49 0 15%,#246f4b 15% 30%)!important;
-  box-shadow:inset 0 0 24px #071b2480!important;
+.vf-mini-pitch.rtg-squad-shell .rtg-match-squad-field-shell{
+  display:block;width:100%;max-width:none;min-width:0;
+  margin:0!important;padding:0!important;border:0!important;
+  background:transparent!important;box-shadow:none!important;
 }
-.vf-mini-pitch .rtg-squad-pitch-main:before{
-  content:"";position:absolute;z-index:0;inset:8px;pointer-events:none;
-  border:2px solid #d9f6df7a;border-radius:2px;
-  background:
-    linear-gradient(#e4f7df78,#e4f7df78) center / 100% 2px no-repeat,
-    radial-gradient(circle at 50% 50%,transparent 0 38px,#e9ffee80 39px 41px,transparent 42px);
+.vf-mini-pitch.rtg-squad-shell .rtg-squad-pitch-main.pitch{
+  width:100%;min-height:450px!important;height:auto!important;
+  margin:0!important;padding:20px 6px!important;gap:15px!important;
+  overflow:visible;
 }
-.vf-mini-pitch .rtg-squad-pitch-main:after{
-  content:"";position:absolute;z-index:0;left:50%;top:9px;transform:translateX(-50%);
-  width:40%;height:13%;border:2px solid #e8f7df73;border-top:0;pointer-events:none;
+.vf-mini-pitch.rtg-squad-shell .rtg-squad-pitch-main .pitch-row{
+  display:grid!important;
+  grid-template-columns:repeat(var(--row-count),minmax(0,min(84px,calc((100% - 12px)/4))))!important;
+  gap:4px!important;justify-content:center!important;justify-items:center!important;
+  margin:0!important;
 }
-.vf-mini-pitch .pitch-row.tactical-row{
-  position:relative;z-index:1;display:grid!important;
-  grid-template-columns:repeat(var(--row-count,3),minmax(0,1fr))!important;
-  align-items:center;justify-content:center;justify-items:center;gap:3px;
-  width:100%;min-width:0;margin:0!important;padding:0!important;overflow:visible!important;
+.vf-mini-pitch.rtg-squad-shell .rtg-squad-card-slot{
+  width:100%;min-width:0;max-width:84px;
 }
-.vf-mini-pitch .rtg-squad-card-slot{
-  width:100%!important;max-width:84px!important;min-width:0!important;
-  margin:0!important;padding:0!important;box-sizing:border-box;
-}
-.vf-mini-pitch .rtg-squad-card-slot .player-card{
-  cursor:pointer!important;
-}
-.vf-mini-pitch .rtg-squad-card-slot .player-card:focus-visible{
+.vf-mini-pitch.rtg-squad-shell [data-rtg-lineup-player]{cursor:pointer!important}
+.vf-mini-pitch.rtg-squad-shell [data-rtg-lineup-player]:focus-visible{
   outline:3px solid #ffe75d!important;outline-offset:2px;
 }
+
 .vf-rival__unavailable{padding:16px;color:#f0f6f9;text-align:center;font-size:.8rem}
 
 
@@ -691,9 +683,9 @@
   .event-page--vento-fuoco .vf-duel{min-height:340px}
   .vf-duel__main{min-height:240px;grid-template-columns:minmax(0,1fr) 82px minmax(0,1fr)}
   .vf-duel__versus{width:68px;height:68px}.vf-duel__versus span{font-size:1.45rem}
-  .vf-mini-pitch .rtg-squad-pitch-main{min-height:530px!important;padding:20px 28px!important}
-  .vf-mini-pitch .rtg-squad-card-slot{max-width:110px!important}
-  .vf-mini-pitch .rtg-squad-player-card{max-width:108px!important}
+
+
+
 }
 @media(max-width:395px){
   .vf-duel__top strong{display:none}
@@ -705,9 +697,9 @@
   .event-page--vento-fuoco .vf-rival__lineup summary{gap:4px;padding:10px 4px}
   .vf-rival__lineup-toggle{padding:9px 6px;gap:4px}
   .vf-rival__lineup-label strong{font-size:.7rem}
-  .vf-mini-pitch .rtg-squad-pitch-main{min-height:440px!important;padding:17px 5px!important}
-  .vf-mini-pitch .rtg-squad-card-slot{max-width:76px!important}
-  .vf-mini-pitch .rtg-squad-card-slot .player-card{max-width:74px!important}
+
+
+
 }
 @media(prefers-reduced-motion:reduce){
   .vf-rival__lineup-toggle i,
