@@ -20,7 +20,7 @@ for(const recipe of recipes){
  const allow=[...lineup,...bench,"free_agents::13","free_agents::14"];
  const call=account=>sandbox.VentoFuocoMiximax.apply({account,ledger:acc=>acc.events.vento_fuoco_dev,recipe,prefix:"vento_fuoco_dev::",
   squadRecord:{...squad,activeSquadSlot:2,slots:{"1":squad,"2":squad,"3":squad}},fallbackSquad:squad,allowedCardIds:allow,
-  recordCard:id=>({cardId:"vento_fuoco_dev::"+id}),roleFor:()=> "FW"});
+  recordCard:id=>({cardId:"vento_fuoco_dev::"+id}),roleFor:()=> "FW",rolesForSlot:()=>Array(11).fill("FW")});
  const account=structuredClone(original),result=call(account);
  assert.ok(account.events.vento_fuoco_dev.ownedIds.includes(recipe.resultId));
  assert.ok(!account.events.vento_fuoco_dev.ownedIds.some(id=>recipe.inputs.includes(id)));
