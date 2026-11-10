@@ -2,7 +2,7 @@
  "use strict";
  const asId = x => String(x??"");
  const fail = code => {const error=new Error(code);error.code=code;throw error;};
- function apply({account,ledger,recipe,prefix,squadRecord,fallbackSquad,allowedCardIds,recordCard,roleFor}) {
+ function apply({account,ledger,recipe,prefix,squadRecord,fallbackSquad,allowedCardIds,recordCard,roleFor,rolesForSlot}) {
    if(!account||!ledger||!recipe||!Array.isArray(recipe.inputs)||recipe.inputs.length!==2||!prefix) fail("miximax-invalid");
    const parents=recipe.inputs.map(asId);
    const child=asId(recipe.resultId);
@@ -38,7 +38,8 @@
        if(!candidate)fail("miximax-squad-insufficient");
        used.add(candidate);return candidate;
      };
-     for(let i=0;i<lineup.length;i++)if(!lineup[i])lineup[i]=pick("");
+     const tacticalRoles=typeof rolesForSlot==="function"?rolesForSlot(previous.formationId):[];
+     for(let i=0;i<lineup.length;i++)if(!lineup[i])lineup[i]=pick(tacticalRoles[i]||"");
      for(let i=0;i<bench.length;i++)if(!bench[i])bench[i]=pick("");
      if(new Set([...lineup,...bench]).size!==15)fail("miximax-squad-invalid");
      const roles={...(previous.activeRoleVariantByCardId||{})};
