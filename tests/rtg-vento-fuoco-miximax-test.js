@@ -96,6 +96,10 @@ const css=fs.readFileSync(path.join(root,"css/vento-fuoco-visual.css"),"utf8");
 assert.match(css,/chaos-fullbody\.webp/);
 assert.match(css,/shaiden-fullbody\.webp/);
 assert.match(css,/height:69%!important/, "Nathan Halloween fullbody proportions");
+assert.match(css,/img\.player-fullbody--fullbody\[src\$="shaiden-fullbody\.webp"\]/,
+  "Shaiden must have its own fullbody selector");
+assert.match(css,/width:148%!important/,
+  "Shaiden artwork must be enlarged without changing Chaos");
 assert.doesNotMatch(css,/\.vf-miximax-face\{/);
 assert.match(css,/\.rtg-element-miximax--fire/);
 assert.match(css,/\.rtg-element-miximax--wind/);
