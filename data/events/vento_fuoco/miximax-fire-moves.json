@@ -12,7 +12,7 @@
           "jpName": "ファイアブリザード",
           "type": "shot",
           "element": "Fire",
-          "power": 85,
+          "power": 90,
           "tension": 80,
           "source": "manual"
         },
@@ -57,7 +57,7 @@
           "jpName": "クロスファイア",
           "type": "shot",
           "element": "Fire",
-          "power": 100,
+          "power": 105,
           "tension": 100,
           "source": "manual"
         },
@@ -77,7 +77,7 @@
           "jpName": "イグナイトスティール",
           "type": "defense",
           "element": "Fire",
-          "power": 60,
+          "power": 70,
           "tension": 60,
           "source": "manual"
         },
