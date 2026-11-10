@@ -26,7 +26,7 @@ function node(selector){
     innerHTML:"",dataset:{},events:{},classList:{toggle(){}},setAttribute(){},
     addEventListener(kind,listener){this.events[kind]=listener;},
     querySelectorAll(){return[];},
-    fire(kind){assert.ok(this.events[kind],"Missing event "+kind+" on "+selector);return this.events[kind]({target:this,currentTarget:this});}
+    fire(kind,value){if(value!==undefined)this.value=value;assert.ok(this.events[kind],"Missing event "+kind+" on "+selector);return this.events[kind]({target:this,currentTarget:this});}
   });
   return nodes.get(selector);
 }
@@ -72,6 +72,12 @@ for(const [slotIndex,slot] of slots.entries()){
   const quick=new Set(first.quickEntries.map(e=>e.cardId));
   assert.ok(quick.has(slot.bench[0]),"slot "+(slotIndex+1)+" quick bench present");
   assert.match(html,/data-vf-picker-event-only/,"event-only shortcut present");
+  // Halloween owned cards must also remain resolvable in every saved slot.
+  node("[data-rtg-picker-season]").fire("change","halloween2026");
+  let seasonResults=calls.filter(x=>x.kind==="results").at(-1);
+  assert.equal(seasonResults.total,1,"Halloween owned-card source must survive slot switches");
+  assert.equal(seasonResults.entries[0].cardId,halloweenId);
+  // Event-only is intentionally independent from stale Season/role filters.
   node("[data-vf-picker-event-only]").fire("click");
   const filtered=calls.filter(x=>x.kind==="results").at(-1);
   assert.equal(filtered.total,eventIds.length,
@@ -80,8 +86,11 @@ for(const [slotIndex,slot] of slots.entries()){
     "all owned Fire/Ice cards available in every saved squad slot");
   assert.equal(filtered.visibleCount,12,"event-only bypasses first 12 without changing normal pagination");
   node("[data-vf-picker-event-only]").fire("click");
+  assert.equal(calls.filter(x=>x.kind==="results").at(-1).total,1,
+    "returning from event-only restores the previous Halloween Season filter");
+  node("[data-rtg-picker-season]").fire("change","all");
   assert.equal(calls.filter(x=>x.kind==="results").at(-1).total,owned.length-1,
-    "returning to normal list restores the full owned pool");
+    "clearing filters restores all owned cards including bench/event cards");
 }
 assert.equal(openCount,slots.length,"one native Cambio modal per slot; no extra modals");
 console.log("rtg-vento-fuoco-picker-slots-test: PASS (bench/main parity, 18 event players across 3 slots, event-only unpaginated, normal list restored)");
