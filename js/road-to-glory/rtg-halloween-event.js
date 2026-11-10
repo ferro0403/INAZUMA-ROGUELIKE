@@ -558,9 +558,16 @@
       setModalExtraClass(p);
     }
     function footer(active="run") {
+      if(TEAM_VENDING){
+        // One identical two-colour navigation in Home and Squadra.
+        // data-halloween-tab retains the existing event-navigation handler.
+        return '<nav class="bottom-nav rtg-bottom-nav vf-nav-switch" aria-label="Navigazione Vento e Fuoco">'+
+          '<button type="button" data-halloween-tab="match" class="vf-nav-switch__home'+(active==="run"?" active":"")+'"'+(active==="run"?' aria-current="page"':'')+'><span class="nav-icon" aria-hidden="true">▱</span><span class="nav-label">HOME</span></button>'+
+          '<button type="button" data-halloween-tab="squad" class="vf-nav-switch__squad'+(active==="squad"?" active":"")+'"'+(active==="squad"?' aria-current="page"':'')+'><span class="nav-icon" aria-hidden="true">♧</span><span class="nav-label">SQUADRA</span></button></nav>';
+      }
       return '<nav class="bottom-nav rtg-bottom-nav" aria-label="'+uiText("appAria")+'">'+
-      '<button type="button" data-halloween-tab="match" class="'+(active==="run"?"active":"")+'"><span class="nav-icon">▱</span><span class="nav-label">RUN</span></button>'+
-      '<button type="button" data-halloween-tab="squad" class="'+(active==="squad"?"active":"")+'"><span class="nav-icon">♧</span><span class="nav-label">SQUADRA</span></button></nav>';
+        '<button type="button" data-halloween-tab="match" class="'+(active==="run"?"active":"")+'"><span class="nav-icon">▱</span><span class="nav-label">RUN</span></button>'+
+        '<button type="button" data-halloween-tab="squad" class="'+(active==="squad"?"active":"")+'"><span class="nav-icon">♧</span><span class="nav-label">SQUADRA</span></button></nav>';
     }
     function shell(body) {
       return '<main class="screen rtg-run-screen rtg-halloween-run-screen halloween-screen">'+
@@ -660,13 +667,18 @@
       const strength=visualSquadStrength();
       const squadOvr=strength.current;
       const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · '+escape(manifest.labels.source)+'</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div></div>';
-      return '<div class="rtg-halloween-mode halloween-squad-mode">'+
-        view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
+      const nativeSquad=view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
           coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(
             activeEventSquad(),localSquad.coachId,
             localSquad.coachId===HALLOWEEN_COACH_ID&&!eventOverallDiscount()
               ?null:localSquad.coachPowerSelection)||"",
-          requirementsMarkup:requirement,nextTeamName:TEAM_NAME,dirty:false})+'</div>';
+          requirementsMarkup:requirement,nextTeamName:TEAM_NAME,dirty:false});
+      // Preserve the original Squadra renderer. Only replace its bottom-nav
+      // with the same shared UI already used by the Vento-Fuoco Home.
+      const themedSquad=TEAM_VENDING
+        ?nativeSquad.replace(/<nav class="bottom-nav rtg-bottom-nav"[\s\S]*?<\/nav>/,footer("squad"))
+        :nativeSquad;
+      return '<div class="rtg-halloween-mode halloween-squad-mode">'+themedSquad+'</div>';
     }
     function vendingSection() {
       const team=TEAMS.find(entry=>entry.teamId===selectedVendingTeamId)||TEAMS[0];
@@ -1388,6 +1400,14 @@
           // For Vento-Fuoco keep the native RoadToGloryRunView.pullResultMarkup
           // untouched apart from the event currency/label above. The same
           // original structure, rarity panels and card size render in all modes.
+          if(TEAM_VENDING&&!isCoach){
+            // The event reward must use the EXACT compact Squadra card anatomy.
+            // The normal RTG pull uses the picker variant (different portrait
+            // height and badge stacking), which clipped some hairstyles/OVRs.
+            // Keep the same native card renderer and only switch its UI class.
+            markup=markup.replace("rtg-picker-squad-card rtg-pull-player-card",
+              "rtg-squad-player-card rtg-pull-player-card");
+          }
           const rewardStyle=TEAM_VENDING
             ?(drawn.player?.teamId==="blizzard-team"?" vf-reward-ice":" vf-reward-fire"):"";
           // Keep the committed reward view in memory while the player sheet
