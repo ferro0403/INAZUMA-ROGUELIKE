@@ -78,7 +78,7 @@ const fetcher=async url=>({
   assert.match(css,/ANd9GcQ4docu4pCKgUNZ2fs/);
   assert.match(css,/duel-hero-v2\.svg/);
   assert.match(css,/\.vf-mini-pitch\.rtg-squad-shell \.rtg-squad-pitch-main/);
-  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-layout-fix-2"));
+  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-fullhero-3"));
   assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261110-vf-artwork-final-1"));
   const runtime=read("js/road-to-glory/rtg-halloween-event.js");
   assert.match(runtime,/function restoreEventOpponentCrests/);
@@ -117,7 +117,15 @@ const fetcher=async url=>({
     "Home event must not restyle individual Squadra cards");
   assert.match(css,/\.player-detail-hero::after\{\s*content:none!important;display:none!important/,
     "the old red/blue diagonal layer must be absent");
-  assert.match(css,/background:#fffdf5!important;isolation:isolate;overflow:hidden!important/);
+  assert.match(css,/var\(--vf-detail-art\) center center \/ cover no-repeat!important/,"Fire/Ice HD art must cover the entire top hero");
+  assert.match(css,/rgba\(255,251,242,\.93\)/,"soft ivory veil keeps text readable");
+  assert.match(css,/rgba\(255,251,242,\.68\) 61%/,"mobile labels stay protected by the veil");
+  assert.match(css,/\.player-detail-identity\{[\s\S]*?background:transparent!important;/,"all information sits over the same artwork, not a rectangular slab");
+  assert.match(css,/\.player-detail-visual\{[\s\S]*?background:none!important;\s*border:0!important;/,"visual column must not duplicate/cut the background");
+  assert.match(css,/\.player-detail-content\{[\s\S]*?background:linear-gradient\(180deg,#f9fdff,#fffbf4\)!important/,"statistics keep a separate clean paper background");
+  assert.match(css,/\.overall-comparison>div\{[\s\S]*?background:#fffdf8!important/,"OVR and potential remain legible");
+  assert.match(css,/\.detail-category\{[\s\S]*?background:#fffdf6!important/,"rarity remains legible");
+  assert.match(css,/\.player-detail-visual > \.player-fullbody\{[\s\S]*?visibility:visible!important;opacity:1!important/,"fullbody stays visible");
   assert.match(css,/overflow-wrap:anywhere!important/,"long player names stay inside the white panel");
   assert.match(css,/\.vf-mini-pitch\.rtg-squad-shell\{[\s\S]*?min-height:0!important;[\s\S]*?background-image:none!important;/,
     "nested XI must not inherit full-screen stadium min-height or photo from RTG shell");
