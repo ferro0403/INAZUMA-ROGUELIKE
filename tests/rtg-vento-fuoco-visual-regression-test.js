@@ -78,7 +78,7 @@ const fetcher=async url=>({
   assert.match(css,/ANd9GcQ4docu4pCKgUNZ2fs/);
   assert.match(css,/duel-hero-v2\.svg/);
   assert.match(css,/\.vf-mini-pitch\.rtg-squad-shell \.rtg-squad-pitch-main/);
-  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-hd-native-1"));
+  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-layout-fix-2"));
   assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261110-vf-artwork-final-1"));
   const runtime=read("js/road-to-glory/rtg-halloween-event.js");
   assert.match(runtime,/function restoreEventOpponentCrests/);
@@ -119,6 +119,14 @@ const fetcher=async url=>({
     "the old red/blue diagonal layer must be absent");
   assert.match(css,/background:#fffdf5!important;isolation:isolate;overflow:hidden!important/);
   assert.match(css,/overflow-wrap:anywhere!important/,"long player names stay inside the white panel");
+  assert.match(css,/\.vf-mini-pitch\.rtg-squad-shell\{[\s\S]*?min-height:0!important;[\s\S]*?background-image:none!important;/,
+    "nested XI must not inherit full-screen stadium min-height or photo from RTG shell");
+  assert.match(css,/\.player-detail-layout\.rtg-event--vento_fuoco_dev \.player-detail-visual\{[\s\S]*?position:absolute!important;[\s\S]*?bottom:0!important;left:47%!important;/,
+    "event fullbody artwork uses native absolute panel, never a zero-height relative block");
+  assert.match(css,/\.player-detail-layout\.rtg-event--vento_fuoco_dev \.player-detail-visual > \.player-fullbody\{/,
+    "character rendering must remain visible in the native player sheet");
+  assert.doesNotMatch(css,/position:relative;z-index:1;min-width:0;\s*background:var\(--vf-detail-art\)/,
+    "regression: collapsed detail art panel must never return");
   assert.match(css,/PlayerView nativo/,"original RTG card owns portrait/OVR/role");
   assert.match(css,/border:3px solid var\(--vf-card-accent\)!important/);
   assert.match(css,/background:linear-gradient\(180deg,#111b2d,#07101c\)!important/);
