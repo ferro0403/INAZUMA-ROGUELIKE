@@ -409,7 +409,7 @@
     "js/events/vento_fuoco_dev/miximax-rules.js",
     "js/events/vento_fuoco_dev/home.js"
   ],
-  "extensionCacheVersion": "20261110-vf-shaiden-move-power-5",
+  "extensionCacheVersion": "20261110-vf-miximax-polish-6",
   "uses": {
     "cardsFrom": [
       "halloween2026"
