@@ -2,14 +2,14 @@
 [data-event-theme="vento_fuoco_dev"] { --vf-ink:#071323; --vf-paper:#fffaf1; --vf-gold:#ffd21f; }
 .event-page--vento-fuoco {
   background-image:
-    linear-gradient(155deg,rgba(4,17,38,.90),rgba(10,26,56,.72) 40%,rgba(46,12,29,.84)),
+    linear-gradient(115deg,rgba(58,10,32,.84) 0%,rgba(9,23,51,.77) 47%,rgba(3,46,82,.86) 100%),
     url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ4docu4pCKgUNZ2fs-bhLizkbbUEEQopSCQju2-RVSCw&s=10");
   background-position:center,center top;
   background-size:cover;
   background-repeat:no-repeat;
   background-attachment:scroll;
 }
-.vf-home-shell { background:linear-gradient(125deg,#092a4c,#0b1830 50%,#531b2c); }
+.vf-home-shell { background:linear-gradient(110deg,#341728 0%,#102c50 49%,#06446b 100%); }
 .vf-strength {
   display:grid;grid-template-columns:minmax(0,1fr) minmax(54px,1.35fr) minmax(0,1fr);
   gap:10px;align-items:center;padding:10px 12px;border:3px solid #071323;
@@ -24,7 +24,6 @@
 .vf-strength__meter span{display:block;height:100%;background:linear-gradient(90deg,#00c6eb 0%,#167ccb 54%,#ff9b3d 84%,#e74235 100%);transition:width .2s}
 .vf-strength.is-over-limit { border-color:#c42e24; }
 .vf-strength.is-over-limit .vf-strength__meter span{background:#e33e2e}
-.vf-rival__limit { margin-top:4px!important;color:#f8faff!important;font-size:.7rem!important; }
 .vf-rival__lineup { grid-column:1/-1;z-index:2;width:100%;margin-top:5px;border-top:2px solid rgba(255,255,255,.34);color:#fff; }
 .vf-rival__lineup summary { display:flex;align-items:center;justify-content:space-between;gap:7px;min-height:38px;padding:7px 1px;
   cursor:pointer;font-size:clamp(.62rem,2.8vw,.78rem);font-weight:950;letter-spacing:.02em;list-style:none; }
@@ -64,11 +63,56 @@
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-live-overall{
   background:#ffd21f!important;color:#071323!important;
 }
+/* Replace the unrelated orange 4-3-3 tile with a Fire/Ice accent. */
+.halloween-squad-mode .rtg-squad-head-stats .squad-field-formation{
+  background:linear-gradient(110deg,#b6efff,#45c6f3)!important;
+  color:#071b2d!important;
+  border:3px solid #071323!important;
+  border-left:6px solid #e3474b!important;
+  box-shadow:3px 3px 0 #061321!important;
+}
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-change-trigger{
   background:#f5fbff!important;color:#08182b!important;border-color:#092746!important;
 }
-[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-bottom-nav{background:#0b2038!important;border-color:#22bfe9!important}
-[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-bottom-nav button.active{background:#ffd21f!important;color:#061323!important}
+/* One navigation renderer for Home and Squadra, with opposite colours.
+ * It retains the canonical bottom-nav sizing/position and event click API. */
+.vf-nav-switch.bottom-nav.rtg-bottom-nav{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:6px!important;padding:8px!important;
+  background:#0b1a30!important;
+  border:3px solid #081523!important;border-radius:3px!important;
+  box-shadow:4px 5px 0 #020914!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>button{
+  min-width:0!important;min-height:48px!important;flex:none!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  gap:9px!important;border:2px solid #081523!important;border-radius:2px!important;
+  box-shadow:3px 3px 0 #020914!important;
+  letter-spacing:.065em!important;font-weight:1000!important;
+  transform:none!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>.vf-nav-switch__home,
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>.vf-nav-switch__home.active{
+  background:#df3845!important;color:#fffaf4!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>.vf-nav-switch__squad,
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>.vf-nav-switch__squad.active{
+  background:#51cef5!important;color:#091b2e!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>button.active{
+  outline:2px solid #ffe16b!important;outline-offset:-2px!important;
+  box-shadow:inset 0 -4px 0 #08152355,3px 3px 0 #020914!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>button:focus-visible{
+  outline:3px solid #fff!important;outline-offset:2px!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav .nav-label{
+  color:inherit!important;font-size:clamp(.8rem,3.1vw,1rem)!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav .nav-icon{
+  color:inherit!important;
+}
+
 /* Strength is still calculated for validation and available in the event Home.
  * Squadra and pre-partita no longer inject a second top-of-page strip. */
 
@@ -302,8 +346,8 @@
 .vf-duel__versus span{font-size:1.06rem;font-weight:1000;line-height:1;color:#0a1a33}
 .event-page--vento-fuoco .vf-rivals{gap:12px}
 .event-page--vento-fuoco .vf-rival {
-  border-radius:12px;border-width:2px;padding:12px 11px 8px;
-  box-shadow:0 8px 18px #030b16a1,inset 0 0 0 1px #ffffff1c;
+  border-radius:4px;border-width:3px;padding:12px 11px 8px;
+  box-shadow:5px 5px 0 #020b17;
   grid-template-columns:51px minmax(0,1fr) 76px;
   background:linear-gradient(120deg,#4d121ef5 0%,#281321f4 51%,#151626f5 100%);
 }
@@ -313,12 +357,31 @@
 .event-page--vento-fuoco .vf-rival:after{display:none}
 .event-page--vento-fuoco .vf-rival__crest img{width:48px;height:48px;filter:drop-shadow(0 3px 7px #0009)}
 .event-page--vento-fuoco .vf-rival__challenge{
-  border-radius:7px;font-weight:1000;letter-spacing:.05em;
-  box-shadow:0 3px 0 #030914;background:#ffc14c;color:#0a1c30;
+  border:3px solid #071626;border-radius:3px;font-weight:1000;letter-spacing:.05em;
+  box-shadow:3px 4px 0 #020914;background:#ef4b4a;color:#fffaf4;
 }
-.event-page--vento-fuoco .vf-rival--ice .vf-rival__challenge{background:#a6eeff}
+.event-page--vento-fuoco .vf-rival--ice .vf-rival__challenge{background:#58d3f7;color:#071626}
 .event-page--vento-fuoco .vf-rival__copy h2{font-size:clamp(.97rem,3.5vw,1.24rem)}
-.event-page--vento-fuoco .vf-rival__copy p{font-size:.68rem;color:#dce7ee}
+.event-page--vento-fuoco .vf-rival__copy p{font-size:.68rem;color:#f2f6fc}
+.event-page--vento-fuoco .vf-rival__reward{
+  display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;margin:4px 0!important;
+}
+.event-page--vento-fuoco .vf-rival__reward>span{font-weight:800;color:#eff6ff}
+.event-page--vento-fuoco .vf-rival__reward>strong{
+  display:inline-flex;align-items:center;gap:4px;min-width:0;
+  white-space:nowrap;font-weight:1000;color:#fffaf0;
+}
+.event-page--vento-fuoco .vf-rival__reward .halloween-currency{
+  display:inline-flex;align-items:center;gap:3px;font-size:.76rem;
+  font-weight:1000;color:#fff!important;white-space:nowrap;
+}
+.event-page--vento-fuoco .vf-rival__reward .halloween-currency img{
+  display:block;width:16px!important;height:16px!important;max-width:16px!important;
+  object-fit:contain;margin:0!important;
+}
+.event-page--vento-fuoco .vf-rival__reward small{
+  font-size:.67rem;font-weight:850;letter-spacing:.01em;text-transform:lowercase;color:#f5faff;
+}
 .event-page--vento-fuoco .vf-rival__lineup{
   grid-column:1/-1;position:relative;z-index:2;margin:12px 0 0;
   border:0;border-top:1px solid #ffffff37;
@@ -335,10 +398,10 @@
 .vf-rival__lineup-label strong{font-size:clamp(.72rem,3vw,.92rem);color:#fff9ea;line-height:1.1;font-weight:1000}
 .vf-rival__lineup-toggle{
   display:flex;align-items:center;gap:8px;flex:none;padding:10px;
-  border:1px solid #a7e7ff8c;border-radius:8px;background:#d9faff;
-  color:#071c32;box-shadow:0 2px 0 #020c19;
+  border:2px solid #071523;border-radius:3px;background:#d9faff;
+  color:#071c32;box-shadow:3px 3px 0 #020c19;
 }
-.vf-rival--fire .vf-rival__lineup-toggle{border-color:#ffc193;background:#fff0df}
+.vf-rival--fire .vf-rival__lineup-toggle{border-color:#071523;background:#ffe7e6}
 .vf-rival__lineup-toggle b{margin:0!important;font-size:clamp(.52rem,2.3vw,.7rem)!important;font-weight:1000;white-space:nowrap;color:#081d30!important}
 .vf-rival__lineup-toggle b:nth-child(2),.vf-rival__lineup[open] .vf-rival__lineup-toggle b:first-child{display:none}
 .vf-rival__lineup[open] .vf-rival__lineup-toggle b:nth-child(2){display:block}
@@ -399,20 +462,14 @@
 /* Event opponent panels use the same palette as the native skins, but keep
  * the original RTG frame and readable white-on-dark challenge information. */
 .event-page--vento-fuoco .vf-rival--fire{
-  border-color:#ef8857!important;
-  background:
-    radial-gradient(ellipse at 91% 6%,#ed663b56,transparent 48%),
-    linear-gradient(118deg,transparent 0 76%,#fd783d1b 76% 77%,transparent 77% 83%,#ff9d3911 83% 84%,transparent 84%),
-    linear-gradient(125deg,#4d1b21,#251826 56%,#0a1828)!important;
-  box-shadow:inset 4px 0 0 #f0803b78,0 8px 18px #030b16a1!important;
+  border-color:#f15a56!important;
+  background:linear-gradient(110deg,#491927 0%,#2b2030 52%,#101d31 100%)!important;
+  box-shadow:5px 5px 0 #020914,inset 5px 0 0 #e54b4b!important;
 }
 .event-page--vento-fuoco .vf-rival--ice{
-  border-color:#74d8f7!important;
-  background:
-    radial-gradient(ellipse at 91% 4%,#9decff45,transparent 50%),
-    linear-gradient(120deg,transparent 0 71%,#90eaff1b 71% 72%,transparent 72% 81%,#57b4ef23 81% 83%,transparent 83%),
-    linear-gradient(125deg,#153d61,#10253d 58%,#091727)!important;
-  box-shadow:inset 4px 0 0 #72d9ff8c,0 8px 18px #030b16a1!important;
+  border-color:#57d3fa!important;
+  background:linear-gradient(110deg,#123d60 0%,#152d49 52%,#302237 100%)!important;
+  box-shadow:5px 5px 0 #020914,inset 5px 0 0 #4dcfff!important;
 }
 .event-page--vento-fuoco .vf-rival--fire .vf-rival__field{
   border-left:3px solid #ef905f;
