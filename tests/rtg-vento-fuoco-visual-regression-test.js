@@ -101,19 +101,32 @@ const fetcher=async url=>({
 
   assert.match(runtime,/markup=markup\.replace\("rtg-picker-squad-card rtg-pull-player-card"/,
     "prize player card must use the Squadra variant, not the picker variant");
-  assert.match(runtime,/const themedSquad=TEAM_VENDING/,
-    "single navigation template is shared by event Home and Squadra");
-  assert.match(runtime,/nativeSquad\.replace\(\/<nav class="bottom-nav rtg-bottom-nav"/,
-    "only native Squadra navigation is replaced, not the card renderer");
-  assert.match(runtime,/footer\("squad"\)/);
+  assert.match(runtime,/const nativeSquad=view\.markup\(/,"original Squadra renderer stays intact");
+  assert.match(runtime,/app\.querySelectorAll\?\.\("nav\.rtg-bottom-nav"\)/,
+    "remove nested Home and Squadra navs");
+  assert.match(runtime,/app\.insertAdjacentHTML\("beforeend"/,
+    "one nav is inserted as an app child in both views");
+  assert.match(runtime,/footer\(view==="squad"\?"squad":"run"\)/);
   assert.match(runtime,/vf-nav-switch__home/);
   assert.match(runtime,/vf-nav-switch__squad/);
+  assert.doesNotMatch(runtime,/nativeSquad\.replace\(/,
+    "the native Squadra cards/markup are not rewritten");
   assert.doesNotMatch(runtime,/vf-reward-balance-value/,
     "do not reconstruct the canonical balance/card markup");
   assert.doesNotMatch(runtime,/vf-squad-strength|vf-prematch-strength|strengthStrip\(/,
     "no additional strength banner in Squadra or pre-partita");
   assert.match(runtime,/function visualSquadStrength\(/,
     "OVR projections and eligibility must remain intact");
+  assert.match(runtime,/const all=userCards\(\)\.filter\(id=>id!==cardId\)\.map\(id=>\{/,
+    "event cards in bench remain in the full Cambia player list");
+  assert.doesNotMatch(runtime,/!quickIds\.has\(id\)/,
+    "quick bench must never exclude candidates from the full picker");
+  assert.match(runtime,/const shown=list=>eventOnly\?list:list\.slice\(0,visibleCount\)/,
+    "event players do not disappear behind pagination");
+  assert.match(runtime,/data-vf-picker-event-only/,
+    "native picker has a full Vento-Fuoco event collection shortcut");
+  assert.match(runtime,/e\.seasonId===EVENT_ID/,
+    "event-only filter selects the active event's actually owned cards");
   // HD assets are distinct source crops: small card vs tall player sheet.
   const files=[
     ["fire-card-hd.avif",1024,768],["ice-card-hd.avif",1024,768],
@@ -213,6 +226,10 @@ const fetcher=async url=>({
     "native RTG prize gets a Fire/Ice accent without a custom result layout");
   assert.match(css,/\.vf-nav-switch\.bottom-nav\.rtg-bottom-nav/,
     "one red/blue navigation in Home and Squadra");
+  assert.match(css,/\.vf-nav-dock \.vf-nav-switch\.bottom-nav\.rtg-bottom-nav/,
+    "both nav screens have identical parent-level layout geometry");
+  assert.match(css,/\.vf-picker-event-filter>button/,
+    "native Cambia has a visible event-only filter");
   assert.match(css,/vf-nav-switch__home\.active/);
   assert.match(css,/vf-nav-switch__squad\.active/);
   assert.match(css,/\.halloween-squad-mode \.rtg-squad-head-stats \.squad-field-formation/,
@@ -221,8 +238,11 @@ const fetcher=async url=>({
     "matching small reward icons");
   assert.doesNotMatch(css,/vf-reward-balance-value|grid-template-columns:132px minmax\(0,1fr\)!important/,
     "original RTG result dimensions/markup must not be recreated");
-  assert.match(css,/vf-reward-return/,"reward detail has explicit return UI");
-  assert.match(runtime,/data-vf-return-to-reward/,"detail can return to committed reward");
+  assert.doesNotMatch(css,/vf-reward-return/,"no extra yellow return button inside the detail");
+  assert.doesNotMatch(runtime,/data-vf-return-to-reward/,
+    "native X is the only return control");
+  assert.match(runtime,/event\.target\?\.closest\?\.\("\.modal-close"\)/,
+    "native X returns to the same reward without a second pull");
   assert.match(runtime,/const showReward=\(\)=>/,"return does not run a second pull");
   assert.match(runtime,/openPreviewPlayer:cardId=>/,"opponent pitch cards are actionable");
   assert.match(runtime,/const pitchMarkup=String\(pitch\)/,
@@ -241,5 +261,5 @@ const fetcher=async url=>({
   const halloween=context.GameEvents.module("halloween2026");
   assert.equal(halloween.pullFieldForTeam("occult-2"),"pumpkins");
   assert.equal(halloween.rewardFieldForTeam("occult-2"),"pumpkins");
-  console.log("vento-fuoco-visual-regression-test: PASS (canonical rarity/element colours, native RTG rewards, no squad/prematch strength bars, HD art, native XI, 22 players, reward-back)");
+  console.log("vento-fuoco-visual-regression-test: PASS (picker slot parity, single nav dock, X reward return, HD art, 22 players)");
 })().catch(error=>{console.error(error);process.exitCode=1;});
