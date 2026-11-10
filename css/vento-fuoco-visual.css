@@ -537,214 +537,38 @@
 }
 #modal-root .vf-reward-return:focus-visible{outline:3px solid #35c4ff;outline-offset:2px}
 
-/* In the pull reveal the exact same native card gets room to breathe, without
- * a second card anatomy or a fake diagonal paper ticket behind it. */
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-card-stage{
-  min-height:142px!important;isolation:auto!important;
+/* A skin on the ORIGINAL RoadToGloryRunView.pullResultMarkup.
+ * Do not style the native result grid, card sizing, typography, badge,
+ * rarity band, modal close, reveal label, or the CONTINUA button: all those
+ * remain owned by css/road-to-glory.css and css/rtg-theme.css.
+ * This only gives Fire/Ice a distinctive frame and illustrated header. */
+.modal.rtg-modal.rtg-pull-modal.vf-reward-fire{
+  --vf-pull-accent:#ef672d;
+  --vf-pull-image:url("../assets/events/vento-fuoco/fire-card-hd.avif");
 }
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-card-stage::before,
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-card-stage::after{
-  display:none!important;content:none!important;
+.modal.rtg-modal.rtg-pull-modal.vf-reward-ice{
+  --vf-pull-accent:#26bff2;
+  --vf-pull-image:url("../assets/events/vento-fuoco/ice-card-hd.avif");
 }
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
-.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card{
-  width:105px!important;max-width:105px!important;min-width:105px!important;
-  min-height:128px!important;transform:none!important;
-  margin:5px auto 10px!important;
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice){
+  border-color:var(--vf-pull-accent)!important;
+  box-shadow:0 0 0 3px #fffef4,0 18px 35px #03132691!important;
 }
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
-.rtg-pull-card-stage .rtg-picker-squad-card .player-portrait-wrap{
-  height:83px!important;min-height:83px!important;padding:6px 4px 0!important;
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-result-head{
+  background:
+    linear-gradient(90deg,#fffdf8fa 0%,#fffdf8f1 56%,#fffdf8b4 100%),
+    var(--vf-pull-image) center center / cover no-repeat!important;
+  border-bottom:3px solid var(--vf-pull-accent)!important;
 }
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
-.rtg-pull-card-stage .rtg-picker-squad-card .player-info{
-  min-height:35px!important;padding:5px 4px 6px!important;
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-balance{
+  border-left-color:var(--vf-pull-accent)!important;
 }
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
-.rtg-pull-card-stage .rtg-picker-squad-card .player-title strong{
-  font-size:.72rem!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
-.rtg-pull-card-stage .rtg-legacy-badge{display:grid!important}
-
-/* Native RTG reveal, re-skinned in the same navy/ivory/yellow language as Squadra.
- * Rarity is still correctly displayed once, in the header; it is never changed.
- * Only reward modals of the Vento-Fuoco event receive this treatment. */
-.modal.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice){
-  --vf-reveal-accent:#e57030;
-  --vf-reveal-halo:#ffdb97;
-  --vf-reveal-deep:#69291c;
-  width:min(92vw,465px)!important;
-  max-height:calc(100dvh - 35px)!important;
-  overflow-y:auto!important;overflow-x:hidden!important;
-  padding:0!important;border:3px solid #101e30!important;border-radius:14px!important;
-  background:#07182b!important;
-  box-shadow:0 16px 36px #020915b5,0 0 0 3px #fff8e9!important;
-}
-.modal.rtg-halloween-pull-modal.vf-reward-ice{
-  --vf-reveal-accent:#258dca;
-  --vf-reveal-halo:#c5f0ff;
-  --vf-reveal-deep:#164567;
-}
-.modal.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .modal-close{
-  top:10px!important;right:10px!important;
-  width:37px!important;height:37px!important;
-  border:2px solid #fff!important;border-radius:5px!important;
-  background:#ffd127!important;color:#132135!important;
-  box-shadow:2px 3px 0 #071425!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-result.rtg-paper-modal{
-  border:0!important;border-radius:0!important;
-  background:#fbf9f1!important;
-  box-shadow:none!important;color:#15243a!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-result:before,
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-result:after{
-  display:none!important;content:none!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-result-head{
-  display:flex!important;flex-direction:column!important;
-  align-items:flex-start!important;justify-content:center!important;
-  gap:7px!important;min-height:100px!important;
-  padding:17px 55px 15px 18px!important;
-  border:0!important;border-bottom:4px solid var(--vf-reveal-accent)!important;
-  border-radius:0!important;
-  background:linear-gradient(120deg,#0b2037,#163750 80%,var(--vf-reveal-deep))!important;
-  color:#f8fdff!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-result-head:after{
-  content:none!important;display:none!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-series{
-  order:0!important;white-space:normal!important;
-  color:var(--vf-reveal-halo)!important;font-size:.63rem!important;
-  font-weight:900!important;letter-spacing:.11em!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-rarity{
-  order:1!important;
-  min-height:29px!important;margin:0!important;padding:5px 10px!important;
-  font-size:.64rem!important;
-  border:1px solid #f7e9e0!important;border-radius:4px!important;
-  box-shadow:2px 2px 0 #010e1a!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-reveal-label{
-  margin:13px 16px 0!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-reveal-label span{
-  border:2px solid #071729!important;border-radius:4px!important;
-  background:#ffd227!important;color:#0d1d31!important;
-  box-shadow:3px 3px 0 #09243c!important;
-  letter-spacing:.08em!important;font-size:.64rem!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-result-body{
-  display:grid!important;
-  grid-template-columns:132px minmax(0,1fr)!important;
-  align-items:center!important;gap:10px!important;
-  padding:16px 16px 17px!important;
-  background:#fbf9f1!important;color:#142137!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-result-copy h2{
-  margin:0 0 9px!important;
-  font-size:clamp(1.15rem,4.7vw,1.62rem)!important;
-  line-height:1.1!important;
-  color:#142339!important;
-  text-shadow:none!important;
-  overflow-wrap:break-word!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
-:is(.rtg-pull-result-copy,.rtg-pull-team strong,.rtg-pull-player-identity,.rtg-pull-meta){
-  color:#16243a!important;text-shadow:none!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-team{
-  display:flex;flex-wrap:wrap;align-items:center;gap:5px;
-  padding:0!important;border:0!important;
-  min-width:0;min-height:25px;
-  background:transparent!important;box-shadow:none!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-team strong{
-  font-size:.7rem!important;overflow-wrap:anywhere!important;
-  white-space:normal!important;line-height:1.1!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-role{
-  background:var(--vf-reveal-accent)!important;color:#fff!important;
-  border:2px solid #102238!important;border-radius:3px!important;
-  min-height:25px!important;min-width:29px!important;font-size:.65rem!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-meta{
-  gap:5px!important;margin-top:8px!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-meta span{
-  background:#e6edf2!important;color:#112236!important;
-  border:1px solid #364b60!important;border-radius:4px!important;
-  font-size:.58rem!important;
-}
-/* The rarity is already labeled in the top ribbon; duplicate chip removed. */
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-meta span:last-child{
-  display:none!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-balance{
-  display:grid!important;grid-template-columns:minmax(72px,1fr) minmax(0,2fr)!important;
-  align-items:center!important;gap:9px!important;
-  min-height:68px!important;
-  margin:0 16px 13px!important;padding:10px 12px!important;
-  border:2px solid #172b41!important;
-  border-left:5px solid var(--vf-reveal-accent)!important;
-  border-radius:5px!important;
-  background:#f0f5f7!important;
-  box-shadow:2px 3px 0 #14243745!important;color:#172639!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-balance>span{
-  color:#273b50!important;text-shadow:none!important;
-  font-size:.57rem!important;line-height:1.25!important;
-  font-weight:1000!important;letter-spacing:.04em!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-balance>strong{
-  display:block!important;min-width:0!important;
-  color:#142339!important;text-shadow:none!important;
-  font-size:1rem!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .vf-reward-balance-value{
-  display:grid;grid-template-columns:24px minmax(0,1fr);
-  column-gap:6px;align-items:center;min-width:0;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .vf-reward-balance-value img{
-  grid-row:1/3;width:23px!important;height:23px!important;
-  background:transparent!important;border:0!important;
-  border-radius:0!important;object-fit:contain!important;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .vf-reward-balance-value b{
-  grid-column:2;display:block;
-  font-size:clamp(1.06rem,4.3vw,1.35rem)!important;
-  font-weight:1000;line-height:1.08;white-space:nowrap;
-  font-variant-numeric:tabular-nums;letter-spacing:-.025em;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .vf-reward-balance-value small{
-  grid-column:2;display:block;min-width:0;
-  color:#263d53!important;font-size:.58rem!important;
-  font-weight:950!important;line-height:1.15!important;
-  letter-spacing:.02em!important;white-space:normal;
-}
-.rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-continue{
-  width:calc(100% - 32px)!important;
-  margin:0 16px 16px!important;
-  min-height:49px!important;
-  border:2px solid #0d2134!important;border-radius:4px!important;
-  background:#ffd227!important;color:#102136!important;
-  box-shadow:3px 4px 0 #0b2036!important;
-  font-size:.96rem!important;font-weight:1000!important;
-}
-@media(max-width:385px){
-  .rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-result-body{
-    grid-template-columns:120px minmax(0,1fr)!important;
-    gap:7px!important;padding:13px 10px 14px!important;
-  }
-  .rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-balance{
-    grid-template-columns:minmax(60px,.78fr) minmax(0,1.8fr)!important;
-    margin:0 10px 11px!important;
-  }
-  .rtg-halloween-pull-modal:is(.vf-reward-fire,.vf-reward-ice) .rtg-pull-result-copy h2{
-    font-size:1.05rem!important;
-  }
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.halloween-reveal-currency-icon{
+  display:inline-block;width:22px;height:22px;
+  vertical-align:middle;object-fit:contain;background:none;border:0;
 }
 
 @media(min-width:650px){
