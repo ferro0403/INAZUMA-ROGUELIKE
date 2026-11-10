@@ -409,7 +409,7 @@
     "js/events/vento_fuoco_dev/miximax-rules.js",
     "js/events/vento_fuoco_dev/home.js"
   ],
-  "extensionCacheVersion": "20261110-vf-miximax-1",
+  "extensionCacheVersion": "20261110-vf-miximax-native-fullbody-2",
   "uses": {
     "cardsFrom": [
       "halloween2026"
