@@ -149,11 +149,22 @@
   position:relative;z-index:2;min-width:0;max-width:100%;
   background:#fffdf5!important;
 }
+/* Native PlayerView puts its fullbody image in an ABSOLUTE-positioned
+ * visual panel. Relative positioning collapses the image panel to zero height
+ * because the character img is itself absolute. Preserve its native geometry. */
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual{
-  position:relative;z-index:1;min-width:0;
+  position:absolute!important;
+  top:0!important;right:0!important;bottom:0!important;left:47%!important;
+  width:auto!important;height:auto!important;min-width:0;
+  z-index:1!important;display:block!important;overflow:hidden!important;
   background:var(--vf-detail-art) center center / cover no-repeat!important;
   border-left:3px solid var(--vf-detail-primary,#056bc4)!important;
 }
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual > .player-fullbody{
+  display:block!important;visibility:visible!important;opacity:1!important;
+  z-index:3!important;
+}
+/* The portrait image uses the game's original native art and sizing. */
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual::before,
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual::after{content:none!important;display:none!important}
 
@@ -307,9 +318,16 @@
 /* Opponents reuse the same Squadra component and scope as the player's XI.
  * Never restyle internal .player-card, .player-portrait-wrap, role/OVR or footer.
  * Only fit the full native pitch into a narrower, read-only Home disclosure. */
+/* rtg-squad-shell is intentionally reused for card parity, but the
+ * global RTG shell is a full-screen stadium page. Reset its PAGE properties
+ * when nested inside the Vento-Fuoco home. The pitch keeps native card CSS. */
 .vf-mini-pitch.rtg-squad-shell{
-  width:100%;min-width:0;overflow:visible;
-  border:2px solid #e2f8edb0;border-radius:9px;background:#285f39;
+  display:block!important;position:relative;
+  width:100%!important;height:auto!important;min-height:0!important;
+  max-height:none!important;min-width:0;
+  overflow:visible!important;
+  border:2px solid #e2f8edb0!important;border-radius:9px!important;
+  background:#285f39!important;background-image:none!important;
 }
 .vf-mini-pitch.rtg-squad-shell .rtg-match-squad-field-shell{
   display:block;width:100%;max-width:none;min-width:0;
