@@ -813,6 +813,7 @@
 .vf-miximax-page .vf-miximax-return{margin-top:14px!important;max-width:400px;background:#96ddf4!important}
 .player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax{
   --vf-event-art:url("../assets/events/vento-fuoco/miximax-fire-right-hd.webp");
+  position:relative!important;overflow:visible!important;
   border:3px solid #ffe2a5!important;border-radius:4px!important;color:#fff!important;
   background:#112040!important;box-shadow:3px 4px 0 #061525,0 0 14px #57cafe99,0 0 7px #ff924e!important}
 .player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax::before{display:none!important;content:none!important}
