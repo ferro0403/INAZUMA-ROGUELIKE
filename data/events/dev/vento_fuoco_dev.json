@@ -406,12 +406,39 @@
     }
   },
   "extensions": [
+    "js/events/vento_fuoco_dev/miximax-rules.js",
     "js/events/vento_fuoco_dev/home.js"
   ],
-  "extensionCacheVersion": "20261110-vf-ui-polish-5",
+  "extensionCacheVersion": "20261110-vf-miximax-1",
   "uses": {
     "cardsFrom": [
       "halloween2026"
+    ]
+  },
+  "fusions": {
+    "banner": "https://i.namu.wiki/i/PxJXiYFKsUW3Axc5dN2ucbhYCHZnEegA3kLqRM_al8cJJfTBUFTL-KXRGcYKhL6x2LRoWQidbO3UtkeUS7FPNA.webp",
+    "files": {
+      "players": "data/events/vento_fuoco/miximax-players.json",
+      "fireMoves": "data/events/vento_fuoco/miximax-fire-moves.json",
+      "windMoves": "data/events/vento_fuoco/miximax-wind-moves.json"
+    },
+    "recipes": [
+      {
+        "id": "shaiden",
+        "inputs": [
+          "4539",
+          "4538"
+        ],
+        "resultId": "9900002"
+      },
+      {
+        "id": "chaos",
+        "inputs": [
+          "1122",
+          "1105"
+        ],
+        "resultId": "9900001"
+      }
     ]
   }
 }
