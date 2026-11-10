@@ -16,7 +16,7 @@ const fetcher=async url=>({
   await loadEventsWithDev(context,"vento_fuoco_dev");
   const manifest=context.GameEvents.get("vento_fuoco_dev");
   assert.equal(context.GameEvents.validate(manifest).length,0,"manifest paths remain valid");
-  assert.equal(manifest.extensionCacheVersion,"20261110-vf-hd-native-1");
+  assert.equal(manifest.extensionCacheVersion,"20261110-vf-ui-polish-5");
   const api=context.GameEvents.module("vento_fuoco_dev");
   const part=context.GameEvents.extensionPart("vento_fuoco_dev","home");
   assert.ok(part?.render,"Home extension loaded through versioned manifest");
@@ -51,7 +51,7 @@ const fetcher=async url=>({
         lineup,pitchMarkup};
     },
     player:pid=>api.eventPlayer(pid),
-    wallet:()=>"<strong>saldo</strong>",coin:()=>"<strong>300</strong>",
+    wallet:()=>"<strong>saldo</strong>",coin:amount=>'<span class="halloween-currency"><img src="currency-icon.png" alt="">'+amount+"</span>",
     isOpen:()=>true,countdown:()=>"6g"
   });
   assert.match(html,/FORZA ATTUALE/);
@@ -70,6 +70,15 @@ const fetcher=async url=>({
   assert.equal((html.match(/data-event-action="start"/g)||[]).length,2);
   assert.ok(html.includes(teams[0].logo)&&html.includes(teams[1].logo),"real team crests");
   assert.doesNotMatch(html,/data-event-action="squad"|data-event-action="album"/);
+
+  assert.equal((html.match(/class="vf-rival__reward"/g)||[]).length,4,
+    "both team banners use two concise reward rows");
+  assert.equal((html.match(/Vittoria fortunata:/g)||[]).length,2);
+  assert.equal((html.match(/>600<\/span>/g)||[]).length,2,
+    "600 gettoni must render the same icon+amount component as 300");
+  assert.equal((html.match(/gettoni<\/small>/g)||[]).length,2);
+  assert.doesNotMatch(html,/Fortunata 20%|Limite formazione:/,
+    "old text and duplicate limits must be absent");
   const css=read("css/vento-fuoco-visual.css"),index=read("index.html");
   assert.match(css,/player-card\.rtg-event--vento_fuoco_dev\.rtg-element-fire-team/);
   assert.match(css,/player-card\.rtg-event--vento_fuoco_dev\.rtg-element-blizzard-team/);
@@ -78,8 +87,8 @@ const fetcher=async url=>({
   assert.match(css,/ANd9GcQ4docu4pCKgUNZ2fs/);
   assert.match(css,/duel-hero-v2\.svg/);
   assert.match(css,/\.vf-mini-pitch\.rtg-squad-shell \.rtg-squad-pitch-main/);
-  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-native-reveal-4"));
-  assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261110-vf-native-reveal-4"));
+  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-ui-polish-5"));
+  assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261110-vf-ui-polish-5"));
   const runtime=read("js/road-to-glory/rtg-halloween-event.js");
   assert.match(runtime,/function restoreEventOpponentCrests/);
   assert.match(runtime,/function visualSquadStrength/);
@@ -89,6 +98,16 @@ const fetcher=async url=>({
     "Vento-Fuoco must use the canonical RTG result renderer");
   assert.match(runtime,/const rewardClass=TEAM_VENDING&&!isCoach/,
     "event reward must use the ordinary RTG modal instead of Halloween");
+
+  assert.match(runtime,/markup=markup\.replace\("rtg-picker-squad-card rtg-pull-player-card"/,
+    "prize player card must use the Squadra variant, not the picker variant");
+  assert.match(runtime,/const themedSquad=TEAM_VENDING/,
+    "single navigation template is shared by event Home and Squadra");
+  assert.match(runtime,/nativeSquad\.replace\(\/<nav class="bottom-nav rtg-bottom-nav"/,
+    "only native Squadra navigation is replaced, not the card renderer");
+  assert.match(runtime,/footer\("squad"\)/);
+  assert.match(runtime,/vf-nav-switch__home/);
+  assert.match(runtime,/vf-nav-switch__squad/);
   assert.doesNotMatch(runtime,/vf-reward-balance-value/,
     "do not reconstruct the canonical balance/card markup");
   assert.doesNotMatch(runtime,/vf-squad-strength|vf-prematch-strength|strengthStrip\(/,
@@ -184,6 +203,22 @@ const fetcher=async url=>({
   assert.match(css,/A skin on the ORIGINAL RoadToGloryRunView\.pullResultMarkup/);
   assert.match(css,/\.modal\.rtg-modal\.rtg-pull-modal\.vf-reward-fire/);
   assert.match(css,/\.modal\.rtg-modal\.rtg-pull-modal\.vf-reward-ice/);
+
+  assert.match(css,/rtg-pull-card-stage>\.rtg-squad-player-card/,
+    "native Squadra dimensions on the event reward");
+  assert.match(css,/rtg-pull-card-stage>\.rtg-squad-player-card \.player-portrait-wrap/,
+    "portrait is contained within its own event card frame");
+  assert.match(css,/z-index:10!important/,"role and OVR above large player hair");
+  assert.match(css,/\.rtg-pull-result-body\{[\s\S]*?border-left:4px solid var\(--vf-pull-accent\)!important/,
+    "native RTG prize gets a Fire/Ice accent without a custom result layout");
+  assert.match(css,/\.vf-nav-switch\.bottom-nav\.rtg-bottom-nav/,
+    "one red/blue navigation in Home and Squadra");
+  assert.match(css,/vf-nav-switch__home\.active/);
+  assert.match(css,/vf-nav-switch__squad\.active/);
+  assert.match(css,/\.halloween-squad-mode \.rtg-squad-head-stats \.squad-field-formation/,
+    "formation badge no longer orange");
+  assert.match(css,/\.vf-rival__reward \.halloween-currency img/,
+    "matching small reward icons");
   assert.doesNotMatch(css,/vf-reward-balance-value|grid-template-columns:132px minmax\(0,1fr\)!important/,
     "original RTG result dimensions/markup must not be recreated");
   assert.match(css,/vf-reward-return/,"reward detail has explicit return UI");
