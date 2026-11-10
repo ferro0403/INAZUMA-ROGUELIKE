@@ -812,7 +812,7 @@
   background:#451f20;color:#fff4dc;font-size:.77rem;line-height:1.5}
 .vf-miximax-page .vf-miximax-return{margin-top:14px!important;max-width:400px;background:#96ddf4!important}
 .player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax{
-  --vf-event-art:url("../assets/events/vento-fuoco/miximax-collision.svg");
+  --vf-event-art:url("../assets/events/vento-fuoco/miximax-fire-right-hd.webp");
   border:3px solid #ffe2a5!important;border-radius:4px!important;color:#fff!important;
   background:#112040!important;box-shadow:3px 4px 0 #061525,0 0 14px #57cafe99,0 0 7px #ff924e!important}
 .player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax::before{display:none!important;content:none!important}
@@ -825,12 +825,83 @@
   background:linear-gradient(90deg,#133c69,#182b50 45%,#913726)!important;color:#fff!important}
 .player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax{
   --vf-detail-primary:#df5a25;--vf-detail-secondary:#55cfff;--vf-detail-bg:#172a50;
-  --vf-detail-art:url("../assets/events/vento-fuoco/miximax-collision.svg");
+  --vf-detail-art:url("../assets/events/vento-fuoco/miximax-fire-right-hd.webp");
 }
 .player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax .detail-element-chip{
   color:#081523!important;background:linear-gradient(90deg,#ffcd9b,#91e8ff)!important;border-color:#071523!important}
 .player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-fullbody{
   object-fit:contain!important;object-position:center bottom!important;filter:drop-shadow(0 6px 9px #061323a0)}
+/* Two native Miximax variants. Each uses the corresponding illustrated HD
+ * artwork in BOTH the compact Squadra card and the continuous detail hero.
+ * Wind deliberately uses crystalline ICE at right, not cyan fire. */
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire{
+  --vf-event-art:url("../assets/events/vento-fuoco/miximax-fire-right-hd.webp");
+  border-color:#ed4443!important;
+  box-shadow:3px 4px 0 #061525,0 0 13px #f14b4c88!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind{
+  --vf-event-art:url("../assets/events/vento-fuoco/miximax-ice-right-hd.webp");
+  border-color:#35a9ed!important;
+  box-shadow:3px 4px 0 #061525,0 0 13px #30baf088!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire .player-info{
+  background:linear-gradient(90deg,#481628,#241526 72%,#861b25)!important;
+  border-top:2px solid #ed4443!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind .player-info{
+  background:linear-gradient(90deg,#0a3455,#102840 72%,#114c8a)!important;
+  border-top:2px solid #35a9ed!important;
+}
+/* Match the exact VF legacy badge geometry of Fire and Blizzard cards. */
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax>.rtg-legacy-badge{
+  position:absolute!important;z-index:24!important;right:-4px!important;left:auto!important;
+  top:auto!important;bottom:-11px!important;min-width:27px!important;width:auto!important;
+  height:16px!important;min-height:16px!important;padding:0 5px!important;
+  border:2px solid #071323!important;border-radius:0!important;
+  box-shadow:1px 2px 0 #071323!important;font:1000 7px/1 system-ui,sans-serif!important;
+  color:#fff!important;pointer-events:none!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire>.rtg-legacy-badge{
+  --rtg-legacy-color:#df2e42!important;--rtg-legacy-ink:#fff!important;
+  background:#df2e42!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind>.rtg-legacy-badge{
+  --rtg-legacy-color:#1978d8!important;--rtg-legacy-ink:#fff!important;
+  background:#1978d8!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire{
+  --vf-detail-primary:#df2e42;--vf-detail-secondary:#f98b49;--vf-detail-bg:#4a1c37;
+  --vf-detail-art:url("../assets/events/vento-fuoco/miximax-fire-right-hd.webp");
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind{
+  --vf-detail-primary:#1978d8;--vf-detail-secondary:#69d7ff;--vf-detail-bg:#0b457f;
+  --vf-detail-art:url("../assets/events/vento-fuoco/miximax-ice-right-hd.webp");
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire
+  :is(.rtg-legacy-badge,.player-detail-rtg-legacy-badge){
+  --rtg-legacy-color:#df2e42!important;--rtg-legacy-ink:#fff!important;
+  background:#df2e42!important;color:#fff!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind
+  :is(.rtg-legacy-badge,.player-detail-rtg-legacy-badge){
+  --rtg-legacy-color:#1978d8!important;--rtg-legacy-ink:#fff!important;
+  background:#1978d8!important;color:#fff!important;
+}
+/* The "VERSIONE" badge changes with the current variant too. */
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire
+  [data-detail-rtg-role-switch]{
+  background:#df2e42!important;color:#fff!important;border-color:#071323!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind
+  [data-detail-rtg-role-switch]{
+  background:#1978d8!important;color:#fff!important;border-color:#071323!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire .detail-element-chip{
+  background:#fff0eb!important;color:#b71f2d!important;border-color:#bc2634!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind .detail-element-chip{
+  background:#ecf9ff!important;color:#0871bc!important;border-color:#168acb!important;
+}
 /* Nathan Halloween reference: the whole transparent render fits inside
  * the right-side hero and stays grounded near its bottom (not zoomed/cropped).
  * This rule is exclusive to the two Miximax sheets. */
