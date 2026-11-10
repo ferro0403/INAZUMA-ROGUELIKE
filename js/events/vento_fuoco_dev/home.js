@@ -90,5 +90,17 @@
       </button>
     </main>`;
   }
-  global.GameEvents?.extend?.(ID,{classes,home:{render:home}});
+  // All 22 players use the actual native Squadra card and detail viewer.
+  // No writes, no preview-only card HTML, and no match start from a card tap.
+  function bindHome(root,tools) {
+    root?.querySelectorAll?.(".vf-mini-pitch [data-rtg-lineup-player]")?.forEach(card=>{
+      card.removeAttribute?.("tabindex");
+      card.addEventListener?.("click",event=>{
+        event.stopPropagation?.();
+        const cardId=card.dataset.rtgLineupPlayer;
+        if(cardId)tools.openPreviewPlayer?.(cardId);
+      });
+    });
+  }
+  global.GameEvents?.extend?.(ID,{classes,home:{render:home,bind:bindHome}});
 })(globalThis);
