@@ -154,8 +154,13 @@
     if(!raw)return null;
     const moves=fusionRaw?(assets.fusionMoves[variantKey].players[asId(pid)]?.moves||[]):
       (assets.moves.players[asId(pid)]?.moves||[]);
-    const teamConfig=fusionRaw?{teamId:"miximax",name:"Miximax",logo:"assets/events/vento-fuoco/miximax-collision.svg"}:
-      (assets.teamOf?.get(asId(pid))?.config || manifest.team);
+    // A Miximax card has ONE player ID but belongs to the existing elemental
+    // team of its selected version. Never expose "Miximax" as its team label:
+    // Fire uses Fire Team, Wind uses Blizzard Team, including their real crest.
+    const fusionTeamId=variantKey==="wind"?"blizzard-team":"fire-team";
+    const teamConfig=fusionRaw
+      ?(TEAMS.find(team=>team.teamId===fusionTeamId)||manifest.team)
+      :(assets.teamOf?.get(asId(pid))?.config || manifest.team);
     const statKeys=["attack","control","speed","grit","physical","stamina","defense","save"];
     const stats=Object.fromEntries(statKeys.map(k=>[k,Math.max(0,Number(raw[k]||0)*10)]));
     return {
