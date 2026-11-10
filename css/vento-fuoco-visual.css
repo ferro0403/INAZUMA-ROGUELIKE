@@ -76,6 +76,49 @@
 }
 /* One navigation renderer for Home and Squadra, with opposite colours.
  * It retains the canonical bottom-nav sizing/position and event click API. */
+/* Both screens insert their navigation as a direct child of the same
+ * event app root, not inside Home or Squadra's different themed wrappers. */
+.vf-nav-dock{
+  position:static;box-sizing:border-box;font-family:inherit;
+}
+.vf-nav-dock .vf-nav-switch.bottom-nav.rtg-bottom-nav{
+  box-sizing:border-box!important;width:218px!important;max-width:calc(100vw - 30px)!important;
+  bottom:calc(10px + env(safe-area-inset-bottom,0px))!important;
+  z-index:80!important;
+}
+.vf-nav-dock .vf-nav-switch.bottom-nav.rtg-bottom-nav>button{
+  box-sizing:border-box!important;min-height:48px!important;height:48px!important;
+}
+.vf-nav-dock .vf-nav-switch.bottom-nav.rtg-bottom-nav .nav-icon,
+.vf-nav-dock .vf-nav-switch.bottom-nav.rtg-bottom-nav .nav-label{
+  flex:0 0 auto;line-height:1.05!important;text-decoration:none!important;
+}
+
+/* Owned event players never disappear with slot/bench or old picker filters.
+ * A single button exposes the whole event collection without pagination. */
+#modal-root .vf-picker-event-filter{margin:10px 0 12px;}
+#modal-root .vf-picker-event-filter>button{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  width:100%;min-height:43px;padding:9px 12px;
+  border:3px solid #081725;border-radius:3px;
+  background:linear-gradient(105deg,#ef4651 0%,#a73758 46%,#36bde9 100%);
+  box-shadow:3px 4px 0 #091524;color:#fff!important;
+  font-size:clamp(.7rem,2.6vw,.83rem);font-weight:1000;
+  text-align:center;letter-spacing:.03em;cursor:pointer;
+}
+#modal-root .vf-picker-event-filter>button span{
+  display:grid;place-items:center;min-width:29px;min-height:25px;
+  padding:2px 5px;border:2px solid #081725;
+  background:#fffaf1;color:#081725;font-weight:1000;
+}
+#modal-root .vf-picker-event-filter>button.active{
+  outline:3px solid #ffd21f;outline-offset:-3px;
+  background:linear-gradient(105deg,#ca263f 0%,#791d52 46%,#0f87c9 100%);
+}
+#modal-root .vf-picker-event-filter>button:focus-visible{
+  outline:3px solid #ffd21f;outline-offset:3px;
+}
+
 .vf-nav-switch.bottom-nav.rtg-bottom-nav{
   display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
   gap:6px!important;padding:8px!important;
@@ -584,15 +627,8 @@
   background:#1978d8!important;color:#fff!important;
 }
 
-/* Premio → scheda giocatore → premio: navigazione solo UI, senza pull ripetuti. */
-#modal-root .vf-reward-return{
-  display:block;width:calc(100% - 22px);margin:9px 11px 0;
-  padding:10px 12px;border:2px solid #071827;border-radius:3px;
-  background:#ffdc53;color:#071827;box-shadow:2px 3px 0 #061525;
-  font-size:.75rem;line-height:1.2;font-weight:1000;letter-spacing:.045em;
-  cursor:pointer;
-}
-#modal-root .vf-reward-return:focus-visible{outline:3px solid #35c4ff;outline-offset:2px}
+/* La X nativa della scheda riapre il premio già estratto.
+ * Nessun pulsante supplementare nella scheda. */
 
 /* A skin on the ORIGINAL RoadToGloryRunView.pullResultMarkup.
  * Do not style the native result grid, card sizing, typography, badge,
