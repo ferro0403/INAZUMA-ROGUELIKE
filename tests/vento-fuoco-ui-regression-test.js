@@ -43,6 +43,18 @@ const fetcher=async url=>({ok:fs.existsSync(String(url)),status:fs.existsSync(St
   const withFusions=await module.albumTeamsSnapshot(storage);
   assert.equal(withFusions.length,2);
   assert.deepEqual(Array.from(withFusions.map(t=>[t.unlocked,t.total])),[[3,21],[3,21]]);
+  const windStorage={readMany:async keys=>Object.fromEntries(keys.map(key=>[
+    key,key==="dev:vento_fuoco_dev:shared:account"?account:
+      key==="dev:vento_fuoco_dev:squad"?
+        {activeSquadSlot:2,slots:{"2":{activeRoleVariantByCardId:{
+          "vento_fuoco_dev::9900002":"wind"}}}}:null
+  ]))};
+  const windTeams=await module.albumTeamsSnapshot(windStorage);
+  for(const team of windTeams){
+    const shaiden=team.roster.find(p=>p.playerId==="9900002");
+    assert.equal(shaiden.position,"DF","Album must use the active squad version");
+    assert.equal(shaiden.element,"Wind","Wind version must use the ice artwork");
+  }
   account.events.vento_fuoco_dev.ownedIds.splice(-2,2);
   const view=context.RoadToGloryAlbumView.create({
     escapeHtml:s=>String(s??"").replaceAll("&","&amp;").replaceAll('"',"&quot;"),
