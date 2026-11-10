@@ -16,7 +16,7 @@ const fetcher=async url=>({
   await loadEventsWithDev(context,"vento_fuoco_dev");
   const manifest=context.GameEvents.get("vento_fuoco_dev");
   assert.equal(context.GameEvents.validate(manifest).length,0,"manifest paths remain valid");
-  assert.equal(manifest.extensionCacheVersion,"20261110-vf-artwork-final-1");
+  assert.equal(manifest.extensionCacheVersion,"20261110-vf-hd-native-1");
   const api=context.GameEvents.module("vento_fuoco_dev");
   const part=context.GameEvents.extensionPart("vento_fuoco_dev","home");
   assert.ok(part?.render,"Home extension loaded through versioned manifest");
@@ -61,7 +61,7 @@ const fetcher=async url=>({
   assert.equal((html.match(/<details class="vf-rival__lineup"/g)||[]).length,2);
   assert.doesNotMatch(html,/<details class="vf-rival__lineup"[^>]*\bopen\b/);
   assert.equal((html.match(/class="vf-rival__lineup-toggle"/g)||[]).length,2);
-  assert.equal((html.match(/class="vf-mini-pitch development-squad-card-scope"/g)||[]).length,2);
+  assert.equal((html.match(/class="vf-mini-pitch development-squad-card-scope rtg-squad-shell"/g)||[]).length,2);
   assert.equal((html.match(/class="pitch rtg-squad-pitch-main"/g)||[]).length,2);
   assert.equal((html.match(/class="pitch-row tactical-row"/g)||[]).length,8);
   assert.equal((html.match(/data-rtg-lineup-player="/g)||[]).length,22);
@@ -77,8 +77,8 @@ const fetcher=async url=>({
   assert.match(css,/halloween-squad-mode/);
   assert.match(css,/ANd9GcQ4docu4pCKgUNZ2fs/);
   assert.match(css,/duel-hero-v2\.svg/);
-  assert.match(css,/\.vf-mini-pitch \.rtg-squad-pitch-main/);
-  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-artwork-final-1"));
+  assert.match(css,/\.vf-mini-pitch\.rtg-squad-shell \.rtg-squad-pitch-main/);
+  assert.ok(index.includes("css/vento-fuoco-visual.css?v=20261110-vf-hd-native-1"));
   assert.ok(index.includes("js/road-to-glory/rtg-halloween-event.js?v=20261110-vf-artwork-final-1"));
   const runtime=read("js/road-to-glory/rtg-halloween-event.js");
   assert.match(runtime,/function restoreEventOpponentCrests/);
@@ -86,23 +86,39 @@ const fetcher=async url=>({
   assert.match(runtime,/deps\.squadView\?\.matchPitchMarkup\?\./);
   assert.match(runtime,/mode:"preview"/);
   assert.match(runtime,/vf-reward-balance-value/,"only event reward has structured balance");
-  // The final images are actual encoded artwork, not another procedural SVG.
-  for(const asset of ["fire-event.webp","ice-event.webp"]){
+  // HD assets are distinct source crops: small card vs tall player sheet.
+  const files=[
+    ["fire-card-hd.avif",1024,768],["ice-card-hd.avif",1024,768],
+    ["fire-detail-hd.avif",1086,1448],["ice-detail-hd.avif",1086,1448]
+  ];
+  for(const [asset,width,height] of files){
     const path="assets/events/vento-fuoco/"+asset;
-    assert.ok(fs.existsSync(path),"final WebP artwork missing: "+asset);
+    assert.ok(fs.existsSync(path),"HD artwork missing: "+asset);
     const bytes=fs.readFileSync(path);
-    assert.ok(bytes.length>3000,"artwork must contain image pixels");
-    assert.equal(bytes.subarray(0,4).toString("ascii"),"RIFF");
-    assert.equal(bytes.subarray(8,12).toString("ascii"),"WEBP");
+    assert.ok(bytes.length>25000,"artwork must retain detailed image pixels");
+    assert.equal(bytes.subarray(4,12).toString("ascii"),"ftypavif");
+    const at=bytes.indexOf(Buffer.from("ispe","ascii"));
+    assert.ok(at>0,"AVIF image dimensions missing");
+    assert.equal(bytes.readUInt32BE(at+8),width,"HD artwork width");
+    assert.equal(bytes.readUInt32BE(at+12),height,"HD artwork height");
+    assert.match(css,new RegExp(asset.replace(".","\\.")));
   }
-  for(const unused of ["fire-card-bg.svg","ice-card-bg.svg",
-    "fire-event-v5.svg","ice-event-v5.svg","fire-event-v6.svg","ice-event-v6.svg",
-    "fire-portrait-patch.svg","ice-portrait-patch.svg"]){
+  for(const unused of ["fire-event.webp","ice-event.webp",
+    "fire-card-bg.svg","ice-card-bg.svg","fire-event-v5.svg","ice-event-v5.svg",
+    "fire-event-v6.svg","ice-event-v6.svg","fire-portrait-patch.svg","ice-portrait-patch.svg"]){
     assert.equal(fs.existsSync("assets/events/vento-fuoco/"+unused),false,
-      "Superseded artwork should be removed: "+unused);
+      "Unused low-res or prototype artwork must be removed: "+unused);
   }
-  assert.match(css,/fire-event\.webp/);
-  assert.match(css,/ice-event\.webp/);
+  // Native field/lineup card sizing is authoritative, never redrawn in Home.
+  assert.match(css,/\.vf-mini-pitch\.rtg-squad-shell/);
+  const nativeCss=read("css/rtg-theme-base.css");
+  assert.match(nativeCss,/\.rtg-squad-shell,\.rtg-prematch-shell/);
+  assert.doesNotMatch(css,/\.vf-mini-pitch[^\n]*\.player-card\s*\{/,
+    "Home event must not restyle individual Squadra cards");
+  assert.match(css,/\.player-detail-hero::after\{\s*content:none!important;display:none!important/,
+    "the old red/blue diagonal layer must be absent");
+  assert.match(css,/background:#fffdf5!important;isolation:isolate;overflow:hidden!important/);
+  assert.match(css,/overflow-wrap:anywhere!important/,"long player names stay inside the white panel");
   assert.match(css,/PlayerView nativo/,"original RTG card owns portrait/OVR/role");
   assert.match(css,/border:3px solid var\(--vf-card-accent\)!important/);
   assert.match(css,/background:linear-gradient\(180deg,#111b2d,#07101c\)!important/);
@@ -133,5 +149,5 @@ const fetcher=async url=>({
   const halloween=context.GameEvents.module("halloween2026");
   assert.equal(halloween.pullFieldForTeam("occult-2"),"pumpkins");
   assert.equal(halloween.rewardFieldForTeam("occult-2"),"pumpkins");
-  console.log("vento-fuoco-visual-regression-test: PASS (2 pitch Squadra, 22 titolari, final-illustrated WebP skins, small VF tags, clickable XI and reward-back, cap 92, cache, Halloween)");
+  console.log("vento-fuoco-visual-regression-test: PASS (HD card/detail AVIF, native Squadra XI, clean technical sheet, 22 players, cap 92, reward-back, no old art)");
 })().catch(error=>{console.error(error);process.exitCode=1;});
