@@ -86,19 +86,20 @@
   border:5px solid #07111e!important;box-shadow:inset 0 0 0 3px #fff,0 0 0 3px var(--vf-detail-primary,#056bc4)!important
 }
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-hero{
-  background:linear-gradient(107deg,#fffdf6 0 47%,var(--vf-detail-bg,#044c99) 47% 100%)!important;
+  background:#fffdf5!important;isolation:isolate;overflow:hidden!important;
   border-bottom:5px solid #07111e!important;
 }
-.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-hero::before{
-  content:"";position:absolute;right:0;top:0;bottom:0;width:55%;z-index:0;pointer-events:none;
-  background:var(--vf-event-art) 53% center / cover no-repeat!important;
-  opacity:.98;
-  clip-path:polygon(30% 0,100% 0,100% 100%,0 100%,35% 50%);
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-hero::before,
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-hero::after{
+  content:none!important;display:none!important;
 }
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-identity{color:#07111e!important}
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-name{
-  color:#050d16!important;text-shadow:none!important;font-size:clamp(2rem,6vw,4.1rem)!important;
-  letter-spacing:-.055em!important;line-height:.91!important;
+  color:#050d16!important;text-shadow:none!important;
+  max-width:100%!important;min-width:0!important;white-space:normal!important;
+  overflow-wrap:anywhere!important;word-break:normal!important;
+  font-size:clamp(1.55rem,4.7vw,3.05rem)!important;
+  letter-spacing:-.035em!important;line-height:.98!important;
 }
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-heading .eyebrow,
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-heading span{color:var(--vf-detail-primary,#056bc4)!important}
@@ -139,13 +140,19 @@
 }
 
 .player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team{
-  --vf-event-art:url("../assets/events/vento-fuoco/fire-event.webp");
+  --vf-detail-art:url("../assets/events/vento-fuoco/fire-detail-hd.avif");
 }
 .player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team{
-  --vf-event-art:url("../assets/events/vento-fuoco/ice-event.webp");
+  --vf-detail-art:url("../assets/events/vento-fuoco/ice-detail-hd.avif");
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-identity{
+  position:relative;z-index:2;min-width:0;max-width:100%;
+  background:#fffdf5!important;
 }
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual{
-  background:var(--vf-event-art) center 50% / cover no-repeat!important;
+  position:relative;z-index:1;min-width:0;
+  background:var(--vf-detail-art) center center / cover no-repeat!important;
+  border-left:3px solid var(--vf-detail-primary,#056bc4)!important;
 }
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual::before,
 .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual::after{content:none!important;display:none!important}
@@ -155,7 +162,10 @@
 [data-event-theme="vento_fuoco_dev"] .halloween-native-match .rtg-prematch-top-team--opponent img,
 [data-event-theme="vento_fuoco_dev"] .halloween-native-match .rtg-score-team--opponent img{filter:none!important}
 @media(max-width:440px){
-  .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-name{font-size:clamp(1.7rem,8.5vw,2.4rem)!important}
+  .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-name{
+    font-size:clamp(1.35rem,5.9vw,1.82rem)!important;
+    line-height:1.02!important;max-width:100%!important;overflow-wrap:anywhere!important;
+  }
   .vf-strength{gap:6px;padding:9px 7px}
 }
 
@@ -365,12 +375,12 @@
 .player-card.rtg-event--vento_fuoco_dev.rtg-element-fire-team{
   --vf-card-accent:#ff6f28;
   --vf-card-glow:rgba(255,101,31,.52);
-  --vf-event-art:url("../assets/events/vento-fuoco/fire-event.webp");
+  --vf-event-art:url("../assets/events/vento-fuoco/fire-card-hd.avif");
 }
 .player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team{
   --vf-card-accent:#37d7ff;
   --vf-card-glow:rgba(34,198,255,.47);
-  --vf-event-art:url("../assets/events/vento-fuoco/ice-event.webp");
+  --vf-event-art:url("../assets/events/vento-fuoco/ice-card-hd.avif");
 }
 .player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team){
   position:relative!important;
