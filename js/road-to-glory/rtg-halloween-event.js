@@ -112,29 +112,62 @@
       const teamOf = new Map(teamAssets.flatMap(entry => Array.from(entry.players.keys()).map(pid => [pid, entry])));
       const moves = teamAssets.length === 1 ? first.moves :
         {...first.moves, players:Object.assign({}, ...teamAssets.map(entry => entry.moves.players))};
-      assets = Object.freeze({team:first.team, setup:first.setup, moves, players, teams:teamAssets, teamOf});
+      return Object.freeze({team:first.team, setup:first.setup, moves, players, teams:teamAssets, teamOf});
+    }).then(async current => {
+      // Fusion players are NOT part of rival teams or capsule pools.
+      if (!manifest.fusions) { assets=current; return assets; }
+      const files=manifest.fusions.files||{};
+      const loadFile=async path => {
+        if(typeof path!=="string"||!path.startsWith("data/events/vento_fuoco/"))throw fail("miximax-invalid-path");
+        const response=await fetcher(path,{cache:"no-store"});
+        if(!response.ok)throw fail("miximax-asset-unavailable");
+        return response.json();
+      };
+      const [roster,fire,wind]=await Promise.all([
+        loadFile(files.players),loadFile(files.fireMoves),loadFile(files.windMoves)
+      ]);
+      const list=Array.isArray(roster?.players)?roster.players:[];
+      const fusionPlayers=new Map(list.map(p=>[asId(p.playerId),p]));
+      const recipes=manifest.fusions.recipes||[];
+      if(list.length!==2||fusionPlayers.size!==2||recipes.length!==2||
+         recipes.some(recipe=>!fusionPlayers.has(asId(recipe.resultId))||
+           recipe.inputs?.length!==2||recipe.inputs.some(id=>!current.players.has(asId(id))))||
+         list.some(p=>!p?.variants?.fire||!p?.variants?.wind||
+           !fire.players?.[asId(p.playerId)]?.moves?.length||
+           fire.players[asId(p.playerId)].moves.length!==4||
+           wind.players?.[asId(p.playerId)]?.moves?.length!==4))
+        throw fail("miximax-invalid-asset-contract");
+      assets=Object.freeze({...current,fusionPlayers,fusionMoves:{fire,wind}});
       return assets;
-    }).catch(error => { assetsPromise = null; throw error; });
+    }).catch(error => { assets=null; assetsPromise = null; throw error; });
     return assetsPromise;
   }
-  function player(pid) {
+  function player(pid,variantId=null) {
     if (asId(pid) === global.RoadToGloryHalloweenCompletion?.PLAYER_ID)
       return global.RoadToGloryHalloweenCompletion.player();
-    const raw = assets?.players?.get(asId(pid));
-    if (!raw) return null;
-    const moves = assets.moves.players[asId(pid)]?.moves || [];
-    const teamConfig = assets.teamOf?.get(asId(pid))?.config || manifest.team;
-    const statKeys = ["attack","control","speed","grit","physical","stamina","defense","save"];
-    const stats = Object.fromEntries(statKeys.map(k => [k, Math.max(0, Number(raw[k]||0)*10)]));
+    const fusionRaw=assets?.fusionPlayers?.get(asId(pid))||null;
+    const variantKey=fusionRaw?(variantId==="wind"?"wind":"fire"):null;
+    const raw=fusionRaw?{...fusionRaw,...fusionRaw.variants[variantKey],
+      roleVariantId:variantKey,defaultRoleVariantId:"fire",
+      roleVariants:Object.entries(fusionRaw.variants).map(([id,v])=>({...v,variantId:id,roleVariantId:id})),
+      roleSwitchEnabled:true}:assets?.players?.get(asId(pid));
+    if(!raw)return null;
+    const moves=fusionRaw?(assets.fusionMoves[variantKey].players[asId(pid)]?.moves||[]):
+      (assets.moves.players[asId(pid)]?.moves||[]);
+    const teamConfig=fusionRaw?{teamId:"miximax",name:"Miximax",logo:"assets/events/vento-fuoco/miximax-collision.svg"}:
+      (assets.teamOf?.get(asId(pid))?.config || manifest.team);
+    const statKeys=["attack","control","speed","grit","physical","stamina","defense","save"];
+    const stats=Object.fromEntries(statKeys.map(k=>[k,Math.max(0,Number(raw[k]||0)*10)]));
     return {
-      ...raw, ...stats, playerId:asId(raw.playerId), cardId:EVENT_ID+"::"+asId(raw.playerId),
-      legacySeasonId:EVENT_ID, resolvedSeasonId:EVENT_ID, teamId:teamConfig.teamId,
-      teamName:teamConfig.name, teamLogoUrl:teamConfig.logo || LOGO_URL, level:20, stats, baseStats:stats,
-      normalizedRole:raw.position, finalOverall:Number(raw.overall)||0,
-      category:raw.category, finalRarity:raw.category, activeMove:moves[0] || null,
-      halloweenMoves:moves, halloweenVampire:!SPECIAL.includes(asId(pid)),
-      frontFullbodyUrl:raw.frontFullbodyUrl || EVENT_FULLBODY_URLS[asId(pid)] || null,
-      fullbodyUrl:raw.frontFullbodyUrl || EVENT_FULLBODY_URLS[asId(pid)] || null,
+      ...raw,...stats,playerId:asId(raw.playerId),cardId:EVENT_ID+"::"+asId(raw.playerId),
+      legacySeasonId:EVENT_ID,resolvedSeasonId:EVENT_ID,teamId:teamConfig.teamId,
+      teamName:teamConfig.name,teamLogoUrl:teamConfig.logo||LOGO_URL,level:20,stats,baseStats:stats,
+      normalizedRole:raw.position,finalOverall:Number(raw.overall)||0,
+      category:raw.category,finalRarity:raw.category,activeMove:moves[0]||null,
+      halloweenMoves:moves,halloweenFusion:!!fusionRaw,
+      halloweenVampire:!fusionRaw&&!SPECIAL.includes(asId(pid)),
+      frontFullbodyUrl:raw.frontFullbodyUrl||(fusionRaw?raw.portraitUrl:EVENT_FULLBODY_URLS[asId(pid)])||null,
+      fullbodyUrl:raw.frontFullbodyUrl||(fusionRaw?raw.portraitUrl:EVENT_FULLBODY_URLS[asId(pid)])||null,
       portraitUrl:raw.portraitUrl
     };
   }
@@ -268,9 +301,14 @@
     function eligibleFreeAgentIds(){return unlockedFreeAgentIds();}
 
     function resolveCard(cardId) {
-      if(cardId.startsWith(EVENT_ID+"::"))return global.RoadToGloryPlayerResolver?.resolveOwnedAtLevel20?.(
-        cardId,"ie1",null,data?.freeAgents,shared?.developmentByCardId||{}
-      ) || player(cardId.split("::")[1]);
+      if(cardId.startsWith(EVENT_ID+"::")){
+        const pid=cardId.slice(EVENT_ID.length+2);
+        // The event-local profile is authoritative for both fusion variants.
+        if(assets?.fusionPlayers?.has(pid))return player(pid,localSquad?.activeRoleVariantByCardId?.[cardId]||"fire");
+        return global.RoadToGloryPlayerResolver?.resolveOwnedAtLevel20?.(
+          cardId,"ie1",null,data?.freeAgents,shared?.developmentByCardId||{}
+        ) || player(pid);
+      }
       return global.RoadToGloryPlayerResolver?.resolveOwnedAtLevel20?.(cardId,"ie1",null,data.freeAgents,shared?.developmentByCardId||{})||null;
     }
     function resolvedUser() {
@@ -541,12 +579,19 @@
       if(!original)return;
       const info=!fromAlbum&&!matchPlayer?squadCoachDetailPreview(cardId,original):null;
       const p=info?.player||original;
+      const canSwitchFusion=Boolean(p?.halloweenFusion&&isOwned(asId(p.playerId))&&!match&&!fromAlbum&&
+        (localSquad?.bench||[]).includes(cardId));
       // The generic RTG detail resolver cannot resolve an unowned event card.
       // Use this event player's canonical render directly, even when locked.
       if(deps.showPlayerDetailsFor) {
         deps.showPlayerDetailsFor(p,{playerId:p.playerId,level:20,readOnly:true,rtgFourMoves:true,
           moveSeasonId:p.halloweenMoves?EVENT_ID:(p.resolvedSeasonId||p.legacySeasonId||"ie1"),
-          rtgRarity:p.category,mode:fromAlbum?"album":"current",albumUnlocked});
+          rtgRarity:p.category,mode:fromAlbum?"album":"current",albumUnlocked,
+          rtgRoleSwitch:canSwitchFusion?{enabled:true}:null,
+          onRtgRoleSwitch:canSwitchFusion?()=>perform(async()=>{
+            await editSquad("fusionRole",cardId);
+            deps.closeModal?.({invokeOnClose:false});
+          }).then(()=>openNativeDetail(cardId,false,false)):null});
         if(info)global.RoadToGloryCoachSquadPreview?.decorateDetail?.({
           root:deps.getModalRoot?.(),info
         });
@@ -714,7 +759,7 @@
       // Single event team today; future event teams can be added to this
       // collection without replacing the native RTG teams/roster screens.
       const teamRecords=(assets.teams||[{team:assets.team}]).map(entry=>entry.team);
-      return teamRecords.filter(Boolean).map((team,index)=>{
+      const teams=teamRecords.filter(Boolean).map((team,index)=>{
         const bonus=global.RoadToGloryHalloweenCompletion;
         const extra=index===0&&manifest.completionReward&&bonus?.owns?.(shared)?[player(bonus.PLAYER_ID)]:[];
         const roster=[...(team.players||[]).map(raw=>isOwned(asId(raw.playerId))
@@ -723,6 +768,13 @@
           logoUrl:team.logoUrl||LOGO_URL,roster,
           total:roster.length,unlocked:roster.filter(p=>isOwned(asId(p.playerId))).length};
       });
+      if(assets?.fusionPlayers?.size) {
+        const roster=Array.from(assets.fusionPlayers.keys()).map(pid=>player(pid)).filter(Boolean);
+        teams.push({teamId:"miximax",teamName:"Miximax",
+          logoUrl:"assets/events/vento-fuoco/miximax-collision.svg",
+          roster,total:roster.length,unlocked:roster.filter(p=>isOwned(asId(p.playerId))).length});
+      }
+      return teams;
     }
     function albumSection() {
       const teams=eventAlbumTeams();
@@ -1207,6 +1259,26 @@
     }
     // Parte 2 (b): home e schermate proprie di un evento (pezzo aggiuntivo: home, screens). La parte comune offre
     // solo strumenti; sezione Squadra, partita e distributore restano quelli comuni (pulsanti data-event-action).
+    async function fuseRecipe(recipeId){
+      const recipe=(manifest.fusions?.recipes||[]).find(item=>item.id===asId(recipeId));
+      if(!recipe||!isOpen()||match)throw fail("miximax-unavailable");
+      const rules=global.VentoFuocoMiximax;
+      if(!rules?.apply||!assets?.fusionPlayers?.has(asId(recipe.resultId)))
+        throw fail("miximax-not-ready");
+      await mutate("miximax-fuse",(account,records)=>{
+        const cards=account.gachaAcquiredCards||[];
+        const free=unlockedFreeAgentIds().map(pid=>global.RoadToGloryCardIdentity.cardIdForFreeAgent(pid));
+        const result=rules.apply({
+          account,ledger,recipe,prefix:EVENT_ID+"::",recordCard,
+          squadRecord:records[SQUAD_KEY]||null,fallbackSquad:localSquad,
+          allowedCardIds:[...free,...cards.map(card=>card.cardId)],
+          roleFor:cardId=>asId(resolveCard(cardId)?.position).toUpperCase()
+        });
+        return {writes:{[SQUAD_KEY]:result.squad}};
+      },[SHARED_KEY,SQUAD_KEY]);
+      notify("Miximax completato: "+(player(recipe.resultId)?.name||"nuovo giocatore")+
+        ". Gli originali possono essere ritrovati nei distributori.");
+    }
     const customPart=name=>name==="home"?global.GameEvents?.extensionPart?.(EVENT_ID,"home"):
       (global.GameEvents?.extensionPart?.(EVENT_ID,"screens")||{})[name]||null;
     let customHomeFailed=false;
@@ -1244,10 +1316,18 @@
         openNativeDetail(EVENT_ID+"::"+pid,isOwned(pid),true);
       },
       player:pid=>player(asId(pid)),
+      fusionRecipes:()=> (manifest.fusions?.recipes||[]).map(recipe=>{
+        const inputs=recipe.inputs.map(pid=>({playerId:pid,player:player(pid),owned:isOwned(pid)}));
+        const result=player(recipe.resultId),owned=isOwned(recipe.resultId);
+        return {id:recipe.id,inputs,result,owned,available:isOpen()&&!match&&!owned&&
+          inputs.every(entry=>entry.owned)};
+      }),
+      fuse:recipeId=>perform(()=>fuseRecipe(recipeId)),
       // Carte possedute di questo evento; con {from:"<id>"} quelle di un altro evento, solo se il file lo permette
       // (uses.cardsFrom). Le carte di un altro evento sono in sola lettura: niente poteri o stato di quell'evento.
       ownedCards:({from=EVENT_ID}={})=>{
-        if(from===EVENT_ID)return manifest.cards.map(card=>card.playerId).filter(pid=>isOwned(pid))
+        if(from===EVENT_ID)return [...manifest.cards.map(card=>card.playerId),
+          ...(manifest.fusions?.recipes||[]).map(recipe=>recipe.resultId)].filter(pid=>isOwned(pid))
           .map(pid=>({playerId:pid,cardId:EVENT_ID+"::"+pid,player:player(pid)}));
         if(!global.GameEvents?.canUseCardsFrom?.(EVENT_ID,from))return [];
         const other=global.GameEvents.get(from),module=global.GameEvents.module?.(from);
@@ -1524,6 +1604,14 @@
           const j=curr[area].indexOf(arg.to);curr[area][j]=arg.from;
         }
         curr[area][i]=arg.to;
+      } else if(kind==="fusionRole") {
+        const cardId=asId(arg),pid=cardId.slice(EVENT_ID.length+2);
+        if(!assets?.fusionPlayers?.has(pid)||!isOwned(pid)||!curr.bench.includes(cardId))
+          throw fail("miximax-switch-bench-only");
+        const current=curr.activeRoleVariantByCardId?.[cardId]==="wind"?"wind":"fire";
+        curr.activeRoleVariantByCardId={...(curr.activeRoleVariantByCardId||{}),
+          [cardId]:current==="fire"?"wind":"fire"};
+        nextSquad=curr;
       } else if(kind==="slot") {
         const slot=Number(arg);if(![1,2,3].includes(slot))throw fail("halloween-invalid-slot");
         nextSlots[activeSquadSlot]=curr;
@@ -1842,7 +1930,7 @@
     const owned=new Set(eventState(ledger(account)).ownedIds||[]);
     const bonus=manifest.completionReward&&global.RoadToGloryHalloweenCompletion;
     const hasBonus=bonus?.owns?.(account)===true;
-    return (assets.teams||[]).map((entry,index)=>{
+    const teams=(assets.teams||[]).map((entry,index)=>{
       const roster=(entry.team.players||[]).map(raw=>player(raw.playerId)).filter(Boolean);
       if(index===0&&hasBonus) {
         const extra=bonus.player?.();
@@ -1858,6 +1946,15 @@
         roster,entries:roster.filter(isUnlocked)
       };
     });
+    if(assets.fusionPlayers?.size){
+      const roster=Array.from(assets.fusionPlayers.keys()).map(pid=>player(pid)).filter(Boolean);
+      const isUnlocked=p=>owned.has(asId(p.playerId));
+      teams.push({eventId:EVENT_ID,originTeamId:"miximax",teamId:EVENT_ID+"::miximax",
+        isEventTeam:true,teamName:"Miximax",logoUrl:"assets/events/vento-fuoco/miximax-collision.svg",
+        total:roster.length,unlocked:roster.filter(isUnlocked).length,
+        roster,entries:roster.filter(isUnlocked)});
+    }
+    return teams;
   }
   const api = Object.freeze({
     EVENT_ID,TEAM_ID,EVENT_END_MS,PRICE,PRIZE,LUCKY_PRIZE,LABELS:manifest.labels,isOpen,countdown,eventCard,prepare,
