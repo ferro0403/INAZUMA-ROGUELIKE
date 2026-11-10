@@ -46,6 +46,7 @@ const view={
 const scope={
   Object,Array,Map,Set,Number,String,Math,JSON,Promise,Error,console,
   EVENT_ID:"vento_fuoco_dev",TEAM_VENDING:true,match:null,
+  manifest:{labels:{source:"Evento Vento e Fuoco"}},
   busy:false,squadEditPending:false,actionPending:false,
   localSquad:null,userCards:()=>owned,
   resolveCard:id=>players[id]||null,
