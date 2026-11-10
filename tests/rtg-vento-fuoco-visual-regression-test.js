@@ -123,6 +123,11 @@ const fetcher=async url=>({
   assert.match(eventHome,/function bindHome\(root,tools\)/);
   assert.match(eventHome,/tools\.openPreviewPlayer\?\.\(cardId\)/);
   assert.doesNotMatch(css,/fire-event-v[56]\.svg|ice-event-v[56]\.svg|portrait-patch\.svg|card-bg\.svg/);
+  const halloweenStyles=read("css/rtg-halloween-event.css");
+  assert.doesNotMatch(halloweenStyles,/\.player-card\.rtg-event--vento_fuoco_dev/,
+    "legacy event card theme must not also live in shared Halloween CSS");
+  assert.doesNotMatch(halloweenStyles,/\.player-detail-layout\.rtg-event--vento_fuoco_dev/,
+    "old element detail theme must be removed from shared CSS");
   assert.match(runtime,/\(localSquad\.lineup\|\|\[\]\)\.findIndex/);
   assert.match(runtime,/Math\.round\(\(\(sum-amount\)\/11\)\*10\)\/10/);
   const halloween=context.GameEvents.module("halloween2026");
