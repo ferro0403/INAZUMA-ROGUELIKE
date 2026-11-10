@@ -33,38 +33,54 @@
 .vf-rival__lineup summary b{margin-left:auto;font-size:.65rem;color:#ffd21f;white-space:nowrap}
 /* La formazione avversaria usa esclusivamente il renderer Squadra nativo. */
 
-/* Contenitori Squadra: alternanza blu/rosso con verde campo preservato. */
+/* Solo Squadra Vento-Fuoco: rosso Fuoco a sinistra, blu Ghiaccio a destra.
+ * Il campo rimane verde; le carte, le statistiche e i pulsanti nativi restano invariati. */
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-shell {
-  background:linear-gradient(115deg,#103e6d 0%,#0b213c 42%,#551f2c 100%)!important;color:#f5faff!important;
+  background:linear-gradient(112deg,#6d2436 0%,#172842 48%,#164d72 100%)!important;color:#f5faff!important;
 }
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-content{
-  background:linear-gradient(120deg,#0d355b,#0d2342 48%,#502033)!important;
+  background:linear-gradient(110deg,#612538 0%,#14263f 50%,#17466d 100%)!important;
 }
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-topbar {
-  background:linear-gradient(100deg,#07172c 0%,#164c7e 60%,#a3323e 100%)!important;
-  border-bottom-color:#00c8ed!important;
+  background:linear-gradient(100deg,#952d44 0%,#6a263d 27%,#182944 57%,#12608a 100%)!important;
+  border-bottom-color:#22c8f0!important;
 }
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slots,
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-field-panel,
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-bench-panel,
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-management-panel{
-  background:linear-gradient(135deg,#153c65,#0b213a 55%,#522432)!important;
+  background:linear-gradient(110deg,#542237 0%,#14233b 48%,#165277 100%)!important;
   border-color:#58b9eb!important;color:#fff!important;
 }
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-section-head{
-  background:linear-gradient(90deg,#071627,#16385c 65%,#842f36)!important;
-  border-color:#00bff3!important;
+  background:linear-gradient(95deg,#82243b 0%,#34263d 43%,#12577e 100%)!important;
+  border-color:#32c6f1!important;border-left:6px solid #ec4b57!important;
 }
-[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slot-buttons,
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slot-buttons{
+  background:linear-gradient(90deg,#4b293e 0%,#132840 51%,#155479 100%)!important;
+  color:#fff!important;
+}
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slot{
-  background:#0e3050!important;color:#fff!important;
+  background:#10314e!important;color:#fff!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slots{
+  border-left:5px solid #ed4856!important;
+  border-right:5px solid #43c8f0!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-field-panel{
+  border-left:5px solid #e64b56!important;
+  border-right:5px solid #43c8f0!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-bench-panel{
+  border-left:5px solid #42c5eb!important;
+  border-right:5px solid #e64b56!important;
 }
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slot.active,
 [data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-live-overall{
   background:#ffd21f!important;color:#071323!important;
 }
 /* Replace the unrelated orange 4-3-3 tile with a Fire/Ice accent. */
-.halloween-squad-mode .rtg-squad-head-stats .squad-field-formation{
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-head-stats .squad-field-formation{
   background:linear-gradient(110deg,#b6efff,#45c6f3)!important;
   color:#071b2d!important;
   border:3px solid #071323!important;
@@ -92,31 +108,6 @@
 .vf-nav-dock .vf-nav-switch.bottom-nav.rtg-bottom-nav .nav-icon,
 .vf-nav-dock .vf-nav-switch.bottom-nav.rtg-bottom-nav .nav-label{
   flex:0 0 auto;line-height:1.05!important;text-decoration:none!important;
-}
-
-/* Owned event players never disappear with slot/bench or old picker filters.
- * A single button exposes the whole event collection without pagination. */
-#modal-root .vf-picker-event-filter{margin:10px 0 12px;}
-#modal-root .vf-picker-event-filter>button{
-  display:flex;align-items:center;justify-content:space-between;gap:8px;
-  width:100%;min-height:43px;padding:9px 12px;
-  border:3px solid #081725;border-radius:3px;
-  background:linear-gradient(105deg,#ef4651 0%,#a73758 46%,#36bde9 100%);
-  box-shadow:3px 4px 0 #091524;color:#fff!important;
-  font-size:clamp(.7rem,2.6vw,.83rem);font-weight:1000;
-  text-align:center;letter-spacing:.03em;cursor:pointer;
-}
-#modal-root .vf-picker-event-filter>button span{
-  display:grid;place-items:center;min-width:29px;min-height:25px;
-  padding:2px 5px;border:2px solid #081725;
-  background:#fffaf1;color:#081725;font-weight:1000;
-}
-#modal-root .vf-picker-event-filter>button.active{
-  outline:3px solid #ffd21f;outline-offset:-3px;
-  background:linear-gradient(105deg,#ca263f 0%,#791d52 46%,#0f87c9 100%);
-}
-#modal-root .vf-picker-event-filter>button:focus-visible{
-  outline:3px solid #ffd21f;outline-offset:3px;
 }
 
 .vf-nav-switch.bottom-nav.rtg-bottom-nav{
