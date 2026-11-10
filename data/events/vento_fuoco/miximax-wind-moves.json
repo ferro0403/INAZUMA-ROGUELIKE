@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 2,
+  "seasonId": "vento_fuoco_dev_miximax",
+  "maxMovesPerPlayer": 4,
+  "players": {
+    "9900001": {
+      "primaryMoveId": "1105_6",
+      "moves": [
+        {
+          "moveId": "1105_6",
+          "name": "Fire Blizzard",
+          "jpName": "ファイアブリザード",
+          "type": "shot",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        },
+        {
+          "moveId": "4538_8",
+          "name": "Icebreaker",
+          "jpName": "氷結のグングニル",
+          "type": "shot",
+          "element": "Wind",
+          "power": 0,
+          "tension": 0,
+          "source": "manual"
+        },
+        {
+          "moveId": "197_4",
+          "name": "Aurora Dribble",
+          "jpName": "オーロラドリブル",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "manual"
+        },
+        {
+          "moveId": "289_1",
+          "name": "Frozen Steal",
+          "jpName": "フローズンスティール",
+          "type": "defense",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        }
+      ]
+    },
+    "9900002": {
+      "primaryMoveId": "4102_1",
+      "moves": [
+        {
+          "moveId": "4102_1",
+          "name": "Stealth Step",
+          "jpName": "ステルスウォーク",
+          "type": "defense",
+          "element": "Wind",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        },
+        {
+          "moveId": "256_3",
+          "name": "Land of Ice",
+          "jpName": "アイスグランド",
+          "type": "defense",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "197_4",
+          "name": "Aurora Dribble",
+          "jpName": "オーロラドリブル",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "manual"
+        },
+        {
+          "moveId": "4538_7",
+          "name": "Triple Blizzard",
+          "jpName": "トリプルブリザード",
+          "type": "shot",
+          "element": "Wind",
+          "power": 0,
+          "tension": 0,
+          "source": "manual"
+        }
+      ]
+    }
+  }
+}
