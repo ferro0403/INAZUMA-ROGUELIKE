@@ -766,21 +766,21 @@
       // Single event team today; future event teams can be added to this
       // collection without replacing the native RTG teams/roster screens.
       const teamRecords=(assets.teams||[{team:assets.team}]).map(entry=>entry.team);
+      // The two Miximax players belong to BOTH existing Fire/Blizzard album
+      // squads. No third album team, and no changes to opponent starting XI.
+      const fusionRoster=assets?.fusionPlayers?.size
+        ?Array.from(assets.fusionPlayers.keys()).map(pid=>
+          isOwned(pid)?(resolveCard(EVENT_ID+"::"+pid)||player(pid)):player(pid)).filter(Boolean)
+        :[];
       const teams=teamRecords.filter(Boolean).map((team,index)=>{
         const bonus=global.RoadToGloryHalloweenCompletion;
         const extra=index===0&&manifest.completionReward&&bonus?.owns?.(shared)?[player(bonus.PLAYER_ID)]:[];
         const roster=[...(team.players||[]).map(raw=>isOwned(asId(raw.playerId))
-          ?resolveCard(EVENT_ID+"::"+asId(raw.playerId)):player(raw.playerId)),...extra].filter(Boolean);
+          ?resolveCard(EVENT_ID+"::"+asId(raw.playerId)):player(raw.playerId)),...fusionRoster,...extra].filter(Boolean);
         return {teamId:asId(team.teamId),teamName:asId(team.teamName||team.name)||TEAM_NAME,
           logoUrl:team.logoUrl||LOGO_URL,roster,
           total:roster.length,unlocked:roster.filter(p=>isOwned(asId(p.playerId))).length};
       });
-      if(assets?.fusionPlayers?.size) {
-        const roster=Array.from(assets.fusionPlayers.keys()).map(pid=>player(pid)).filter(Boolean);
-        teams.push({teamId:"miximax",teamName:"Miximax",
-          logoUrl:"assets/events/vento-fuoco/miximax-collision.svg",
-          roster,total:roster.length,unlocked:roster.filter(p=>isOwned(asId(p.playerId))).length});
-      }
       return teams;
     }
     function albumSection() {
@@ -1955,8 +1955,13 @@
     const owned=new Set(eventState(ledger(account)).ownedIds||[]);
     const bonus=manifest.completionReward&&global.RoadToGloryHalloweenCompletion;
     const hasBonus=bonus?.owns?.(account)===true;
+    // Shared read-only album projection: one Chaos and one Shaiden in EACH
+    // original squad. The same player IDs are not duplicate owned cards.
+    const fusionRoster=assets.fusionPlayers?.size
+      ?Array.from(assets.fusionPlayers.keys()).map(pid=>player(pid)).filter(Boolean)
+      :[];
     const teams=(assets.teams||[]).map((entry,index)=>{
-      const roster=(entry.team.players||[]).map(raw=>player(raw.playerId)).filter(Boolean);
+      const roster=[...(entry.team.players||[]).map(raw=>player(raw.playerId)).filter(Boolean),...fusionRoster];
       if(index===0&&hasBonus) {
         const extra=bonus.player?.();
         if(extra&&!roster.some(p=>p.playerId===extra.playerId))roster.push(extra);
@@ -1971,14 +1976,6 @@
         roster,entries:roster.filter(isUnlocked)
       };
     });
-    if(assets.fusionPlayers?.size){
-      const roster=Array.from(assets.fusionPlayers.keys()).map(pid=>player(pid)).filter(Boolean);
-      const isUnlocked=p=>owned.has(asId(p.playerId));
-      teams.push({eventId:EVENT_ID,originTeamId:"miximax",teamId:EVENT_ID+"::miximax",
-        isEventTeam:true,teamName:"Miximax",logoUrl:"assets/events/vento-fuoco/miximax-collision.svg",
-        total:roster.length,unlocked:roster.filter(isUnlocked).length,
-        roster,entries:roster.filter(isUnlocked)});
-    }
     return teams;
   }
   const api = Object.freeze({
