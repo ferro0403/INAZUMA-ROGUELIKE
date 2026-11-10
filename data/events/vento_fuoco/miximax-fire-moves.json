@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 2,
+  "seasonId": "vento_fuoco_dev_miximax",
+  "maxMovesPerPlayer": 4,
+  "players": {
+    "9900001": {
+      "primaryMoveId": "1105_2",
+      "moves": [
+        {
+          "moveId": "1105_2",
+          "name": "Fire Blizzard",
+          "jpName": "ファイアブリザード",
+          "type": "shot",
+          "element": "Fire",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        },
+        {
+          "moveId": "4073_1",
+          "name": "Volcanic Lightning",
+          "jpName": "カザンライ",
+          "type": "shot",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        },
+        {
+          "moveId": "16_2",
+          "name": "Volcano Cut",
+          "jpName": "ボルケイノカット",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "99_3",
+          "name": "Meteor Shower",
+          "jpName": "メテオシャワー",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "manual"
+        }
+      ]
+    },
+    "9900002": {
+      "primaryMoveId": "2_15",
+      "moves": [
+        {
+          "moveId": "2_15",
+          "name": "Cross Fire",
+          "jpName": "クロスファイア",
+          "type": "shot",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        },
+        {
+          "moveId": "99_3",
+          "name": "Meteor Shower",
+          "jpName": "メテオシャワー",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "manual"
+        },
+        {
+          "moveId": "356_1",
+          "name": "Ignited Steal",
+          "jpName": "イグナイトスティール",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "2436_22",
+          "name": "Fire Tornado TC",
+          "jpName": "ファイアトルネードＴＣ",
+          "type": "shot",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        }
+      ]
+    }
+  }
+}
