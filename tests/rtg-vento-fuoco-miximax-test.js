@@ -55,6 +55,12 @@ const ui={GameEvents:{get:()=>manifest,extend:(id,extra)=>{
  assert.equal(id,"vento_fuoco_dev");hooks=extra;
 }}};ui.globalThis=ui;
 vm.runInNewContext(fs.readFileSync(path.join(root,"js/events/vento_fuoco_dev/home.js"),"utf8"),ui);
+const fireClass=hooks.classes({playerId:"9900002",roleVariantId:"fire",element:"Fire"});
+const windClass=hooks.classes({playerId:"9900002",roleVariantId:"wind",element:"Wind"});
+assert.match(fireClass,/rtg-element-miximax--fire/);
+assert.match(windClass,/rtg-element-miximax--wind/);
+assert.doesNotMatch(fireClass,/miximax--wind/);
+assert.doesNotMatch(windClass,/miximax--fire/);
 const card=(pid,name)=>({playerId:String(pid),cardId:"vento_fuoco_dev::"+pid,name,position:"FW",overall:96});
 const show=hooks.screens.miximax.render({
  fusionRecipes:()=>[
@@ -91,4 +97,20 @@ assert.match(css,/chaos-fullbody\.webp/);
 assert.match(css,/shaiden-fullbody\.webp/);
 assert.match(css,/height:69%!important/, "Nathan Halloween fullbody proportions");
 assert.doesNotMatch(css,/\.vf-miximax-face\{/);
-console.log("Miximax: sei card Squadra native, immagini HD e pulsanti RTG verificati");
+assert.match(css,/\.rtg-element-miximax--fire/);
+assert.match(css,/\.rtg-element-miximax--wind/);
+assert.match(css,/miximax-fire-right-hd\.webp/);
+assert.match(css,/miximax-ice-right-hd\.webp/);
+assert.match(css,/data-detail-rtg-role-switch/);
+assert.match(css,/background:#df2e42!important/);
+assert.match(css,/background:#1978d8!important/);
+for(const image of ["miximax-fire-right-hd.webp","miximax-ice-right-hd.webp"]){
+  const file=path.join(root,"assets/events/vento-fuoco",image);
+  const webp=fs.readFileSync(file);
+  assert.equal(webp.toString("ascii",0,4),"RIFF");
+  assert.equal(webp.toString("ascii",8,12),"WEBP");
+  assert.ok(webp.length>200000,"HD background should not be a low-resolution thumbnail");
+}
+assert.doesNotMatch(runtime,/originTeamId:"miximax"/);
+assert.match(runtime,/const fusionRoster=/);
+console.log("Miximax: due HD variant-dependent, VF rosso-blu e nessun terzo album OK");
