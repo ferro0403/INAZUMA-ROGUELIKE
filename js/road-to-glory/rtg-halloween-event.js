@@ -1272,7 +1272,8 @@
           account,ledger,recipe,prefix:EVENT_ID+"::",recordCard,
           squadRecord:records[SQUAD_KEY]||null,fallbackSquad:localSquad,
           allowedCardIds:[...free,...cards.map(card=>card.cardId)],
-          roleFor:cardId=>asId(resolveCard(cardId)?.position).toUpperCase()
+          roleFor:cardId=>asId(resolveCard(cardId)?.position).toUpperCase(),
+          rolesForSlot:tacticalSlotRoles
         });
         return {writes:{[SQUAD_KEY]:result.squad}};
       },[SHARED_KEY,SQUAD_KEY]);
