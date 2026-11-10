@@ -750,18 +750,35 @@
 .vf-miximax-recipe{position:relative;overflow:hidden;padding:12px;border:3px solid #81e9ff;border-radius:12px;
   background:linear-gradient(105deg,#093964,#07182f 45%,#511d18 100%);box-shadow:0 6px 0 #06121d,0 0 20px #0007}
 .vf-miximax-recipe:nth-child(2){border-color:#ffa24d}
-.vf-miximax-pair{display:flex;justify-content:center;align-items:center;gap:7px;min-height:120px}
-.vf-miximax-ingredient,.vf-miximax-result{min-width:0;flex:0 1 25%;display:grid;justify-items:center;align-content:start;text-align:center;
-  background:#06172db3;border:1px solid #93dafa66;border-radius:8px;padding:7px 4px;gap:3px}
-.vf-miximax-ingredient.is-missing{filter:saturate(.62);opacity:.7}
-.vf-miximax-result{flex:1 1 28%;border:2px solid #ffc267;background:linear-gradient(125deg,#0e4576,#782019);
-  box-shadow:inset 0 0 16px #fff2a226,0 0 12px #ffae4a44}
-.vf-miximax-face{height:78px;width:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 3px 3px #0009)}
-.vf-miximax-face.is-fusion{height:90px}
-.vf-miximax-ingredient strong,.vf-miximax-result strong{font-size:clamp(.62rem,2.25vw,.93rem);line-height:1.1;color:#fff}
-.vf-miximax-ingredient small,.vf-miximax-result small{font-size:.52rem;font-weight:900;letter-spacing:.03em;color:#b9e7f6}
-.vf-miximax-ingredient.is-missing small{color:#ffb5a3}
-.vf-miximax-plus,.vf-miximax-arrow{font-size:clamp(1rem,4vw,1.8rem);font-weight:1000;color:#fff3c7;flex:none}
+/* The exact cards from Squadra, with the same native card dimensions.
+ * Only the surrounding recipe layout is different. */
+.vf-miximax-pair.rtg-squad-shell{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr) 22px minmax(0,1fr);
+  gap:4px!important;align-items:center;justify-items:center;
+  width:100%;min-height:132px!important;padding:7px 0 9px!important;
+  margin:0!important;background:none!important;background-image:none!important;
+  box-shadow:none!important;border:0!important;color:#fff!important;
+}
+.vf-miximax-entrant{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;width:100%;min-width:0;padding:0;background:transparent}
+.vf-miximax-entrant.is-missing .rtg-squad-player-card{filter:saturate(.65);opacity:.85}
+.vf-miximax-native-card{width:100%;min-width:0;display:flex;justify-content:center;align-items:flex-start}
+.vf-miximax-native-card .rtg-squad-card-slot{width:100%!important;max-width:84px!important;
+  margin:0 auto!important;align-items:stretch!important}
+.vf-miximax-native-card .rtg-squad-card-slot > .rtg-squad-player-card{margin:0 auto!important;
+  cursor:pointer!important;touch-action:manipulation}
+.vf-miximax-native-card .rtg-squad-card-slot > .rtg-squad-player-card:focus-visible{
+  outline:3px solid #ffe07c!important;outline-offset:3px}
+.vf-miximax-card-state{display:block;max-width:100%;padding:3px 4px;
+  border:1px solid #b7dffc72;background:#07192dc9;border-radius:2px;
+  text-align:center;color:#ddf4ff;font-size:clamp(.46rem,1.75vw,.62rem);
+  font-weight:900;letter-spacing:.04em;line-height:1.18;white-space:normal}
+.vf-miximax-entrant.is-missing .vf-miximax-card-state{color:#ffbfad;border-color:#e4a48b7c}
+.vf-miximax-result .vf-miximax-card-state{color:#ffe09f;border-color:#ffd27c83}
+.vf-miximax-plus,.vf-miximax-arrow{font-size:clamp(.95rem,3.6vw,1.5rem);
+  line-height:1;font-weight:1000;color:#fff0b4;text-shadow:0 2px 3px #0009}
+.vf-miximax-unavailable{color:#eee;font-size:.65rem;text-align:center}
 .vf-miximax-recipe__info{margin:10px 0;padding:10px 8px;background:#020d209a;border-radius:7px}
 .vf-miximax-recipe__info h2{margin:0 0 6px;font-size:1.3rem;color:#fff7e0}
 .vf-miximax-versions{display:flex;flex-wrap:wrap;gap:6px}
@@ -769,22 +786,31 @@
 .vf-miximax-versions .vf-fire{background:#9e271b;color:#fff0e4}
 .vf-miximax-versions .vf-wind{background:#125faa;color:#ecfaff}
 .vf-miximax-recipe__info p{margin:8px 0 0;font-size:.72rem;color:#d5e9f4}
-.vf-miximax-fuse,.vf-miximax-return,.vf-miximax-confirm__actions button{
-  display:block;width:100%;border:2px solid #081829;border-radius:7px;min-height:45px;cursor:pointer;
-  background:linear-gradient(180deg,#ffe6a0,#ffa743);color:#081829;font-size:.85rem;font-weight:1000;letter-spacing:.04em;
-  box-shadow:0 3px 0 #071623}
-.vf-miximax-fuse:disabled{opacity:.6;cursor:not-allowed;background:linear-gradient(#b2bcc7,#707b8a)}
+/* Native RTG arcade buttons: square corners, ink border and hard shadow. */
+.vf-miximax-page :is(.vf-miximax-fuse,.vf-miximax-return,.vf-miximax-confirm__actions button){
+  display:flex!important;align-items:center;justify-content:center;text-align:center;
+  width:100%;min-height:45px;margin:0;border:3px solid #071523!important;border-radius:3px!important;
+  padding:9px 12px!important;background:#ffd21f!important;color:#071523!important;
+  font-weight:1000!important;font-size:clamp(.68rem,2.7vw,.85rem)!important;
+  line-height:1.12;letter-spacing:.04em;box-shadow:3px 4px 0 #07131e!important;
+  text-transform:uppercase;cursor:pointer;touch-action:manipulation;
+}
+.vf-miximax-page :is(.vf-miximax-fuse,.vf-miximax-return,.vf-miximax-confirm__actions button):active:not(:disabled){
+  transform:translate(2px,2px);box-shadow:1px 2px 0 #07131e!important}
+.vf-miximax-page .vf-miximax-fuse:disabled{
+  background:#a4aebc!important;color:#122136!important;opacity:.85;cursor:not-allowed;
+}
 .vf-miximax-confirm{padding:10px;margin-top:9px;border:2px solid #ff9d57;border-radius:8px;background:#261420}
 .vf-miximax-confirm[hidden],.vf-miximax-fuse[hidden]{display:none!important}
 .vf-miximax-confirm p{font-size:.75rem;line-height:1.5;color:#fff0e2;margin:0 0 10px}
 .vf-miximax-confirm p strong{color:#ffe190}
 .vf-miximax-confirm__actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.vf-miximax-confirm__actions button:first-child{background:#cee8fb}
-.vf-miximax-confirm__actions button:last-child{background:#ffad61}
+.vf-miximax-page .vf-miximax-confirm__actions button:first-child{background:#b6ebff!important}
+.vf-miximax-page .vf-miximax-confirm__actions button:last-child{background:#ffae54!important}
 .vf-miximax-confirm__actions button:disabled{opacity:.55;cursor:wait}
 .vf-miximax-warning{margin-top:19px;padding:11px 14px;border:1px solid #ffcd75;border-radius:8px;
   background:#451f20;color:#fff4dc;font-size:.77rem;line-height:1.5}
-.vf-miximax-return{margin-top:14px!important;max-width:400px;background:#a9eaff}
+.vf-miximax-page .vf-miximax-return{margin-top:14px!important;max-width:400px;background:#96ddf4!important}
 .player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax{
   --vf-event-art:url("../assets/events/vento-fuoco/miximax-collision.svg");
   border:3px solid #ffe2a5!important;border-radius:4px!important;color:#fff!important;
@@ -805,18 +831,28 @@
   color:#081523!important;background:linear-gradient(90deg,#ffcd9b,#91e8ff)!important;border-color:#071523!important}
 .player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-fullbody{
   object-fit:contain!important;object-position:center bottom!important;filter:drop-shadow(0 6px 9px #061323a0)}
+/* Nathan Halloween reference: the whole transparent render fits inside
+ * the right-side hero and stays grounded near its bottom (not zoomed/cropped).
+ * This rule is exclusive to the two Miximax sheets. */
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-detail-visual
+  img.player-fullbody--fullbody:is([src$="chaos-fullbody.webp"],[src$="shaiden-fullbody.webp"]){
+  position:absolute!important;left:55%!important;right:auto!important;
+  top:auto!important;bottom:4%!important;
+  width:100%!important;height:69%!important;max-width:100%!important;max-height:69%!important;
+  object-fit:contain!important;object-position:center bottom!important;
+  transform:translateX(-50%) scale(1)!important;transform-origin:center bottom!important;
+}
 @media(min-width:650px){
   .event-page--vento-fuoco .vf-miximax-banner{min-height:190px}
   .vf-miximax-banner__copy{min-height:188px}
   .vf-miximax-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-  .vf-miximax-face{height:120px}.vf-miximax-face.is-fusion{height:140px}
+  .vf-miximax-pair.rtg-squad-shell{grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr) 26px minmax(0,1fr);gap:8px!important}
 }
 @media(max-width:390px){
   .vf-miximax-page{padding:8px 7px 65px!important}
   .vf-miximax-recipe{padding:8px}
-  .vf-miximax-pair{gap:3px}
-  .vf-miximax-ingredient,.vf-miximax-result{padding:5px 2px}
-  .vf-miximax-face{height:67px}.vf-miximax-face.is-fusion{height:76px}
-  .vf-miximax-ingredient small,.vf-miximax-result small{font-size:.46rem}
+  .vf-miximax-pair.rtg-squad-shell{grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr) 15px minmax(0,1fr);gap:2px!important}
+  .vf-miximax-native-card .rtg-squad-card-slot{max-width:66px!important}
+  .vf-miximax-card-state{font-size:.46rem;letter-spacing:0}
   .vf-miximax-banner__copy{padding:15px}
 }
