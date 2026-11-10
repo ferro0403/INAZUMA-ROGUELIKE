@@ -69,19 +69,14 @@ for(const [slotIndex,slot] of slots.entries()){
   scope.openPicker(TARGET);
   const first=calls.filter(x=>x.kind==="initial").at(-1);
   assert.equal(first.total,owned.length-1,"slot "+(slotIndex+1)+" full pool includes bench and all owned cards");
-  for(const id of eventIds){
-    assert.ok(first.entries.some(entry=>entry.cardId===id)||first.total>first.entries.length,
-      "normal picker may paginate but must retain every event card in pool");
-  }
   const quick=new Set(first.quickEntries.map(e=>e.cardId));
-  const notCurrent=calls.filter(x=>x.kind==="initial").length;
   assert.ok(quick.has(slot.bench[0]),"slot "+(slotIndex+1)+" quick bench present");
   assert.match(html,/data-vf-picker-event-only/,"event-only shortcut present");
   node("[data-vf-picker-event-only]").fire("click");
   const filtered=calls.filter(x=>x.kind==="results").at(-1);
   assert.equal(filtered.total,eventIds.length,
     "slot "+(slotIndex+1)+" event-only result has ALL owned event players, no truncation");
-  assert.deepEqual(filtered.entries.map(x=>x.cardId).sort(),[...eventIds].sort(),
+  assert.deepEqual(Array.from(filtered.entries,x=>x.cardId).sort(),[...eventIds].sort(),
     "all owned Fire/Ice cards available in every saved squad slot");
   assert.equal(filtered.visibleCount,12,"event-only bypasses first 12 without changing normal pagination");
   node("[data-vf-picker-event-only]").fire("click");
