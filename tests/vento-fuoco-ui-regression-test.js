@@ -16,6 +16,22 @@ const fetcher=async url=>({ok:fs.existsSync(String(url)),status:fs.existsSync(St
   const module=context.GameEvents.module("vento_fuoco_dev");
   assert(module,"Vento-Fuoco DEV registered");
   await module.prepare(fetcher);
+  // Both variants of each Miximax player use the two EXISTING event teams.
+  // This drives the native detail team banner and the correct team crest.
+  const manifest=context.GameEvents.get("vento_fuoco_dev");
+  for(const pid of ["9900001","9900002"]){
+    const fire=module.eventPlayer(pid,"fire"),wind=module.eventPlayer(pid,"wind");
+    for(const [player,team] of [[fire,manifest.teams[0]],[wind,manifest.teams[1]]]){
+      assert.equal(player.teamId,team.teamId,pid+" variant team id");
+      assert.equal(player.teamName,team.name,pid+" variant team name");
+      assert.equal(player.teamLogoUrl,team.logo,pid+" variant team crest");
+      assert.notEqual(player.teamName,"Miximax",pid+" must never display Miximax as team");
+    }
+    assert.equal(fire.playerId,wind.playerId,"Changing variant must not duplicate a card");
+    assert.equal(fire.frontFullbodyUrl,wind.frontFullbodyUrl,"Switch keeps the same fullbody art");
+  }
+  assert.equal(module.eventPlayer("4539").teamId,"fire-team");
+  assert.equal(module.eventPlayer("4538").teamId,"blizzard-team");
   // Event states are read through their isolated storage key; no sync or writes.
   const account={events:{vento_fuoco_dev:{
     fireBadges:500,windBadges:800,ownedIds:["4539","4538"],pullCount:2,
