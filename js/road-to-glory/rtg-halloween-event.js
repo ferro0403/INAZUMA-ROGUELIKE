@@ -166,8 +166,10 @@
       category:raw.category,finalRarity:raw.category,activeMove:moves[0]||null,
       halloweenMoves:moves,halloweenFusion:!!fusionRaw,
       halloweenVampire:!fusionRaw&&!SPECIAL.includes(asId(pid)),
-      frontFullbodyUrl:raw.frontFullbodyUrl||(fusionRaw?raw.portraitUrl:EVENT_FULLBODY_URLS[asId(pid)])||null,
-      fullbodyUrl:raw.frontFullbodyUrl||(fusionRaw?raw.portraitUrl:EVENT_FULLBODY_URLS[asId(pid)])||null,
+      frontFullbodyUrl:raw.frontFullbodyUrl || EVENT_FULLBODY_URLS[asId(pid)] ||
+        (fusionRaw ? raw.portraitUrl : null),
+      fullbodyUrl:raw.frontFullbodyUrl || EVENT_FULLBODY_URLS[asId(pid)] ||
+        (fusionRaw ? raw.portraitUrl : null),
       portraitUrl:raw.portraitUrl
     };
   }
