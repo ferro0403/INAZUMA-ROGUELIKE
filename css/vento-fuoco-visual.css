@@ -93,10 +93,10 @@
   background:
     linear-gradient(90deg,
       rgba(255,251,242,.93) 0%,
-      rgba(255,251,242,.86) 29%,
-      rgba(255,251,242,.74) 42%,
-      rgba(255,251,242,.36) 53%,
-      rgba(255,251,242,0) 66%),
+      rgba(255,251,242,.88) 32%,
+      rgba(255,251,242,.80) 49%,
+      rgba(255,251,242,.68) 61%,
+      rgba(255,251,242,0) 77%),
     var(--vf-detail-art) center center / cover no-repeat!important;
   border-bottom:5px solid #07111e!important;
 }
