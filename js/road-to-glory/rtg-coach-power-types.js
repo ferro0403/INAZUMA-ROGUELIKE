@@ -16,6 +16,11 @@
     halveMoveCost: { phase: "squad", requiresPtMode: true, params: { picks: int(1, 1), divisor: int(2, 4) } },
     benchCapOverride: { phase: "squad", params: { picks: int(1, 1), cap: int(1, 99) } },
     rarityUpgrade: { phase: "squad", requiresPtMode: true, params: { picks: int(1, 2) } },
+    // Event-only: exactly three eligible starters of the specified squad.
+    // One rarity tier + extra PT in the NEXT match snapshot; no saved-card mutation.
+    elementalTrioAwakening: { phase: "squad", requiresPtMode: true,
+      params: { picks: int(3, 3), amount: int(1, 500),
+        teamId: oneOf("fire-team","blizzard-team") } },
     elementTransform: { phase: "squad", params: { picks: int(1, 2) } },
     requirementsOvrDiscount: { phase: "squad", params: { picks: int(1, 1), amount: int(1, 30),
       target: oneOf("ownStarter"), cardScope: oneOf("event") } },

@@ -1,0 +1,862 @@
+{
+  "schemaVersion": 2,
+  "seasonId": "vento_fuoco",
+  "maxMovesPerPlayer": 4,
+  "players": {
+    "180": {
+      "primaryMoveId": "180_1",
+      "moves": [
+        {
+          "moveId": "180_1",
+          "name": "Mega Quake",
+          "jpName": "メガクェイク",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "180_2",
+          "name": "Zigzag Spark",
+          "jpName": "ジグザグスパーク",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "180_3",
+          "name": "Earthquake",
+          "jpName": "アースクェイク",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "289_1",
+          "name": "Frozen Steal",
+          "jpName": "フローズンスティール",
+          "type": "defense",
+          "element": "Wind",
+          "power": 70,
+          "tension": 60,
+          "source": "manual"
+        }
+      ]
+    },
+    "266": {
+      "primaryMoveId": "266_1",
+      "moves": [
+        {
+          "moveId": "266_1",
+          "name": "God Knows",
+          "jpName": "ゴッドノウズ",
+          "type": "shot",
+          "element": "Wind",
+          "power": 85,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "266_2",
+          "name": "Aikido",
+          "jpName": "合気道",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "266_3",
+          "name": "Inazuma Drop",
+          "jpName": "イナズマ落とし",
+          "type": "shot",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "289_1",
+          "name": "Frozen Steal",
+          "jpName": "フローズンスティール",
+          "type": "defense",
+          "element": "Wind",
+          "power": 70,
+          "tension": 60,
+          "source": "manual"
+        }
+      ]
+    },
+    "1060": {
+      "primaryMoveId": "1060_1",
+      "moves": [
+        {
+          "moveId": "1060_1",
+          "name": "Asteroid Belt",
+          "jpName": "アステロイドベルト",
+          "type": "defense",
+          "element": "Forest",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "4102_1",
+          "name": "Stealth Step",
+          "jpName": "ステルスウォーク",
+          "type": "defense",
+          "element": "Wind",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        },
+        {
+          "moveId": "197_4",
+          "name": "Aurora Dribble",
+          "jpName": "オーロラドリブル",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "manual"
+        },
+        {
+          "moveId": "16_3",
+          "name": "Back Tornado",
+          "jpName": "バックトルネード",
+          "type": "shot",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        }
+      ]
+    },
+    "1078": {
+      "primaryMoveId": "1078_1",
+      "moves": [
+        {
+          "moveId": "1078_1",
+          "name": "Meteor Shower",
+          "jpName": "メテオシャワー",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "1078_2",
+          "name": "Gaia Break",
+          "jpName": "ガイアブレイク",
+          "type": "shot",
+          "element": "Mountain",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "1078_3",
+          "name": "Back Tornado",
+          "jpName": "バックトルネード",
+          "type": "shot",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "289_1",
+          "name": "Frozen Steal",
+          "jpName": "フローズンスティール",
+          "type": "defense",
+          "element": "Wind",
+          "power": 70,
+          "tension": 60,
+          "source": "manual"
+        }
+      ]
+    },
+    "1111": {
+      "primaryMoveId": "1111_2",
+      "moves": [
+        {
+          "moveId": "1111_2",
+          "name": "Water Veil",
+          "jpName": "ウォーターベール",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 65,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1111_4",
+          "name": "Frozen Steal",
+          "jpName": "フローズンスティール",
+          "type": "defense",
+          "element": "Wind",
+          "power": 70,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "3489_5",
+          "name": "Asteride",
+          "jpName": "スパークルウェイブ",
+          "type": "shot",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "manual"
+        },
+        {
+          "moveId": "13_1",
+          "name": "Coil Turn",
+          "jpName": "コイルターン",
+          "type": "defense",
+          "element": "Wind",
+          "power": 50,
+          "tension": 50,
+          "source": "manual"
+        }
+      ]
+    },
+    "1115": {
+      "primaryMoveId": "1115_1",
+      "moves": [
+        {
+          "moveId": "1115_1",
+          "name": "Frozen Steal",
+          "jpName": "フローズンスティール",
+          "type": "defense",
+          "element": "Wind",
+          "power": 70,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1115_2",
+          "name": "Aurora Dribble",
+          "jpName": "オーロラドリブル",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "1115_4",
+          "name": "Freeze Shot",
+          "jpName": "フリーズショット",
+          "type": "shot",
+          "element": "Forest",
+          "power": 55,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "4052_1",
+          "name": "Hydro Flow",
+          "jpName": "リキッドフロウ",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        }
+      ]
+    },
+    "1119": {
+      "primaryMoveId": "1119_4",
+      "moves": [
+        {
+          "moveId": "1119_4",
+          "name": "Space Penguin",
+          "jpName": "スペースペンギン",
+          "type": "shot",
+          "element": "Wind",
+          "power": 100,
+          "tension": 100,
+          "source": "database"
+        },
+        {
+          "moveId": "1119_2",
+          "name": "Water Veil",
+          "jpName": "ウォーターベール",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 65,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "289_1",
+          "name": "Frozen Steal",
+          "jpName": "フローズンスティール",
+          "type": "defense",
+          "element": "Wind",
+          "power": 70,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "1119_3",
+          "name": "Spiral Shot",
+          "jpName": "スパイラルショット",
+          "type": "shot",
+          "element": "Wind",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        }
+      ]
+    },
+    "1122": {
+      "primaryMoveId": "1122_3",
+      "moves": [
+        {
+          "moveId": "1122_3",
+          "name": "Fire Blizzard",
+          "jpName": "ファイアブリザード",
+          "type": "shot",
+          "element": "Wind",
+          "power": 90,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "1122_4",
+          "name": "Side Swipe",
+          "jpName": "バニシングカット",
+          "type": "defense",
+          "element": "Void",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "1122_2",
+          "name": "Water Veil",
+          "jpName": "ウォーターベール",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 65,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "2_21",
+          "name": "Prime Legend",
+          "jpName": "プライムレジェンド",
+          "type": "shot",
+          "element": "Wind",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        }
+      ]
+    },
+    "1125": {
+      "primaryMoveId": "1125_2",
+      "moves": [
+        {
+          "moveId": "1125_2",
+          "name": "Temporal Wall",
+          "jpName": "時空の壁",
+          "type": "save",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "289_1",
+          "name": "Frozen Steal",
+          "jpName": "フローズンスティール",
+          "type": "defense",
+          "element": "Wind",
+          "power": 70,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "2735_5",
+          "name": "All-Star",
+          "jpName": "スターリフレクション",
+          "type": "save",
+          "element": "Wind",
+          "power": 70,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "4130_1",
+          "name": "Dark Reversal",
+          "jpName": "サクリファイス",
+          "type": "save",
+          "element": "Wind",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        }
+      ]
+    },
+    "1134": {
+      "primaryMoveId": "1134_2",
+      "moves": [
+        {
+          "moveId": "1134_2",
+          "name": "Space Penguin",
+          "jpName": "スペースペンギン",
+          "type": "shot",
+          "element": "Wind",
+          "power": 100,
+          "tension": 100,
+          "source": "database"
+        },
+        {
+          "moveId": "1134_4",
+          "name": "Zigzag Spark",
+          "jpName": "ジグザグスパーク",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "1134_1",
+          "name": "Meteor Shower",
+          "jpName": "メテオシャワー",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "83_1",
+          "name": "Perimeter Zone",
+          "jpName": "プロファイルゾーン",
+          "type": "defense",
+          "element": "Wind",
+          "power": 50,
+          "tension": 50,
+          "source": "manual"
+        }
+      ]
+    },
+    "1146": {
+      "primaryMoveId": "1146_4",
+      "moves": [
+        {
+          "moveId": "1146_4",
+          "name": "Perfect Tower",
+          "jpName": "パーフェクト・タワー",
+          "type": "defense",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "1146_5",
+          "name": "Aikido",
+          "jpName": "合気道",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "1146_1",
+          "name": "The Tower",
+          "jpName": "ザ・タワー",
+          "type": "defense",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "2_2",
+          "name": "Inazuma Drop",
+          "jpName": "イナズマ落とし",
+          "type": "shot",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "manual"
+        }
+      ]
+    },
+    "1156": {
+      "primaryMoveId": "1156_2",
+      "moves": [
+        {
+          "moveId": "1156_2",
+          "name": "Land of Ice",
+          "jpName": "アイスグランド",
+          "type": "defense",
+          "element": "Wind",
+          "power": 85,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1156_4",
+          "name": "Cyclone",
+          "jpName": "サイクロン",
+          "type": "defense",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1244_2",
+          "name": "Frosticle",
+          "jpName": "ホワイトブレード",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "4052_3",
+          "name": "Bubble Trouble",
+          "jpName": "バブルボイル",
+          "type": "shot",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        }
+      ]
+    },
+    "1759": {
+      "primaryMoveId": "1759_2",
+      "moves": [
+        {
+          "moveId": "1759_2",
+          "name": "Heaven's Time",
+          "jpName": "ヘブンズタイム",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "1759_4",
+          "name": "Divine Arrows",
+          "jpName": "ディバインアロー",
+          "type": "shot",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "185_1",
+          "name": "God Knows",
+          "jpName": "ゴッドノウズ",
+          "type": "shot",
+          "element": "Wind",
+          "power": 85,
+          "tension": 70,
+          "source": "manual"
+        },
+        {
+          "moveId": "289_1",
+          "name": "Frozen Steal",
+          "jpName": "フローズンスティール",
+          "type": "defense",
+          "element": "Wind",
+          "power": 70,
+          "tension": 60,
+          "source": "manual"
+        }
+      ]
+    },
+    "1788": {
+      "primaryMoveId": "1788_1",
+      "moves": [
+        {
+          "moveId": "1788_1",
+          "name": "Megalodon",
+          "jpName": "メガロドン",
+          "type": "shot",
+          "element": "Wind",
+          "power": 70,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "73_3",
+          "name": "Heaven's Time",
+          "jpName": "ヘブンズタイム",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        },
+        {
+          "moveId": "4050_1",
+          "name": "Waterfall",
+          "jpName": "ウォーターフォール",
+          "type": "defense",
+          "element": "Wind",
+          "power": 100,
+          "tension": 80,
+          "source": "manual"
+        },
+        {
+          "moveId": "6_13",
+          "name": "The Hurricane",
+          "jpName": "ザ・ハリケーン",
+          "type": "shot",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        }
+      ]
+    },
+    "1857": {
+      "primaryMoveId": "1857_1",
+      "moves": [
+        {
+          "moveId": "1857_1",
+          "name": "Killer Slide",
+          "jpName": "キラースライド",
+          "type": "defense",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "4050_1",
+          "name": "Waterfall",
+          "jpName": "ウォーターフォール",
+          "type": "defense",
+          "element": "Wind",
+          "power": 100,
+          "tension": 80,
+          "source": "manual"
+        },
+        {
+          "moveId": "4940_1",
+          "name": "Niagara Falls",
+          "jpName": "ナイアガラフォールズ",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "16_3",
+          "name": "Back Tornado",
+          "jpName": "バックトルネード",
+          "type": "shot",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        }
+      ]
+    },
+    "1908": {
+      "primaryMoveId": "1908_2",
+      "moves": [
+        {
+          "moveId": "1908_2",
+          "name": "Dash Storm",
+          "jpName": "ダッシュストーム",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "1908_3",
+          "name": "Double Cyclone",
+          "jpName": "ダブルサイクロン",
+          "type": "defense",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "1908_5",
+          "name": "Barbarian Shield",
+          "jpName": "バーバリアンの盾",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 90,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "2505_4",
+          "name": "Plasma Ball",
+          "jpName": "プラズマボール",
+          "type": "shot",
+          "element": "Wind",
+          "power": 50,
+          "tension": 50,
+          "source": "manual"
+        }
+      ]
+    },
+    "1912": {
+      "primaryMoveId": "1912_1",
+      "moves": [
+        {
+          "moveId": "1912_1",
+          "name": "Divine Arrows",
+          "jpName": "ディバインアロー",
+          "type": "shot",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "256_3",
+          "name": "Land of Ice",
+          "jpName": "アイスグランド",
+          "type": "defense",
+          "element": "Wind",
+          "power": 85,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "1912_4",
+          "name": "Heaven's Time",
+          "jpName": "ヘブンズタイム",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "1912_7",
+          "name": "Meteor Blade",
+          "jpName": "流星ブレード",
+          "type": "shot",
+          "element": "Fire",
+          "power": 85,
+          "tension": 70,
+          "source": "database"
+        }
+      ]
+    },
+    "4519": {
+      "primaryMoveId": "4519_2",
+      "moves": [
+        {
+          "moveId": "4519_2",
+          "name": "Dash Storm",
+          "jpName": "ダッシュストーム",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "4519_4",
+          "name": "Divine Arrows",
+          "jpName": "ディバインアロー",
+          "type": "shot",
+          "element": "Wind",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "4519_3",
+          "name": "Dawnrise",
+          "jpName": "ゴー・トゥ・ヘブン",
+          "type": "defense",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "4508_6",
+          "name": "Tornado Barrier",
+          "jpName": "スピニングフェンス",
+          "type": "defense",
+          "element": "Wind",
+          "power": 95,
+          "tension": 80,
+          "source": "manual"
+        }
+      ]
+    },
+    "4538": {
+      "primaryMoveId": "4538_2",
+      "moves": [
+        {
+          "moveId": "4538_2",
+          "name": "Land of Ice",
+          "jpName": "アイスグランド",
+          "type": "defense",
+          "element": "Wind",
+          "power": 85,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "4538_3",
+          "name": "Aurora Dribble",
+          "jpName": "オーロラドリブル",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "4538_5",
+          "name": "Eternal Blizzard",
+          "jpName": "エターナルブリザード",
+          "type": "shot",
+          "element": "Wind",
+          "power": 75,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "4399_5",
+          "name": "Polar Pike",
+          "jpName": "氷の槍",
+          "type": "shot",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        }
+      ]
+    }
+  }
+}

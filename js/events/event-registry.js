@@ -87,6 +87,12 @@
       need(card.teamId === undefined || allTeams.some((entry) => entry?.teamId === card.teamId), `carta ${card.playerId}: squadra sconosciuta`);
     }
     const allCurrencies = currenciesOf(manifest);
+    for (const entry of allTeams) {
+      if (entry.currencyId !== undefined)
+        need(allCurrencies.some(c=>c.id===entry.currencyId), `squadra ${entry.teamId}: valuta sconosciuta`);
+      if (entry.theme?.colors) for (const key of THEME_COLORS)
+        need(/^#[0-9a-fA-F]{6}$/.test(entry.theme.colors[key]||""), `squadra ${entry.teamId}: theme.colors.${key} non valido`);
+    }
     if (manifest.currencies !== undefined) {
       need(Array.isArray(manifest.currencies) && manifest.currencies[0]?.id === manifest.currency?.id, "currencies deve iniziare con currency");
       need(new Set(allCurrencies.map((c) => c.id)).size === allCurrencies.length &&
@@ -101,7 +107,12 @@
       need(economy[key] === undefined || allCurrencies.some((c) => c.id === economy[key]), `economy.${key}: moneta sconosciuta`);
     }
     need(new Set(cards.map((card) => card.playerId)).size === cards.length, "carte ripetute");
-    for (const card of cards) need(isText(card.playerId) && isText(card.rarity), "carta senza playerId o rarity");
+    for (const card of cards) {
+      need(isText(card.playerId) && isText(card.rarity), "carta senza playerId o rarity");
+      if (card.pullWeight !== undefined)
+        need(Number.isFinite(card.pullWeight) && card.pullWeight > 0 && card.pullWeight <= 1000,
+          `carta ${card.playerId}: pullWeight deve essere positivo`);
+    }
     // Evento finto (solo sviluppo, data/events/dev/): tutto il suo salvataggio sta in chiavi locali "dev:...",
     // mai in shared:account (quindi mai nel cloud). Non usa save.key.
     if (manifest.dev !== undefined) {
@@ -178,14 +189,18 @@
     const doc = global.document;
     if (!doc?.createElement) return Promise.resolve();
     return Promise.all((manifest.extensions || []).map((src) => {
-      if (!loadedExtensions.has(src)) loadedExtensions.set(src, new Promise((resolve) => {
+      // Keep manifest paths validated as local .js files; an optional version
+      // only affects browser caching, never extension identity or persistence.
+      const version = String(manifest.extensionCacheVersion || "");
+      const cacheSrc = version ? src + "?v=" + encodeURIComponent(version) : src;
+      if (!loadedExtensions.has(cacheSrc)) loadedExtensions.set(cacheSrc, new Promise((resolve) => {
         const script = doc.createElement("script");
-        script.src = src;
+        script.src = cacheSrc;
         script.onload = () => resolve(true);
         script.onerror = () => { global.console?.warn?.(`[eventi] pezzo aggiuntivo ${src} non caricato`); resolve(false); };
         doc.head?.appendChild?.(script);
       }));
-      return loadedExtensions.get(src);
+      return loadedExtensions.get(cacheSrc);
     }));
   }
 
@@ -370,6 +385,14 @@
     }
     const vars = Object.entries(themeVars(manifest.id)).map(([key, value]) => `${key}:${value}`).join(";");
     style.textContent += `.rtg-event--${manifest.id}{${vars}}\n`;
+    // I colori delle due squadre derivano dai dati, senza duplicazioni CSS.
+    for (const team of teamsOf(manifest)) {
+      if (!team?.theme?.colors) continue;
+      const perTeam = THEME_COLORS.map(key=>`--event-${key}:${team.theme.colors[key]}`).join(";");
+      const selector = `.rtg-event--${manifest.id}.rtg-element-${team.teamId},`+
+        `.rtg-event--${manifest.id} .rtg-element-${team.teamId}`;
+      style.textContent += `${selector}{${perTeam}}\n`;
+    }
   }
   function applyTheme(element, eventId) {
     if (typeof element?.style?.setProperty !== "function") return;

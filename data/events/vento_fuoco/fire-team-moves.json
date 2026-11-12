@@ -1,0 +1,862 @@
+{
+  "schemaVersion": 2,
+  "seasonId": "vento_fuoco",
+  "maxMovesPerPlayer": 4,
+  "players": {
+    "160": {
+      "primaryMoveId": "160_4",
+      "moves": [
+        {
+          "moveId": "160_4",
+          "name": "Tri-Pegasus",
+          "jpName": "トライペガサス",
+          "type": "shot",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "16_2",
+          "name": "Volcano Cut",
+          "jpName": "ボルケイノカット",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "30_9",
+          "name": "Heel Drop",
+          "jpName": "ならく落とし",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "2440_4",
+          "name": "La Flamme",
+          "jpName": "ラ・フラム",
+          "type": "defense",
+          "element": "Fire",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        }
+      ]
+    },
+    "178": {
+      "primaryMoveId": "178_2",
+      "moves": [
+        {
+          "moveId": "178_2",
+          "name": "Flame Dance",
+          "jpName": "フレイムダンス",
+          "type": "defense",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "178_3",
+          "name": "Fire Rooster",
+          "jpName": "炎の風見鶏",
+          "type": "shot",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "178_5",
+          "name": "Divine Stamp",
+          "jpName": "裁きの鉄槌",
+          "type": "defense",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "30_8",
+          "name": "Gale Dash",
+          "jpName": "烈風ダッシュ",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "manual"
+        }
+      ]
+    },
+    "1092": {
+      "primaryMoveId": "1092_1",
+      "moves": [
+        {
+          "moveId": "1092_1",
+          "name": "Burnout",
+          "jpName": "バーンアウト",
+          "type": "save",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "16_2",
+          "name": "Volcano Cut",
+          "jpName": "ボルケイノカット",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "1092_2",
+          "name": "Fireball Knuckle",
+          "jpName": "熱血パンチ",
+          "type": "save",
+          "element": "Fire",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "4062_1",
+          "name": "Volcano Head",
+          "jpName": "ボルケイノヘッド",
+          "type": "save",
+          "element": "Fire",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        }
+      ]
+    },
+    "1098": {
+      "primaryMoveId": "1098_1",
+      "moves": [
+        {
+          "moveId": "1098_1",
+          "name": "Ignited Steal",
+          "jpName": "イグナイトスティール",
+          "type": "defense",
+          "element": "Fire",
+          "power": 70,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1098_2",
+          "name": "Super Armadillo",
+          "jpName": "スーパーアルマジロ",
+          "type": "dribble",
+          "element": "Mountain",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "4661_3",
+          "name": "Bull Rush",
+          "jpName": "バイソンホーン",
+          "type": "shot",
+          "element": "Fire",
+          "power": 85,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "2440_4",
+          "name": "La Flamme",
+          "jpName": "ラ・フラム",
+          "type": "defense",
+          "element": "Fire",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        }
+      ]
+    },
+    "1102": {
+      "primaryMoveId": "1102_4",
+      "moves": [
+        {
+          "moveId": "1102_4",
+          "name": "Atomic Flare",
+          "jpName": "アトミックフレア",
+          "type": "shot",
+          "element": "Fire",
+          "power": 85,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "356_1",
+          "name": "Ignited Steal",
+          "jpName": "イグナイトスティール",
+          "type": "defense",
+          "element": "Fire",
+          "power": 70,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "214_4",
+          "name": "Double Touch",
+          "jpName": "ひとりワンツー",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "15_5",
+          "name": "Flame Dance",
+          "jpName": "フレイムダンス",
+          "type": "defense",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "manual"
+        }
+      ]
+    },
+    "1104": {
+      "primaryMoveId": "1104_4",
+      "moves": [
+        {
+          "moveId": "1104_4",
+          "name": "No Escape",
+          "jpName": "ノーエスケイプ",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "1104_3",
+          "name": "Atomic Flare",
+          "jpName": "アトミックフレア",
+          "type": "shot",
+          "element": "Fire",
+          "power": 85,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "1105_5",
+          "name": "Flame Veil",
+          "jpName": "フレイムベール",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 50,
+          "tension": 50,
+          "source": "manual"
+        },
+        {
+          "moveId": "2_22",
+          "name": "Fire Tornado DD",
+          "jpName": "ファイアトルネードＤＤ",
+          "type": "shot",
+          "element": "Fire",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        }
+      ]
+    },
+    "1105": {
+      "primaryMoveId": "1105_2",
+      "moves": [
+        {
+          "moveId": "1105_2",
+          "name": "Fire Blizzard",
+          "jpName": "ファイアブリザード",
+          "type": "shot",
+          "element": "Fire",
+          "power": 90,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "1105_4",
+          "name": "Solar Surprise",
+          "jpName": "クレイジーサンライト",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1105_5",
+          "name": "Flame Veil",
+          "jpName": "フレイムベール",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "4073_1",
+          "name": "Volcanic Lightning",
+          "jpName": "カザンライ",
+          "type": "shot",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        }
+      ]
+    },
+    "1127": {
+      "primaryMoveId": "1127_1",
+      "moves": [
+        {
+          "moveId": "1127_1",
+          "name": "Lightning Bolt",
+          "jpName": "ライトニングアクセル",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "1127_2",
+          "name": "Gravitation",
+          "jpName": "グラビテイション",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 70,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "1127_3",
+          "name": "Gunshot",
+          "jpName": "ガンショット",
+          "type": "shot",
+          "element": "Fire",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "1105_5",
+          "name": "Flame Veil",
+          "jpName": "フレイムベール",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 50,
+          "tension": 50,
+          "source": "manual"
+        }
+      ]
+    },
+    "1193": {
+      "primaryMoveId": "1193_3",
+      "moves": [
+        {
+          "moveId": "1193_3",
+          "name": "Drill Smasher",
+          "jpName": "ドリルスマッシャー",
+          "type": "save",
+          "element": "Fire",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "1193_5",
+          "name": "Beast Fang",
+          "jpName": "ビーストファング",
+          "type": "save",
+          "element": "Fire",
+          "power": 90,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "4118_1",
+          "name": "Bastion Block",
+          "jpName": "キャッスルゲート",
+          "type": "save",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        },
+        {
+          "moveId": "16_2",
+          "name": "Volcano Cut",
+          "jpName": "ボルケイノカット",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        }
+      ]
+    },
+    "1202": {
+      "primaryMoveId": "1202_1",
+      "moves": [
+        {
+          "moveId": "1202_1",
+          "name": "Triple Boost",
+          "jpName": "トリプルブースト",
+          "type": "shot",
+          "element": "Fire",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "1202_2",
+          "name": "Killer Slide",
+          "jpName": "キラースライド",
+          "type": "defense",
+          "element": "Forest",
+          "power": 50,
+          "tension": 50,
+          "source": "database"
+        },
+        {
+          "moveId": "1202_4",
+          "name": "Foul Offence 3",
+          "jpName": "ジャッジスルー３",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "database"
+        },
+        {
+          "moveId": "4107_1",
+          "name": "Judgment Ray",
+          "jpName": "ジャッジメント・レイ",
+          "type": "defense",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        }
+      ]
+    },
+    "1270": {
+      "primaryMoveId": "1270_1",
+      "moves": [
+        {
+          "moveId": "1270_1",
+          "name": "Double Grenade",
+          "jpName": "ダブルグレネード",
+          "type": "shot",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1270_4",
+          "name": "Foul Offence 3",
+          "jpName": "ジャッジスルー３",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "database"
+        },
+        {
+          "moveId": "1270_6",
+          "name": "Fake Bomber",
+          "jpName": "フェイクボンバー",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1270_8",
+          "name": "Triple Boost",
+          "jpName": "トリプルブースト",
+          "type": "shot",
+          "element": "Fire",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        }
+      ]
+    },
+    "1762": {
+      "primaryMoveId": "1762_1",
+      "moves": [
+        {
+          "moveId": "1762_1",
+          "name": "Volcano Cut",
+          "jpName": "ボルケイノカット",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1762_2",
+          "name": "No Escape",
+          "jpName": "ノーエスケイプ",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "1105_5",
+          "name": "Flame Veil",
+          "jpName": "フレイムベール",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 50,
+          "tension": 50,
+          "source": "manual"
+        },
+        {
+          "moveId": "25_4",
+          "name": "Foul Offence 3",
+          "jpName": "ジャッジスルー３",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        }
+      ]
+    },
+    "1807": {
+      "primaryMoveId": "1807_3",
+      "moves": [
+        {
+          "moveId": "1807_3",
+          "name": "Shine Drive",
+          "jpName": "シャインドライブ",
+          "type": "shot",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1105_5",
+          "name": "Flame Veil",
+          "jpName": "フレイムベール",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 50,
+          "tension": 50,
+          "source": "manual"
+        },
+        {
+          "moveId": "2_16",
+          "name": "Tiger Storm",
+          "jpName": "タイガーストーム",
+          "type": "shot",
+          "element": "Fire",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        },
+        {
+          "moveId": "4720_1",
+          "name": "Last Lion of Defence",
+          "jpName": "爆喰獅子",
+          "type": "defense",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "manual"
+        }
+      ]
+    },
+    "1829": {
+      "primaryMoveId": "1829_1",
+      "moves": [
+        {
+          "moveId": "1829_1",
+          "name": "Heel Drop",
+          "jpName": "ならく落とし",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1829_2",
+          "name": "Racing Flame",
+          "jpName": "地走り火炎",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1829_5",
+          "name": "Dragon Cannon",
+          "jpName": "ドラゴンキャノン",
+          "type": "shot",
+          "element": "Fire",
+          "power": 80,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "4063_2",
+          "name": "Magmire",
+          "jpName": "マグマカーペット",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 85,
+          "tension": 80,
+          "source": "manual"
+        }
+      ]
+    },
+    "1915": {
+      "primaryMoveId": "1915_1",
+      "moves": [
+        {
+          "moveId": "1915_1",
+          "name": "Stone Prison",
+          "jpName": "ストーンプリズン",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1915_3",
+          "name": "Zigzag Flame",
+          "jpName": "ジグザグフレイム",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "1915_4",
+          "name": "Heel Drop",
+          "jpName": "ならく落とし",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 70,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "356_1",
+          "name": "Ignited Steal",
+          "jpName": "イグナイトスティール",
+          "type": "defense",
+          "element": "Fire",
+          "power": 70,
+          "tension": 60,
+          "source": "manual"
+        }
+      ]
+    },
+    "1943": {
+      "primaryMoveId": "1943_1",
+      "moves": [
+        {
+          "moveId": "1943_1",
+          "name": "Foul Offence 3",
+          "jpName": "ジャッジスルー３",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "database"
+        },
+        {
+          "moveId": "1943_2",
+          "name": "Diabolical Cut",
+          "jpName": "デーモンカット",
+          "type": "defense",
+          "element": "Forest",
+          "power": 75,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "356_1",
+          "name": "Ignited Steal",
+          "jpName": "イグナイトスティール",
+          "type": "defense",
+          "element": "Fire",
+          "power": 70,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "25_5",
+          "name": "Foul Offence 2",
+          "jpName": "ジャッジスルー２",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 80,
+          "tension": 60,
+          "source": "manual"
+        }
+      ]
+    },
+    "2008": {
+      "primaryMoveId": "2008_1",
+      "moves": [
+        {
+          "moveId": "2008_1",
+          "name": "Super Sumo Stomp",
+          "jpName": "スーパー四股踏み",
+          "type": "defense",
+          "element": "Fire",
+          "power": 65,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "2008_2",
+          "name": "Double Grenade",
+          "jpName": "ダブルグレネード",
+          "type": "shot",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "2008_3",
+          "name": "Volcano Cut",
+          "jpName": "ボルケイノカット",
+          "type": "defense",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "4662_4",
+          "name": "Bullseye Blaze",
+          "jpName": "レッドブレイク",
+          "type": "shot",
+          "element": "Fire",
+          "power": 80,
+          "tension": 60,
+          "source": "manual"
+        }
+      ]
+    },
+    "4527": {
+      "primaryMoveId": "4527_1",
+      "moves": [
+        {
+          "moveId": "4527_1",
+          "name": "Celestial Saw",
+          "jpName": "天空の刃",
+          "type": "shot",
+          "element": "Wind",
+          "power": 85,
+          "tension": 70,
+          "source": "database"
+        },
+        {
+          "moveId": "4527_2",
+          "name": "Heaven's Time",
+          "jpName": "ヘブンズタイム",
+          "type": "dribble",
+          "element": "Wind",
+          "power": 85,
+          "tension": 80,
+          "source": "database"
+        },
+        {
+          "moveId": "3566_5",
+          "name": "Asterocks",
+          "jpName": "アスタリスクロック",
+          "type": "defense",
+          "element": "Fire",
+          "power": 70,
+          "tension": 70,
+          "source": "manual"
+        },
+        {
+          "moveId": "2_19",
+          "name": "Grand Fire",
+          "jpName": "グランドファイア",
+          "type": "shot",
+          "element": "Fire",
+          "power": 105,
+          "tension": 100,
+          "source": "manual"
+        }
+      ]
+    },
+    "4539": {
+      "primaryMoveId": "356_1",
+      "moves": [
+        {
+          "moveId": "356_1",
+          "name": "Ignited Steal",
+          "jpName": "イグナイトスティール",
+          "type": "defense",
+          "element": "Fire",
+          "power": 70,
+          "tension": 60,
+          "source": "manual"
+        },
+        {
+          "moveId": "4073_1",
+          "name": "Volcanic Lightning",
+          "jpName": "カザンライ",
+          "type": "shot",
+          "element": "Fire",
+          "power": 100,
+          "tension": 100,
+          "source": "manual"
+        },
+        {
+          "moveId": "4539_2",
+          "name": "Ursa Rager",
+          "jpName": "必殺クマゴロシ斬",
+          "type": "shot",
+          "element": "Mountain",
+          "power": 85,
+          "tension": 60,
+          "source": "database"
+        },
+        {
+          "moveId": "214_4",
+          "name": "Double Touch",
+          "jpName": "ひとりワンツー",
+          "type": "dribble",
+          "element": "Fire",
+          "power": 60,
+          "tension": 60,
+          "source": "manual"
+        }
+      ]
+    }
+  }
+}

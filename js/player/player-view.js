@@ -299,7 +299,7 @@
           ? "Squadra campione"
           : "";
       return `
-        <div class="player-detail-layout ${rarityClass(currentRarity)} ${historical ? "player-detail-historical" : ""} ${global.GameEvents?.eventClasses?.(player?.legacySeasonId,"detail")||""}">
+        <div class="player-detail-layout ${rarityClass(currentRarity)} ${historical ? "player-detail-historical" : ""} ${global.GameEvents?.eventClasses?.(player?.legacySeasonId,"detail")||""} ${global.GameEvents?.extraClasses?.(player,"detail")||""}">
           <section class="player-detail-hero ${String(resolved.name || "").length > 18 ? "player-detail-hero--extra-long-name" : String(resolved.name || "").length > 12 ? "player-detail-hero--long-name" : ""}">
             ${rtgRoleSwitchButton}
             ${rtgLegacyBadge}

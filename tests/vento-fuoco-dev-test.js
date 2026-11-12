@@ -1,0 +1,52 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const {loadEventsWithDev}=require("./helpers/events");
+const read=file=>fs.readFileSync(file,"utf8");
+const fetcher=async url=>({ok:fs.existsSync(String(url)),json:async()=>JSON.parse(read(String(url)))});
+(async()=>{
+  const context=vm.createContext({console:{warn(){},log(){},error(){}}});
+  context.globalThis=context;
+  for(const path of ["js/events/event-registry.js","js/road-to-glory/rtg-config.js",
+    "js/road-to-glory/rtg-halloween-event.js"]) vm.runInContext(read(path),context,{filename:path});
+  await loadEventsWithDev(context,"vento_fuoco_dev");
+  const m=context.GameEvents.get("vento_fuoco_dev"),api=context.GameEvents.module("vento_fuoco_dev");
+  assert(m&&api&&m.dev,"dev event registrato");
+  assert.strictEqual(context.GameEvents.validate(m).length,0);
+  assert.deepStrictEqual(Array.from(context.GameEvents.teamsOf(m)).map(t=>t.teamId),["fire-team","blizzard-team"]);
+  assert.deepStrictEqual(Array.from(context.GameEvents.currenciesOf(m)).map(c=>c.field),["fireBadges","windBadges"]);
+  assert.strictEqual(api.pullFieldForTeam("fire-team"),"fireBadges");
+  assert.strictEqual(api.pullFieldForTeam("blizzard-team"),"windBadges");
+  for(const lucky of [false,true]){
+    assert.strictEqual(api.rewardFieldForTeam("fire-team",lucky),"fireBadges");
+    assert.strictEqual(api.rewardFieldForTeam("blizzard-team",lucky),"windBadges");
+  }
+  const state=JSON.parse(JSON.stringify(api.eventState(null)));
+  assert.strictEqual(state.fireBadges,0);
+  assert.strictEqual(state.windBadges,0);
+  assert.strictEqual(m.economy.pullPrice,200);
+  assert.strictEqual(m.economy.winPrize,300);
+  assert.strictEqual(m.economy.luckyPrize,600);
+  assert.strictEqual(m.economy.luckyChancePercent,20);
+  const rarityIds=["4539","1105","4538","1122"];
+  assert.strictEqual(m.cards.length,38);
+  assert.strictEqual(m.cards.filter(c=>c.pullWeight===1).length,4);
+  for(const card of m.cards)assert.strictEqual(card.pullWeight,rarityIds.includes(card.playerId)?1:3);
+  assert.strictEqual(api.weightedPick(["4539","1105","1104"],0.01),"4539");
+  assert.strictEqual(api.weightedPick(["4539","1105","1104"],0.25),"1105");
+  assert.strictEqual(api.weightedPick(["4539","1105","1104"],0.9),"1104");
+  const data=await api.prepare(fetcher);
+  assert.strictEqual(data.players.size,38);
+  assert.strictEqual(data.teams.length,2);
+  assert.strictEqual(api.opponentOverall("fire-team"),91);
+  assert.strictEqual(api.opponentOverall("blizzard-team"),91);
+  assert.strictEqual(context.GameEvents.teamOfCard(m,"4539").teamId,"fire-team");
+  assert.strictEqual(context.GameEvents.teamOfCard(m,"4538").teamId,"blizzard-team");
+  assert.strictEqual(context.GameEvents.extraClasses(api.eventPlayer("4539"),"card"),"rtg-element-fire-team");
+  assert.strictEqual(context.GameEvents.extraClasses(api.eventPlayer("4538"),"card"),"rtg-element-blizzard-team");
+  assert.strictEqual(context.GameEvents.extraClasses({legacySeasonId:"ie1",playerId:"4539"},"card"),"");
+  const h=context.GameEvents.module("halloween2026");
+  assert.strictEqual(h.pullFieldForTeam("occult-2"),"pumpkins");
+  assert.strictEqual(h.rewardFieldForTeam("occult-2"),"pumpkins");
+  assert.strictEqual(h.weightedPick(["45","custom_0002"],0.5),"45");
+  console.log("vento-fuoco-dev-test: PASS (2 pool, 2 valute, pesi, premi, album/tema)");
+})().catch(error=>{console.error(error);process.exit(1);});
