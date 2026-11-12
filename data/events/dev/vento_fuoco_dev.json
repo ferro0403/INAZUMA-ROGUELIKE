@@ -385,7 +385,52 @@
       "pullWeight": 3
     }
   ],
-  "coaches": [],
+  "coaches": [
+    {
+      "id": "vento-fuoco-coach-fire",
+      "teamId": "fire-team",
+      "name": "Allenatore Fuoco",
+      "imageUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/2/20/Team_Fire_emblem_%28SD%29.png/revision/latest/scale-to-width-down/173?cb=20250513214059",
+      "frontFullbodyUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/2/20/Team_Fire_emblem_%28SD%29.png/revision/latest/scale-to-width-down/173?cb=20250513214059",
+      "power": {
+        "type": "elementalTrioAwakening",
+        "name": "Risveglio Infernale",
+        "description": "In Squadra scegli esattamente 3 titolari speciali Fuoco dell’evento. Nella partita successiva salgono temporaneamente di una rarità e ricevono +100 PT iniziali e massimi. L’OVR usato per i requisiti resta quello originale (es. 95 → 99 conta 95). Le carte possedute non cambiano.",
+        "params": {
+          "picks": 3,
+          "amount": 100,
+          "teamId": "fire-team"
+        },
+        "ui": {
+          "title": "RISVEGLIO INFERNALE",
+          "pickerTitle": "SCEGLI 3 TITOLARI FUOCO",
+          "note": "Seleziona 3 titolari speciali Fuoco. Ognuno guadagna +1 rarità e +100 PT per la partita. Per il limite squadra continua a contare l’OVR originale."
+        }
+      }
+    },
+    {
+      "id": "vento-fuoco-coach-blizzard",
+      "teamId": "blizzard-team",
+      "name": "Allenatore Blizzard",
+      "imageUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/1/12/Team_Blizzard_emblem_%28SD%29.png/revision/latest/scale-to-width-down/169?cb=20250513214057",
+      "frontFullbodyUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/1/12/Team_Blizzard_emblem_%28SD%29.png/revision/latest/scale-to-width-down/169?cb=20250513214057",
+      "power": {
+        "type": "elementalTrioAwakening",
+        "name": "Risveglio Glaciale",
+        "description": "In Squadra scegli esattamente 3 titolari speciali Blizzard dell’evento. Nella partita successiva salgono temporaneamente di una rarità e ricevono +100 PT iniziali e massimi. L’OVR usato per i requisiti resta quello originale (es. 95 → 99 conta 95). Le carte possedute non cambiano.",
+        "params": {
+          "picks": 3,
+          "amount": 100,
+          "teamId": "blizzard-team"
+        },
+        "ui": {
+          "title": "RISVEGLIO GLACIALE",
+          "pickerTitle": "SCEGLI 3 TITOLARI BLIZZARD",
+          "note": "Seleziona 3 titolari speciali Blizzard. Ognuno guadagna +1 rarità e +100 PT per la partita. Per il limite squadra continua a contare l’OVR originale."
+        }
+      }
+    }
+  ],
   "assets": {
     "banner": "assets/rtg/rtg-season2-route-map-user.webp",
     "background": "assets/rtg/rtg-season3-route-map-user.webp"
