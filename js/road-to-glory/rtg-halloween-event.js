@@ -528,7 +528,14 @@
       // Coach validation needs the resolved 15 cards, not raw saved ID strings.
       // Never modify canonical lineup, bench or player development here.
       const unpack=keys=>(keys||[]).map(cardId=>{
-        const p=resolveCard(cardId);
+        // Evaluate the PROPOSED squad version, not the previous saved slot:
+        // changing a fusion variant must invalidate a wrong-element coach
+        // selection within the same atomic squad edit.
+        const pid=asId(cardId).startsWith(EVENT_ID+"::")
+          ?asId(cardId).slice(EVENT_ID.length+2):"";
+        const p=assets?.fusionPlayers?.has(pid)
+          ?player(pid,squad?.activeRoleVariantByCardId?.[cardId]||"fire")
+          :resolveCard(cardId);
         return p?{...p,cardId}:null;
       });
       return {lineup:unpack(squad?.lineup),bench:unpack(squad?.bench)};
