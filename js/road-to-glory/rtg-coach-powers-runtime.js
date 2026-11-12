@@ -94,7 +94,8 @@
         config.cardIds.every(key=>{
           const player=lineup.get(key);
           return key.startsWith(power.eventCardPrefix)&&
-            player?.teamId===power.params.teamId&&nextRarity(rarityOf(player));
+            player?.teamId===power.params.teamId&&
+            Number(player?.overall??player?.finalOverall)<99&&nextRarity(rarityOf(player));
         })?config:null;
     }
     if(type==="rarityUpgrade"){
