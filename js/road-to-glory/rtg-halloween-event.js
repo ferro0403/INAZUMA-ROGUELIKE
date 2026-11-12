@@ -1557,14 +1557,15 @@
             markup=markup.replace("rtg-picker-squad-card rtg-pull-player-card",
               "rtg-squad-player-card rtg-pull-player-card");
           }
+          const rewardTeamId=drawn.coach?.teamId||drawn.player?.teamId||"";
           const rewardStyle=TEAM_VENDING
-            ?(drawn.player?.teamId==="blizzard-team"?" vf-reward-ice":" vf-reward-fire"):"";
+            ?(rewardTeamId==="blizzard-team"?" vf-reward-ice":" vf-reward-fire"):"";
           // Keep the committed reward view in memory while the player sheet
           // is open. Returning from the detail restores this SAME result,
           // never starts a new pull or touches the account state.
           // Vento-Fuoco player prizes use the STANDARD RTG modal, NOT the
           // Halloween wrapper that restyles its component anatomy.
-          const rewardClass=TEAM_VENDING&&!isCoach
+          const rewardClass=TEAM_VENDING
             ?"rtg-modal rtg-pull-modal"+rewardStyle
             :"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"+rewardStyle;
           const showReward=()=>{
@@ -1587,13 +1588,24 @@
               };
               root.addEventListener?.("click",back,true);
             });
+            if(isCoach)modalRoot()?.querySelector?.("[data-rtg-coach-detail]")?.addEventListener("click",()=>{
+              deps.openModal(global.RoadToGloryCoachesView.detail(activeEventSquad(),drawn.coach.id,{equippedId:localSquad.coachId||""}),
+                {className:TEAM_VENDING?"rtg-modal player-detail-modal rtg-coaches-modal":"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"});
+              const root=modalRoot();
+              root?.querySelector?.("[data-rtg-coaches-back]")?.addEventListener("click",()=>showReward());
+              if(TEAM_VENDING&&root){
+                const back=event=>{
+                  const close=event.target?.closest?.(".modal-close");
+                  if(!close||!root.contains?.(close))return;
+                  event.preventDefault?.();event.stopImmediatePropagation?.();
+                  root.removeEventListener?.("click",back,true);
+                  showReward(); // Reopen the SAME committed reward without a second pull.
+                };
+                root.addEventListener?.("click",back,true);
+              }
+            });
           };
           showReward();
-          if(isCoach)modalRoot()?.querySelector?.("[data-rtg-coach-detail]")?.addEventListener("click",()=>{
-            deps.openModal(global.RoadToGloryCoachesView.detail(activeEventSquad(),drawn.coach.id,{equippedId:localSquad.coachId||""}),
-              {className:"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"});
-            modalRoot()?.querySelector?.("[data-rtg-coaches-back]")?.addEventListener("click",()=>deps.closeModal?.());
-          });
         }).finally?.(()=>{if(button.isConnected)button.disabled=false;});
       });
       if(match&&view==="match"&&deps.matchView)bindNativeMatch();

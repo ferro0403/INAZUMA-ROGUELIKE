@@ -2,7 +2,12 @@
   "use strict";
   const model=()=>global.RoadToGloryCoaches;
   // Passo 3.6b: classi dell'allenatore di un evento (colori e pelle dal file del suo evento).
-  const eventCoachClasses=c=>c?.eventCoach?global.GameEvents?.eventClasses?.(c.seasonId,"coach")||"":"";
+  const eventCoachClasses=c=>{
+    if(!c?.eventCoach)return "";
+    const base=global.GameEvents?.eventClasses?.(c.seasonId,"coach")||"";
+    const team=String(c.teamId||"");
+    return [base,/^[a-z0-9_-]+$/.test(team)?"rtg-element-"+team:""].filter(Boolean).join(" ");
+  };
   // Fase del potere dai dati (registro dei tipi, Passo 3.3): configurato in squadra o scelto prima della partita.
   const powerPhase=coachId=>global.RoadToGloryCoachPowerTypes?.powerFor?.(coachId)?.phase||"";
   const squadPower=coachId=>powerPhase(coachId)==="squad";

@@ -962,3 +962,78 @@
   .vf-miximax-card-state{font-size:.46rem;letter-spacing:0}
   .vf-miximax-banner__copy{padding:15px}
 }
+
+/* Elemental event coaches: native cards, fullbody detail, Squadra and reveal. */
+.rtg-event--vento_fuoco_dev.rtg-element-fire-team{
+ --vf-coach-edge:#ed5832;--vf-coach-deep:#b92122;--vf-coach-soft:#fff0df;
+ --vf-coach-ink:#27151a;--vf-coach-art:url("../assets/events/vento-fuoco/fire-card-hd.avif");
+}
+.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team{
+ --vf-coach-edge:#288fd5;--vf-coach-deep:#1c5694;--vf-coach-soft:#e3f7ff;
+ --vf-coach-ink:#142a41;--vf-coach-art:url("../assets/events/vento-fuoco/ice-card-hd.avif");
+}
+.rtg-coaches-modal .rtg-coach-entry .player-card.rtg-coach-card.rtg-event--vento_fuoco_dev,
+.rtg-coach-card.player-card.rtg-event--vento_fuoco_dev,
+.rtg-coaches-album .album-player-entry>.rtg-coach-album-card.rtg-event--vento_fuoco_dev,
+.rtg-coaches-reward.rtg-event--vento_fuoco_dev .rtg-coaches-reward-art .rtg-coach-card.player-card{
+ --rarity-color:var(--vf-coach-edge);--rarity-accent:var(--vf-coach-edge);
+ border-color:var(--vf-coach-edge)!important;color:var(--vf-coach-ink)!important;
+ background:linear-gradient(145deg,#fffdf6 0 63%,var(--vf-coach-soft) 63% 83%,var(--vf-coach-edge) 100%)!important;
+}
+.rtg-coach-card.rtg-event--vento_fuoco_dev .player-portrait-wrap,
+.rtg-coach-album-card.rtg-event--vento_fuoco_dev .player-portrait-wrap{
+ background:radial-gradient(circle at 50% 28%,#fffdfa 4%,var(--vf-coach-soft) 70%,var(--vf-coach-edge) 125%)!important;
+}
+.rtg-coach-card.rtg-event--vento_fuoco_dev .player-info,
+.rtg-coach-album-card.rtg-event--vento_fuoco_dev .player-info{
+ background:#fffdf6!important;color:var(--vf-coach-ink)!important;
+}
+.rtg-coach-card.rtg-event--vento_fuoco_dev .player-title strong,
+.rtg-coach-album-card.rtg-event--vento_fuoco_dev .player-title strong,
+.rtg-coach-card.rtg-event--vento_fuoco_dev .player-meta{
+ color:var(--vf-coach-ink)!important;text-shadow:none!important;
+}
+.rtg-coach-card.rtg-event--vento_fuoco_dev .player-corner.player-overall,
+.rtg-coach-album-card.rtg-event--vento_fuoco_dev .player-corner.player-overall{
+ background:var(--vf-coach-edge)!important;color:white!important;border-color:var(--vf-coach-ink)!important;
+}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev.player-detail-layout{
+ --rarity-color:var(--vf-coach-edge);--rarity-accent:var(--vf-coach-edge);
+ --detail-rarity-bg:var(--vf-coach-soft);--detail-rarity-accent:var(--vf-coach-edge);
+}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .player-detail-hero{
+ background:linear-gradient(102deg,#fffdf7 0%,#fff9ed 43%,var(--vf-coach-soft) 63%,var(--vf-coach-edge) 100%)!important;
+}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .player-detail-visual{
+ background:linear-gradient(110deg,#fffdf700,var(--vf-coach-soft) 50%,#fffdf733),
+ var(--vf-coach-art) center/cover no-repeat!important;
+}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .player-detail-visual::before{
+ background:linear-gradient(125deg,transparent 20%,var(--vf-coach-soft) 35%,transparent 66%)!important;opacity:.28;
+}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .player-detail-name{color:var(--vf-coach-ink)!important;text-shadow:none!important;}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .detail-category,
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .player-detail-section h3{border-color:var(--vf-coach-edge)!important;}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .detail-category::before{background:var(--vf-coach-edge)!important;}
+.rtg-coach-squad-slot.rtg-event--vento_fuoco_dev{
+ border-color:var(--vf-coach-edge)!important;background:#fffdf6!important;color:var(--vf-coach-ink)!important;
+}
+.rtg-coach-squad-slot.rtg-event--vento_fuoco_dev .rtg-coach-squad-heading{border-bottom-color:var(--vf-coach-edge);}
+.rtg-coach-squad-slot.rtg-event--vento_fuoco_dev .rtg-coach-squad-heading b,
+.rtg-coach-squad-slot.rtg-event--vento_fuoco_dev .rtg-coach-squad-buttons .btn:first-child{
+ background:var(--vf-coach-edge)!important;color:white!important;
+}
+.rtg-coaches-reward.rtg-event--vento_fuoco_dev.rtg-paper-modal{
+ border-color:var(--vf-coach-edge)!important;
+ background:radial-gradient(circle at 50% 27%,var(--vf-coach-soft),#fffdf6 75%)!important;
+}
+.rtg-coaches-reward.rtg-event--vento_fuoco_dev .rtg-coaches-reward-heading{
+ padding:13px 8px;border-bottom:4px solid var(--vf-coach-edge);
+ background:linear-gradient(90deg,#fffdf6f8,#fffdf6d9 63%,#fffdf659),var(--vf-coach-art) center/cover no-repeat;
+}
+.rtg-coaches-reward.rtg-event--vento_fuoco_dev .rtg-coaches-reward-info small,
+.rtg-coaches-reward.rtg-event--vento_fuoco_dev .rtg-coaches-reward-info h3{color:var(--vf-coach-deep)!important;}
+.rtg-coaches-reward.rtg-event--vento_fuoco_dev .rtg-coaches-reward-unlocked{
+ color:var(--vf-coach-ink)!important;background:var(--vf-coach-soft)!important;
+}
+@media(max-width:390px){.rtg-coaches-reward.rtg-event--vento_fuoco_dev{padding:12px!important;gap:10px;}}

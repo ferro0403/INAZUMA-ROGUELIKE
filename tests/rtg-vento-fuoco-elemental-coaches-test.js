@@ -17,6 +17,10 @@ const read=path=>fs.readFileSync(path,"utf8");
   const manifest=context.GameEvents.get("vento_fuoco_dev");
   const rules=context.RoadToGloryCoachPowerRuntime,types=context.RoadToGloryCoachPowerTypes;
   const coaches=context.RoadToGloryCoaches;
+  vm.runInContext(read("js/road-to-glory/rtg-coaches-view.js"),context,
+    {filename:"js/road-to-glory/rtg-coaches-view.js"});
+  const coachesView=context.RoadToGloryCoachesView;
+  const visuals=JSON.parse(read("data/PLAYER_VISUALS.json")).players;
   assert.equal(context.GameEvents.validate(manifest).length,0);
   assert.equal(manifest.coaches.length,2);
   const eventPrefix="vento_fuoco_dev::";
@@ -48,6 +52,18 @@ const read=path=>fs.readFileSync(path,"utf8");
     [manifest.coaches[1],"blizzard-team",ice,fire]
   ]){
     assert.equal(coach.teamId,expectedTeam);
+    // Zukan 4687 is Grant Grimoire, but legacy visuals index him as 4685
+    // (the local visuals ID 4687 belongs to Bolero Salimov).
+    const person=expectedTeam==="fire-team"
+      ?{id:"vento-fuoco-coach-fire",zukan:"4602",name:"Alessio Ganonti",visual:"4602"}
+      :{id:"vento-fuoco-coach-blizzard",zukan:"4687",name:"Grant Grimoire",visual:"4685"};
+    const art=visuals[person.visual];
+    assert.equal(coach.id,person.id,"persistent IDs are stable");
+    assert.equal(coach.zukanId,person.zukan);
+    assert.equal(coach.name,person.name);
+    assert.equal(coach.imageUrl,art.portraitUrl);
+    assert.equal(coach.frontFullbodyUrl,art.frontFullbodyUrl);
+    assert.notEqual(coach.imageUrl,manifest.teams.find(t=>t.teamId===expectedTeam).logo);
     assert.equal(coach.power.type,"elementalTrioAwakening");
     assert.deepEqual(plain(coach.power.params),{picks:3,amount:100,teamId:expectedTeam});
     const power=types.powerFor(coach.id);
@@ -56,7 +72,16 @@ const read=path=>fs.readFileSync(path,"utf8");
     const identity=coaches.lookup(coach.id);
     assert.equal(identity?.eventCoach,true);
     assert.equal(identity?.team,manifest.teams.find(t=>t.teamId===expectedTeam).name);
+    assert.equal(identity?.teamId,expectedTeam);
+    assert.equal(identity?.zukanId,person.zukan);
     assert.equal(identity?.teamLogoUrl,manifest.teams.find(t=>t.teamId===expectedTeam).logo);
+    const prize=coachesView.result(identity),details=coachesView.detail(
+      {coachOwnedIds:[coach.id]},coach.id,{equippedId:coach.id});
+    assert(prize.includes("rtg-element-"+expectedTeam));
+    assert(prize.includes(art.portraitUrl),"prize shows correct portrait");
+    assert(details.includes(art.frontFullbodyUrl),"detail shows fullbody");
+    assert(details.includes(coach.power.name),"detail includes power name");
+    assert(coachesView.card(identity,"owned").includes(art.portraitUrl));
     assert(!coaches.CATALOG.some(c=>c.id===coach.id));
     const squad=configuration(coach,group);
     const before=match(group),frozen=plain(before);
@@ -127,6 +152,9 @@ const read=path=>fs.readFileSync(path,"utf8");
     "the same Shaiden card ID qualifies as Blizzard when active variant changes");
   assert.equal(types.powerFor("halloween-coach-54").type,"requirementsOvrDiscount",
     "Halloween coach keeps its original power");
+  const vendingSource=read("js/road-to-glory/rtg-halloween-event.js");
+  assert.match(vendingSource,/filter\(coach=>coach\.teamId===teamId\)/,"vending is team-specific");
+  assert.match(vendingSource,/account\.coachOwnedIds\.push\(selected\)/,"coach unlock uses atomic debit");
   const sourceUi=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
   assert.match(sourceUi,/choice\.cardIds\.length<cap/,"picker must allow 3, never 4");
   assert.match(sourceUi,/type==="elementalTrioAwakening"/);

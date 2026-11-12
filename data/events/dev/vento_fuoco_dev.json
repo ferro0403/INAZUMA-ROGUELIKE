@@ -389,9 +389,10 @@
     {
       "id": "vento-fuoco-coach-fire",
       "teamId": "fire-team",
-      "name": "Allenatore Fuoco",
-      "imageUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/2/20/Team_Fire_emblem_%28SD%29.png/revision/latest/scale-to-width-down/173?cb=20250513214059",
-      "frontFullbodyUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/2/20/Team_Fire_emblem_%28SD%29.png/revision/latest/scale-to-width-down/173?cb=20250513214059",
+      "name": "Alessio Ganonti",
+    "zukanId": "4602",
+    "imageUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/p/x/pxgpobr4h9k.png",
+    "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/4/k/4kvdoecozlm_r0_fullbody.webp",
       "power": {
         "type": "elementalTrioAwakening",
         "name": "Risveglio Infernale",
@@ -411,9 +412,10 @@
     {
       "id": "vento-fuoco-coach-blizzard",
       "teamId": "blizzard-team",
-      "name": "Allenatore Blizzard",
-      "imageUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/1/12/Team_Blizzard_emblem_%28SD%29.png/revision/latest/scale-to-width-down/169?cb=20250513214057",
-      "frontFullbodyUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/1/12/Team_Blizzard_emblem_%28SD%29.png/revision/latest/scale-to-width-down/169?cb=20250513214057",
+      "name": "Grant Grimoire",
+    "zukanId": "4687",
+    "imageUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/4/h/4hcxw_icn2u.png",
+    "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/p/s/ps1jw6l05u8_r0_fullbody.webp",
       "power": {
         "type": "elementalTrioAwakening",
         "name": "Risveglio Glaciale",
