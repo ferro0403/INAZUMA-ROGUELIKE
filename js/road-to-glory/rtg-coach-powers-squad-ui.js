@@ -84,6 +84,9 @@
           '<strong>'+esc(original.name||"Giocatore")+' · '+esc(original.category)+' → '+esc(updated.category)+
           '</strong><p>Overall personale: '+esc(original.overall)+' → '+esc(updated.overall)+
           ' (non modifica l’overall squadra per i requisiti)</p>'+
+          (type==="elementalTrioAwakening"
+            ?'<p>PT iniziali e massimi dopo il potenziamento: <strong>'+esc(preview.pt?.total??"—")+
+              '</strong> · bonus +'+esc(power?.params?.amount||0)+'</p>':'')+
           (preview.stats?.length?'<div class="rtg-coach-preview-stat-grid">'+preview.stats.map(item=>
             '<span><strong>'+esc(item.label)+'</strong> '+esc(item.before)+' → '+
             esc(item.after)+' <b>+'+esc(item.after-item.before)+'</b></span>').join("")+'</div>':
