@@ -179,7 +179,7 @@ assert.match(eventSource,/function squadCoachDetailPreview\(cardId,player\)/,
   "Halloween Squadra must resolve the actual saved coach power for card details");
 assert.match(eventSource,/RoadToGloryCoachSquadPreview\?\.decorateDetail\?\.\(/,
   "Halloween player details must render staff power stats and special moves");
-assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-runtime.js?v=20261106-modulo-evento-2"));
+assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-runtime.js?v=20261112-vf-coach-trio-1"));
 assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-prematch.js?v=20261106-poteri-dati-1"));
 assert.doesNotMatch(eventSource,/rtg-coach-cap-note/,
   "Hekyll helper below OVR max must be removed, not just hidden");
