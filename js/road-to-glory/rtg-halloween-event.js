@@ -545,7 +545,10 @@
       const roster=resolvedPowerRoster(localSquad);
       const config=rules?.validConfig?.(localSquad,roster.lineup,"ie1",roster.bench);
       if(!config||!config.cardIds?.includes(cardId))return null;
-      if(global.RoadToGloryCoachPowerTypes?.typeOf?.(coachId)==="rarityUpgrade"&&cardId.startsWith(EVENT_ID+"::")){
+      const power=global.RoadToGloryCoachPowerTypes?.powerFor?.(coachId);
+      const isElemental=power?.type==="elementalTrioAwakening";
+      if(["rarityUpgrade","elementalTrioAwakening"].includes(power?.type)&&
+         cardId.startsWith(EVENT_ID+"::")){
         // Event cards have no Season progression source. Reuse the exact
         // temporary upgrade used at Halloween kickoff, only for this preview.
         const nextRarity=rules?.nextRarity?.(rules.rarityOf(player));
@@ -558,11 +561,17 @@
           label:labels[k],before:Number(player.stats?.[k]||0),
           after:Number(upgraded.stats?.[k]||0)
         })).filter(item=>item.after>item.before);
-        return {coachId,original:player,player:upgraded,stats,costs:{},moveElements:{},
-          pt:global.RtgFourMovesRuntime?.ptBreakdown?.(upgraded.stats,nextRarity)||null,
-          note:"POTENZIALE RISVEGLIATO · "+rules.rarityOf(player)+" → "+
+        const basePt=global.RtgFourMovesRuntime?.ptBreakdown?.(upgraded.stats,nextRarity)||null;
+        const pt=isElemental&&basePt
+          ?{...basePt,total:basePt.total+power.params.amount,coachBonus:power.params.amount}
+          :basePt;
+        return {coachId,original:player,player:upgraded,stats,costs:{},moveElements:{},pt,
+          note:(isElemental?power.params.teamId==="fire-team"?"RISVEGLIO INFERNALE":"RISVEGLIO GLACIALE"
+            :"POTENZIALE RISVEGLIATO")+" · "+rules.rarityOf(player)+" → "+
             nextRarity+" · OVR "+Number(player.overall)+" → "+Number(upgraded.overall)+
-            " in partita. Nessun cambiamento permanente; requisiti invariati."};
+            (isElemental?" · +"+power.params.amount+" PT iniziali e massimi":"")+
+            " in partita. Per i requisiti continua a contare OVR "+Number(player.overall)+
+            ". Nessun cambiamento permanente."};
       }
       if(!TEAM_VENDING&&coachId===HALLOWEEN_COACH_ID){
         return {coachId,original:player,player,stats:[],costs:{},moveElements:{},
@@ -1189,7 +1198,9 @@
         previewChoice:(key,selection)=>{
           const p=resolveCard(key);
           if(!p)return null;
-          if(global.RoadToGloryCoachPowerTypes?.typeOf?.(localSquad.coachId)==="rarityUpgrade"&&asId(key).startsWith(EVENT_ID+"::")){
+          const previewPower=global.RoadToGloryCoachPowerTypes?.powerFor?.(localSquad.coachId);
+          if(["rarityUpgrade","elementalTrioAwakening"].includes(previewPower?.type)&&
+             asId(key).startsWith(EVENT_ID+"::")){
             const rarityRules=global.RoadToGloryCoachPowerRuntime;
             const nextRarity=rarityRules?.nextRarity?.(rarityRules.rarityOf(p));
             const upgraded=nextRarity&&selection?.cardIds?.includes(key)
@@ -1202,7 +1213,11 @@
               label:label[k],before:Number(p.stats?.[k]||0),
               after:Number(upgraded.stats?.[k]||0)
             })).filter(v=>v.after>v.before);
-            return {original:p,player:upgraded,stats};
+            const basePt=global.RtgFourMovesRuntime?.ptBreakdown?.(upgraded.stats,nextRarity)||null;
+            const pt=previewPower?.type==="elementalTrioAwakening"&&basePt
+              ?{...basePt,total:basePt.total+previewPower.params.amount,
+                coachBonus:previewPower.params.amount}:basePt;
+            return {original:p,player:upgraded,stats,pt};
           }
           return global.RoadToGloryCoachSquadPreview?.projected?.({
             player:p,cardId:key,squad:{...localSquad,coachPowerSelection:selection},
