@@ -49,6 +49,10 @@
       type==="benchCapOverride"?(squad.bench||[]).includes(key):
       type==="rarityUpgrade"?[...(squad.lineup||[]),...(squad.bench||[])].includes(key)&&
         !!rules.nextRarity(rules.rarityOf(resolve(key))):
+      type==="elementalTrioAwakening"?(squad.lineup||[]).includes(key)&&
+        !!power?.eventCardPrefix&&key.startsWith(power.eventCardPrefix)&&
+        resolve(key)?.teamId===power.params.teamId&&
+        !!rules.nextRarity(rules.rarityOf(resolve(key))):
         (squad.lineup||[]).includes(key);
     function pick(key){
       if(busy||!allowed(key))return;
@@ -67,11 +71,11 @@
       }
       if(choice.cardIds.includes(key))choice.cardIds=choice.cardIds.filter(x=>x!==key);
       else if(cap===1)choice.cardIds=[key];
-      else if(choice.cardIds.length<2)choice.cardIds.push(key);
+      else if(choice.cardIds.length<cap)choice.cardIds.push(key);
       render();
     }
     function projectedChanges(){
-      if(type!=="rarityUpgrade"||!choice.cardIds.length)return "";
+      if(!["rarityUpgrade","elementalTrioAwakening"].includes(type)||!choice.cardIds.length)return "";
       return choice.cardIds.map(key=>{
         const preview=ctx.previewChoice?.(key,choice);
         if(!preview)return '<p class="rtg-coach-picker-note">Rarità massima o anteprima non disponibile: scegli un altro giocatore.</p>';
