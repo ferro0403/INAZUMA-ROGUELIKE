@@ -46,6 +46,8 @@
   // Carte senza lo stile "vampiro" (le due speciali).
   const SPECIAL = Object.freeze(manifest.cards.filter(card => !card.vampire).map(card => card.playerId));
   const HALLOWEEN_COACH_ID = manifest.coaches?.[0]?.id || "";
+  const EVENT_COACH_IDS=new Set((manifest.coaches||[]).map(coach=>coach.id));
+  const isEventCoachId=pid=>EVENT_COACH_IDS.has(pid);
   const PULL_WEIGHTS = new Map(manifest.cards.filter(card=>card.pullWeight !== undefined).map(card=>[card.playerId,card.pullWeight]));
   // La valuta per squadra e' opzionale: Halloween usa sempre i campi storici.
   const currencyForTeam = teamId => TEAMS.find(t=>t.teamId===teamId)?.currencyId || "";
@@ -209,7 +211,7 @@
   }
   function weightedPick(missing, random) {
     const pool = missing.map(pid => ({pid,weight:PULL_WEIGHTS.get(pid) ??
-      (pid===HALLOWEEN_COACH_ID||SPECIAL.includes(pid)?4:5.75)}));
+      (isEventCoachId(pid)||SPECIAL.includes(pid)?4:5.75)}));
     const total = pool.reduce((n,item)=>n+item.weight,0);
     if (!pool.length || !Number.isFinite(random) || random < 0 || random >= 1) throw fail("halloween-invalid-pull");
     let n = random * total;
@@ -350,8 +352,11 @@
       const missing=Array.from(assets.players.keys()).filter(pid=>
         !ledger(account).ownedIds.includes(pid) &&
         (!split||assets.teamOf?.get(pid)?.config?.teamId===teamId));
-      if(HALLOWEEN_COACH_ID&&!account.coachOwnedIds.includes(HALLOWEEN_COACH_ID))
-        missing.push(HALLOWEEN_COACH_ID);
+      const eventCoaches=TEAM_VENDING
+        ?(manifest.coaches||[]).filter(coach=>coach.teamId===teamId)
+        :(manifest.coaches||[]);
+      for(const coach of eventCoaches)
+        if(!account.coachOwnedIds.includes(coach.id))missing.push(coach.id);
       return missing;
     }
     async function grantCompletionReward() {
@@ -559,7 +564,7 @@
             nextRarity+" · OVR "+Number(player.overall)+" → "+Number(upgraded.overall)+
             " in partita. Nessun cambiamento permanente; requisiti invariati."};
       }
-      if(coachId===HALLOWEEN_COACH_ID){
+      if(!TEAM_VENDING&&coachId===HALLOWEEN_COACH_ID){
         return {coachId,original:player,player,stats:[],costs:{},moveElements:{},
           note:"MASCHERA MALEDETTA · questo giocatore conta 15 OVR in meno "+
             "soltanto per i requisiti dell'evento. Statistiche e partita invariati."};
@@ -1563,7 +1568,7 @@
           };
           showReward();
           if(isCoach)modalRoot()?.querySelector?.("[data-rtg-coach-detail]")?.addEventListener("click",()=>{
-            deps.openModal(global.RoadToGloryCoachesView.detail(activeEventSquad(),HALLOWEEN_COACH_ID,{equippedId:localSquad.coachId||""}),
+            deps.openModal(global.RoadToGloryCoachesView.detail(activeEventSquad(),drawn.coach.id,{equippedId:localSquad.coachId||""}),
               {className:"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"});
             modalRoot()?.querySelector?.("[data-rtg-coaches-back]")?.addEventListener("click",()=>deps.closeModal?.());
           });
@@ -1761,11 +1766,11 @@
       // Keep all configured squad powers in sync with the saved XI. A changed
       // player can invalidate Hillman/Yi just as it can invalidate Hekyll.
       // Clear only an invalid selection during this SAME atomic squad write.
-      if(["replace","adapt","formation"].includes(kind)&&nextSquad.coachPowerSelection){
+      if(["replace","adapt","formation","fusionRole"].includes(kind)&&nextSquad.coachPowerSelection){
         const roster=resolvedPowerRoster(nextSquad);
         if(!global.RoadToGloryCoachPowerRuntime?.validConfig?.(
             nextSquad,roster.lineup,"ie1",roster.bench)){
-          const message=nextSquad.coachId===HALLOWEEN_COACH_ID
+          const message=!TEAM_VENDING&&nextSquad.coachId===HALLOWEEN_COACH_ID
             ?manifest.coaches[0].power.name+": seleziona di nuovo un titolare "+UI.short+"."
             :"Potere allenatore: seleziona di nuovo i giocatori interessati.";
           nextSquad.coachPowerSelection=null;
@@ -1821,7 +1826,7 @@
       })||created;
       // A saved power must never silently disappear in the match snapshot.
       // Hekyll is intentionally eligibility-only and has no combat effect.
-      if(powerConfig&&powerConfig.coachId!==HALLOWEEN_COACH_ID&&
+      if(powerConfig&&configuredPower?.type!=="requirementsOvrDiscount"&&
          created.coachPowerEffect?.coachId!==powerConfig.coachId)
         throw fail("halloween-coach-power-not-applied");
       if(coach){created.preMatchCoachId=coach;created.presentation={...(created.presentation||{}),preMatchPowerStatus:"pending"};}
@@ -1915,7 +1920,7 @@
         if(!missing.length)throw fail("halloween-collection-completed");
         const random=global.crypto?.getRandomValues?global.crypto.getRandomValues(new Uint32Array(1))[0]/4294967296:Math.random();
         selected=weightedPick(missing,random);
-        if(selected===HALLOWEEN_COACH_ID){
+        if(isEventCoachId(selected)){
           if(account.coachOwnedIds.includes(selected))throw fail("halloween-coach-already-owned");
           // Existing RTG shared account persists coaches for BOTH campaigns.
           // Debit and coach grant commit in the SAME canonical transaction.
@@ -1927,7 +1932,7 @@
           account.gachaAcquiredCards.push(record);
         }
       });
-      if(selected===HALLOWEEN_COACH_ID)
+      if(isEventCoachId(selected))
         return {coach:global.RoadToGloryCoaches?.lookup?.(selected),result:{
           coachId:selected,rarity:"Leggenda",balanceAfter:ledger(shared)[selectedField]}};
       const p=player(selected);
