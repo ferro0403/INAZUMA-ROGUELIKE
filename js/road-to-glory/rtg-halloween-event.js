@@ -743,7 +743,7 @@
       const nativeSquad=view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
           coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(
             activeEventSquad(),localSquad.coachId,
-            localSquad.coachId===HALLOWEEN_COACH_ID&&!eventOverallDiscount()
+            !TEAM_VENDING&&localSquad.coachId===HALLOWEEN_COACH_ID&&!eventOverallDiscount()
               ?null:localSquad.coachPowerSelection)||"",
           requirementsMarkup:requirement,nextTeamName:TEAM_NAME,dirty:false});
       // Never rewrite the native Squadra HTML or card structure. The shared
@@ -1263,7 +1263,7 @@
           // Standard coaches must get the IDENTICAL detail modal frame used
           // by the canonical RTG coaches controller (player-detail-modal).
           // Hekyll alone retains the custom Halloween modal appearance.
-          const coachDetailClassName=id===HALLOWEEN_COACH_ID
+          const coachDetailClassName=!TEAM_VENDING&&id===HALLOWEEN_COACH_ID
             ?"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"
             :"rtg-modal player-detail-modal rtg-coaches-modal";
           deps.openModal(view.detail(activeEventSquad(),id,{equippedId:localSquad.coachId||""}),
