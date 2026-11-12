@@ -206,8 +206,8 @@ const openCoachesPart=eventSource.slice(eventSource.indexOf("function openCoache
 const canonicalCoaches=fs.readFileSync("js/road-to-glory/rtg-coaches-controller.js","utf8");
 assert.match(canonicalCoaches,/detailId\?"rtg-modal player-detail-modal rtg-coaches-modal"/,
   "Record the canonical normal RTG coach detail modal frame");
-assert.match(openCoachesPart,/coachDetailClassName=id===HALLOWEEN_COACH_ID/,
-  "Halloween-only coach must be the sole exception to the ordinary coach frame");
+assert.match(openCoachesPart,/coachDetailClassName=!TEAM_VENDING&&id===HALLOWEEN_COACH_ID/,
+  "Hekyll alone keeps the Halloween coach frame; the first Fire coach must remain native");
 assert.match(openCoachesPart,/"rtg-modal player-detail-modal rtg-coaches-modal"/,
   "All normal coaches opened during Halloween must preserve the black RTG inset frame");
 assert.match(openCoachesPart,/"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"/,
