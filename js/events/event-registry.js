@@ -189,14 +189,18 @@
     const doc = global.document;
     if (!doc?.createElement) return Promise.resolve();
     return Promise.all((manifest.extensions || []).map((src) => {
-      if (!loadedExtensions.has(src)) loadedExtensions.set(src, new Promise((resolve) => {
+      // Keep manifest paths validated as local .js files; an optional version
+      // only affects browser caching, never extension identity or persistence.
+      const version = String(manifest.extensionCacheVersion || "");
+      const cacheSrc = version ? src + "?v=" + encodeURIComponent(version) : src;
+      if (!loadedExtensions.has(cacheSrc)) loadedExtensions.set(cacheSrc, new Promise((resolve) => {
         const script = doc.createElement("script");
-        script.src = src;
+        script.src = cacheSrc;
         script.onload = () => resolve(true);
         script.onerror = () => { global.console?.warn?.(`[eventi] pezzo aggiuntivo ${src} non caricato`); resolve(false); };
         doc.head?.appendChild?.(script);
       }));
-      return loadedExtensions.get(src);
+      return loadedExtensions.get(cacheSrc);
     }));
   }
 

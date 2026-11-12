@@ -1,0 +1,1071 @@
+/* Vento-Fuoco · veste grafica isolata. Non altera rarità, gameplay, Halloween o Season. */
+[data-event-theme="vento_fuoco_dev"] { --vf-ink:#071323; --vf-paper:#fffaf1; --vf-gold:#ffd21f; }
+.event-page--vento-fuoco {
+  background-image:
+    linear-gradient(115deg,rgba(58,10,32,.84) 0%,rgba(9,23,51,.77) 47%,rgba(3,46,82,.86) 100%),
+    url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ4docu4pCKgUNZ2fs-bhLizkbbUEEQopSCQju2-RVSCw&s=10");
+  background-position:center,center top;
+  background-size:cover;
+  background-repeat:no-repeat;
+  background-attachment:scroll;
+}
+.vf-home-shell { background:linear-gradient(110deg,#341728 0%,#102c50 49%,#06446b 100%); }
+.vf-strength {
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(54px,1.35fr) minmax(0,1fr);
+  gap:10px;align-items:center;padding:10px 12px;border:3px solid #071323;
+  box-shadow:4px 5px 0 #030811;background:linear-gradient(100deg,#e9f7ff 0%,#f8fdff 48%,#fff2dc);
+  color:#061728;font-variant-numeric:tabular-nums;
+}
+.vf-strength>div:not(.vf-strength__meter){display:grid;gap:2px}
+.vf-strength>div:last-child{text-align:right}
+.vf-strength small{font-size:clamp(.53rem,2.1vw,.72rem);font-weight:1000;letter-spacing:.07em}
+.vf-strength strong{font-size:clamp(1.65rem,6vw,2.5rem);font-weight:1000;line-height:1}
+.vf-strength__meter{height:12px;overflow:hidden;border:2px solid #071323;background:#d9e2e8}
+.vf-strength__meter span{display:block;height:100%;background:linear-gradient(90deg,#00c6eb 0%,#167ccb 54%,#ff9b3d 84%,#e74235 100%);transition:width .2s}
+.vf-strength.is-over-limit { border-color:#c42e24; }
+.vf-strength.is-over-limit .vf-strength__meter span{background:#e33e2e}
+.vf-rival__lineup { grid-column:1/-1;z-index:2;width:100%;margin-top:5px;border-top:2px solid rgba(255,255,255,.34);color:#fff; }
+.vf-rival__lineup summary { display:flex;align-items:center;justify-content:space-between;gap:7px;min-height:38px;padding:7px 1px;
+  cursor:pointer;font-size:clamp(.62rem,2.8vw,.78rem);font-weight:950;letter-spacing:.02em;list-style:none; }
+.vf-rival__lineup summary::-webkit-details-marker{display:none}
+.vf-rival__lineup summary:after{content:"+";font-size:1.2rem;color:#ffd21f}
+.vf-rival__lineup[open] summary:after{content:"−"}
+.vf-rival__lineup summary b{margin-left:auto;font-size:.65rem;color:#ffd21f;white-space:nowrap}
+/* La formazione avversaria usa esclusivamente il renderer Squadra nativo. */
+
+/* Solo Squadra Vento-Fuoco: rosso Fuoco a sinistra, blu Ghiaccio a destra.
+ * Il campo rimane verde; le carte, le statistiche e i pulsanti nativi restano invariati. */
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-shell {
+  background:linear-gradient(112deg,#6d2436 0%,#172842 48%,#164d72 100%)!important;color:#f5faff!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-content{
+  background:linear-gradient(110deg,#612538 0%,#14263f 50%,#17466d 100%)!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-topbar {
+  background:linear-gradient(100deg,#952d44 0%,#6a263d 27%,#182944 57%,#12608a 100%)!important;
+  border-bottom-color:#22c8f0!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slots,
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-field-panel,
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-bench-panel,
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-management-panel{
+  background:linear-gradient(110deg,#542237 0%,#14233b 48%,#165277 100%)!important;
+  border-color:#58b9eb!important;color:#fff!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-section-head{
+  background:linear-gradient(95deg,#82243b 0%,#34263d 43%,#12577e 100%)!important;
+  border-color:#32c6f1!important;border-left:6px solid #ec4b57!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slot-buttons{
+  background:linear-gradient(90deg,#4b293e 0%,#132840 51%,#155479 100%)!important;
+  color:#fff!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slot{
+  background:#10314e!important;color:#fff!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slots{
+  border-left:5px solid #ed4856!important;
+  border-right:5px solid #43c8f0!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-field-panel{
+  border-left:5px solid #e64b56!important;
+  border-right:5px solid #43c8f0!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .squad-bench-panel{
+  border-left:5px solid #42c5eb!important;
+  border-right:5px solid #e64b56!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-slot.active,
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-live-overall{
+  background:#ffd21f!important;color:#071323!important;
+}
+/* Replace the unrelated orange 4-3-3 tile with a Fire/Ice accent. */
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-head-stats .squad-field-formation{
+  background:linear-gradient(110deg,#b6efff,#45c6f3)!important;
+  color:#071b2d!important;
+  border:3px solid #071323!important;
+  border-left:6px solid #e3474b!important;
+  box-shadow:3px 3px 0 #061321!important;
+}
+[data-event-theme="vento_fuoco_dev"] .halloween-squad-mode .rtg-squad-change-trigger{
+  background:#f5fbff!important;color:#08182b!important;border-color:#092746!important;
+}
+/* One navigation renderer for Home and Squadra, with opposite colours.
+ * It retains the canonical bottom-nav sizing/position and event click API. */
+/* Both screens insert their navigation as a direct child of the same
+ * event app root, not inside Home or Squadra's different themed wrappers. */
+.vf-nav-dock{
+  position:static;box-sizing:border-box;font-family:inherit;
+}
+.vf-nav-dock .vf-nav-switch.bottom-nav.rtg-bottom-nav{
+  box-sizing:border-box!important;width:218px!important;max-width:calc(100vw - 30px)!important;
+  bottom:calc(10px + env(safe-area-inset-bottom,0px))!important;
+  z-index:80!important;
+}
+.vf-nav-dock .vf-nav-switch.bottom-nav.rtg-bottom-nav>button{
+  box-sizing:border-box!important;min-height:48px!important;height:48px!important;
+}
+.vf-nav-dock .vf-nav-switch.bottom-nav.rtg-bottom-nav .nav-icon,
+.vf-nav-dock .vf-nav-switch.bottom-nav.rtg-bottom-nav .nav-label{
+  flex:0 0 auto;line-height:1.05!important;text-decoration:none!important;
+}
+
+.vf-nav-switch.bottom-nav.rtg-bottom-nav{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:6px!important;padding:8px!important;
+  background:#0b1a30!important;
+  border:3px solid #081523!important;border-radius:3px!important;
+  box-shadow:4px 5px 0 #020914!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>button{
+  min-width:0!important;min-height:48px!important;flex:none!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  gap:9px!important;border:2px solid #081523!important;border-radius:2px!important;
+  box-shadow:3px 3px 0 #020914!important;
+  letter-spacing:.065em!important;font-weight:1000!important;
+  transform:none!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>.vf-nav-switch__home,
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>.vf-nav-switch__home.active{
+  background:#df3845!important;color:#fffaf4!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>.vf-nav-switch__squad,
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>.vf-nav-switch__squad.active{
+  background:#51cef5!important;color:#091b2e!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>button.active{
+  outline:2px solid #ffe16b!important;outline-offset:-2px!important;
+  box-shadow:inset 0 -4px 0 #08152355,3px 3px 0 #020914!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav>button:focus-visible{
+  outline:3px solid #fff!important;outline-offset:2px!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav .nav-label{
+  color:inherit!important;font-size:clamp(.8rem,3.1vw,1rem)!important;
+}
+.vf-nav-switch.bottom-nav.rtg-bottom-nav .nav-icon{
+  color:inherit!important;
+}
+
+/* Strength is still calculated for validation and available in the event Home.
+ * Squadra and pre-partita no longer inject a second top-of-page strip. */
+
+/* Schede giocatore: artwork full-bleed SOLO nell'hero, informazioni leggibili. */
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team{
+  --vf-detail-primary:#d32a14;--vf-detail-secondary:#ffb017;--vf-detail-bg:#a50f1b;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team{
+  --vf-detail-primary:#056bc4;--vf-detail-secondary:#2cdbff;--vf-detail-bg:#044c99;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev{
+  --pd-paper:#fffaf0;--pd-cream:#fff7e9;--pd-ink:#09111a;
+  color:#07101a!important;background:#fffaf0!important;
+  border:5px solid #07111e!important;box-shadow:inset 0 0 0 3px #fff,0 0 0 3px var(--vf-detail-primary,#056bc4)!important
+}
+/* A single continuous illustration fills the entire top of the sheet.
+ * The ivory veil softens ONLY the area under labels and numbers; the HD
+ * artwork remains visible behind name, role, OVR and rarity. Never under stats. */
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-hero{
+  position:relative!important;isolation:isolate;overflow:hidden!important;
+  background:
+    linear-gradient(90deg,
+      rgba(255,251,242,.93) 0%,
+      rgba(255,251,242,.88) 32%,
+      rgba(255,251,242,.80) 49%,
+      rgba(255,251,242,.68) 61%,
+      rgba(255,251,242,0) 77%),
+    var(--vf-detail-art) center center / cover no-repeat!important;
+  border-bottom:5px solid #07111e!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-hero::before,
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-hero::after{
+  content:none!important;display:none!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-identity{color:#07111e!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-name{
+  color:#050d16!important;text-shadow:none!important;
+  max-width:100%!important;min-width:0!important;white-space:normal!important;
+  overflow-wrap:anywhere!important;word-break:normal!important;
+  font-size:clamp(1.55rem,4.7vw,3.05rem)!important;
+  letter-spacing:-.035em!important;line-height:.98!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-heading .eyebrow,
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-heading span{color:var(--vf-detail-primary,#056bc4)!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-team{background:#fff!important;color:#061321!important;border:2px solid #09111e!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-team strong{color:#071321!important;text-shadow:none!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-team img{filter:none!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-tags .role-chip{
+  background:#fffdfa!important;color:#08131c!important;border:2px solid #06121e!important
+}
+/* Restore the real element label palette, as on canonical player sheets.
+ * Unlike the general role/level chips, Fire and Wind must NOT be black. */
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team .detail-element-chip{
+  background:#fff0eb!important;color:#b71f2d!important;
+  border-color:#bc2634!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team .detail-element-chip{
+  background:#ecf9ff!important;color:#0871bc!important;
+  border-color:#168acb!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-element-chip svg{
+  fill:currentColor!important;stroke:currentColor;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .overall-comparison>div{
+  background:#fffdf8!important;border:3px solid #07111e!important;color:#08131e!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .overall-comparison>div:first-child{background:#ffd21f!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .overall-comparison span,
+.player-detail-layout.rtg-event--vento_fuoco_dev .overall-comparison strong{color:#06121e!important}
+/* Rarity is a real PlayerView variable set by rarity-<tier>, not the
+ * Fire/Ice team colour. Mondiale stays red; Elite purple; all other tiers
+ * inherit their own canonical star and left stripe exactly as standard RTG. */
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-category{
+  background:#fffdf6!important;color:#07131e!important;
+  border:3px solid #07111e!important;
+  border-left:9px solid var(--detail-rarity-accent)!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-category span{
+  color:var(--detail-rarity-accent)!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-category small{
+  color:#806719!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-category strong{
+  color:#07131e!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual{
+  background:linear-gradient(150deg,transparent 0%,var(--vf-detail-primary,#0474d1) 95%)!important;
+  overflow:hidden!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-fullbody{filter:drop-shadow(0 6px 8px #06132388);object-fit:contain!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-content{
+  background:linear-gradient(180deg,#f9fdff,#fffbf4)!important;color:#07111e!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-section>h3{color:#07111e!important;border-color:#07111e!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-section>h3:after{background:linear-gradient(90deg,var(--vf-detail-primary,#056bc4),var(--vf-detail-secondary,#2cdbff))!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-content .detail-stat{
+  background:#fff!important;color:#07111e!important;border:2px solid #07111e!important
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-content .detail-stat *{color:#07111e!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-stat-track{background:#ced8e0!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .detail-stat-track i{background:var(--vf-detail-primary,#056bc4)!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-rtg-legacy-badge{
+  background:#ffd21f!important;color:#07111e!important;border-color:#07111e!important
+}
+
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team{
+  --vf-detail-art:url("../assets/events/vento-fuoco/fire-detail-hd.avif");
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team{
+  --vf-detail-art:url("../assets/events/vento-fuoco/ice-detail-hd.avif");
+}
+/* No opaque rectangular slab: illustration is continuous behind ALL hero
+ * information, while actual data cards keep their opaque native surfaces. */
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-identity{
+  position:relative;z-index:2;min-width:0;max-width:100%;
+  background:transparent!important;
+}
+/* Native PlayerView puts its fullbody image in an ABSOLUTE-positioned
+ * visual panel. Relative positioning collapses the image panel to zero height
+ * because the character img is itself absolute. Preserve its native geometry. */
+/* Preserve the native absolute fullbody positioning but do not paint a
+ * separate image/vertical stripe: that caused the visible straight seam. */
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual{
+  position:absolute!important;
+  top:0!important;right:0!important;bottom:0!important;left:47%!important;
+  width:auto!important;height:auto!important;min-width:0;
+  z-index:1!important;display:block!important;overflow:hidden!important;
+  background:none!important;
+  border:0!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual > .player-fullbody{
+  display:block!important;visibility:visible!important;opacity:1!important;
+  z-index:3!important;
+}
+/* The portrait image uses the game's original native art and sizing. */
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual::before,
+.player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-visual::after{content:none!important;display:none!important}
+
+/* Con questi override gli stemmi originali non ricevono il filtro Halloween. */
+[data-event-theme="vento_fuoco_dev"] .halloween-native-match .rtg-matchup-team--opponent img,
+[data-event-theme="vento_fuoco_dev"] .halloween-native-match .rtg-prematch-top-team--opponent img,
+[data-event-theme="vento_fuoco_dev"] .halloween-native-match .rtg-score-team--opponent img{filter:none!important}
+@media(max-width:440px){
+  .player-detail-layout.rtg-event--vento_fuoco_dev .player-detail-name{
+    font-size:clamp(1.35rem,5.9vw,1.82rem)!important;
+    line-height:1.02!important;max-width:100%!important;overflow-wrap:anywhere!important;
+  }
+  .vf-strength{gap:6px;padding:9px 7px}
+}
+
+
+/* VENTO × FUOCO · Home evento e formazioni
+ * Scoped to DEV event surfaces: no changes to normal RTG, Halloween or gameplay.
+ * The eleven-player fields use the exact native Squadra read-only HTML.
+ */
+.event-page--vento-fuoco {
+  --vf-ui-fire:#ff6428;
+  --vf-ui-ice:#5cddff;
+  --vf-ui-midnight:#081726;
+  padding:13px 11px 108px;
+  background:
+    linear-gradient(112deg,rgba(57,12,30,.86) 0%,rgba(8,23,49,.78) 48%,rgba(4,44,78,.89) 100%),
+    url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ4docu4pCKgUNZ2fs-bhLizkbbUEEQopSCQju2-RVSCw&s=10") center top / cover no-repeat;
+}
+.event-page--vento-fuoco .vf-duel {
+  position:relative;isolation:isolate;display:flex;flex-direction:column;
+  min-height:252px;margin:5px 0 6px;overflow:hidden;border:2px solid #8cbbd2;
+  border-radius:15px;background:#0a1b30
+    url("../assets/events/vento-fuoco/duel-hero-v2.svg") center / cover no-repeat;
+  box-shadow:0 14px 30px #02081188,inset 0 0 0 1px #e0fcff33;
+}
+.event-page--vento-fuoco .vf-duel:before {
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(180deg,#0309139c 0%,transparent 32%,transparent 68%,#020811bf 100%);
+}
+.event-page--vento-fuoco .vf-duel:after {
+  content:"";position:absolute;inset:4px;z-index:0;pointer-events:none;
+  border:1px solid #e5fbff36;border-radius:10px;
+}
+.vf-duel__top,.vf-duel__bottom {
+  position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
+  gap:8px;min-height:34px;padding:8px 12px;letter-spacing:.11em;font-weight:900;
+}
+.vf-duel__top{border-bottom:1px solid #e5f8ff38;background:#0614264a;font-size:clamp(.52rem,2.1vw,.72rem)}
+.vf-duel__top span{color:#f6faff}
+.vf-duel__top span i{display:inline-block;width:4px;height:4px;margin:0 4px 2px;border-radius:50%;background:#ffda85}
+.vf-duel__top strong{font-size:.55rem;color:#bcecff;white-space:nowrap}
+.vf-duel__bottom {
+  min-height:40px;margin-top:auto;border-top:1px solid #e8f8ff3b;background:#050f20bd;
+  font-size:clamp(.55rem,2.1vw,.7rem);color:#d8f6ff;
+}
+.vf-duel__bottom>span b{color:#ffd78b;padding:0 3px}
+.vf-duel__bottom>strong{color:#fff9e5;letter-spacing:.02em;text-align:right}
+.vf-duel__main{
+  position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1fr) 53px minmax(0,1fr);
+  align-items:center;justify-content:center;gap:1px;flex:1;min-height:164px;padding:12px 9px 9px;
+}
+.vf-duel__team{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;gap:7px}
+.vf-duel__team-emblem{
+  position:relative;display:grid;place-items:center;width:clamp(79px,22vw,130px);height:clamp(79px,22vw,130px);
+  background:radial-gradient(circle,#fff8f443 0%,transparent 64%);
+  filter:drop-shadow(0 10px 12px #0207169c);
+}
+.vf-duel__team-emblem:before{
+  content:"";position:absolute;inset:7%;border:1px solid #ffd19c77;border-radius:50%;
+  box-shadow:inset 0 0 20px #ff67373b,0 0 15px #ff74442e;
+}
+.vf-duel__team--ice .vf-duel__team-emblem:before{border-color:#a6edff88;box-shadow:inset 0 0 20px #a0f4ff3e,0 0 15px #63d4ff4f}
+.vf-duel__team-emblem img{
+  position:relative;width:84%;height:84%;max-width:120px;max-height:120px;
+  object-fit:contain;filter:drop-shadow(0 2px 2px #0009);
+}
+.vf-duel__team-name{text-align:center;display:grid;gap:3px;min-width:0}
+.vf-duel__team-name strong{
+  color:#fff8ef;font-weight:1000;line-height:.98;letter-spacing:.005em;
+  font-size:clamp(1.13rem,5.2vw,2.2rem);
+  text-shadow:0 2px 1px #2a0815,0 0 14px #ff572c77;
+}
+.vf-duel__team--ice .vf-duel__team-name strong{color:#dcfaff;text-shadow:0 2px 1px #061e34,0 0 16px #54d9ffb5}
+.vf-duel__team-name small{
+  color:#fff6ed;font-size:clamp(.51rem,2vw,.72rem);letter-spacing:.11em;
+  font-weight:900;white-space:nowrap;text-shadow:0 1px 4px #000c;
+}
+.vf-duel__versus{
+  position:relative;display:grid;place-items:center;align-self:center;width:48px;height:48px;
+  border-radius:50%;background:linear-gradient(145deg,#fffdf0,#d9e3f4);
+  border:3px solid #13273d;box-shadow:0 4px 0 #06111f,0 0 16px #f5effc66;
+  transform:rotate(-9deg);
+}
+.vf-duel__versus span{font-size:1.06rem;font-weight:1000;line-height:1;color:#0a1a33}
+.event-page--vento-fuoco .vf-rivals{gap:12px}
+.event-page--vento-fuoco .vf-rival {
+  border-radius:4px;border-width:3px;padding:12px 11px 8px;
+  box-shadow:5px 5px 0 #020b17;
+  grid-template-columns:51px minmax(0,1fr) 76px;
+  background:linear-gradient(120deg,#4d121ef5 0%,#281321f4 51%,#151626f5 100%);
+}
+.event-page--vento-fuoco .vf-rival--ice{
+  background:linear-gradient(120deg,#0c3762f5 0%,#103148f4 51%,#0b172ef5 100%);
+}
+.event-page--vento-fuoco .vf-rival:after{display:none}
+.event-page--vento-fuoco .vf-rival__crest img{width:48px;height:48px;filter:drop-shadow(0 3px 7px #0009)}
+.event-page--vento-fuoco .vf-rival__challenge{
+  border:3px solid #071626;border-radius:3px;font-weight:1000;letter-spacing:.05em;
+  box-shadow:3px 4px 0 #020914;background:#ef4b4a;color:#fffaf4;
+}
+.event-page--vento-fuoco .vf-rival--ice .vf-rival__challenge{background:#58d3f7;color:#071626}
+.event-page--vento-fuoco .vf-rival__copy h2{font-size:clamp(.97rem,3.5vw,1.24rem)}
+.event-page--vento-fuoco .vf-rival__copy p{font-size:.68rem;color:#f2f6fc}
+.event-page--vento-fuoco .vf-rival__reward{
+  display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;margin:4px 0!important;
+}
+.event-page--vento-fuoco .vf-rival__reward>span{font-weight:800;color:#eff6ff}
+.event-page--vento-fuoco .vf-rival__reward>strong{
+  display:inline-flex;align-items:center;gap:4px;min-width:0;
+  white-space:nowrap;font-weight:1000;color:#fffaf0;
+}
+.event-page--vento-fuoco .vf-rival__reward .halloween-currency{
+  display:inline-flex;align-items:center;gap:3px;font-size:.76rem;
+  font-weight:1000;color:#fff!important;white-space:nowrap;
+}
+.event-page--vento-fuoco .vf-rival__reward .halloween-currency img{
+  display:block;width:16px!important;height:16px!important;max-width:16px!important;
+  object-fit:contain;margin:0!important;
+}
+.event-page--vento-fuoco .vf-rival__reward small{
+  font-size:.67rem;font-weight:850;letter-spacing:.01em;text-transform:lowercase;color:#f5faff;
+}
+.event-page--vento-fuoco .vf-rival__lineup{
+  grid-column:1/-1;position:relative;z-index:2;margin:12px 0 0;
+  border:0;border-top:1px solid #ffffff37;
+  background:#030d1a59;border-radius:0 0 8px 8px;
+}
+.event-page--vento-fuoco .vf-rival__lineup summary{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:11px 8px;min-height:56px;cursor:pointer;list-style:none;
+}
+.event-page--vento-fuoco .vf-rival__lineup summary::-webkit-details-marker{display:none}
+.event-page--vento-fuoco .vf-rival__lineup summary:after{content:none}
+.vf-rival__lineup-label{min-width:0;display:grid;gap:3px}
+.vf-rival__lineup-label small{font-size:.54rem;letter-spacing:.08em;color:#b4cddd;font-weight:900}
+.vf-rival__lineup-label strong{font-size:clamp(.72rem,3vw,.92rem);color:#fff9ea;line-height:1.1;font-weight:1000}
+.vf-rival__lineup-toggle{
+  display:flex;align-items:center;gap:8px;flex:none;padding:10px;
+  border:2px solid #071523;border-radius:3px;background:#d9faff;
+  color:#071c32;box-shadow:3px 3px 0 #020c19;
+}
+.vf-rival--fire .vf-rival__lineup-toggle{border-color:#071523;background:#ffe7e6}
+.vf-rival__lineup-toggle b{margin:0!important;font-size:clamp(.52rem,2.3vw,.7rem)!important;font-weight:1000;white-space:nowrap;color:#081d30!important}
+.vf-rival__lineup-toggle b:nth-child(2),.vf-rival__lineup[open] .vf-rival__lineup-toggle b:first-child{display:none}
+.vf-rival__lineup[open] .vf-rival__lineup-toggle b:nth-child(2){display:block}
+.vf-rival__lineup-toggle i{font-style:normal;font-size:1.15rem;line-height:.55;transition:transform .2s}
+.vf-rival__lineup[open] .vf-rival__lineup-toggle i{transform:rotate(180deg)}
+.vf-rival__lineup summary:focus-visible{outline:3px solid #ffe76f;outline-offset:2px}
+.vf-rival__field{
+  padding:8px 7px 10px;border-top:1px solid #ffffff37;
+  background:linear-gradient(145deg,#061d30,#0a1d2b);
+  border-radius:0 0 8px 8px;
+}
+.vf-rival__field-head{
+  display:flex;justify-content:space-between;gap:4px;align-items:center;
+  margin:0 0 8px;color:#e5f8fb;font-size:.58rem;letter-spacing:.08em;font-weight:1000;
+}
+.vf-rival__field-head>span:last-child{color:#ffe8a6;white-space:nowrap}
+/* Opponents reuse the same Squadra component and scope as the player's XI.
+ * Never restyle internal .player-card, .player-portrait-wrap, role/OVR or footer.
+ * Only fit the full native pitch into a narrower, read-only Home disclosure. */
+/* rtg-squad-shell is intentionally reused for card parity, but the
+ * global RTG shell is a full-screen stadium page. Reset its PAGE properties
+ * when nested inside the Vento-Fuoco home. The pitch keeps native card CSS. */
+.vf-mini-pitch.rtg-squad-shell{
+  display:block!important;position:relative;
+  width:100%!important;height:auto!important;min-height:0!important;
+  max-height:none!important;min-width:0;
+  overflow:visible!important;
+  border:2px solid #e2f8edb0!important;border-radius:9px!important;
+  background:#285f39!important;background-image:none!important;
+}
+.vf-mini-pitch.rtg-squad-shell .rtg-match-squad-field-shell{
+  display:block;width:100%;max-width:none;min-width:0;
+  margin:0!important;padding:0!important;border:0!important;
+  background:transparent!important;box-shadow:none!important;
+}
+.vf-mini-pitch.rtg-squad-shell .rtg-squad-pitch-main.pitch{
+  width:100%;min-height:450px!important;height:auto!important;
+  margin:0!important;padding:20px 6px!important;gap:15px!important;
+  overflow:visible;
+}
+.vf-mini-pitch.rtg-squad-shell .rtg-squad-pitch-main .pitch-row{
+  display:grid!important;
+  grid-template-columns:repeat(var(--row-count),minmax(0,min(84px,calc((100% - 12px)/4))))!important;
+  gap:4px!important;justify-content:center!important;justify-items:center!important;
+  margin:0!important;
+}
+.vf-mini-pitch.rtg-squad-shell .rtg-squad-card-slot{
+  width:100%;min-width:0;max-width:84px;
+}
+.vf-mini-pitch.rtg-squad-shell [data-rtg-lineup-player]{cursor:pointer!important}
+.vf-mini-pitch.rtg-squad-shell [data-rtg-lineup-player]:focus-visible{
+  outline:3px solid #ffe75d!important;outline-offset:2px;
+}
+
+.vf-rival__unavailable{padding:16px;color:#f0f6f9;text-align:center;font-size:.8rem}
+
+
+/* Event opponent panels use the same palette as the native skins, but keep
+ * the original RTG frame and readable white-on-dark challenge information. */
+.event-page--vento-fuoco .vf-rival--fire{
+  border-color:#f15a56!important;
+  background:linear-gradient(110deg,#491927 0%,#2b2030 52%,#101d31 100%)!important;
+  box-shadow:5px 5px 0 #020914,inset 5px 0 0 #e54b4b!important;
+}
+.event-page--vento-fuoco .vf-rival--ice{
+  border-color:#57d3fa!important;
+  background:linear-gradient(110deg,#123d60 0%,#152d49 52%,#302237 100%)!important;
+  box-shadow:5px 5px 0 #020914,inset 5px 0 0 #4dcfff!important;
+}
+.event-page--vento-fuoco .vf-rival--fire .vf-rival__field{
+  border-left:3px solid #ef905f;
+  background:linear-gradient(125deg,#122339,#0b1c2f)!important;
+}
+.event-page--vento-fuoco .vf-rival--ice .vf-rival__field{
+  border-left:3px solid #89ddf4;
+  background:linear-gradient(125deg,#112f4c,#091e35)!important;
+}
+.event-page--vento-fuoco .vf-rival__lineup summary{
+  background:linear-gradient(110deg,#08192c88,#0713234d);
+}
+
+/* Carte Vento-Fuoco: componente PlayerView nativo, artwork definitivo.
+ * I due sfondi sono illustrazioni originali, non patch/filtri CSS.
+ * Giocatore, ruolo, OVR, nome, rarità vera e badge vengono dal renderer RTG.
+ */
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-fire-team{
+  --vf-card-accent:#ff6f28;
+  --vf-card-glow:rgba(255,101,31,.52);
+  --vf-event-art:url("../assets/events/vento-fuoco/fire-card-hd.avif");
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team{
+  --vf-card-accent:#37d7ff;
+  --vf-card-glow:rgba(34,198,255,.47);
+  --vf-event-art:url("../assets/events/vento-fuoco/ice-card-hd.avif");
+}
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team){
+  position:relative!important;
+  isolation:auto!important;
+  overflow:visible!important;
+  background:#0b1728!important;
+  color:#fff!important;
+  border:3px solid var(--vf-card-accent)!important;
+  border-radius:4px!important;
+  box-shadow:3px 4px 0 #061525,0 0 12px var(--vf-card-glow)!important;
+}
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)::before{
+  content:none!important;display:none!important; /* no double rarity stripe */
+}
+/* Il disegno copre l'intero riquadro del ritratto; il PNG giocatore e'
+ * rigorosamente invariato. */
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team) .player-portrait-wrap{
+  position:relative!important;
+  overflow:hidden!important;
+  background:#17365c var(--vf-event-art) center 52%/cover no-repeat!important;
+}
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team) .player-portrait-wrap::before,
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team) .player-portrait-wrap::after,
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team) .player-info::before,
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team) .player-info::after{
+  content:none!important;display:none!important;
+}
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team) .player-portrait-wrap img.player-portrait{
+  position:relative!important;z-index:2;
+  object-fit:contain!important;object-position:center bottom!important;
+  filter:drop-shadow(0 2px 2px #030c1994);
+}
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team) .player-info{
+  position:relative!important;
+  background:linear-gradient(180deg,#111b2d,#07101c)!important;
+  border-top:2px solid var(--vf-card-accent)!important;
+  color:#fff!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team .player-info{
+  background:linear-gradient(180deg,#092642,#071421)!important;
+}
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team) .player-info .player-title strong{
+  display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  overflow:hidden!important;white-space:normal!important;overflow-wrap:break-word;
+  color:#fff!important;text-shadow:0 1px 2px #000a!important;
+  text-align:center!important;line-height:1.12!important;
+}
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team) .player-corner.player-role{
+  background:#fff7e8!important;border-color:#08182b!important;color:#08182b!important;
+}
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team) .player-corner.player-overall{
+  background:#ffd127!important;border-color:#08182b!important;color:#08182b!important;
+}
+/* VF ha esattamente le dimensioni e il posizionamento dei badge AR / S1.
+ * Il bordo inferiore della carta si sovrappone al tasto Cambia. */
+.player-card.rtg-event--vento_fuoco_dev:is(.rtg-element-fire-team,.rtg-element-blizzard-team)> .rtg-legacy-badge{
+  z-index:24!important;position:absolute!important;
+  left:auto!important;right:-4px!important;top:auto!important;bottom:-11px!important;
+  width:auto!important;min-width:27px!important;height:16px!important;min-height:16px!important;
+  padding:0 5px!important;border:2px solid #071323!important;border-radius:0!important;
+  box-shadow:1px 2px 0 #071323!important;
+  font:1000 7px/1 system-ui,sans-serif!important;
+  color:#fff!important;
+  pointer-events:none!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-fire-team > .rtg-legacy-badge{
+  --rtg-legacy-color:#df2e42!important;--rtg-legacy-ink:#fff!important;
+  background:#df2e42!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team > .rtg-legacy-badge{
+  --rtg-legacy-color:#1978d8!important;--rtg-legacy-ink:#fff!important;
+  background:#1978d8!important;
+}
+.rtg-squad-card-slot:has(> .player-card.rtg-event--vento_fuoco_dev){
+  position:relative!important;overflow:visible!important;
+}
+.rtg-squad-card-slot:has(> .player-card.rtg-event--vento_fuoco_dev) > .rtg-squad-change-trigger{
+  position:relative;z-index:1;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-fire-team :is(.rtg-legacy-badge,.player-detail-rtg-legacy-badge){
+  --rtg-legacy-color:#df2e42!important;--rtg-legacy-ink:#fff!important;
+  background:#df2e42!important;color:#fff!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team :is(.rtg-legacy-badge,.player-detail-rtg-legacy-badge){
+  --rtg-legacy-color:#1978d8!important;--rtg-legacy-ink:#fff!important;
+  background:#1978d8!important;color:#fff!important;
+}
+
+/* La X nativa della scheda riapre il premio già estratto.
+ * Nessun pulsante supplementare nella scheda. */
+
+/* A skin on the ORIGINAL RoadToGloryRunView.pullResultMarkup.
+ * Do not style the native result grid, card sizing, typography, badge,
+ * rarity band, modal close, reveal label, or the CONTINUA button: all those
+ * remain owned by css/road-to-glory.css and css/rtg-theme.css.
+ * This only gives Fire/Ice a distinctive frame and illustrated header. */
+.modal.rtg-modal.rtg-pull-modal.vf-reward-fire{
+  --vf-pull-accent:#ef672d;
+  --vf-pull-image:url("../assets/events/vento-fuoco/fire-card-hd.avif");
+}
+.modal.rtg-modal.rtg-pull-modal.vf-reward-ice{
+  --vf-pull-accent:#26bff2;
+  --vf-pull-image:url("../assets/events/vento-fuoco/ice-card-hd.avif");
+}
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice){
+  border-color:var(--vf-pull-accent)!important;
+  box-shadow:0 0 0 3px #fffef4,0 18px 35px #03132691!important;
+}
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-result-head{
+  background:
+    linear-gradient(90deg,#fffdf8fa 0%,#fffdf8ee 37%,#fffdf8b9 68%,#fffdf821 100%),
+    var(--vf-pull-image) center center / cover no-repeat!important;
+  border-bottom:3px solid var(--vf-pull-accent)!important;
+}
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-balance{
+  border-left-color:var(--vf-pull-accent)!important;
+}
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-result-body{
+  border-left:4px solid var(--vf-pull-accent)!important;
+}
+/* Only the Vento-Fuoco reward: the compact native Squadra card must use
+ * exactly the SAME 84px geometry as lineup/bench, including badge stacking.
+ * The original RTG result shell, typography and rarity remain untouched. */
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-card-stage>.rtg-squad-player-card{
+  width:84px!important;max-width:84px!important;min-width:0!important;
+  height:auto!important;min-height:0!important;
+  margin:0 auto!important;transform:none!important;
+}
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-card-stage>.rtg-squad-player-card .player-portrait-wrap{
+  height:62px!important;min-height:0!important;overflow:hidden!important;
+}
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-card-stage>.rtg-squad-player-card :is(.player-corner.player-role,.player-corner.player-overall){
+  position:absolute;z-index:10!important;
+}
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.rtg-pull-result-head>.rtg-pull-series{
+  background:#fffaf0e8;
+  border:1px solid #071726;
+  padding:4px 6px;color:#12243a!important;
+}
+
+.modal.rtg-modal.rtg-pull-modal:is(.vf-reward-fire,.vf-reward-ice)
+.halloween-reveal-currency-icon{
+  display:inline-block;width:22px;height:22px;
+  vertical-align:middle;object-fit:contain;background:none;border:0;
+}
+
+@media(min-width:650px){
+  .event-page--vento-fuoco .vf-duel{min-height:340px}
+  .vf-duel__main{min-height:240px;grid-template-columns:minmax(0,1fr) 82px minmax(0,1fr)}
+  .vf-duel__versus{width:68px;height:68px}.vf-duel__versus span{font-size:1.45rem}
+
+
+
+}
+@media(max-width:395px){
+  .vf-duel__top strong{display:none}
+  .vf-duel__main{grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr);padding:10px 3px}
+  .vf-duel__versus{width:39px;height:39px}.vf-duel__versus span{font-size:.88rem}
+  .vf-duel__bottom{padding:9px 8px;letter-spacing:.03em}
+  .event-page--vento-fuoco .vf-rival{grid-template-columns:43px minmax(0,1fr) 70px;gap:6px;padding:10px 7px 6px}
+  .event-page--vento-fuoco .vf-rival__crest img{width:42px;height:42px}
+  .event-page--vento-fuoco .vf-rival__lineup summary{gap:4px;padding:10px 4px}
+  .vf-rival__lineup-toggle{padding:9px 6px;gap:4px}
+  .vf-rival__lineup-label strong{font-size:.7rem}
+
+
+
+}
+@media(prefers-reduced-motion:reduce){
+  .vf-rival__lineup-toggle i,
+  .player-card.rtg-event--vento_fuoco_dev{transition:none!important}
+}
+
+
+/* MIXIMAX — isolated Vento/Fuoco event extension. No global player-card geometry changes. */
+.event-page--vento-fuoco .vf-miximax-banner{
+  position:relative;isolation:isolate;display:block;overflow:hidden;width:100%;min-height:152px;
+  margin:14px 0 22px;padding:0;text-align:left;cursor:pointer;color:#fff;
+  border:4px solid #07182b;border-radius:12px;background:
+  linear-gradient(105deg,#0a4282 0%,#123f8c 43%,#aa2c1c 65%,#fa802a 100%);
+  box-shadow:0 0 0 2px #fff2c8,0 7px 0 #07111c,0 14px 24px #030c1b72;
+}
+.vf-miximax-banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 45%;z-index:-2}
+.vf-miximax-banner::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#021b38df,#051b37a6 35%,#061c3566 63%,#6420104f)}
+.vf-miximax-banner__copy{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:148px;padding:20px 22px;text-shadow:0 3px 3px #000d}
+.vf-miximax-banner__copy small{font-size:.68rem;font-weight:900;letter-spacing:.14em;color:#bff5ff}
+.vf-miximax-banner__copy strong{font-size:clamp(2.1rem,8vw,3.6rem);font-weight:1000;line-height:1.05;letter-spacing:.025em;
+  color:#fff9ea;-webkit-text-stroke:1px #0b1d37;filter:drop-shadow(3px 3px 0 #071325)}
+.vf-miximax-banner__copy em{font-style:normal;font-size:.8rem;font-weight:900;letter-spacing:.1em;color:#ffe59c}
+.vf-miximax-banner__copy b{padding-left:12px;font-size:1.55rem;vertical-align:middle;color:#fff}
+.vf-miximax-banner:focus-visible,.vf-miximax-return:focus-visible,.vf-miximax-fuse:focus-visible{
+  outline:3px solid #ffe76e;outline-offset:4px
+}
+.vf-miximax-page{display:block!important;min-height:100dvh;padding:10px 12px 75px!important;
+  background:linear-gradient(125deg,#031e42,#0a1730 46%,#521a16 100%)!important;color:#fff!important}
+.vf-miximax-header{display:flex;align-items:center;gap:12px;margin:0 auto 15px;max-width:1080px}
+.vf-miximax-header .vf-back{flex:none;position:static}
+.vf-miximax-header small{font-size:.65rem;color:#a8e7ff;font-weight:900;letter-spacing:.09em}
+.vf-miximax-header h1{margin:2px 0 0;font-size:clamp(1.6rem,6vw,2.7rem);color:#fff7de;letter-spacing:.07em}
+.vf-miximax-intro,.vf-miximax-list,.vf-miximax-warning,.vf-miximax-return{max-width:1080px;margin-left:auto!important;margin-right:auto!important}
+.vf-miximax-intro{position:relative;isolation:isolate;display:flex;align-items:flex-end;min-height:200px;
+  overflow:hidden;border:3px solid #a9f1ff;border-radius:13px;background:#0a3e6d;margin-bottom:15px;
+  box-shadow:0 0 18px #2297d65e,inset 0 0 30px #0008}
+.vf-miximax-intro>img{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover}
+.vf-miximax-intro::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,#031326f5,transparent 93%)}
+.vf-miximax-intro>div{padding:17px 18px}
+.vf-miximax-intro small{font-size:.65rem;font-weight:1000;color:#ffe7aa;letter-spacing:.1em}
+.vf-miximax-intro h2{margin:4px 0;font-size:clamp(1.1rem,4.1vw,1.8rem);color:#fff}
+.vf-miximax-intro p{margin:0;font-size:.76rem;line-height:1.5;color:#e0f6ff}
+.vf-miximax-list{display:grid;gap:15px}
+.vf-miximax-recipe{position:relative;overflow:hidden;padding:12px;border:3px solid #81e9ff;border-radius:12px;
+  background:linear-gradient(105deg,#093964,#07182f 45%,#511d18 100%);box-shadow:0 6px 0 #06121d,0 0 20px #0007}
+.vf-miximax-recipe:nth-child(2){border-color:#ffa24d}
+/* The exact cards from Squadra, with the same native card dimensions.
+ * Only the surrounding recipe layout is different. */
+.vf-miximax-pair.rtg-squad-shell{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr) 22px minmax(0,1fr);
+  gap:4px!important;align-items:center;justify-items:center;
+  width:100%;min-height:132px!important;padding:7px 0 9px!important;
+  margin:0!important;background:none!important;background-image:none!important;
+  box-shadow:none!important;border:0!important;color:#fff!important;
+}
+.vf-miximax-entrant{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;width:100%;min-width:0;padding:0;background:transparent}
+.vf-miximax-entrant.is-missing .rtg-squad-player-card{filter:saturate(.65);opacity:.85}
+.vf-miximax-native-card{width:100%;min-width:0;display:flex;justify-content:center;align-items:flex-start}
+.vf-miximax-native-card .rtg-squad-card-slot{width:100%!important;max-width:84px!important;
+  margin:0 auto!important;align-items:stretch!important}
+.vf-miximax-native-card .rtg-squad-card-slot > .rtg-squad-player-card{margin:0 auto!important;
+  cursor:pointer!important;touch-action:manipulation}
+.vf-miximax-native-card .rtg-squad-card-slot > .rtg-squad-player-card:focus-visible{
+  outline:3px solid #ffe07c!important;outline-offset:3px}
+.vf-miximax-card-state{display:block;max-width:100%;padding:3px 4px;
+  border:1px solid #b7dffc72;background:#07192dc9;border-radius:2px;
+  text-align:center;color:#ddf4ff;font-size:clamp(.46rem,1.75vw,.62rem);
+  font-weight:900;letter-spacing:.04em;line-height:1.18;white-space:normal}
+.vf-miximax-entrant.is-missing .vf-miximax-card-state{color:#ffbfad;border-color:#e4a48b7c}
+.vf-miximax-result .vf-miximax-card-state{color:#ffe09f;border-color:#ffd27c83}
+.vf-miximax-plus,.vf-miximax-arrow{font-size:clamp(.95rem,3.6vw,1.5rem);
+  line-height:1;font-weight:1000;color:#fff0b4;text-shadow:0 2px 3px #0009}
+.vf-miximax-unavailable{color:#eee;font-size:.65rem;text-align:center}
+.vf-miximax-recipe__info{margin:10px 0;padding:10px 8px;background:#020d209a;border-radius:7px}
+.vf-miximax-recipe__info h2{margin:0 0 6px;font-size:1.3rem;color:#fff7e0}
+.vf-miximax-versions{display:flex;flex-wrap:wrap;gap:6px}
+.vf-miximax-versions span{padding:4px 8px;border:1px solid #fff8;border-radius:5px;font-size:.67rem;font-weight:900}
+.vf-miximax-versions .vf-fire{background:#9e271b;color:#fff0e4}
+.vf-miximax-versions .vf-wind{background:#125faa;color:#ecfaff}
+.vf-miximax-recipe__info p{margin:8px 0 0;font-size:.72rem;color:#d5e9f4}
+/* Native RTG arcade buttons: square corners, ink border and hard shadow. */
+.vf-miximax-page :is(.vf-miximax-fuse,.vf-miximax-return,.vf-miximax-confirm__actions button){
+  display:flex!important;align-items:center;justify-content:center;text-align:center;
+  width:100%;min-height:45px;margin:0;border:3px solid #071523!important;border-radius:3px!important;
+  padding:9px 12px!important;background:#ffd21f!important;color:#071523!important;
+  font-weight:1000!important;font-size:clamp(.68rem,2.7vw,.85rem)!important;
+  line-height:1.12;letter-spacing:.04em;box-shadow:3px 4px 0 #07131e!important;
+  text-transform:uppercase;cursor:pointer;touch-action:manipulation;
+}
+.vf-miximax-page :is(.vf-miximax-fuse,.vf-miximax-return,.vf-miximax-confirm__actions button):active:not(:disabled){
+  transform:translate(2px,2px);box-shadow:1px 2px 0 #07131e!important}
+.vf-miximax-page .vf-miximax-fuse:disabled{
+  background:#a4aebc!important;color:#122136!important;opacity:.85;cursor:not-allowed;
+}
+.vf-miximax-confirm{padding:10px;margin-top:9px;border:2px solid #ff9d57;border-radius:8px;background:#261420}
+.vf-miximax-confirm[hidden],.vf-miximax-fuse[hidden]{display:none!important}
+.vf-miximax-confirm p{font-size:.75rem;line-height:1.5;color:#fff0e2;margin:0 0 10px}
+.vf-miximax-confirm p strong{color:#ffe190}
+.vf-miximax-confirm__actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vf-miximax-page .vf-miximax-confirm__actions button:first-child{background:#b6ebff!important}
+.vf-miximax-page .vf-miximax-confirm__actions button:last-child{background:#ffae54!important}
+.vf-miximax-confirm__actions button:disabled{opacity:.55;cursor:wait}
+.vf-miximax-warning{margin-top:19px;padding:11px 14px;border:1px solid #ffcd75;border-radius:8px;
+  background:#451f20;color:#fff4dc;font-size:.77rem;line-height:1.5}
+.vf-miximax-page .vf-miximax-return{margin-top:14px!important;max-width:400px;background:#96ddf4!important}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax{
+  --vf-event-art:url("../assets/events/vento-fuoco/miximax-fire-right-hd.webp");
+  position:relative!important;overflow:visible!important;
+  border:3px solid #ffe2a5!important;border-radius:4px!important;color:#fff!important;
+  background:#112040!important;box-shadow:3px 4px 0 #061525,0 0 14px #57cafe99,0 0 7px #ff924e!important}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax::before{display:none!important;content:none!important}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-portrait-wrap{
+  position:relative!important;overflow:hidden!important;background:#17365c var(--vf-event-art) center/cover no-repeat!important}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-portrait-wrap img.player-portrait{
+  position:relative!important;z-index:2;object-fit:contain!important;object-position:center bottom!important;
+  /* Zoom only the two Miximax card illustrations, never the card frame,
+     role/OVR corners, labels or other players. */
+  transform:scale(1.15)!important;transform-origin:center 52%!important;
+  filter:drop-shadow(0 2px 3px #000a)}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-info{
+  background:linear-gradient(90deg,#133c69,#182b50 45%,#913726)!important;color:#fff!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax{
+  --vf-detail-primary:#df5a25;--vf-detail-secondary:#55cfff;--vf-detail-bg:#172a50;
+  --vf-detail-art:url("../assets/events/vento-fuoco/miximax-fire-right-hd.webp");
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax .detail-element-chip{
+  color:#081523!important;background:linear-gradient(90deg,#ffcd9b,#91e8ff)!important;border-color:#071523!important}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-fullbody{
+  object-fit:contain!important;object-position:center bottom!important;filter:drop-shadow(0 6px 9px #061323a0)}
+/* Two native Miximax variants. Each uses the corresponding illustrated HD
+ * artwork in BOTH the compact Squadra card and the continuous detail hero.
+ * Wind deliberately uses crystalline ICE at right, not cyan fire. */
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire{
+  --vf-event-art:url("../assets/events/vento-fuoco/miximax-fire-right-hd.webp");
+  border-color:#ed4443!important;
+  box-shadow:3px 4px 0 #061525,0 0 13px #f14b4c88!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind{
+  --vf-event-art:url("../assets/events/vento-fuoco/miximax-ice-right-hd.webp");
+  border-color:#35a9ed!important;
+  box-shadow:3px 4px 0 #061525,0 0 13px #30baf088!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire .player-info{
+  background:linear-gradient(90deg,#481628,#241526 72%,#861b25)!important;
+  border-top:2px solid #ed4443!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind .player-info{
+  background:linear-gradient(90deg,#0a3455,#102840 72%,#114c8a)!important;
+  border-top:2px solid #35a9ed!important;
+}
+/* Match the exact VF legacy badge geometry of Fire and Blizzard cards. */
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax>.rtg-legacy-badge{
+  position:absolute!important;z-index:24!important;right:-4px!important;left:auto!important;
+  top:auto!important;bottom:-11px!important;min-width:27px!important;width:auto!important;
+  height:16px!important;min-height:16px!important;padding:0 5px!important;
+  border:2px solid #071323!important;border-radius:0!important;
+  box-shadow:1px 2px 0 #071323!important;font:1000 7px/1 system-ui,sans-serif!important;
+  color:#fff!important;pointer-events:none!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire>.rtg-legacy-badge{
+  --rtg-legacy-color:#df2e42!important;--rtg-legacy-ink:#fff!important;
+  background:#df2e42!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind>.rtg-legacy-badge{
+  --rtg-legacy-color:#1978d8!important;--rtg-legacy-ink:#fff!important;
+  background:#1978d8!important;
+}
+/* Some native Squadra/album readers do not emit .rtg-legacy-badge for
+ * non-season cards. Supply the same VF corner banner only in that case. */
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax:not(:has(>.rtg-legacy-badge))::after{
+  content:"VF"!important;display:grid!important;place-items:center!important;
+  position:absolute!important;z-index:24!important;right:-4px!important;left:auto!important;
+  top:auto!important;bottom:-11px!important;min-width:27px!important;width:auto!important;
+  height:16px!important;min-height:16px!important;padding:0 5px!important;
+  border:2px solid #071323!important;border-radius:0!important;
+  box-shadow:1px 2px 0 #071323!important;
+  color:#fff!important;font:1000 7px/1 system-ui,sans-serif!important;pointer-events:none!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire:not(:has(>.rtg-legacy-badge))::after{
+  background:#df2e42!important;
+}
+.player-card.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind:not(:has(>.rtg-legacy-badge))::after{
+  background:#1978d8!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire{
+  --vf-detail-primary:#df2e42;--vf-detail-secondary:#f98b49;--vf-detail-bg:#4a1c37;
+  --vf-detail-art:url("../assets/events/vento-fuoco/miximax-fire-right-hd.webp");
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind{
+  --vf-detail-primary:#1978d8;--vf-detail-secondary:#69d7ff;--vf-detail-bg:#0b457f;
+  --vf-detail-art:url("../assets/events/vento-fuoco/miximax-ice-right-hd.webp");
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire
+  :is(.rtg-legacy-badge,.player-detail-rtg-legacy-badge){
+  --rtg-legacy-color:#df2e42!important;--rtg-legacy-ink:#fff!important;
+  background:#df2e42!important;color:#fff!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind
+  :is(.rtg-legacy-badge,.player-detail-rtg-legacy-badge){
+  --rtg-legacy-color:#1978d8!important;--rtg-legacy-ink:#fff!important;
+  background:#1978d8!important;color:#fff!important;
+}
+/* The "VERSIONE" badge changes with the current variant too. */
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire
+  [data-detail-rtg-role-switch]{
+  background:#df2e42!important;color:#fff!important;border-color:#071323!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind
+  [data-detail-rtg-role-switch]{
+  background:#1978d8!important;color:#fff!important;border-color:#071323!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--fire .detail-element-chip{
+  background:#fff0eb!important;color:#b71f2d!important;border-color:#bc2634!important;
+}
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax--wind .detail-element-chip{
+  background:#ecf9ff!important;color:#0871bc!important;border-color:#168acb!important;
+}
+/* Nathan Halloween reference: the whole transparent render fits inside
+ * the right-side hero and stays grounded near its bottom (not zoomed/cropped).
+ * This rule is exclusive to the two Miximax sheets. */
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-detail-visual
+  img.player-fullbody--fullbody:is([src$="chaos-fullbody.webp"],[src$="shaiden-fullbody.webp"]){
+  position:absolute!important;left:55%!important;right:auto!important;
+  top:auto!important;bottom:4%!important;
+  width:100%!important;height:69%!important;max-width:100%!important;max-height:69%!important;
+  object-fit:contain!important;object-position:center bottom!important;
+  transform:translateX(-50%) scale(1)!important;transform-origin:center bottom!important;
+}
+/* Shaiden remains larger than the initial 69%-height Nathan baseline,
+ * but is noticeably smaller than the previous 93% version. Chaos is untouched. */
+.player-detail-layout.rtg-event--vento_fuoco_dev.rtg-element-miximax .player-detail-visual
+  img.player-fullbody--fullbody[src$="shaiden-fullbody.webp"]{
+  left:57%!important;
+  bottom:3%!important;
+  width:127%!important;
+  max-width:none!important;
+  height:82%!important;
+  max-height:82%!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  transform:translateX(-50%) scale(1)!important;
+}
+@media(min-width:650px){
+  .event-page--vento-fuoco .vf-miximax-banner{min-height:190px}
+  .vf-miximax-banner__copy{min-height:188px}
+  .vf-miximax-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+  .vf-miximax-pair.rtg-squad-shell{grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr) 26px minmax(0,1fr);gap:8px!important}
+}
+@media(max-width:390px){
+  .vf-miximax-page{padding:8px 7px 65px!important}
+  .vf-miximax-recipe{padding:8px}
+  .vf-miximax-pair.rtg-squad-shell{grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr) 15px minmax(0,1fr);gap:2px!important}
+  .vf-miximax-native-card .rtg-squad-card-slot{max-width:66px!important}
+  .vf-miximax-card-state{font-size:.46rem;letter-spacing:0}
+  .vf-miximax-banner__copy{padding:15px}
+}
+
+/* Elemental event coaches: native cards, fullbody detail, Squadra and reveal. */
+.rtg-event--vento_fuoco_dev.rtg-element-fire-team{
+ --vf-coach-edge:#ed5832;--vf-coach-deep:#b92122;--vf-coach-soft:#fff0df;
+ --vf-coach-ink:#27151a;--vf-coach-art:url("../assets/events/vento-fuoco/fire-card-hd.avif");
+}
+.rtg-event--vento_fuoco_dev.rtg-element-blizzard-team{
+ --vf-coach-edge:#288fd5;--vf-coach-deep:#1c5694;--vf-coach-soft:#e3f7ff;
+ --vf-coach-ink:#142a41;--vf-coach-art:url("../assets/events/vento-fuoco/ice-card-hd.avif");
+}
+.rtg-coaches-modal .rtg-coach-entry .player-card.rtg-coach-card.rtg-event--vento_fuoco_dev,
+.rtg-coach-card.player-card.rtg-event--vento_fuoco_dev,
+.rtg-coaches-album .album-player-entry>.rtg-coach-album-card.rtg-event--vento_fuoco_dev,
+.rtg-coaches-reward.rtg-event--vento_fuoco_dev .rtg-coaches-reward-art .rtg-coach-card.player-card{
+ --rarity-color:var(--vf-coach-edge);--rarity-accent:var(--vf-coach-edge);
+ border-color:var(--vf-coach-edge)!important;color:var(--vf-coach-ink)!important;
+ background:linear-gradient(145deg,#fffdf6 0 63%,var(--vf-coach-soft) 63% 83%,var(--vf-coach-edge) 100%)!important;
+}
+.rtg-coach-card.rtg-event--vento_fuoco_dev .player-portrait-wrap,
+.rtg-coach-album-card.rtg-event--vento_fuoco_dev .player-portrait-wrap{
+ background:radial-gradient(circle at 50% 28%,#fffdfa 4%,var(--vf-coach-soft) 70%,var(--vf-coach-edge) 125%)!important;
+}
+.rtg-coach-card.rtg-event--vento_fuoco_dev .player-info,
+.rtg-coach-album-card.rtg-event--vento_fuoco_dev .player-info{
+ background:#fffdf6!important;color:var(--vf-coach-ink)!important;
+}
+.rtg-coach-card.rtg-event--vento_fuoco_dev .player-title strong,
+.rtg-coach-album-card.rtg-event--vento_fuoco_dev .player-title strong,
+.rtg-coach-card.rtg-event--vento_fuoco_dev .player-meta{
+ color:var(--vf-coach-ink)!important;text-shadow:none!important;
+}
+.rtg-coach-card.rtg-event--vento_fuoco_dev .player-corner.player-overall,
+.rtg-coach-album-card.rtg-event--vento_fuoco_dev .player-corner.player-overall{
+ background:var(--vf-coach-edge)!important;color:white!important;border-color:var(--vf-coach-ink)!important;
+}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev.player-detail-layout{
+ --rarity-color:var(--vf-coach-edge);--rarity-accent:var(--vf-coach-edge);
+ --detail-rarity-bg:var(--vf-coach-soft);--detail-rarity-accent:var(--vf-coach-edge);
+}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .player-detail-hero{
+ background:linear-gradient(102deg,#fffdf7 0%,#fff9ed 43%,var(--vf-coach-soft) 63%,var(--vf-coach-edge) 100%)!important;
+}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .player-detail-visual{
+ background:linear-gradient(110deg,#fffdf700,var(--vf-coach-soft) 50%,#fffdf733),
+ var(--vf-coach-art) center/cover no-repeat!important;
+}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .player-detail-visual::before{
+ background:linear-gradient(125deg,transparent 20%,var(--vf-coach-soft) 35%,transparent 66%)!important;opacity:.28;
+}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .player-detail-name{color:var(--vf-coach-ink)!important;text-shadow:none!important;}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .detail-category,
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .player-detail-section h3{border-color:var(--vf-coach-edge)!important;}
+.rtg-coach-detail.rtg-event--vento_fuoco_dev .detail-category::before{background:var(--vf-coach-edge)!important;}
+.rtg-coach-squad-slot.rtg-event--vento_fuoco_dev{
+ border-color:var(--vf-coach-edge)!important;background:#fffdf6!important;color:var(--vf-coach-ink)!important;
+}
+.rtg-coach-squad-slot.rtg-event--vento_fuoco_dev .rtg-coach-squad-heading{border-bottom-color:var(--vf-coach-edge);}
+.rtg-coach-squad-slot.rtg-event--vento_fuoco_dev .rtg-coach-squad-heading b,
+.rtg-coach-squad-slot.rtg-event--vento_fuoco_dev .rtg-coach-squad-buttons .btn:first-child{
+ background:var(--vf-coach-edge)!important;color:white!important;
+}
+.rtg-coaches-reward.rtg-event--vento_fuoco_dev.rtg-paper-modal{
+ border-color:var(--vf-coach-edge)!important;
+ background:radial-gradient(circle at 50% 27%,var(--vf-coach-soft),#fffdf6 75%)!important;
+}
+.rtg-coaches-reward.rtg-event--vento_fuoco_dev .rtg-coaches-reward-heading{
+ padding:13px 8px;border-bottom:4px solid var(--vf-coach-edge);
+ background:linear-gradient(90deg,#fffdf6f8,#fffdf6d9 63%,#fffdf659),var(--vf-coach-art) center/cover no-repeat;
+}
+.rtg-coaches-reward.rtg-event--vento_fuoco_dev .rtg-coaches-reward-info small,
+.rtg-coaches-reward.rtg-event--vento_fuoco_dev .rtg-coaches-reward-info h3{color:var(--vf-coach-deep)!important;}
+.rtg-coaches-reward.rtg-event--vento_fuoco_dev .rtg-coaches-reward-unlocked{
+ color:var(--vf-coach-ink)!important;background:var(--vf-coach-soft)!important;
+}
+@media(max-width:390px){.rtg-coaches-reward.rtg-event--vento_fuoco_dev{padding:12px!important;gap:10px;}}
+
+/* Coach bonuses shown only under the Vento-Fuoco native Squadra staff slot. */
+.halloween-squad-mode .vf-coach-effects{
+ --vf-coach-power:#288fd5;margin:12px 0 16px;padding:12px;background:#f8fcff;
+ border:3px solid #121923;border-left:5px solid var(--vf-coach-power);
+ color:#132338;box-shadow:3px 4px 0 #12192344;
+}
+.halloween-squad-mode .vf-coach-effects--fire{--vf-coach-power:#ed5832;background:#fff8ef;}
+.halloween-squad-mode .vf-coach-effects>header{
+ display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;
+ padding-bottom:7px;border-bottom:2px solid var(--vf-coach-power);
+}
+.halloween-squad-mode .vf-coach-effects>header strong{font-size:14px;font-weight:1000;color:#111923;}
+.halloween-squad-mode .vf-coach-effects>header small{font-size:10px;font-weight:850;color:#4b5661;}
+.halloween-squad-mode .vf-coach-effects>p{margin:8px 0 11px;font-size:11px;line-height:1.45;font-weight:700;}
+.halloween-squad-mode .vf-coach-effects-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.halloween-squad-mode .vf-coach-effect-player{
+ min-width:0;padding:8px;background:#fffef9;border:2px solid #131923;
+ border-top:4px solid var(--vf-coach-power);font-size:12px;overflow-wrap:anywhere;
+}
+.halloween-squad-mode .vf-coach-effect-player>strong{font-weight:1000;}
+.halloween-squad-mode .vf-coach-effect-values{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0;}
+.halloween-squad-mode .vf-coach-effect-values span{
+ padding:4px 5px;background:#f0f2f6;border:1px solid #273240;font-size:11px;font-weight:800;white-space:nowrap;
+}
+.halloween-squad-mode .vf-coach-effect-values b,.halloween-squad-mode .vf-coach-effect-stats strong{color:#176d37;}
+.halloween-squad-mode .vf-coach-effect-values s{color:#6c5b58;}
+.halloween-squad-mode .vf-coach-effect-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;}
+.halloween-squad-mode .vf-coach-effect-stats span{
+ padding:4px;background:#f7f4ec;border:1px solid #cad0d4;font-size:10px;overflow-wrap:anywhere;
+}
+@media(max-width:710px){.halloween-squad-mode .vf-coach-effects-grid{grid-template-columns:1fr;}}

@@ -38,8 +38,11 @@
   function devCoaches(eventId=""){
     return (global.GameEvents?.all?.()||[]).filter(event=>event.dev===true&&(!eventId||event.id===eventId))
       .flatMap(event=>(event.coaches||[]).map(coach=>Object.freeze({id:String(coach.id),zukanId:String(coach.zukanId||""),
-        powerName:coach.power.name,powerDescription:coach.power.description,name:coach.name,seasonId:event.id,
-        season:event.labels.collection,team:event.team.name,teamLogoUrl:event.team.logo,imageUrl:coach.imageUrl||"",
+        powerName:coach.power.name,powerDescription:coach.power.description,name:coach.name,teamId:String(coach.teamId||""),seasonId:event.id,
+        season:event.labels.collection,
+        team:(event.teams||[event.team]).find(t=>t.teamId===coach.teamId)?.name||event.team.name,
+        teamLogoUrl:(event.teams||[event.team]).find(t=>t.teamId===coach.teamId)?.logo||event.team.logo,
+        imageUrl:coach.imageUrl||"",
         frontFullbodyUrl:coach.frontFullbodyUrl||coach.imageUrl||"",eventCoach:true,devCoach:true})));
   }
   // Allenatore per id: catalogo reale, poi gli allenatori degli eventi finti caricati.

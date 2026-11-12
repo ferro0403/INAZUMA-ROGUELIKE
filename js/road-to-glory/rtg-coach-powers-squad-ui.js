@@ -49,6 +49,11 @@
       type==="benchCapOverride"?(squad.bench||[]).includes(key):
       type==="rarityUpgrade"?[...(squad.lineup||[]),...(squad.bench||[])].includes(key)&&
         !!rules.nextRarity(rules.rarityOf(resolve(key))):
+      type==="elementalTrioAwakening"?(squad.lineup||[]).includes(key)&&
+        !!power?.eventCardPrefix&&key.startsWith(power.eventCardPrefix)&&
+        resolve(key)?.teamId===power.params.teamId&&
+        Number(resolve(key)?.overall??resolve(key)?.finalOverall)<99&&
+        !!rules.nextRarity(rules.rarityOf(resolve(key))):
         (squad.lineup||[]).includes(key);
     function pick(key){
       if(busy||!allowed(key))return;
@@ -67,11 +72,11 @@
       }
       if(choice.cardIds.includes(key))choice.cardIds=choice.cardIds.filter(x=>x!==key);
       else if(cap===1)choice.cardIds=[key];
-      else if(choice.cardIds.length<2)choice.cardIds.push(key);
+      else if(choice.cardIds.length<cap)choice.cardIds.push(key);
       render();
     }
     function projectedChanges(){
-      if(type!=="rarityUpgrade"||!choice.cardIds.length)return "";
+      if(!["rarityUpgrade","elementalTrioAwakening"].includes(type)||!choice.cardIds.length)return "";
       return choice.cardIds.map(key=>{
         const preview=ctx.previewChoice?.(key,choice);
         if(!preview)return '<p class="rtg-coach-picker-note">Rarità massima o anteprima non disponibile: scegli un altro giocatore.</p>';
@@ -80,6 +85,9 @@
           '<strong>'+esc(original.name||"Giocatore")+' · '+esc(original.category)+' → '+esc(updated.category)+
           '</strong><p>Overall personale: '+esc(original.overall)+' → '+esc(updated.overall)+
           ' (non modifica l’overall squadra per i requisiti)</p>'+
+          (type==="elementalTrioAwakening"
+            ?'<p>PT iniziali e massimi dopo il potenziamento: <strong>'+esc(preview.pt?.total??"—")+
+              '</strong> · bonus +'+esc(power?.params?.amount||0)+'</p>':'')+
           (preview.stats?.length?'<div class="rtg-coach-preview-stat-grid">'+preview.stats.map(item=>
             '<span><strong>'+esc(item.label)+'</strong> '+esc(item.before)+' → '+
             esc(item.after)+' <b>+'+esc(item.after-item.before)+'</b></span>').join("")+'</div>':

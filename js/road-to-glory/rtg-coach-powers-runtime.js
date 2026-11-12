@@ -87,6 +87,17 @@
       // Bench player is excluded from the 15-player *cap average* only.
       return config.cardIds.length===picks&&bench.has(config.cardIds[0])?config:null;
     }
+    if(type==="elementalTrioAwakening"){
+      // Three distinct starters from the chosen event team, not arbitrary
+      // Fire/Wind players. The active Miximax variant determines its team.
+      return config.cardIds.length===picks&&!!power.eventCardPrefix&&
+        config.cardIds.every(key=>{
+          const player=lineup.get(key);
+          return key.startsWith(power.eventCardPrefix)&&
+            player?.teamId===power.params.teamId&&
+            Number(player?.overall??player?.finalOverall)<99&&nextRarity(rarityOf(player));
+        })?config:null;
+    }
     if(type==="rarityUpgrade"){
       // Two distinct cards, each either starter or reserve. A previously saved
       // one-card choice remains valid until the user edits the configuration.
@@ -194,8 +205,10 @@
       });
       return {...match,userSquad:{...match.userSquad,lineup},coachPowerEffect:effect};
     }
-    if(type==="rarityUpgrade"){
-      const all=[...(match.userSquad?.lineup||[]),...(match.userSquad?.bench||[])];
+    if(type==="rarityUpgrade"||type==="elementalTrioAwakening"){
+      const isElemental=type==="elementalTrioAwakening";
+      const all=isElemental?(match.userSquad?.lineup||[]):
+        [...(match.userSquad?.lineup||[]),...(match.userSquad?.bench||[])];
       const ptBreakdown=global.RtgFourMovesRuntime?.ptBreakdown;
       if(typeof options.upgradeRarity!=="function"||typeof ptBreakdown!=="function")return match;
       const upgrades=new Map(),snapshot=[];
@@ -208,8 +221,9 @@
         if(!upgraded||rarityOf(upgraded)!==target||
            !Number.isFinite(Number(upgraded.overall))||
            !upgraded.stats||typeof upgraded.stats!=="object")return match;
-        const total=Number(ptBreakdown(upgraded.stats,target)?.total);
-        if(!Number.isInteger(total)||total<0)return match;
+        const normalPt=Number(ptBreakdown(upgraded.stats,target)?.total);
+        if(!Number.isInteger(normalPt)||normalPt<0)return match;
+        const total=normalPt+(isElemental?power.params.amount:0);
         const boosted={
           ...original,...upgraded,cardId:key,playerId:original.playerId,
           tacticalRole:original.tacticalRole,move:original.move,
@@ -217,7 +231,9 @@
         };
         upgrades.set(key,{player:boosted,total});
         snapshot.push({cardId:key,previousRarity:rarityOf(original),
-          targetRarity:target,previousOverall:Number(original.overall)});
+          targetRarity:target,previousOverall:Number(original.overall),
+          ...(isElemental?{requirementOverall:Number(original.overall),
+            bonusPt:power.params.amount}:{})});
       }
       const current={...(match.ptCurrentByPlayerId||{})};
       const maximum={...(match.ptMaxByPlayerId||{})};

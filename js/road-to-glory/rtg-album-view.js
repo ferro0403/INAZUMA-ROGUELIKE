@@ -67,10 +67,26 @@
       const halloweenPercent=Math.round(100*halloweenUnlocked/(halloweenTotal||1));
       // Other events, including the isolated dev sandbox, are read-only album sources.
       // Without eventTeams the legacy Halloween counters remain byte-for-byte the same.
-      const eventTotal=Array.isArray(eventTeams)&&eventTeams.length
+      const eventTeamsAvailable=Array.isArray(eventTeams)&&eventTeams.length>0;
+      const totalByTeam=eventTeamsAvailable
         ?eventTeams.reduce((n,t)=>n+Number(t.total||0),0):halloweenTotal;
-      const eventUnlocked=Array.isArray(eventTeams)&&eventTeams.length
+      const unlockedByTeam=eventTeamsAvailable
         ?eventTeams.reduce((n,t)=>n+Number(t.unlocked||0),0):halloweenUnlocked;
+      // A player can legitimately appear in two event squad albums (Miximax
+      // Fire + Blizzard) while representing ONE collectible card. Deduplicate
+      // the COLLECTION progress only; team rosters and their counts stay intact.
+      // Other albums without duplicate valid card IDs keep their old totals.
+      const eventIds=eventTeamsAvailable&&eventTeams.every(t=>
+        Array.isArray(t.roster)&&Array.isArray(t.entries))
+        ?eventTeams.flatMap(t=>t.roster.map(p=>String(p?.cardId||p?.playerId||p?.id||"")))
+        :[];
+      const hasOverlap=eventIds.length>0&&eventIds.every(Boolean)&&
+        new Set(eventIds).size<eventIds.length;
+      const eventTotal=hasOverlap?new Set(eventIds).size:totalByTeam;
+      const eventUnlocked=hasOverlap
+        ?new Set(eventTeams.flatMap(t=>t.entries.map(p=>
+          String(p?.cardId||p?.playerId||p?.id||""))).filter(Boolean)).size
+        :unlockedByTeam;
       const eventPercent=Math.round(100*eventUnlocked/(eventTotal||1));
       const coachCard=coachItems.length?`<button type="button" class="panel album-collection-card rtg-coach-album-collection" data-rtg-album-coaches-open aria-label="Apri album allenatori"><span class="album-collection-cover album-collection-cover--hero"><img src="${escape(RTG_COACHES_COVER_URL)}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');"></span><span class="album-collection-content album-collection-content--hero"><span class="album-collection-title">ALLENATORI</span><span class="album-collection-progress-copy"><span>${obtained} / ${coachItems.length} allenatori sbloccati</span><strong>${percentCoach}%</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width:${percentCoach}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button>`:"";
       return `<main class="album-screen album-collections-screen rtg-album-collections-screen"><header class="topbar album-topbar album-collections-topbar"><button type="button" class="btn section-root-button album-collections-home-button" data-rtg-home aria-label="Torna a Road to Glory"><span aria-hidden="true">←</span></button><div class="album-collections-heading"><p class="eyebrow">ALBUM</p><h1>COLLEZIONI</h1></div><span class="album-collections-topbar-spacer" aria-hidden="true"></span></header><section class="album-collection-grid">${cards}${coachCard}<button type="button" class="panel album-collection-card rtg-halloween-album-collection" data-rtg-album-halloween style="${global.GameEvents?.themeStyle?.(albumEvent?.id)||""}" aria-label="Apri collezione Giocatori Evento: ${eventUnlocked} su ${eventTotal} giocatori sbloccati, ${eventPercent}%"><span class="album-collection-cover album-collection-cover--hero"><img src="${escape(RTG_HALLOWEEN_PLAYERS_COVER_URL)}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');"></span><span class="album-collection-content album-collection-content--hero"><span class="album-collection-title">GIOCATORI EVENTO</span><span class="album-collection-progress-copy"><span>${eventUnlocked} / ${eventTotal} giocatori sbloccati</span><strong>${eventPercent}%</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width:${eventPercent}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button></section></main>`;

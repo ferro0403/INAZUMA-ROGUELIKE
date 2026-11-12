@@ -42,7 +42,7 @@
           "jpName": "フローズンスティール",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 70,
           "tension": 60,
           "source": "manual"
         }
@@ -57,7 +57,7 @@
           "jpName": "ゴッドノウズ",
           "type": "shot",
           "element": "Wind",
-          "power": 70,
+          "power": 85,
           "tension": 70,
           "source": "database"
         },
@@ -87,7 +87,7 @@
           "jpName": "フローズンスティール",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 70,
           "tension": 60,
           "source": "manual"
         }
@@ -177,7 +177,7 @@
           "jpName": "フローズンスティール",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 70,
           "tension": 60,
           "source": "manual"
         }
@@ -192,7 +192,7 @@
           "jpName": "ウォーターベール",
           "type": "dribble",
           "element": "Wind",
-          "power": 60,
+          "power": 65,
           "tension": 60,
           "source": "database"
         },
@@ -202,7 +202,7 @@
           "jpName": "フローズンスティール",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 70,
           "tension": 60,
           "source": "database"
         },
@@ -237,7 +237,7 @@
           "jpName": "フローズンスティール",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 70,
           "tension": 60,
           "source": "database"
         },
@@ -257,7 +257,7 @@
           "jpName": "フリーズショット",
           "type": "shot",
           "element": "Forest",
-          "power": 50,
+          "power": 55,
           "tension": 50,
           "source": "database"
         },
@@ -292,7 +292,7 @@
           "jpName": "ウォーターベール",
           "type": "dribble",
           "element": "Wind",
-          "power": 60,
+          "power": 65,
           "tension": 60,
           "source": "database"
         },
@@ -302,7 +302,7 @@
           "jpName": "フローズンスティール",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 70,
           "tension": 60,
           "source": "manual"
         },
@@ -327,7 +327,7 @@
           "jpName": "ファイアブリザード",
           "type": "shot",
           "element": "Wind",
-          "power": 85,
+          "power": 90,
           "tension": 80,
           "source": "database"
         },
@@ -347,7 +347,7 @@
           "jpName": "ウォーターベール",
           "type": "dribble",
           "element": "Wind",
-          "power": 60,
+          "power": 65,
           "tension": 60,
           "source": "database"
         },
@@ -382,7 +382,7 @@
           "jpName": "フローズンスティール",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 70,
           "tension": 60,
           "source": "manual"
         },
@@ -392,7 +392,7 @@
           "jpName": "スターリフレクション",
           "type": "save",
           "element": "Wind",
-          "power": 60,
+          "power": 70,
           "tension": 60,
           "source": "manual"
         },
@@ -507,7 +507,7 @@
           "jpName": "アイスグランド",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 85,
           "tension": 60,
           "source": "database"
         },
@@ -572,7 +572,7 @@
           "jpName": "ゴッドノウズ",
           "type": "shot",
           "element": "Wind",
-          "power": 70,
+          "power": 85,
           "tension": 70,
           "source": "manual"
         },
@@ -582,7 +582,7 @@
           "jpName": "フローズンスティール",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 70,
           "tension": 60,
           "source": "manual"
         }
@@ -597,7 +597,7 @@
           "jpName": "メガロドン",
           "type": "shot",
           "element": "Wind",
-          "power": 60,
+          "power": 70,
           "tension": 60,
           "source": "database"
         },
@@ -617,7 +617,7 @@
           "jpName": "ウォーターフォール",
           "type": "defense",
           "element": "Wind",
-          "power": 85,
+          "power": 100,
           "tension": 80,
           "source": "manual"
         },
@@ -652,7 +652,7 @@
           "jpName": "ウォーターフォール",
           "type": "defense",
           "element": "Wind",
-          "power": 85,
+          "power": 100,
           "tension": 80,
           "source": "manual"
         },
@@ -707,7 +707,7 @@
           "jpName": "バーバリアンの盾",
           "type": "defense",
           "element": "Mountain",
-          "power": 70,
+          "power": 90,
           "tension": 70,
           "source": "database"
         },
@@ -742,7 +742,7 @@
           "jpName": "アイスグランド",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 85,
           "tension": 60,
           "source": "manual"
         },
@@ -762,7 +762,7 @@
           "jpName": "流星ブレード",
           "type": "shot",
           "element": "Fire",
-          "power": 70,
+          "power": 85,
           "tension": 70,
           "source": "database"
         }
@@ -807,7 +807,7 @@
           "jpName": "スピニングフェンス",
           "type": "defense",
           "element": "Wind",
-          "power": 85,
+          "power": 95,
           "tension": 80,
           "source": "manual"
         }
@@ -822,7 +822,7 @@
           "jpName": "アイスグランド",
           "type": "defense",
           "element": "Wind",
-          "power": 60,
+          "power": 85,
           "tension": 60,
           "source": "database"
         },
@@ -842,7 +842,7 @@
           "jpName": "エターナルブリザード",
           "type": "shot",
           "element": "Wind",
-          "power": 60,
+          "power": 75,
           "tension": 60,
           "source": "database"
         },

@@ -80,10 +80,10 @@ assert.doesNotMatch(matchView.duelVisualMarkup(samford,"opponent"),/halloween-va
 assert.doesNotMatch(matchView.duelVisualMarkup(normal,"user"),/halloween-vampiro/);
 assert.equal((fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8").match(/class="rtg-duel-render\$\{shawnFwClass\}\$\{halloweenClass\}"/g)||[]).length,2,"Both original duel renderers must apply the tagged filter");
 const htmlShell=fs.readFileSync("index.html","utf8");
-assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261108-via-scambio-1/,
+assert.match(htmlShell,/rtg-halloween-event\.js\?v=20261112-vf-coach-squad-3/,
   "iOS cache must not serve the older pre-fix Halloween controller");
 const albumViewSource=fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8");
-assert.ok(htmlShell.includes("js/road-to-glory/rtg-album-view.js?v=20261107-grafica-eventi-1"),
+assert.ok(htmlShell.includes("js/road-to-glory/rtg-album-view.js?v=20261109-vf-fix-2"),
   "Safari must fetch the latest album covers");
 ctx.RoadToGloryCoaches={catalog:()=>[{id:"208",name:"Hillman"}],
   owned:()=>new Set(["208"])};
@@ -170,7 +170,7 @@ assert.match(coachesCss,/transform:scale\(1\.52\)/,
 assert.ok(halloweenCss.includes(".rtg-halloween-album-collection .album-collection-title{color:#fffdf6!important"),
   "Event title must be white over the artwork");
 
-assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261108-via-scambio-1"));
+assert.ok(htmlShell.includes("css/rtg-halloween-event.css?v=20261110-vf-native-reveal-4"));
 assert.doesNotMatch(eventSource,/coachMatchStatus\(|halloween-coach-match-status/,
   "Never insert coach banners above native Halloween matches");
 assert.doesNotMatch(halloweenCss,/halloween-coach-match-status/,
@@ -179,7 +179,7 @@ assert.match(eventSource,/function squadCoachDetailPreview\(cardId,player\)/,
   "Halloween Squadra must resolve the actual saved coach power for card details");
 assert.match(eventSource,/RoadToGloryCoachSquadPreview\?\.decorateDetail\?\.\(/,
   "Halloween player details must render staff power stats and special moves");
-assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-runtime.js?v=20261106-modulo-evento-2"));
+assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-runtime.js?v=20261112-vf-coach-trio-1"));
 assert.ok(htmlShell.includes("js/road-to-glory/rtg-coach-powers-prematch.js?v=20261106-poteri-dati-1"));
 assert.doesNotMatch(eventSource,/rtg-coach-cap-note/,
   "Hekyll helper below OVR max must be removed, not just hidden");
@@ -206,8 +206,8 @@ const openCoachesPart=eventSource.slice(eventSource.indexOf("function openCoache
 const canonicalCoaches=fs.readFileSync("js/road-to-glory/rtg-coaches-controller.js","utf8");
 assert.match(canonicalCoaches,/detailId\?"rtg-modal player-detail-modal rtg-coaches-modal"/,
   "Record the canonical normal RTG coach detail modal frame");
-assert.match(openCoachesPart,/coachDetailClassName=id===HALLOWEEN_COACH_ID/,
-  "Halloween-only coach must be the sole exception to the ordinary coach frame");
+assert.match(openCoachesPart,/coachDetailClassName=!TEAM_VENDING&&id===HALLOWEEN_COACH_ID/,
+  "Hekyll alone keeps the Halloween coach frame; the first Fire coach must remain native");
 assert.match(openCoachesPart,/"rtg-modal player-detail-modal rtg-coaches-modal"/,
   "All normal coaches opened during Halloween must preserve the black RTG inset frame");
 assert.match(openCoachesPart,/"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"/,
