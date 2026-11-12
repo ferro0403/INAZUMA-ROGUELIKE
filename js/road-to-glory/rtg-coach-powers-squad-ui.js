@@ -52,6 +52,7 @@
       type==="elementalTrioAwakening"?(squad.lineup||[]).includes(key)&&
         !!power?.eventCardPrefix&&key.startsWith(power.eventCardPrefix)&&
         resolve(key)?.teamId===power.params.teamId&&
+        Number(resolve(key)?.overall??resolve(key)?.finalOverall)<99&&
         !!rules.nextRarity(rules.rarityOf(resolve(key))):
         (squad.lineup||[]).includes(key);
     function pick(key){
