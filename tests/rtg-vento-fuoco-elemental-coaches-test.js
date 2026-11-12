@@ -160,5 +160,76 @@ const read=path=>fs.readFileSync(path,"utf8");
   assert.match(sourceUi,/type==="elementalTrioAwakening"/);
   assert.match(read("js/road-to-glory/rtg-halloween-event.js"),/\["replace","adapt","formation","fusionRole"\]/,
     "changing the Miximax variant revalidates the saved coach selection");
-  console.log("elemental-coaches PASS: two team-only coaches, 3 capped upgrades, +100 PT each, 95->99 counts 95, atomic rollback, Miximax switch, Halloween isolation");
+
+  // Run the production event presentation in an isolated JS context for each
+  // coach: all three XI cards, statistics and PT; no permanent mutation.
+  const sourceEvent=read("js/road-to-glory/rtg-halloween-event.js");
+  const from=sourceEvent.indexOf("    function upgradeEventCoachRarity(");
+  const until=sourceEvent.indexOf("    function nativeCard(",from);
+  const start=sourceEvent.indexOf("    function elementalSquadPresentation(");
+  const end=sourceEvent.indexOf("    function squadSection() {",start);
+  assert(from>0&&until>from&&start>0&&end>start);
+  assert.match(sourceEvent.slice(end,end+1600),/elementalSquadPresentation\(tacticalLineupModel\(/);
+  assert.match(sourceEvent.slice(end,end+2300),/elementalSquadSummaryMarkup\(projection\.effects\)/);
+  const scope=vm.createContext({
+    EVENT_ID:"vento_fuoco_dev",TEAM_VENDING:true,view:"squad",
+    assets:{fusionPlayers:new Map()},shared:{coachOwnedIds:[]},localSquad:null,
+    resolveCard:()=>null,asId:x=>String(x??""),console,
+    escape:x=>String(x??"").replace(/[&<>"']/g,ch=>({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[ch])),
+    RoadToGloryCoachPowerRuntime:rules,RoadToGloryCoachPowerTypes:types,
+    RoadToGloryCoaches:coaches,
+    RtgFourMovesRuntime:{ptBreakdown:()=>({base:205,bonus:15,total:220})},
+    InazumaProgression:{RARITY_THRESHOLDS:[{category:"Aurico",min:99}],
+      growPlayerStatsToTargetOverall:({currentStats})=>({
+        ...currentStats,attack:Math.min(100,(currentStats?.attack||0)+10),
+        stamina:Math.min(100,(currentStats?.stamina||0)+5)
+      })}
+  });
+  scope.global=scope;scope.globalThis=scope;
+  vm.runInContext(sourceEvent.slice(from,until)+sourceEvent.slice(start,end)+
+    "\nthis.projectSquad=elementalSquadPresentation;this.summarySquad=elementalSquadSummaryMarkup;",scope);
+  for(const [coach,group] of [[fireCoach,fire],[blizzardCoach,ice]]){
+    const members=[...group,...others];
+    const db=Object.fromEntries(members.map(p=>[p.cardId,{
+      ...p,name:"Player "+p.playerId,baseStats:{...p.stats},
+      stats:{...p.stats,attack:70}
+    }]));
+    const entries=members.map(p=>({cardId:p.cardId,player:db[p.cardId],source:"RTG",tacticalRole:"FW"}));
+    const model={lineup:entries,bench:[{cardId:"ie1::bench",player:{overall:80}}],
+      lineupRows:[{role:"FW",entries:entries.slice(0,3)},
+                  {role:"MF",entries:entries.slice(3)}]};
+    scope.resolveCard=id=>db[id]||null;
+    scope.shared={coachOwnedIds:[coach.id]};
+    scope.localSquad={...configuration(coach,group),
+      lineup:members.map(p=>p.cardId),bench:[]};
+    scope.view="squad";
+    const shown=scope.projectSquad(model);
+    assert.equal(shown.effects.length,3);
+    for(const entry of shown.model.lineup.slice(0,3)){
+      assert.equal(entry.player.overall,99);
+      assert.equal(entry.player.category,"Aurico");
+      assert.equal(entry.player.stats.attack,80);
+      assert.equal(entry.coachPreview.pt.total,320);
+    }
+    assert.equal(shown.model.lineupRows[0].entries[0].player.overall,99);
+    assert.equal(shown.model.lineup[3].player.overall,85);
+    assert.equal(shown.model.bench,model.bench);
+    assert.equal(model.lineup[0].player.overall,95);
+    const html=scope.summarySquad(shown.effects);
+    assert.match(html,/OVR <s>95<\/s> → <b>99<\/b>/);
+    assert.match(html,/PT 220 → <b>320<\/b>/);
+    assert.match(html,/Tiro<\/b> 70 → <strong>80<\/strong>/);
+    assert.match(html,/Resistenza<\/b> 80 → <strong>85<\/strong>/);
+    scope.shared={coachOwnedIds:[]};
+    assert.equal(scope.projectSquad(model).effects.length,0);
+    scope.shared={coachOwnedIds:[coach.id]};
+    scope.localSquad.coachPowerSelection.cardIds=group.slice(0,2).map(p=>p.cardId);
+    assert.equal(scope.projectSquad(model).effects.length,0);
+    scope.localSquad.coachPowerSelection.cardIds=group.map(p=>p.cardId);
+    scope.view="match";
+    assert.equal(scope.projectSquad(model).effects.length,0);
+  }
+  console.log("elemental-coaches PASS: two team-only coaches, 3 capped upgrades, +100 PT each, 95->99 counts 95, atomic rollback, Miximax switch, Halloween isolation, Squadra projection");
 })().catch(e=>{console.error(e);process.exitCode=1});

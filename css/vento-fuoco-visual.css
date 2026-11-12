@@ -1037,3 +1037,35 @@
  color:var(--vf-coach-ink)!important;background:var(--vf-coach-soft)!important;
 }
 @media(max-width:390px){.rtg-coaches-reward.rtg-event--vento_fuoco_dev{padding:12px!important;gap:10px;}}
+
+/* Coach bonuses shown only under the Vento-Fuoco native Squadra staff slot. */
+.halloween-squad-mode .vf-coach-effects{
+ --vf-coach-power:#288fd5;margin:12px 0 16px;padding:12px;background:#f8fcff;
+ border:3px solid #121923;border-left:5px solid var(--vf-coach-power);
+ color:#132338;box-shadow:3px 4px 0 #12192344;
+}
+.halloween-squad-mode .vf-coach-effects--fire{--vf-coach-power:#ed5832;background:#fff8ef;}
+.halloween-squad-mode .vf-coach-effects>header{
+ display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;
+ padding-bottom:7px;border-bottom:2px solid var(--vf-coach-power);
+}
+.halloween-squad-mode .vf-coach-effects>header strong{font-size:14px;font-weight:1000;color:#111923;}
+.halloween-squad-mode .vf-coach-effects>header small{font-size:10px;font-weight:850;color:#4b5661;}
+.halloween-squad-mode .vf-coach-effects>p{margin:8px 0 11px;font-size:11px;line-height:1.45;font-weight:700;}
+.halloween-squad-mode .vf-coach-effects-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.halloween-squad-mode .vf-coach-effect-player{
+ min-width:0;padding:8px;background:#fffef9;border:2px solid #131923;
+ border-top:4px solid var(--vf-coach-power);font-size:12px;overflow-wrap:anywhere;
+}
+.halloween-squad-mode .vf-coach-effect-player>strong{font-weight:1000;}
+.halloween-squad-mode .vf-coach-effect-values{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0;}
+.halloween-squad-mode .vf-coach-effect-values span{
+ padding:4px 5px;background:#f0f2f6;border:1px solid #273240;font-size:11px;font-weight:800;white-space:nowrap;
+}
+.halloween-squad-mode .vf-coach-effect-values b,.halloween-squad-mode .vf-coach-effect-stats strong{color:#176d37;}
+.halloween-squad-mode .vf-coach-effect-values s{color:#6c5b58;}
+.halloween-squad-mode .vf-coach-effect-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;}
+.halloween-squad-mode .vf-coach-effect-stats span{
+ padding:4px;background:#f7f4ec;border:1px solid #cad0d4;font-size:10px;overflow-wrap:anywhere;
+}
+@media(max-width:710px){.halloween-squad-mode .vf-coach-effects-grid{grid-template-columns:1fr;}}

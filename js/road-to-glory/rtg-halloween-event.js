@@ -736,22 +736,76 @@
         '<div class="halloween-opponent-preview-field rtg-prematch-shell development-squad-card-scope">'+pitch+'</div>'+
         '<p class="halloween-opponent-preview-note">11 titolari · Stesse carte e posizioni del preview partita</p></section>';
     }
+
+    // Only the committed elemental coach power is projected into the event
+    // Squadra. No owned-card mutations, save writes or altered eligibility.
+    function elementalSquadPresentation(model){
+      const empty={model,effects:[]};
+      if(!TEAM_VENDING||view!=="squad")return empty;
+      const power=global.RoadToGloryCoachPowerTypes?.powerFor?.(localSquad?.coachId);
+      if(power?.type!=="elementalTrioAwakening")return empty;
+      const selected=localSquad?.coachPowerSelection?.cardIds;
+      if(!Array.isArray(selected)||selected.length!==3||new Set(selected).size!==3)return empty;
+      const lineup=model?.lineup||[],updated=new Map();
+      for(const cardId of selected){
+        const entry=lineup.find(row=>row.cardId===cardId);
+        const info=entry?squadCoachDetailPreview(cardId,resolveCard(cardId)):null;
+        // The runtime is all-or-nothing: never display partial boosts.
+        if(!info||!Number.isFinite(Number(info.player?.overall))||
+           !Number.isFinite(Number(info.pt?.total)))return empty;
+        updated.set(cardId,{...entry,player:info.player,coachPreview:info});
+      }
+      const apply=entry=>updated.get(entry.cardId)||entry;
+      return {model:{...model,lineup:lineup.map(apply),
+        lineupRows:(model.lineupRows||[]).map(row=>({...row,
+          entries:(row.entries||[]).map(apply)}))},
+        effects:selected.map(cardId=>updated.get(cardId).coachPreview)};
+    }
+    function elementalSquadSummaryMarkup(effects){
+      if(effects.length!==3)return "";
+      const coach=global.RoadToGloryCoaches?.lookup?.(localSquad.coachId);
+      const power=global.RoadToGloryCoachPowerTypes?.powerFor?.(localSquad.coachId);
+      const fire=power?.params?.teamId==="fire-team";
+      const cards=effects.map(info=>{
+        const original=info.original||{},upgraded=info.player||{};
+        const previousPt=global.RtgFourMovesRuntime?.ptBreakdown?.(
+          original.stats,global.RoadToGloryCoachPowerRuntime?.rarityOf?.(original))?.total;
+        const changes=(info.stats||[]).map(row=>'<span><b>'+escape(row.label)+'</b> '+
+          escape(row.before)+' → <strong>'+escape(row.after)+'</strong></span>').join("");
+        return '<article class="vf-coach-effect-player"><strong>'+escape(original.name||upgraded.name||"Giocatore")+
+          '</strong><div class="vf-coach-effect-values"><span>OVR <s>'+escape(original.overall)+
+          '</s> → <b>'+escape(upgraded.overall)+'</b></span><span>PT '+
+          escape(previousPt??"—")+' → <b>'+escape(info.pt.total)+'</b></span></div>'+
+          '<div class="vf-coach-effect-stats">'+(changes||'<span>Statistiche invariate</span>')+
+          '</div></article>';
+      }).join("");
+      return '<section class="vf-coach-effects vf-coach-effects--'+(fire?"fire":"wind")+
+        '" aria-label="Bonus allenatore attivo nella Squadra"><header><strong>'+
+        (fire?"RISVEGLIO INFERNALE":"RISVEGLIO GLACIALE")+'</strong><small>'+
+        escape(coach?.name||"Allenatore")+' · 3 TITOLARI POTENZIATI</small></header>'+
+        '<p>Valori temporanei per la prossima partita. Per il limite squadra conta l’OVR originale.</p>'+
+        '<div class="vf-coach-effects-grid">'+cards+'</div></section>';
+    }
     function squadSection() {
       const view=deps.squadView;
       if(!view?.renderModel||!view?.markup)return '<p>Layout RTG non disponibile</p>';
       const freeAgentIds=eligibleFreeAgentIds();
-      const model=tacticalLineupModel(view.renderModel({state:activeEventSquad(),freeAgentIds,seasonDb:global.SeasonRegistry?.database?.("ie1")||{},
-          freeAgentsDb:data.freeAgents,playerResolver:{resolveAtLevel20:cardId=>resolveCard(cardId)}}));
+      const projection=elementalSquadPresentation(tacticalLineupModel(view.renderModel({
+          state:activeEventSquad(),freeAgentIds,seasonDb:global.SeasonRegistry?.database?.("ie1")||{},
+          freeAgentsDb:data.freeAgents,playerResolver:{resolveAtLevel20:cardId=>resolveCard(cardId)}
+        })));
+      const model=projection.model;
       const meta=deps.getUserTeamMeta?.()||{};
       const name=meta.name||"La tua squadra";
       const strength=visualSquadStrength();
       const squadOvr=strength.current;
       const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · '+escape(manifest.labels.source)+'</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div></div>';
       const nativeSquad=view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
-          coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(
+          coachSlotMarkup:(global.RoadToGloryCoachesView?.squadSlot?.(
             activeEventSquad(),localSquad.coachId,
             !TEAM_VENDING&&localSquad.coachId===HALLOWEEN_COACH_ID&&!eventOverallDiscount()
-              ?null:localSquad.coachPowerSelection)||"",
+              ?null:localSquad.coachPowerSelection)||"")+
+            elementalSquadSummaryMarkup(projection.effects),
           requirementsMarkup:requirement,nextTeamName:TEAM_NAME,dirty:false});
       // Never rewrite the native Squadra HTML or card structure. The shared
       // event navigation is mounted ONCE as an app child during render(), so
