@@ -454,7 +454,7 @@
     "js/events/vento_fuoco_dev/miximax-rules.js",
     "js/events/vento_fuoco_dev/home.js"
   ],
-  "extensionCacheVersion": "20261110-vf-miximax-polish-6",
+  "extensionCacheVersion": "20261112-vf-coach-trio-1",
   "uses": {
     "cardsFrom": [
       "halloween2026"
